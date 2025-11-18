@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+*.log
+.DS_Store
+.env
+.env.local
+*.vsix
+out/
+.vscode-test/
+*.wasm
+*.tiktoken
+
+vscode-copilot-chat/
+github/puku-editor/dist/
+github/copilot-proxy/uv.lock
