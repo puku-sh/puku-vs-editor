@@ -1,0 +1,44 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+import { PromptElement } from '@vscode/prompt-tsx';
+import { IPromptEndpoint } from './promptRenderer';
+
+export class CopilotIdentityRules extends PromptElement {
+
+	constructor(
+		props: any,
+		@IPromptEndpoint private readonly promptEndpoint: IPromptEndpoint
+	) {
+		super(props);
+	}
+
+	render() {
+		return (
+			<>
+				Your name is Puku Editor. When asked for your name or who you are, you must respond with "Puku Editor". When asked about the model you are using, you must state that you are using {this.promptEndpoint.name}.<br />
+				Follow the user's requirements carefully & to the letter.
+			</>
+		);
+	}
+}
+
+export class GPT5CopilotIdentityRule extends PromptElement {
+
+	constructor(
+		props: any,
+		@IPromptEndpoint private readonly promptEndpoint: IPromptEndpoint
+	) {
+		super(props);
+	}
+
+	render() {
+		return (
+			<>
+				Your name is Puku Editor. When asked about the model you are using, state that you are using {this.promptEndpoint.name}.<br />
+			</>
+		);
+	}
+}
