@@ -2,7 +2,7 @@
 	"name": "puku-editor",
 	"displayName": "Puku Editor",
 	"description": "AI-powered code editor with GLM model support via Z.AI",
-	"version": "0.34.0",
+	"version": "0.34.1",
 	"build": "1",
 	"internalAIKey": "1058ec22-3c95-4951-8443-f26c1f325911",
 	"completionsCoreVersion": "1.378.1799",
@@ -3490,7 +3490,10 @@
 					"github.copilot.chat.notebook.alternativeFormat": {
 						"type": "string",
 						"default": "xml",
-						"enum": ["xml", "markdown"],
+						"enum": [
+							"xml",
+							"markdown"
+						],
 						"markdownDescription": "%github.copilot.config.notebook.alternativeFormat%",
 						"tags": [
 							"advanced",
@@ -3586,7 +3589,10 @@
 						]
 					},
 					"github.copilot.chat.agent.temperature": {
-						"type": ["number", "null"],
+						"type": [
+							"number",
+							"null"
+						],
 						"markdownDescription": "%github.copilot.config.agent.temperature%",
 						"tags": [
 							"advanced",
@@ -3623,7 +3629,10 @@
 						]
 					},
 					"github.copilot.chat.summarizeAgentConversationHistoryThreshold": {
-						"type": ["number", "null"],
+						"type": [
+							"number",
+							"null"
+						],
 						"markdownDescription": "%github.copilot.config.summarizeAgentConversationHistoryThreshold%",
 						"tags": [
 							"advanced",
@@ -3631,7 +3640,10 @@
 						]
 					},
 					"github.copilot.chat.agentHistorySummarizationMode": {
-						"type": ["string", "null"],
+						"type": [
+							"string",
+							"null"
+						],
 						"markdownDescription": "%github.copilot.config.agentHistorySummarizationMode%",
 						"tags": [
 							"advanced",
@@ -3717,7 +3729,10 @@
 						]
 					},
 					"github.copilot.chat.claudeCode.enabled": {
-						"type": ["boolean", "string"],
+						"type": [
+							"boolean",
+							"string"
+						],
 						"default": false,
 						"markdownDescription": "%github.copilot.config.claudeCode.enabled%",
 						"tags": [
@@ -3754,7 +3769,10 @@
 						]
 					},
 					"github.copilot.chat.inlineEdits.triggerOnEditorChangeAfterSeconds": {
-						"type": ["number", "null"],
+						"type": [
+							"number",
+							"null"
+						],
 						"markdownDescription": "%github.copilot.config.inlineEdits.triggerOnEditorChangeAfterSeconds%",
 						"tags": [
 							"advanced",
