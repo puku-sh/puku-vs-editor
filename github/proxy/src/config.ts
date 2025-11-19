@@ -5,7 +5,7 @@ dotenv.config();
 export const config = {
 	zai: {
 		apiKey: process.env.ZAI_API_KEY || '',
-		apiUrl: process.env.ZAI_API_URL || 'https://open.bigmodel.cn/api/paas/v4',
+		apiUrl: process.env.ZAI_API_URL || 'https://api.z.ai/api/coding/paas/v4',
 	},
 	server: {
 		port: parseInt(process.env.PORT || '11434', 10),
@@ -13,8 +13,26 @@ export const config = {
 	},
 	models: [
 		{
+			name: 'puku-ai',
+			id: 'GLM-4.6',
+			capabilities: {
+				tools: true,
+				vision: true,
+				contextLength: 128000,
+			},
+		},
+		{
+			name: 'puku-ai-air',
+			id: 'GLM-4.5-Air',
+			capabilities: {
+				tools: false,
+				vision: false,
+				contextLength: 128000,
+			},
+		},
+		{
 			name: 'GLM-4.6',
-			id: 'glm-4-plus',
+			id: 'GLM-4.6',
 			capabilities: {
 				tools: true,
 				vision: true,
@@ -23,7 +41,7 @@ export const config = {
 		},
 		{
 			name: 'GLM-4.5',
-			id: 'glm-4-0520',
+			id: 'GLM-4.5',
 			capabilities: {
 				tools: true,
 				vision: false,
@@ -32,7 +50,7 @@ export const config = {
 		},
 		{
 			name: 'GLM-4.5-Air',
-			id: 'glm-4-air',
+			id: 'GLM-4.5-Air',
 			capabilities: {
 				tools: false,
 				vision: false,

@@ -23,6 +23,7 @@ import { IEnvService, isScenarioAutomation } from '../../../platform/env/common/
 import { IVSCodeExtensionContext } from '../../../platform/extContext/common/extensionContext';
 import { ILogService } from '../../../platform/log/common/logService';
 import { FinishedCallback, OpenAiFunctionTool, OptionalChatRequestParams } from '../../../platform/networking/common/fetch';
+import { IFetcherService } from '../../../platform/networking/common/fetcherService';
 import { IChatEndpoint, IEndpoint } from '../../../platform/networking/common/networking';
 import { IExperimentationService } from '../../../platform/telemetry/common/nullExperimentationService';
 import { ITelemetryService } from '../../../platform/telemetry/common/telemetry';
@@ -58,6 +59,7 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IAuthenticationService private readonly _authenticationService: IAuthenticationService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
+		@IFetcherService private readonly _fetcherService: IFetcherService,
 		@IEndpointProvider private readonly _endpointProvider: IEndpointProvider,
 		@IEmbeddingsComputer private readonly _embeddingsComputer: IEmbeddingsComputer,
 		@IVSCodeExtensionContext private readonly _vsCodeExtensionContext: IVSCodeExtensionContext,
@@ -90,11 +92,12 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 	}
 
 	private async _registerChatProvider(): Promise<void> {
-		// Puku Editor: Check if Ollama endpoint is configured
+		// Puku Editor: Check if Ollama endpoint is EXPLICITLY configured by the user
 		// If yes, don't register this provider - BYOKContrib will register Ollama as "copilot" vendor
-		const ollamaEndpoint = this._configurationService.getConfig(ConfigKey.OllamaEndpoint);
+		const isOllamaConfigured = this._configurationService.isConfigured(ConfigKey.OllamaEndpoint);
 
-		if (ollamaEndpoint) {
+		if (isOllamaConfigured) {
+			const ollamaEndpoint = this._configurationService.getConfig(ConfigKey.OllamaEndpoint);
 			this._logService.info(`[LanguageModelAccess] Ollama endpoint configured (${ollamaEndpoint}), skipping copilot provider registration`);
 			console.log(`[LanguageModelAccess] Ollama endpoint configured (${ollamaEndpoint}), skipping copilot provider registration`);
 			// Still listen for auth changes to fire the event
@@ -118,20 +121,30 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 	}
 
 	private async _provideLanguageModelChatInfo(options: { silent: boolean }, token: vscode.CancellationToken): Promise<vscode.LanguageModelChatInformation[]> {
-		// Puku Editor: Check if Ollama endpoint is configured
-		// When Ollama is the only provider (no GitHub auth), BYOKContrib will register Ollama as "copilot" vendor
+		// Puku Editor: Check if Ollama or Puku AI endpoint is EXPLICITLY configured
+		// When these are configured (no GitHub auth), their contributions will register their own providers
 		// In that case, this provider won't be called. Otherwise, provide GitHub Copilot models.
-		const ollamaEndpoint = this._configurationService.getConfig(ConfigKey.OllamaEndpoint);
+		const isOllamaConfigured = this._configurationService.isConfigured(ConfigKey.OllamaEndpoint);
+		const isPukuAIConfigured = this._configurationService.isConfigured(ConfigKey.PukuAIEndpoint);
 		const session = await this._getToken();
 
-		this._logService.info(`[LanguageModelAccess] _provideLanguageModelChatInfo called, ollamaEndpoint: ${ollamaEndpoint}, has session: ${!!session}`);
-		console.log(`[LanguageModelAccess] _provideLanguageModelChatInfo called, ollamaEndpoint: ${ollamaEndpoint}, has session: ${!!session}`);
+		this._logService.info(`[LanguageModelAccess] _provideLanguageModelChatInfo called, isOllamaConfigured: ${isOllamaConfigured}, isPukuAIConfigured: ${isPukuAIConfigured}, has session: ${!!session}`);
+		console.log(`[LanguageModelAccess] _provideLanguageModelChatInfo called, isOllamaConfigured: ${isOllamaConfigured}, isPukuAIConfigured: ${isPukuAIConfigured}, has session: ${!!session}`);
 
 		// If Ollama endpoint is configured and we have no GitHub session, return empty
 		// (BYOKContrib will have registered Ollama provider as "copilot" vendor instead)
-		if (ollamaEndpoint && !session) {
+		if (isOllamaConfigured && !session) {
 			this._logService.info(`[LanguageModelAccess] Ollama endpoint configured with no GitHub auth, returning empty (Ollama provider registered as copilot vendor)`);
 			console.log(`[LanguageModelAccess] Ollama endpoint configured with no GitHub auth, returning empty (Ollama provider registered as copilot vendor)`);
+			this._currentModels = [];
+			return [];
+		}
+
+		// If Puku AI endpoint is configured and we have no GitHub session, return empty
+		// (PukuAIContribution will have registered its own provider instead)
+		if (isPukuAIConfigured && !session) {
+			this._logService.info(`[LanguageModelAccess] Puku AI endpoint configured with no GitHub auth, returning empty (Puku AI provider registered)`);
+			console.log(`[LanguageModelAccess] Puku AI endpoint configured with no GitHub auth, returning empty (Puku AI provider registered)`);
 			this._currentModels = [];
 			return [];
 		}

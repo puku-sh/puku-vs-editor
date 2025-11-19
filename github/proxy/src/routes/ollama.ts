@@ -9,6 +9,16 @@ router.get('/api/version', (req, res) => {
 	res.json({ version: '0.6.4' });
 });
 
+// GET /api/vendor - Vendor identification endpoint
+router.get('/api/vendor', (req, res) => {
+	res.json({
+		vendor: 'pukuai',
+		name: 'Puku AI',
+		description: 'AI-powered code editor with Z.AI GLM models',
+		version: '1.0.0'
+	});
+});
+
 // GET /api/tags - List available models
 router.get('/api/tags', (req, res) => {
 	const models: OllamaModel[] = config.models.map((model) => ({
@@ -53,6 +63,7 @@ router.post('/api/show', (req, res) => {
 		},
 		model_info: {
 			'general.architecture': 'glm',
+			'general.basename': model.name,
 			'general.parameter_count': 9000000000,
 			'glm.context_length': model.capabilities.contextLength,
 			'glm.embedding_length': 4096,
@@ -62,12 +73,12 @@ router.post('/api/show', (req, res) => {
 			'glm.attention.head_count_kv': 2,
 			'tokenizer.ggml.model': 'gpt2',
 			'tokenizer.ggml.tokens': [],
-			capabilities: {
-				tools: model.capabilities.tools,
-				vision: model.capabilities.vision,
-				contextLength: model.capabilities.contextLength,
-			},
 		},
+		capabilities: model.capabilities.tools || model.capabilities.vision ?
+			[
+				...(model.capabilities.tools ? ['tools'] : []),
+				...(model.capabilities.vision ? ['vision'] : [])
+			] : [],
 	};
 
 	res.json(response);

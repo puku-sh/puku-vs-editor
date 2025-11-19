@@ -4,7 +4,7 @@
 		{
 			"type": "extensionHost",
 			"request": "launch",
-			"name": "Launch Copilot Extension",
+			"name": "Launch Puku Editor Extension",
 			"runtimeExecutable": "${execPath}",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}",
@@ -28,7 +28,7 @@
 		{
 			"type": "extensionHost",
 			"request": "launch",
-			"name": "Launch Copilot Extension - Watch Mode",
+			"name": "Launch Puku Editor Extension - Watch Mode",
 			"runtimeExecutable": "${execPath}",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}"
@@ -51,7 +51,7 @@
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "Launch Copilot Extension - Watch Mode - Code OSS",
+			"name": "Launch Puku Editor Extension - Watch Mode - Code OSS",
 			"runtimeExecutable": "${workspaceFolder}/../vscode/scripts/code.sh",
 			"windows": {
 				"runtimeExecutable": "${workspaceFolder}/../vscode/scripts/code.bat",
@@ -266,7 +266,7 @@
 		{
 			"type": "extensionHost",
 			"request": "launch",
-			"name": "Launch Copilot Extension - TS Server in Debug Mode",
+			"name": "Launch Puku Editor Extension - TS Server in Debug Mode",
 			"runtimeExecutable": "${execPath}",
 			"args": [
 				"--extensionDevelopmentPath=${workspaceFolder}"

@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { AuthenticationContrib } from '../../authentication/vscode-node/authentication.contribution';
-import { BYOKContrib } from '../../byok/vscode-node/byokContribution';
 import { ChatQuotaContribution } from '../../chat/vscode-node/chatQuota.contribution';
+import { PukuAIContribution } from '../../pukuai/vscode-node/pukuaiContribution';
 import { ChatSessionsContrib } from '../../chatSessions/vscode-node/chatSessions';
 import * as chatBlockLanguageContribution from '../../codeBlocks/vscode-node/chatBlockLanguageFeatures.contribution';
 import { IExtensionContributionFactory, asContributionFactory } from '../../common/contributions';
@@ -59,7 +59,7 @@ import vscodeContributions from '../vscode/contributions';
 // ###################################################################################################
 
 // Puku Editor: Debug log
-console.log('Loading vscodeNodeContributions - BYOK should be included');
+console.log('Loading vscodeNodeContributions - Puku AI should be included:', PukuAIContribution?.name);
 
 export const vscodeNodeContributions: IExtensionContributionFactory[] = [
 	...vscodeContributions,
@@ -72,6 +72,8 @@ export const vscodeNodeContributions: IExtensionContributionFactory[] = [
 	asContributionFactory(PlaceholderViewContribution),
 	asContributionFactory(CopilotDebugCommandContribution),
 	asContributionFactory(DebugCommandsContribution),
+	// Puku Editor: Register Puku AI provider BEFORE LanguageModelAccess to avoid race condition
+	asContributionFactory(PukuAIContribution),
 	asContributionFactory(LanguageModelAccess),
 	asContributionFactory(WalkthroughCommandContribution),
 	asContributionFactory(InlineEditProviderFeature),
@@ -90,8 +92,6 @@ export const vscodeNodeContributions: IExtensionContributionFactory[] = [
 	asContributionFactory(CompletionsUnificationContribution),
 	workspaceIndexingContribution,
 	asContributionFactory(ChatSessionsContrib),
-	// Puku Editor: Load BYOK (Ollama) provider regardless of authentication
-	asContributionFactory(BYOKContrib)
 ];
 
 /**

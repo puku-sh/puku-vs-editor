@@ -90,4 +90,5 @@ export interface OllamaShowResponse {
 	model_info: {
 		[key: string]: any;
 	};
+	capabilities?: string[];
 }

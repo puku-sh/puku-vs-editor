@@ -23,6 +23,7 @@ import { GroqBYOKLMProvider } from './groqProvider';
 import { OllamaLMProvider } from './ollamaProvider';
 import { OAIBYOKLMProvider } from './openAIProvider';
 import { OpenRouterLMProvider } from './openRouterProvider';
+import { PukuAILMProvider } from './pukuAIProvider';
 import { XAIBYOKLMProvider } from './xAIProvider';
 
 export class BYOKContrib extends Disposable implements IExtensionContribution {
@@ -88,7 +89,7 @@ export class BYOKContrib extends Disposable implements IExtensionContribution {
 	}
 
 	private async _authChange(authService: IAuthenticationService, instantiationService: IInstantiationService) {
-		// Puku Editor: Register Ollama provider if endpoint is configured, regardless of GitHub auth
+		// Puku Editor: Register Ollama/PukuAI provider if endpoint is configured, regardless of GitHub auth
 		const ollamaEndpoint = this._configurationService.getConfig(ConfigKey.OllamaEndpoint);
 		const shouldRegisterByok = ollamaEndpoint || (authService.copilotToken && isBYOKEnabled(authService.copilotToken, this._capiClientService));
 
@@ -97,15 +98,11 @@ export class BYOKContrib extends Disposable implements IExtensionContribution {
 
 		if (shouldRegisterByok && !this._byokProvidersRegistered) {
 			this._byokProvidersRegistered = true;
-			// Puku Editor: Only register Ollama provider for GLM models
-			const ollamaProvider = instantiationService.createInstance(OllamaLMProvider, ollamaEndpoint || 'http://localhost:11434', this._byokStorageService);
 
-			// Puku Editor: Query vendor API to determine which vendor name to use
-			// Default behavior: Use "copilot" when no GitHub auth, "ollama" otherwise
-			const hasGitHubAuth = authService.copilotToken && !authService.copilotToken.isNoAuthUser;
-			let vendorName = (ollamaEndpoint && !hasGitHubAuth) ? 'copilot' : OllamaLMProvider.providerName.toLowerCase();
+			// Puku Editor: Query vendor API to determine which provider to use
+			let vendorName = 'ollama';
+			let provider;
 
-			// Try to get vendor info from the Ollama endpoint's /api/vendor endpoint
 			if (ollamaEndpoint) {
 				try {
 					const vendorUrl = `${ollamaEndpoint}/api/vendor`;
@@ -115,21 +112,30 @@ export class BYOKContrib extends Disposable implements IExtensionContribution {
 					const response = await this._fetcherService.fetch(vendorUrl, { method: 'GET' });
 					if (response.ok) {
 						const vendorInfo = await response.json();
-						if (vendorInfo.vendor) {
+						if (vendorInfo.vendor === 'pukuai') {
+							// Use Puku AI provider
 							vendorName = vendorInfo.vendor;
-							this._logService.info(`BYOK: Using vendor name '${vendorName}' from proxy vendor API`);
-							console.log(`BYOK: Using vendor name '${vendorName}' from proxy vendor API. Full info:`, vendorInfo);
+							provider = instantiationService.createInstance(PukuAILMProvider, ollamaEndpoint, this._byokStorageService);
+							this._logService.info(`BYOK: Using Puku AI provider with vendor name '${vendorName}'`);
+							console.log(`BYOK: Using Puku AI provider. Full info:`, vendorInfo);
 						}
 					}
 				} catch (e) {
-					this._logService.warn(`BYOK: Failed to fetch vendor info, using default vendor name: ${e}`);
-					console.log(`BYOK: Failed to fetch vendor info, using default vendor name '${vendorName}'`);
+					this._logService.warn(`BYOK: Failed to fetch vendor info, falling back to Ollama provider: ${e}`);
+					console.log(`BYOK: Failed to fetch vendor info, falling back to Ollama provider`);
 				}
 			}
 
-			this._logService.info(`BYOK: Creating Ollama provider with vendor name '${vendorName}' for endpoint ${ollamaEndpoint || 'http://localhost:11434'}`);
-			console.log(`BYOK: Creating Ollama provider with vendor name '${vendorName}' for endpoint ${ollamaEndpoint || 'http://localhost:11434'}`);
-			this._providers.set(vendorName, ollamaProvider);
+			// Fallback to Ollama provider if Puku AI detection failed
+			if (!provider) {
+				provider = instantiationService.createInstance(OllamaLMProvider, ollamaEndpoint || 'http://localhost:11434', this._byokStorageService);
+				const hasGitHubAuth = authService.copilotToken && !authService.copilotToken.isNoAuthUser;
+				vendorName = (ollamaEndpoint && !hasGitHubAuth) ? 'copilot' : OllamaLMProvider.providerName.toLowerCase();
+			}
+
+			this._logService.info(`BYOK: Creating provider with vendor name '${vendorName}' for endpoint ${ollamaEndpoint || 'http://localhost:11434'}`);
+			console.log(`BYOK: Creating provider with vendor name '${vendorName}' for endpoint ${ollamaEndpoint || 'http://localhost:11434'}`);
+			this._providers.set(vendorName, provider);
 
 			for (const [vendorName, provider] of this._providers) {
 				this._logService.info(`BYOK: Registering language model provider with vendor '${vendorName}'`);

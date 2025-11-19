@@ -15,16 +15,48 @@ router.post('/v1/chat/completions', async (req, res) => {
 		const modelConfig = config.models.find((m) => m.name === request.model);
 		const modelId = modelConfig?.id || config.models[0].id;
 
+		// Enhance messages for GLM model compatibility
+		// Note: We don't modify existing system messages as they contain important Copilot prompts
+		let messages = request.messages;
+
+		// Add identity system message at the beginning if messages exist
+		const hasSystemMessage = messages.some(m => m.role === 'system');
+		if (!hasSystemMessage) {
+			messages = [
+				{
+					role: 'system' as const,
+					content: `You are a highly capable AI coding assistant. You help users with software development tasks including writing, debugging, explaining, and optimizing code.
+
+Key guidelines:
+- Provide detailed, helpful, and accurate responses
+- When explaining code, be thorough but clear
+- Include code examples when appropriate
+- Explain your reasoning when solving problems
+- Be conversational and professional
+- When asked "who are you", describe yourself as an AI coding assistant built into this code editor`
+				},
+				...messages
+			];
+		}
+
 		// Convert to Z.AI format
 		const zaiRequest = {
 			model: modelId,
-			messages: request.messages,
+			messages: messages,
 			temperature: request.temperature,
 			top_p: request.top_p,
 			max_tokens: request.max_tokens,
 			stream: request.stream || false,
 			tools: request.tools,
 		};
+
+		// Debug: Log the first system message
+		const systemMsg = messages.find(m => m.role === 'system');
+		if (systemMsg) {
+			console.log(`[DEBUG] System message length: ${systemMsg.content.length} chars`);
+			console.log(`[DEBUG] System message preview: ${systemMsg.content.substring(0, 200)}...`);
+		}
+		console.log(`[DEBUG] Total messages: ${messages.length}, Model: ${modelId}, Stream: ${request.stream}`);
 
 		if (request.stream) {
 			// Streaming response
@@ -37,12 +69,63 @@ router.post('/v1/chat/completions', async (req, res) => {
 			const decoder = new TextDecoder();
 
 			try {
+				let buffer = '';
+				let totalContent = '';
 				while (true) {
 					const { done, value } = await reader.read();
 					if (done) break;
 
-					const chunk = decoder.decode(value, { stream: true });
-					res.write(chunk);
+					buffer += decoder.decode(value, { stream: true });
+
+					// Process complete SSE events
+					const lines = buffer.split('\n');
+					buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+					for (const line of lines) {
+						if (line.startsWith('data: ')) {
+							const data = line.slice(6).trim();
+							if (data === '[DONE]') {
+								console.log(`[DEBUG] Stream complete. Total content received: ${totalContent.length} chars`);
+								console.log(`[DEBUG] Content preview: ${totalContent.substring(0, 200)}...`);
+								res.write('data: [DONE]\n\n');
+								continue;
+							}
+
+							try {
+								const parsed = JSON.parse(data);
+								const choice = parsed.choices?.[0];
+
+								if (choice?.delta) {
+									// Filter out reasoning_content, keep everything else
+									const { reasoning_content, ...filteredDelta } = choice.delta;
+
+									// Track content for debugging
+									if (filteredDelta.content) {
+										totalContent += filteredDelta.content;
+									}
+
+									// Always forward the chunk if it has any delta content
+									// This ensures the stream doesn't appear empty during reasoning
+									const filtered = {
+										...parsed,
+										choices: [{
+											...choice,
+											delta: filteredDelta
+										}]
+									};
+									res.write(`data: ${JSON.stringify(filtered)}\n\n`);
+								} else if (choice) {
+									// Forward non-delta choices (e.g., finish_reason)
+									res.write(`data: ${JSON.stringify(parsed)}\n\n`);
+								}
+							} catch {
+								// Skip invalid JSON
+							}
+						} else if (line.trim()) {
+							// Forward non-data lines as-is
+							res.write(line + '\n');
+						}
+					}
 				}
 				res.end();
 			} catch (error) {
@@ -74,38 +157,50 @@ router.post('/v1/completions', async (req, res) => {
 		const modelConfig = config.models.find((m) => m.name === request.model);
 		const modelId = modelConfig?.id || config.models[0].id;
 
-		// Convert FIM request to chat format
+		// Convert FIM request to chat format with improved prompting for GLM models
 		let prompt: string;
 		if (request.suffix && request.suffix.trim()) {
-			// FIM with suffix - use markers
-			prompt = `You are a code completion assistant. Complete the code between <CODE_BEFORE> and <CODE_AFTER>.
+			// FIM with suffix - provide clear context about what comes before and after
+			prompt = `Complete the missing code. You are given code before and after the cursor position.
 
-<CODE_BEFORE>
+CODE BEFORE CURSOR:
+\`\`\`
 ${request.prompt}
-<CODE_AFTER>
+\`\`\`
+
+CODE AFTER CURSOR:
+\`\`\`
 ${request.suffix}
+\`\`\`
 
-Provide ONLY the code that should go between <CODE_BEFORE> and <CODE_AFTER>. Do not include explanations, markdown formatting, or any other text. Just the code completion.`;
+Write ONLY the code that belongs between these two sections. Do not repeat the before/after code. Do not add explanations. Output only the completion code.`;
 		} else {
-			// Simple completion - just continue the code
-			prompt = `You are a code completion assistant. Continue the following code naturally:
+			// Simple completion - continue the code naturally
+			prompt = `Continue this code naturally. Complete the next logical lines.
 
+EXISTING CODE:
+\`\`\`
 ${request.prompt}
+\`\`\`
 
-Provide ONLY the code continuation. Do not include explanations, markdown formatting, or any other text. Just the code.`;
+Write ONLY the next lines of code that continue from where it left off. Do not repeat existing code. Do not add explanations or markdown. Output only the completion code.`;
 		}
 
 		const zaiRequest = {
 			model: modelId,
 			messages: [
 				{
+					role: 'system' as const,
+					content: 'You are an expert code completion assistant. Generate only the missing code, nothing else. Never include markdown formatting, explanations, or comments. Just raw code.',
+				},
+				{
 					role: 'user' as const,
 					content: prompt,
 				},
 			],
-			temperature: request.temperature ?? 0.2,
+			temperature: request.temperature ?? 0.3,
 			top_p: request.top_p ?? 0.95,
-			max_tokens: request.max_tokens ?? 200,
+			max_tokens: request.max_tokens ?? 500,
 			stream: request.stream || false,
 		};
 

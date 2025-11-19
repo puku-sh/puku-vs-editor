@@ -12,6 +12,7 @@ import { AutoChatEndpoint } from '../../../platform/endpoint/node/autoChatEndpoi
 import { IAutomodeService } from '../../../platform/endpoint/node/automodeService';
 import { CopilotChatEndpoint } from '../../../platform/endpoint/node/copilotChatEndpoint';
 import { EmbeddingEndpoint } from '../../../platform/endpoint/node/embeddingsEndpoint';
+import { PukuChatEndpoint } from '../../../platform/endpoint/node/pukuChatEndpoint';
 import { IModelMetadataFetcher, ModelMetadataFetcher } from '../../../platform/endpoint/node/modelMetadataFetcher';
 import { ExtensionContributedChatEndpoint } from '../../../platform/endpoint/vscode-node/extChatEndpoint';
 import { IEnvService } from '../../../platform/env/common/envService';
@@ -128,6 +129,8 @@ export class ProductionEndpointProvider implements IEndpointProvider {
 				}
 			} else if (model) {
 				endpoint = this._instantiationService.createInstance(ExtensionContributedChatEndpoint, model);
+			} else if (model && model.id === 'puku-ai') {
+				endpoint = this._instantiationService.createInstance(PukuChatEndpoint);
 			} else {
 				// No explicit family passed and no model picker = gpt-4.1 class model
 				endpoint = await this.getChatEndpoint('gpt-4.1');
@@ -162,6 +165,11 @@ export class ProductionEndpointProvider implements IEndpointProvider {
 
 	async getAllChatEndpoints(): Promise<IChatEndpoint[]> {
 		const models: IChatModelInformation[] = await this._modelFetcher.getAllChatModels();
-		return models.map(model => this.getOrCreateChatEndpointInstance(model));
+		const endpoints = models.map(model => this.getOrCreateChatEndpointInstance(model));
+		const pukuEndpointUrl = this._configService.getConfig(ConfigKey.PukuAIEndpoint);
+		if (pukuEndpointUrl) {
+			endpoints.push(this._instantiationService.createInstance(PukuChatEndpoint));
+		}
+		return endpoints;
 	}
 }
