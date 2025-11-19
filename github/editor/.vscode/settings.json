@@ -1,0 +1,4 @@
+{
+  "github.copilot.pukuai.endpoint": "http://localhost:11434",
+  "github.copilot.advanced.authProvider": "none"
+}
