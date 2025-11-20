@@ -58,6 +58,30 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 	}
 
 	private async _auth(): Promise<TokenInfoOrError> {
+		// Puku Editor: Check if using BYOK (no auth) mode
+		const authProvider = this.configurationService.getConfig('advanced.authProvider' as any);
+		if (authProvider === 'none') {
+			this._logService.info('Using no-auth mode (BYOK)');
+			// Return a dummy token for BYOK mode
+			return {
+				kind: 'success',
+				token: 'dummy-byok-token',
+				expires_at: nowSeconds() + (60 * 60 * 24), // 24 hours from now
+				refresh_in: 60 * 60, // 1 hour
+				organization_list: [],
+				chat_enabled: true,
+				chat_jetbrains_enabled: false,
+				copilot_ide_agent_chat_gpt4_small_prompt: false,
+				public_suggestions: 'disabled',
+				individual: true,
+				endpoints: {
+					'api': '',
+					'origin-tracker': '',
+					'proxy': '',
+				}
+			};
+		}
+
 		const allowNoAuthAccess = this.configurationService.getNonExtensionConfig<boolean>('chat.allowAnonymousAccess');
 		const session = await getAnyAuthSession(this.configurationService, { silent: true });
 		if (!session && !allowNoAuthAccess) {

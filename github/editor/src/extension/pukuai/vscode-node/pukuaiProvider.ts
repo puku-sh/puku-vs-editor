@@ -116,7 +116,8 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 		const url = modelInfo.supported_endpoints?.includes(ModelSupportedEndpoint.Responses) ?
 			`${this._pukuBaseUrl}/v1/responses` :
 			`${this._pukuBaseUrl}/v1/chat/completions`;
-		return this._instantiationService.createInstance(PukuAIEndpoint, modelInfo, '', url);
+		// Puku AI: Pass dummy API key for authentication (proxy will accept any token)
+		return this._instantiationService.createInstance(PukuAIEndpoint, modelInfo, 'puku-ai-dummy-token', url);
 	}
 
 	private async _getAllModels(): Promise<Map<string, PukuAIKnownModel>> {
@@ -165,6 +166,7 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 		}
 
 		const modelApiInfo = await this._getPukuAIModelInformation(modelId);
+		console.log(`Puku AI: Model info for ${modelId}:`, JSON.stringify(modelApiInfo, null, 2));
 
 		// Handle cases where model_info might be undefined or missing fields
 		let contextWindow = 128000;
@@ -179,6 +181,8 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 		const outputTokens = 8192;
 		const toolCalling = modelApiInfo.capabilities?.includes("tools") ?? false;
 		const vision = modelApiInfo.capabilities?.includes("vision") ?? false;
+		console.log(`Puku AI: ${modelId} capabilities array:`, modelApiInfo.capabilities);
+		console.log(`Puku AI: ${modelId} parsed - toolCalling: ${toolCalling}, vision: ${vision}`);
 
 		const modelInfo: IChatModelInformation = {
 			id: modelId,
@@ -215,7 +219,7 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({ model: modelId })
+			body: JSON.stringify({ name: modelId })
 		});
 		return response.json() as unknown as PukuAIModelInfoAPIResponse;
 	}
@@ -225,7 +229,7 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 		let index = 0;
 
 		for (const [id, capabilities] of models) {
-			result.push({
+			const modelInfo = {
 				id,
 				name: capabilities.name,
 				version: '1.0.0',
@@ -241,7 +245,9 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 					toolCalling: capabilities.toolCalling,
 					imageInput: capabilities.vision
 				},
-			});
+			};
+			console.log(`Puku AI: Model ${id} - toolCalling: ${capabilities.toolCalling}, vision: ${capabilities.vision}`);
+			result.push(modelInfo);
 			index++;
 		}
 

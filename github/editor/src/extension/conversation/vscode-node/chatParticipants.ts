@@ -308,14 +308,15 @@ Learn more about [GitHub Copilot](https://docs.github.com/copilot/using-github-c
 
 		const endpoint = await this.endpointProvider.getChatEndpoint(request);
 		const baseEndpoint = await this.endpointProvider.getChatEndpoint('copilot-base');
-		// If it has a 0x multipler, it's free so don't switch them. If it's BYOK, it's free so don't switch them.
-		if (endpoint.multiplier === 0 || request.model.vendor !== 'copilot' || endpoint.multiplier === undefined) {
+		// If it has a 0x multipler, it's free so don't switch them. If it's BYOK or Puku AI, it's free so don't switch them.
+		if (endpoint.multiplier === 0 || (request.model.vendor !== 'copilot' && request.model.vendor !== 'pukuai') || endpoint.multiplier === undefined) {
 			return request;
 		}
 		if (this._chatQuotaService.overagesEnabled || !this._chatQuotaService.quotaExhausted) {
 			return request;
 		}
-		const baseLmModel = (await vscode.lm.selectChatModels({ id: baseEndpoint.model, family: baseEndpoint.family, vendor: 'copilot' }))[0];
+		// Support both copilot and pukuai vendors
+		const baseLmModel = (await vscode.lm.selectChatModels({ id: baseEndpoint.model, family: baseEndpoint.family, vendor: request.model.vendor }))[0];
 		if (!baseLmModel) {
 			return request;
 		}

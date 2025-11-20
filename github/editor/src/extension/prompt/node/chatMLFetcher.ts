@@ -362,14 +362,18 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 		this._logService.debug(`modelMaxResponseTokens ${request.max_tokens ?? 2048}`);
 		this._logService.debug(`chat model ${chatEndpointInfo.model}`);
 
-		// Puku Editor: Skip getCopilotToken for BYOK models (they provide their own API key)
-		if (!secretKey && isBYOKModel(chatEndpointInfo) !== 1) {
+		// Puku AI: Check if this is a Puku AI endpoint (no authentication needed)
+		const isPukuAI = chatEndpointInfo.urlOrRequestMetadata?.toString().includes('/v1/chat/completions') &&
+						chatEndpointInfo.urlOrRequestMetadata?.toString().includes('localhost:11434');
+
+		// Puku Editor: Skip getCopilotToken for BYOK models or Puku AI
+		if (!secretKey && isBYOKModel(chatEndpointInfo) !== 1 && !isPukuAI) {
 			secretKey = (await this._authenticationService.getCopilotToken()).token;
 		}
 
-		// BYOK models may use empty string for no auth (e.g., Ollama)
-		if (!secretKey && isBYOKModel(chatEndpointInfo) !== 1) {
-			// If no key is set we error (only for non-BYOK models)
+		// BYOK models and Puku AI may use empty string for no auth
+		if (!secretKey && isBYOKModel(chatEndpointInfo) !== 1 && !isPukuAI) {
+			// If no key is set we error (only for non-BYOK and non-Puku AI models)
 			const urlOrRequestMetadata = stringifyUrlOrRequestMetadata(chatEndpointInfo.urlOrRequestMetadata);
 			this._logService.error(`Failed to send request to ${urlOrRequestMetadata} due to missing key`);
 			sendCommunicationErrorTelemetry(this._telemetryService, `Failed to send request to ${urlOrRequestMetadata} due to missing key`);
@@ -381,7 +385,7 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 			};
 		}
 
-		// For BYOK models, use empty string if no key provided (e.g., Ollama with no auth)
+		// For BYOK models and Puku AI, use empty string if no key provided
 		secretKey ??= '';
 
 		// Generate unique ID to link input and output messages
@@ -1000,8 +1004,11 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 			};
 		}
 		this._logService.error(errorsUtil.fromUnknown(err), `Error on conversation request`);
+		console.error('[ChatMLFetcher] Error on conversation request:', err);
+		console.error('[ChatMLFetcher] Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
 		this._telemetryService.sendGHTelemetryException(err, 'Error on conversation request');
 		const errorDetail = fetcher.getUserMessageForFetcherError(err);
+		console.log('[ChatMLFetcher] Error detail from fetcher:', errorDetail);
 		const scrubbedErrorDetail = this.scrubErrorDetail(errorDetail);
 		if (fetcher.isInternetDisconnectedError(err)) {
 			return {

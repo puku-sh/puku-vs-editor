@@ -67,7 +67,7 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 
 			const provider = this._instantiationService.createInstance(PukuAILanguageModelProvider, endpoint);
 
-			// Register as 'pukuai' vendor
+			// Register as 'pukuai' vendor - our own vendor identity
 			const vendorName = 'pukuai';
 
 			console.log(`Puku AI: Registering as '${vendorName}' vendor`);
