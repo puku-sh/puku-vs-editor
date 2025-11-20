@@ -1,4 +1,10 @@
 {
   "github.copilot.pukuai.endpoint": "http://localhost:11434",
-  "github.copilot.advanced.authProvider": "none"
+  "github.copilot.advanced.authProvider": "none",
+  "github.copilot.chat.advanced.inlineEdits.completionsProvider.url": "http://127.0.0.1:11434/v1/completions",
+  "github.copilot.advanced.debug.overrideProxyUrl": "http://127.0.0.1:11434",
+  "github.copilot.chat.advanced.inlineEdits.githubCompletionsProvider.enabled": true,
+  "github.copilot.enable": true,
+  "github.copilot.editor.enableAutoCompletions": true,
+  "editor.inlineSuggest.enabled": true
 }

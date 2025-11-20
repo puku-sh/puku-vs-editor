@@ -65,11 +65,15 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 
 			console.log('Puku AI: Detected compatible proxy, registering provider');
 
-			console.log('Puku AI: Detected Puku AI proxy, registering provider');
+			const provider = this._instantiationService.createInstance(PukuAILanguageModelProvider, endpoint);
 
-			const provider = this._instantiationService.createInstance(PukuAILanguageModelProvider, endpoint, this._byokStorageService);
-			// Register as 'pukuai' vendor as defined in package.json
-			this._register(lm.registerLanguageModelChatProvider('pukuai', provider));
+			// Register as 'pukuai' vendor
+			const vendorName = 'pukuai';
+
+			console.log(`Puku AI: Registering as '${vendorName}' vendor`);
+			this._logService.info(`Puku AI: Registering as '${vendorName}' vendor`);
+
+			this._register(lm.registerLanguageModelChatProvider(vendorName, provider));
 
 			this._providerRegistered = true;
 			console.log('Puku AI: Provider registered successfully');

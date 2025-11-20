@@ -30,6 +30,8 @@ export class CompletionsCoreContribution extends Disposable {
 	) {
 		super();
 
+		console.log('[CompletionsCoreContribution] Constructor called');
+
 		const unificationState = unificationStateObservable(this);
 
 		this._register(autorun(reader => {
@@ -39,10 +41,27 @@ export class CompletionsCoreContribution extends Disposable {
 
 			// Puku Editor: Also enable inline completions when overrideProxyUrl is set (for BYOK models)
 			const overrideProxyUrl = configurationService.getConfig(ConfigKey.Shared.DebugOverrideProxyUrl);
+			const copilotToken = this._copilotToken.read(reader);
 
-			if (unificationStateValue?.codeUnification || extensionUnification || configEnabled || this._copilotToken.read(reader)?.isNoAuthUser || overrideProxyUrl) {
+			// Puku Editor: Force enable inline completions for testing
+			const forceEnable = true;
+
+			console.log('[CompletionsCoreContribution] Autorun triggered:', {
+				codeUnification: unificationStateValue?.codeUnification,
+				extensionUnification,
+				configEnabled,
+				isNoAuthUser: copilotToken?.isNoAuthUser,
+				overrideProxyUrl,
+				hasToken: copilotToken !== undefined,
+				forceEnable
+			});
+
+			if (unificationStateValue?.codeUnification || extensionUnification || configEnabled || copilotToken?.isNoAuthUser || overrideProxyUrl || forceEnable) {
+				console.log('[CompletionsCoreContribution] Registering inline completion provider');
 				const provider = this._getOrCreateProvider();
 				reader.store.add(languages.registerInlineCompletionItemProvider({ pattern: '**' }, provider, { debounceDelayMs: 0, excludes: ['github.copilot'], groupId: 'completions' }));
+			} else {
+				console.log('[CompletionsCoreContribution] NOT registering inline completion provider - conditions not met');
 			}
 
 			void commands.executeCommand('setContext', 'github.copilot.extensionUnification.activated', extensionUnification);
@@ -60,10 +79,12 @@ export class CompletionsCoreContribution extends Disposable {
 
 	private _getOrCreateProvider() {
 		if (!this._provider) {
+			console.log('[CompletionsCoreContribution] Creating inline completion provider');
 			const disposables = this._register(new DisposableStore());
 			this._completionsInstantiationService = this._instantiationService.invokeFunction(createContext, disposables);
 			this._completionsInstantiationService.invokeFunction(setup, disposables);
 			this._provider = disposables.add(this._completionsInstantiationService.createInstance(CopilotInlineCompletionItemProvider));
+			console.log('[CompletionsCoreContribution] Provider created successfully');
 		}
 		return this._provider;
 	}

@@ -503,6 +503,10 @@ export class CopilotLanguageModelWrapper extends Disposable {
 				}
 			};
 		});
+		console.log(`CopilotLanguageModelWrapper: Converted options.tools count: ${options.tools?.length ?? 0}`);
+		if (options.tools && options.tools.length > 0) {
+			console.log(`CopilotLanguageModelWrapper: Converted tool names: ${options.tools.map(t => t.function.name).join(', ')}`);
+		}
 		if (_options.toolMode === vscode.LanguageModelChatToolMode.Required && _options.tools?.length && _options.tools.length > 1) {
 			throw new Error('LanguageModelChatToolMode.Required is not supported with more than one tool');
 		}
@@ -511,6 +515,7 @@ export class CopilotLanguageModelWrapper extends Disposable {
 			{ type: 'function', function: { name: _options.tools[0].name } } :
 			undefined;
 
+		console.log(`CopilotLanguageModelWrapper: Calling endpoint.makeChatRequest with ${options.tools?.length ?? 0} tools`);
 		const result = await endpoint.makeChatRequest('copilotLanguageModelWrapper', messages, callback, token, ChatLocation.Other, { extensionId }, options, extensionId !== 'core', telemetryProperties);
 
 		if (result.type !== ChatFetchResponseType.Success) {

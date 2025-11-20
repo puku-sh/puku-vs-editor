@@ -1,0 +1,54 @@
+{
+  "model": "puku-ai",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an AI coding assistant. You have access to tools to help complete tasks. Use tools when needed by calling them with the appropriate parameters."
+    },
+    {
+      "role": "user",
+      "content": "Read the file at /Users/sahamed/Desktop/ai_studio/modal/hi.py and tell me what it contains"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "read_file",
+        "description": "Read the contents of a file at the specified path",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The absolute path to the file to read"
+            }
+          },
+          "required": ["path"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "write_file",
+        "description": "Write content to a file at the specified path",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "The absolute path to the file to write"
+            },
+            "content": {
+              "type": "string",
+              "description": "The content to write to the file"
+            }
+          },
+          "required": ["path", "content"]
+        }
+      }
+    }
+  ],
+  "stream": false
+}

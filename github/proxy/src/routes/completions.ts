@@ -57,6 +57,10 @@ Key guidelines:
 			console.log(`[DEBUG] System message preview: ${systemMsg.content.substring(0, 200)}...`);
 		}
 		console.log(`[DEBUG] Total messages: ${messages.length}, Model: ${modelId}, Stream: ${request.stream}`);
+		if (request.tools && request.tools.length > 0) {
+			console.log(`[DEBUG] Tools count: ${request.tools.length}`);
+			console.log(`[DEBUG] Tool names: ${request.tools.map((t: any) => t.function?.name || t.name).join(', ')}`);
+		}
 
 		if (request.stream) {
 			// Streaming response
@@ -139,6 +143,159 @@ Key guidelines:
 		}
 	} catch (error) {
 		console.error('Chat completion error:', error);
+		res.status(500).json({
+			error: {
+				message: error instanceof Error ? error.message : 'Unknown error',
+				type: 'server_error',
+			},
+		});
+	}
+});
+
+// POST /v1/engines/:model/completions - GitHub Copilot style endpoint
+router.post('/v1/engines/:model/completions', async (req, res) => {
+	try {
+		const request: CompletionRequest = req.body;
+		const modelParam = req.params.model;
+
+		// Log incoming request details
+		console.log(`\n[FIM Request] Model: ${modelParam}`);
+		console.log(`[FIM Request] Prompt length: ${request.prompt?.length || 0} chars`);
+		console.log(`[FIM Request] Suffix length: ${request.suffix?.length || 0} chars`);
+		console.log(`[FIM Request] Extra context:`, JSON.stringify(request.extra, null, 2));
+		console.log(`[FIM Request] First 200 chars of prompt:`, request.prompt?.substring(0, 200));
+		if (request.suffix) {
+			console.log(`[FIM Request] First 100 chars of suffix:`, request.suffix.substring(0, 100));
+		}
+
+		// Find the model configuration
+		const modelConfig = config.models.find((m) => m.name === modelParam || m.id === modelParam);
+		const modelId = modelConfig?.id || config.models[0].id;
+
+		// Convert FIM request to chat format with improved prompting for GLM models
+		let prompt: string;
+		if (request.suffix && request.suffix.trim()) {
+			// FIM with suffix - provide clear context about what comes before and after
+			prompt = `Complete the missing code. You are given code before and after the cursor position.
+
+CODE BEFORE CURSOR:
+\`\`\`
+${request.prompt}
+\`\`\`
+
+CODE AFTER CURSOR:
+\`\`\`
+${request.suffix}
+\`\`\`
+
+Write ONLY the code that belongs between these two sections. Do not repeat the before/after code. Do not add explanations. Output only the completion code.`;
+		} else {
+			// Simple completion - continue the code naturally
+			prompt = `Continue this code naturally. Complete the next logical lines.
+
+EXISTING CODE:
+\`\`\`
+${request.prompt}
+\`\`\`
+
+Write ONLY the next lines of code that continue from where it left off. Do not repeat existing code. Do not add explanations or markdown. Output only the completion code.`;
+		}
+
+		const zaiRequest = {
+			model: modelId,
+			messages: [
+				{
+					role: 'system' as const,
+					content: 'You are an expert code completion assistant. Generate only the missing code, nothing else. Never include markdown formatting, explanations, or comments. Just raw code.',
+				},
+				{
+					role: 'user' as const,
+					content: prompt,
+				},
+			],
+			temperature: request.temperature ?? 0.3,
+			top_p: request.top_p ?? 0.95,
+			max_tokens: request.max_tokens ?? 500,
+			stream: request.stream || false,
+		};
+
+		if (request.stream) {
+			// Streaming response - convert to completions format
+			res.setHeader('Content-Type', 'text/event-stream');
+			res.setHeader('Cache-Control', 'no-cache');
+			res.setHeader('Connection', 'keep-alive');
+
+			const stream = await zaiClient.chatCompletionStream(zaiRequest);
+			const reader = stream.getReader();
+			const decoder = new TextDecoder();
+
+			try {
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+
+					const chunk = decoder.decode(value, { stream: true });
+
+					// Parse SSE data and convert chat format to completions format
+					const lines = chunk.split('\n');
+					for (const line of lines) {
+						if (line.startsWith('data: ')) {
+							const data = line.slice(6);
+							if (data === '[DONE]') {
+								res.write('data: [DONE]\n\n');
+								continue;
+							}
+							try {
+								const parsed = JSON.parse(data);
+								// Convert chat completion to text completion format
+								if (parsed.choices && parsed.choices[0]) {
+									const choice = parsed.choices[0];
+									const completionChunk = {
+										id: parsed.id,
+										object: 'text_completion',
+										created: parsed.created,
+										model: parsed.model,
+										choices: [{
+											text: choice.delta?.content || '',
+											index: 0,
+											finish_reason: choice.finish_reason,
+										}],
+									};
+									res.write(`data: ${JSON.stringify(completionChunk)}\n\n`);
+								}
+							} catch (e) {
+								// Skip invalid JSON
+							}
+						}
+					}
+				}
+				res.end();
+			} catch (error) {
+				console.error('Streaming error:', error);
+				res.end();
+			}
+		} else {
+			// Non-streaming response
+			const response = await zaiClient.chatCompletion(zaiRequest);
+
+			// Convert chat completion to text completion format
+			const completionResponse = {
+				id: response.id,
+				object: 'text_completion',
+				created: response.created,
+				model: response.model,
+				choices: response.choices.map((choice) => ({
+					text: choice.message.content,
+					index: choice.index,
+					finish_reason: choice.finish_reason,
+				})),
+				usage: response.usage,
+			};
+
+			res.json(completionResponse);
+		}
+	} catch (error) {
+		console.error('Completion error:', error);
 		res.status(500).json({
 			error: {
 				message: error instanceof Error ? error.message : 'Unknown error',

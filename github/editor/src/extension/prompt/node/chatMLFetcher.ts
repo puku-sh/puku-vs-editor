@@ -125,11 +125,16 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 		}
 
 		const postOptions = this.preparePostOptions(requestOptions);
+		console.log(`ChatMLFetcher: postOptions.tools count: ${postOptions.tools?.length ?? 0}`);
 		const requestBody = chatEndpoint.createRequestBody({
 			...opts,
 			requestId: ourRequestId,
 			postOptions
 		});
+		console.log(`ChatMLFetcher: requestBody.tools count: ${requestBody.tools?.length ?? 0}`);
+		if (requestBody.tools && requestBody.tools.length > 0) {
+			console.log(`ChatMLFetcher: requestBody tool names: ${requestBody.tools.map((t: any) => t.function?.name || t.name).join(', ')}`);
+		}
 
 
 		const baseTelemetry = TelemetryData.createAndMarkAsIssued({

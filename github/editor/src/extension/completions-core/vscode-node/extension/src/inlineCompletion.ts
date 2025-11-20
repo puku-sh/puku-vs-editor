@@ -84,6 +84,12 @@ export class CopilotInlineCompletionItemProvider extends Disposable implements I
 		context: InlineCompletionContext,
 		token: CancellationToken
 	): Promise<InlineCompletionItem[] | InlineCompletionList | undefined> {
+		console.log('[CopilotInlineCompletionItemProvider] provideInlineCompletionItems called', {
+			fileName: doc.fileName,
+			position: position.line + ':' + position.character,
+			triggerKind: context.triggerKind
+		});
+
 		this.instantiationService.invokeFunction(telemetry, 'codeUnification.completions.invoked', TelemetryData.createAndMarkAsIssued({
 			languageId: doc.languageId,
 			lineCount: String(doc.lineCount),
@@ -95,6 +101,7 @@ export class CopilotInlineCompletionItemProvider extends Disposable implements I
 		try {
 			return await this._provideInlineCompletionItems(doc, position, context, token);
 		} catch (e) {
+			console.error('[CopilotInlineCompletionItemProvider] Error:', e);
 			this.telemetryService.sendGHTelemetryException(e, 'codeUnification.completions.exception');
 		} finally {
 			this.instantiationService.invokeFunction(telemetry, 'codeUnification.completions.returned', TelemetryData.createAndMarkAsIssued());
