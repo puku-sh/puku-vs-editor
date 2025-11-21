@@ -162,7 +162,9 @@ router.post('/v1/engines/:model/completions', async (req, res) => {
 		console.log(`\n[FIM Request] Model: ${modelParam}`);
 		console.log(`[FIM Request] Prompt length: ${request.prompt?.length || 0} chars`);
 		console.log(`[FIM Request] Suffix length: ${request.suffix?.length || 0} chars`);
-		console.log(`[FIM Request] Extra context:`, JSON.stringify(request.extra, null, 2));
+		if ((request as any).extra) {
+			console.log(`[FIM Request] Extra context:`, JSON.stringify((request as any).extra, null, 2));
+		}
 		console.log(`[FIM Request] First 200 chars of prompt:`, request.prompt?.substring(0, 200));
 		if (request.suffix) {
 			console.log(`[FIM Request] First 100 chars of suffix:`, request.suffix.substring(0, 100));

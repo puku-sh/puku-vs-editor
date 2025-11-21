@@ -3,6 +3,7 @@ import cors from 'cors';
 import { config } from './config.js';
 import ollamaRoutes from './routes/ollama.js';
 import completionsRoutes from './routes/completions.js';
+import embeddingsRoutes from './routes/embeddings.js';
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.get('/health', (req, res) => {
 // Mount routes
 app.use(ollamaRoutes);
 app.use(completionsRoutes);
+app.use(embeddingsRoutes);
 
 // Error handling
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -55,5 +57,6 @@ app.listen(port, host, () => {
 	console.log(`   - POST /api/pull`);
 	console.log(`   - POST /v1/chat/completions`);
 	console.log(`   - POST /v1/completions`);
+	console.log(`   - POST /v1/embeddings`);
 	console.log();
 });
