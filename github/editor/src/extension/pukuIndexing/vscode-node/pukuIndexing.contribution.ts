@@ -15,21 +15,97 @@ export class PukuIndexingContribution extends Disposable {
 	static readonly ID = 'pukuIndexing.contribution';
 
 	private _statusBarItem: vscode.StatusBarItem | undefined;
+	private _indexingService: IPukuIndexingService | undefined;
 
 	constructor(
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 	) {
 		super();
 
+		// Register search command
+		this._registerCommands();
+
 		// Initialize indexing after a short delay to let the workspace fully load
 		setTimeout(() => this._initializeIndexing(), 3000);
 	}
 
+	private _registerCommands(): void {
+		// Puku Semantic Search command for testing
+		this._register(vscode.commands.registerCommand('puku.semanticSearch', async () => {
+			if (!this._indexingService) {
+				vscode.window.showErrorMessage('Puku Indexing not initialized');
+				return;
+			}
+
+			if (this._indexingService.status !== PukuIndexingStatus.Ready) {
+				vscode.window.showWarningMessage('Puku Indexing is not ready. Please wait for indexing to complete.');
+				return;
+			}
+
+			const query = await vscode.window.showInputBox({
+				prompt: 'Enter search query',
+				placeHolder: 'Search for semantically similar code...',
+			});
+
+			if (!query) {
+				return;
+			}
+
+			try {
+				const results = await this._indexingService.search(query, 10);
+
+				if (results.length === 0) {
+					vscode.window.showInformationMessage('No results found');
+					return;
+				}
+
+				// Show results in a quick pick
+				const items = results.map((result, index) => ({
+					label: `$(file) ${vscode.workspace.asRelativePath(result.uri)}`,
+					description: `Score: ${(result.score * 100).toFixed(1)}%`,
+					detail: result.content.substring(0, 100).replace(/\n/g, ' ') + '...',
+					uri: result.uri,
+				}));
+
+				const selected = await vscode.window.showQuickPick(items, {
+					placeHolder: `Found ${results.length} results`,
+					matchOnDescription: true,
+					matchOnDetail: true,
+				});
+
+				if (selected) {
+					const document = await vscode.workspace.openTextDocument(selected.uri);
+					await vscode.window.showTextDocument(document);
+				}
+			} catch (error) {
+				console.error('[PukuIndexing] Search failed:', error);
+				vscode.window.showErrorMessage(`Search failed: ${error}`);
+			}
+		}));
+
+		// Re-index command
+		this._register(vscode.commands.registerCommand('puku.reindex', async () => {
+			if (!this._indexingService) {
+				vscode.window.showErrorMessage('Puku Indexing not initialized');
+				return;
+			}
+
+			if (this._indexingService.status === PukuIndexingStatus.Indexing) {
+				vscode.window.showWarningMessage('Indexing already in progress');
+				return;
+			}
+
+			vscode.window.showInformationMessage('Starting re-index...');
+			await this._indexingService.startIndexing();
+		}));
+	}
+
 	private async _initializeIndexing(): Promise<void> {
 		try {
-			const indexingService = this._instantiationService.invokeFunction((accessor) => {
+			this._indexingService = this._instantiationService.invokeFunction((accessor) => {
 				return accessor.get(IPukuIndexingService);
 			});
+			const indexingService = this._indexingService;
 
 			// Create status bar item
 			this._statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
