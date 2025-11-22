@@ -15,6 +15,7 @@ import { TelemetryCorrelationId } from '../../../util/common/telemetryCorrelatio
 export class EmbeddingType {
 	public static readonly text3small_512 = new EmbeddingType('text-embedding-3-small-512');
 	public static readonly metis_1024_I16_Binary = new EmbeddingType('metis-1024-I16-Binary');
+	public static readonly codestralEmbed = new EmbeddingType('mistralai/codestral-embed-2505');
 
 	constructor(
 		public readonly id: string
@@ -62,6 +63,14 @@ const wellKnownEmbeddingMetadata = Object.freeze<Record<string, EmbeddingTypeInf
 		quantization: {
 			query: 'float16',
 			document: 'binary'
+		},
+	},
+	[EmbeddingType.codestralEmbed.id]: {
+		model: LEGACY_EMBEDDING_MODEL_ID.TEXT3SMALL, // Use TEXT3SMALL as fallback for legacy API
+		dimensions: 1024, // Codestral Embed outputs 1024-dimensional vectors
+		quantization: {
+			query: 'float32',
+			document: 'float32'
 		},
 	},
 });
