@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { RequestMetadata } from '@vscode/copilot-api';
+import type { RequestMetadata } from '../../api/common/pukuRequestTypes';
 import type { LanguageModelToolResult } from 'vscode';
 import { AbstractRequestLogger, ILoggedRequestInfo, LoggedRequest } from '../../../platform/requestLogger/node/requestLogger';
 import { Event } from '../../../util/vs/base/common/event';

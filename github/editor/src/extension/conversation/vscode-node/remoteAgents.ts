@@ -2,7 +2,7 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { RequestType } from '@vscode/copilot-api';
+import { RequestType } from '../../../platform/api/common/pukuRequestTypes';
 import { Raw } from '@vscode/prompt-tsx';
 import { ChatCompletionItem, ChatContext, ChatPromptReference, ChatRequest, ChatRequestTurn, ChatResponseMarkdownPart, ChatResponseReferencePart, ChatResponseTurn, ChatResponseWarningPart, ChatVariableLevel, Disposable, DynamicChatParticipantProps, Location, MarkdownString, Position, Progress, Range, TextDocument, TextEditor, ThemeIcon, chat, commands, l10n } from 'vscode';
 import { IAuthenticationService } from '../../../platform/authentication/common/authentication';

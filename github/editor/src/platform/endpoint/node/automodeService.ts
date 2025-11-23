@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { RequestType } from '@vscode/copilot-api';
+import { RequestType } from '../../api/common/pukuRequestTypes';
 import type { ChatRequest } from 'vscode';
 import { createServiceIdentifier } from '../../../util/common/services';
 import { TimeoutTimer } from '../../../util/vs/base/common/async';

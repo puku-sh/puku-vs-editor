@@ -12,7 +12,7 @@ import * as tls from 'tls';
 import * as util from 'util';
 import * as vscode from 'vscode';
 
-import { RequestType } from '@vscode/copilot-api';
+import { RequestType } from '../../../platform/api/common/pukuRequestTypes';
 import { IAuthenticationService } from '../../../platform/authentication/common/authentication';
 import { ConfigKey, IConfigurationService } from '../../../platform/configuration/common/configurationService';
 import { ICAPIClientService } from '../../../platform/endpoint/common/capiClient';

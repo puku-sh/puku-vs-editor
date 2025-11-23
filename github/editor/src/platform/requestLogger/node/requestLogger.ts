@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { RequestMetadata } from '@vscode/copilot-api';
+import type { RequestMetadata } from '../../api/common/pukuRequestTypes';
 import { HTMLTracer, IChatEndpointInfo, Raw, RenderPromptResult } from '@vscode/prompt-tsx';
 import { AsyncLocalStorage } from 'async_hooks';
 import type { Event } from 'vscode';

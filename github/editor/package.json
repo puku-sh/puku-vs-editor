@@ -1182,7 +1182,7 @@
 		"chatParticipants": [
 			{
 				"id": "github.copilot.default",
-				"name": "GitHubCopilot",
+				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.description%",
 				"isDefault": true,
@@ -1218,7 +1218,7 @@
 			},
 			{
 				"id": "github.copilot.editingSession",
-				"name": "GitHubCopilot",
+				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.edits.description%",
 				"isDefault": true,
@@ -1232,7 +1232,7 @@
 			},
 			{
 				"id": "github.copilot.editingSessionEditor",
-				"name": "GitHubCopilot",
+				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.edits.description%",
 				"isDefault": true,
@@ -1243,7 +1243,7 @@
 			},
 			{
 				"id": "github.copilot.editingSession2",
-				"name": "GitHubCopilot",
+				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.edits.description%",
 				"isDefault": true,
@@ -1290,9 +1290,9 @@
 					"panel"
 				]
 			},
-			{
+				{
 				"id": "github.copilot.editor",
-				"name": "Copilot",
+				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.description%",
 				"isDefault": true,
@@ -1397,7 +1397,7 @@
 			},
 			{
 				"id": "github.copilot.notebook",
-				"name": "GitHubCopilot",
+				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.description%",
 				"isDefault": true,
@@ -1418,7 +1418,7 @@
 			},
 			{
 				"id": "github.copilot.notebookEditorAgent",
-				"name": "GitHubCopilot",
+				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.description%",
 				"isDefault": true,
@@ -5138,7 +5138,6 @@
 		"@google/genai": "^1.22.0",
 		"@humanwhocodes/gitignore-to-minimatch": "1.0.2",
 		"@microsoft/tiktokenizer": "^1.0.10",
-		"@vscode/copilot-api": "^0.1.13",
 		"@vscode/extension-telemetry": "^1.2.0",
 		"@vscode/l10n": "^0.0.18",
 		"@vscode/prompt-tsx": "^0.4.0-alpha.5",

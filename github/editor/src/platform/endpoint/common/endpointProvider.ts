@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 
-import { RequestMetadata } from '@vscode/copilot-api';
+import { RequestMetadata } from '../../api/common/pukuRequestTypes';
 import type { LanguageModelChat } from 'vscode';
 import { createServiceIdentifier } from '../../../util/common/services';
 import { TokenizerType } from '../../../util/common/tokenizer';
