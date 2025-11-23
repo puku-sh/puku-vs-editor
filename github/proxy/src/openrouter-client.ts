@@ -20,8 +20,9 @@ export class OpenRouterClient {
 			headers: {
 				'Content-Type': 'application/json',
 				'Authorization': `Bearer ${this.apiKey}`,
-				'HTTP-Referer': 'https://github.com/puku-editor', // Optional: for OpenRouter analytics
-				'X-Title': 'Puku Editor', // Optional: for OpenRouter analytics
+				'HTTP-Referer': 'https://github.com/puku-editor',
+				'X-Title': 'Puku Editor',
+				'User-Agent': 'Puku-Editor/1.0',
 			},
 			body: JSON.stringify(request),
 		});

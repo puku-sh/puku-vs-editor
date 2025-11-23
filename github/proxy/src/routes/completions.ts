@@ -2,14 +2,20 @@ import { Router } from 'express';
 import { ZAIClient } from '../zai-client.js';
 import { config } from '../config.js';
 import type { ChatCompletionRequest, CompletionRequest } from '../types.js';
+import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 const router = Router();
 const zaiClient = new ZAIClient();
 
 // POST /v1/chat/completions - Chat completions endpoint
-router.post('/v1/chat/completions', async (req, res) => {
+router.post('/v1/chat/completions', async (req: AuthenticatedRequest, res) => {
 	try {
 		const request: ChatCompletionRequest = req.body;
+		
+		// Log authentication status
+		if (req.authToken) {
+			console.log(`[Chat Completions] Authenticated request from user: ${req.userId || 'unknown'}`);
+		}
 
 		// Find the model configuration
 		const modelConfig = config.models.find((m) => m.name === request.model);
@@ -153,7 +159,7 @@ Key guidelines:
 });
 
 // POST /v1/engines/:model/completions - GitHub Copilot style endpoint
-router.post('/v1/engines/:model/completions', async (req, res) => {
+router.post('/v1/engines/:model/completions', async (req: AuthenticatedRequest, res) => {
 	try {
 		const request: CompletionRequest = req.body;
 		const modelParam = req.params.model;
@@ -308,7 +314,7 @@ Write ONLY the next lines of code that continue from where it left off. Do not r
 });
 
 // POST /v1/completions - FIM (Fill-In-Middle) completions endpoint
-router.post('/v1/completions', async (req, res) => {
+router.post('/v1/completions', async (req: AuthenticatedRequest, res) => {
 	try {
 		const request: CompletionRequest = req.body;
 

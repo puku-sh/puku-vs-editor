@@ -23,7 +23,6 @@ import { IEnvService, isScenarioAutomation } from '../../../platform/env/common/
 import { IVSCodeExtensionContext } from '../../../platform/extContext/common/extensionContext';
 import { ILogService } from '../../../platform/log/common/logService';
 import { FinishedCallback, OpenAiFunctionTool, OptionalChatRequestParams } from '../../../platform/networking/common/fetch';
-import { IFetcherService } from '../../../platform/networking/common/fetcherService';
 import { IChatEndpoint, IEndpoint } from '../../../platform/networking/common/networking';
 import { IExperimentationService } from '../../../platform/telemetry/common/nullExperimentationService';
 import { ITelemetryService } from '../../../platform/telemetry/common/telemetry';
@@ -59,7 +58,6 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IAuthenticationService private readonly _authenticationService: IAuthenticationService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
-		@IFetcherService private readonly _fetcherService: IFetcherService,
 		@IEndpointProvider private readonly _endpointProvider: IEndpointProvider,
 		@IEmbeddingsComputer private readonly _embeddingsComputer: IEmbeddingsComputer,
 		@IVSCodeExtensionContext private readonly _vsCodeExtensionContext: IVSCodeExtensionContext,
@@ -109,13 +107,28 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 	}
 
 	private async _provideLanguageModelChatInfo(options: { silent: boolean }, token: vscode.CancellationToken): Promise<vscode.LanguageModelChatInformation[]> {
-		// Puku Editor: Check if Ollama or Puku AI endpoint is EXPLICITLY configured
+		// Puku Editor: Check if Ollama or Puku AI endpoint is configured
 		// When these are configured (no GitHub auth), their contributions will register their own providers
 		// In that case, this provider won't be called. Otherwise, provide GitHub Copilot models.
 		const isOllamaConfigured = this._configurationService.isConfigured(ConfigKey.OllamaEndpoint);
-		const isPukuAIConfigured = this._configurationService.isConfigured(ConfigKey.PukuAIEndpoint);
 		const pukuAIEndpoint = this._configurationService.getConfig(ConfigKey.PukuAIEndpoint);
-		const session = await this._getToken();
+		const isPukuAIConfigured = this._configurationService.isConfigured(ConfigKey.PukuAIEndpoint);
+		
+		// Try to get GitHub session, but don't fail if it's not available (e.g., when using Puku AI)
+		let session: any = undefined;
+		try {
+			session = await this._getToken();
+		} catch (error) {
+			// If GitHub login fails, it's OK when using Puku AI or Ollama
+			// The error will be handled gracefully by returning empty models
+			if (isPukuAIConfigured || isOllamaConfigured || pukuAIEndpoint) {
+				// Expected - no GitHub auth needed
+				session = undefined;
+			} else {
+				// Only log the error if we're not in Puku AI/Ollama mode
+				this._logService.warn(`[LanguageModelAccess] GitHub login failed: ${error}`);
+			}
+		}
 
 		this._logService.info(`[LanguageModelAccess] _provideLanguageModelChatInfo called, isOllamaConfigured: ${isOllamaConfigured}, isPukuAIConfigured: ${isPukuAIConfigured}, pukuAIEndpoint: ${pukuAIEndpoint}, has session: ${!!session}`);
 		console.log(`[LanguageModelAccess] _provideLanguageModelChatInfo called, isOllamaConfigured: ${isOllamaConfigured}, isPukuAIConfigured: ${isPukuAIConfigured}, pukuAIEndpoint: ${pukuAIEndpoint}, has session: ${!!session}`);
@@ -129,18 +142,18 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 			return [];
 		}
 
-		// If Puku AI endpoint is configured and we have no GitHub session, return empty
+		// If Puku AI endpoint is set (even if default) and we have no GitHub session, return empty
 		// (PukuAIContribution will have registered its own provider instead)
-		if (isPukuAIConfigured && !session) {
-			this._logService.info(`[LanguageModelAccess] Puku AI endpoint configured with no GitHub auth, returning empty (Puku AI provider registered)`);
-			console.log(`[LanguageModelAccess] Puku AI endpoint configured with no GitHub auth, returning empty (Puku AI provider registered)`);
+		if ((isPukuAIConfigured || pukuAIEndpoint) && !session) {
+			this._logService.info(`[LanguageModelAccess] Puku AI endpoint set (${pukuAIEndpoint}) with no GitHub auth, returning empty (Puku AI provider registered)`);
+			console.log(`[LanguageModelAccess] Puku AI endpoint set (${pukuAIEndpoint}) with no GitHub auth, returning empty (Puku AI provider registered)`);
 			this._currentModels = [];
 			return [];
 		}
 
 		if (!session) {
-			this._logService.warn(`[LanguageModelAccess] No session and no Ollama endpoint, returning empty models`);
-			console.log(`[LanguageModelAccess] No session and no Ollama endpoint, returning empty models`);
+			this._logService.warn(`[LanguageModelAccess] No session and no Puku AI/Ollama endpoint, returning empty models`);
+			console.log(`[LanguageModelAccess] No session and no Puku AI/Ollama endpoint, returning empty models`);
 			this._currentModels = [];
 			return [];
 		}
@@ -152,8 +165,9 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 			(e.model && e.model.startsWith('GLM-')) || e.model === 'gpt-4o-mini'
 		);
 		// Puku Editor: Only add auto mode endpoint if we have GitHub Copilot endpoints
+		let autoEndpoint: IChatEndpoint | undefined;
 		if (chatEndpoints.length > 0 && chatEndpoints.some(e => !e.model.startsWith('GLM-'))) {
-			const autoEndpoint = await this._automodeService.resolveAutoModeEndpoint(undefined, chatEndpoints);
+			autoEndpoint = await this._automodeService.resolveAutoModeEndpoint(undefined, chatEndpoints);
 			chatEndpoints.push(autoEndpoint);
 		}
 		let defaultChatEndpoint: IChatEndpoint | undefined;
@@ -392,6 +406,7 @@ export class CopilotLanguageModelWrapper extends Disposable {
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@ILogService private readonly _logService: ILogService,
 		@IAuthenticationService private readonly _authenticationService: IAuthenticationService,
+		@IConfigurationService private readonly _configurationService: IConfigurationService,
 		@IEnvService private readonly _envService: IEnvService
 	) {
 		super();

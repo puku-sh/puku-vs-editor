@@ -363,12 +363,41 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 		this._logService.debug(`chat model ${chatEndpointInfo.model}`);
 
 		// Puku AI: Check if this is a Puku AI endpoint (no authentication needed)
-		const isPukuAI = chatEndpointInfo.urlOrRequestMetadata?.toString().includes('/v1/chat/completions') &&
-						chatEndpointInfo.urlOrRequestMetadata?.toString().includes('localhost:11434');
+		// Check URL pattern, family, model name, or endpoint name
+		const urlString = chatEndpointInfo.urlOrRequestMetadata?.toString() || '';
+		const isPukuAI = urlString.includes('localhost:11434') || 
+						urlString.includes('127.0.0.1:11434') ||
+						chatEndpointInfo.family === 'puku' ||
+						chatEndpointInfo.model?.startsWith('GLM-') ||
+						chatEndpointInfo.name === 'Puku AI';
 
 		// Puku Editor: Skip getCopilotToken for BYOK models or Puku AI
 		if (!secretKey && isBYOKModel(chatEndpointInfo) !== 1 && !isPukuAI) {
-			secretKey = (await this._authenticationService.getCopilotToken()).token;
+			try {
+				secretKey = (await this._authenticationService.getCopilotToken()).token;
+			} catch (error) {
+				// If GitHub login fails, check if this might be a Puku AI/BYOK endpoint
+				if (error instanceof Error && (error.message === 'GitHubLoginFailed' || error.message.includes('GitHubLoginFailed'))) {
+					// Re-check Puku AI detection in case URL wasn't available before
+					const urlStringRetry = chatEndpointInfo.urlOrRequestMetadata?.toString() || '';
+					const isPukuAIRetry = urlStringRetry.includes('localhost:11434') || 
+										urlStringRetry.includes('127.0.0.1:11434') ||
+										chatEndpointInfo.family === 'puku' ||
+										chatEndpointInfo.model?.startsWith('GLM-') ||
+										chatEndpointInfo.name === 'Puku AI';
+					
+					if (isPukuAIRetry || isBYOKModel(chatEndpointInfo) === 1) {
+						this._logService.info(`[ChatMLFetcher] GitHub login failed but using Puku AI/BYOK (family: ${chatEndpointInfo.family}, model: ${chatEndpointInfo.model}), continuing with empty token`);
+						secretKey = '';
+					} else {
+						// Re-throw if not Puku AI/BYOK
+						this._logService.error(`[ChatMLFetcher] GitHub login failed and endpoint doesn't appear to be Puku AI/BYOK (family: ${chatEndpointInfo.family}, model: ${chatEndpointInfo.model}, name: ${chatEndpointInfo.name})`);
+						throw error;
+					}
+				} else {
+					throw error;
+				}
+			}
 		}
 
 		// BYOK models and Puku AI may use empty string for no auth

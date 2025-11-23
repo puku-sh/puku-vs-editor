@@ -55,14 +55,26 @@ export class CopilotTokenManagerImpl extends Disposable implements ICompletionsC
 	) {
 		super();
 
-		// Puku Editor: Skip token update if BYOK mode is enabled (overrideProxyUrl is set)
+		// Puku Editor: Skip token update if BYOK mode or Puku AI is enabled
 		const overrideProxyUrl = this.configProvider.getOptionalConfig<string>(ConfigKey.DebugOverrideProxyUrl)
 			|| this.configProvider.getOptionalConfig<string>(ConfigKey.DebugOverrideProxyUrlLegacy);
+		const pukuAIEndpoint = this.configProvider.getOptionalConfig<string>('pukuai.endpoint');
+		const isPukuAIConfigured = !!pukuAIEndpoint;
 
-		if (!overrideProxyUrl) {
-			// Only fetch token if not in BYOK mode
-			this.updateCachedToken();
-			this._register(this.authenticationService.onDidAuthenticationChange(() => this.updateCachedToken()));
+		if (!overrideProxyUrl && !isPukuAIConfigured) {
+			// Only fetch token if not in BYOK/Puku AI mode
+			// Use catch to handle errors gracefully
+			this.updateCachedToken().catch(() => {
+				// Silently handle errors - updateCachedToken will create dummy token if needed
+			});
+			this._register(this.authenticationService.onDidAuthenticationChange(() => {
+				this.updateCachedToken().catch(() => {
+					// Silently handle errors
+				});
+			}));
+		} else {
+			// Initialize with dummy token immediately for BYOK/Puku AI mode
+			this._token = createDummyToken();
 		}
 	}
 
@@ -85,19 +97,40 @@ export class CopilotTokenManagerImpl extends Disposable implements ICompletionsC
 	}
 
 	private async updateCachedToken(): Promise<CopilotToken> {
-		// Puku Editor: In BYOK mode, return a dummy token instead of fetching from GitHub
+		// Puku Editor: In BYOK mode or when Puku AI is configured, return a dummy token instead of fetching from GitHub
 		const overrideProxyUrl = this.configProvider.getOptionalConfig<string>(ConfigKey.DebugOverrideProxyUrl)
 			|| this.configProvider.getOptionalConfig<string>(ConfigKey.DebugOverrideProxyUrlLegacy);
+		
+		// Check if Puku AI endpoint is configured (using string key since completions config uses string keys)
+		// If endpoint is set (even if default), assume Puku AI mode
+		const pukuAIEndpoint = this.configProvider.getOptionalConfig<string>('pukuai.endpoint');
+		const isPukuAIConfigured = !!pukuAIEndpoint;
 
-		if (overrideProxyUrl) {
-			// BYOK mode: Return dummy token with all required methods
+		if (overrideProxyUrl || isPukuAIConfigured) {
+			// BYOK/Puku AI mode: Return dummy token with all required methods
 			this._token = createDummyToken();
 			return this._token;
 		}
 
 		// Normal Copilot mode: Fetch real token
-		this._token = await this.authenticationService.getCopilotToken();
-		return this._token;
+		// Catch GitHubLoginFailed errors gracefully (e.g., when using Puku AI without GitHub auth)
+		try {
+			this._token = await this.authenticationService.getCopilotToken();
+			return this._token;
+		} catch (error) {
+			// If GitHub login fails and we don't have a token, use dummy token
+			// This allows the extension to work with Puku AI without GitHub authentication
+			if (error instanceof Error && (error.message === 'GitHubLoginFailed' || error.message.includes('GitHubLoginFailed'))) {
+				// Use dummy token if we don't have one yet
+				if (!this._token) {
+					this._token = createDummyToken();
+					return this._token;
+				}
+				// If we have a token, return it (might be expired but better than nothing)
+				return this._token;
+			}
+			throw error;
+		}
 	}
 
 	resetToken(httpError?: number): void {

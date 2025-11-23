@@ -1,21 +1,22 @@
 /*---------------------------------------------------------------------------------------------
  *  Puku Editor - AI-powered code editor
  *--------------------------------------------------------------------------------------------*/
-import { lm } from 'vscode';
+import * as vscode from 'vscode';
+import { lm, languages } from 'vscode';
 import { ConfigKey, IConfigurationService } from '../../../platform/configuration/common/configurationService';
 import { IVSCodeExtensionContext } from '../../../platform/extContext/common/extensionContext';
 import { ILogService } from '../../../platform/log/common/logService';
 import { IFetcherService } from '../../../platform/networking/common/fetcherService';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
-import { BYOKStorageService, IBYOKStorageService } from '../../byok/vscode-node/byokStorageService';
 import { IExtensionContribution } from '../../common/contributions';
 import { PukuAILanguageModelProvider } from './pukuaiProvider';
+import { PukuInlineCompletionProvider } from './pukuInlineCompletionProvider';
 
 export class PukuAIContribution extends Disposable implements IExtensionContribution {
 	public readonly id: string = 'pukuai-contribution';
 	private _providerRegistered = false;
-	private readonly _byokStorageService: IBYOKStorageService;
+	private _inlineProviderRegistered = false;
 
 	constructor(
 		@IFetcherService private readonly _fetcherService: IFetcherService,
@@ -25,7 +26,6 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 		@IVSCodeExtensionContext extensionContext: IVSCodeExtensionContext,
 	) {
 		super();
-		this._byokStorageService = new BYOKStorageService(extensionContext);
 		console.log('Puku AI: PukuAIContribution constructor called');
 		this._logService.info('Puku AI: PukuAIContribution constructor called');
 
@@ -78,8 +78,68 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 			this._providerRegistered = true;
 			console.log('Puku AI: Provider registered successfully');
 
+			// Also register inline completion provider
+			this._registerInlineCompletionProvider(endpoint);
+
 		} catch (error) {
 			console.error(`Puku AI: Failed to register provider: ${error}`);
 		}
+	}
+
+	/**
+	 * Register standalone inline completion provider for FIM
+	 */
+	private _registerInlineCompletionProvider(endpoint: string) {
+		if (this._inlineProviderRegistered) {
+			console.log('Puku AI: Inline completion provider already registered');
+			return;
+		}
+
+		console.log('Puku AI: Registering inline completion provider');
+		this._logService.info('Puku AI: Registering inline completion provider');
+
+		const inlineProvider = this._instantiationService.createInstance(
+			PukuInlineCompletionProvider,
+			endpoint
+		);
+
+		// Register for supported languages with specific selectors
+		// Using specific language selectors like typescriptContext does
+		const selector: vscode.DocumentSelector = [
+			{ scheme: 'file', language: 'python' },
+			{ scheme: 'file', language: 'typescript' },
+			{ scheme: 'file', language: 'typescriptreact' },
+			{ scheme: 'file', language: 'javascript' },
+			{ scheme: 'file', language: 'javascriptreact' },
+			{ scheme: 'untitled', language: 'python' },
+			{ scheme: 'untitled', language: 'typescript' },
+			{ scheme: 'untitled', language: 'javascript' },
+		];
+
+		// Use vscode.languages directly to ensure correct API
+		// Try both proposed and standard API
+		try {
+			console.log('Puku AI: About to register inline completion provider with vscode.languages');
+			const disposable = vscode.languages.registerInlineCompletionItemProvider(selector, inlineProvider, {
+				debounceDelayMs: 0,
+				groupId: 'pukuai-completions'
+			});
+			this._register(disposable);
+			console.log('Puku AI: Registered with proposed API metadata');
+		} catch (e) {
+			// Fallback to standard API without metadata
+			console.log('Puku AI: Proposed API failed, trying standard API:', e);
+			try {
+				const disposable = vscode.languages.registerInlineCompletionItemProvider(selector, inlineProvider);
+				this._register(disposable);
+				console.log('Puku AI: Registered with standard API');
+			} catch (e2) {
+				console.error('Puku AI: Failed to register inline completion provider:', e2);
+			}
+		}
+
+		this._inlineProviderRegistered = true;
+		console.log('Puku AI: Inline completion provider registered successfully');
+		this._logService.info('Puku AI: Inline completion provider registered successfully');
 	}
 }

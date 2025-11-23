@@ -3,9 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { env, window } from 'vscode';
+import { window } from 'vscode';
 import { TaskSingler } from '../../../util/common/taskSingler';
-import { IConfigurationService } from '../../configuration/common/configurationService';
+import { ConfigKey, IConfigurationService } from '../../configuration/common/configurationService';
 import { ICAPIClientService } from '../../endpoint/common/capiClient';
 import { IDomainService } from '../../endpoint/common/domainService';
 import { IEnvService } from '../../env/common/envService';
@@ -16,7 +16,6 @@ import { ITelemetryService } from '../../telemetry/common/telemetry';
 import { CopilotToken, ExtendedTokenInfo, TokenErrorNotificationId, TokenInfoOrError } from '../common/copilotToken';
 import { nowSeconds } from '../common/copilotTokenManager';
 import { BaseCopilotTokenManager } from '../node/copilotTokenManager';
-import { getAnyAuthSession } from './session';
 
 //Flag if we've shown message about broken oauth token.
 let shown401Message = false;
@@ -58,58 +57,92 @@ export class VSCodeCopilotTokenManager extends BaseCopilotTokenManager {
 	}
 
 	private async _auth(): Promise<TokenInfoOrError> {
-		// Puku Editor: Check if using BYOK (no auth) mode
-		const authProvider = this.configurationService.getConfig('advanced.authProvider' as any);
-		if (authProvider === 'none') {
-			this._logService.info('Using no-auth mode (BYOK)');
-			// Return a dummy token for BYOK mode
-			return {
-				kind: 'success',
-				token: 'dummy-byok-token',
-				expires_at: nowSeconds() + (60 * 60 * 24), // 24 hours from now
-				refresh_in: 60 * 60, // 1 hour
-				organization_list: [],
-				chat_enabled: true,
-				chat_jetbrains_enabled: false,
-				copilot_ide_agent_chat_gpt4_small_prompt: false,
-				public_suggestions: 'disabled',
-				individual: true,
-				endpoints: {
-					'api': '',
-					'origin-tracker': '',
-					'proxy': '',
+		// Puku Editor: Always fetch token from proxy when Puku AI endpoint is configured
+		const pukuAIEndpoint = this.configurationService.getConfig(ConfigKey.PukuAIEndpoint);
+		if (pukuAIEndpoint) {
+			this._logService.info(`[PukuTokenManager] Puku AI endpoint configured, fetching token from proxy`);
+			try {
+				const tokenUrl = `${pukuAIEndpoint}/api/tokens/issue`;
+				const response = await this._fetcherService.fetch(tokenUrl, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						userId: 'puku-user',
+						metadata: {
+							source: 'puku-editor',
+							version: this._envService.getVersion(),
+						},
+					}),
+				});
+
+				if (!response.ok) {
+					const errorText = await response.text();
+					this._logService.error(`[PukuTokenManager] Failed to fetch token from proxy: ${response.status} ${errorText}`);
+					return { 
+						kind: 'failure', 
+						reason: 'FailedToGetToken',
+						message: `Proxy returned ${response.status}: ${errorText}`
+					};
 				}
-			};
+
+				const tokenData = await response.json() as {
+					token: string;
+					expires_at: number;
+					refresh_in: number;
+					userId?: string;
+				};
+
+				if (!tokenData.token) {
+					this._logService.error(`[PukuTokenManager] Proxy returned invalid token data`);
+					return { 
+						kind: 'failure', 
+						reason: 'FailedToGetToken',
+						message: 'Token missing in proxy response'
+					};
+				}
+
+				// Convert expires_at from milliseconds to seconds if needed
+				const expiresAt = tokenData.expires_at > 10000000000 
+					? Math.floor(tokenData.expires_at / 1000) 
+					: tokenData.expires_at;
+
+				this._logService.info(`[PukuTokenManager] Successfully fetched token from proxy, expires at ${new Date(expiresAt * 1000).toISOString()}`);
+				return {
+					kind: 'success',
+					token: tokenData.token,
+					expires_at: expiresAt,
+					refresh_in: tokenData.refresh_in,
+					username: tokenData.userId || 'puku-user',
+					copilot_plan: 'individual',
+					isVscodeTeamMember: false,
+					chat_enabled: true,
+					organization_list: [],
+					individual: true,
+					endpoints: {
+						'api': pukuAIEndpoint,
+						'telemetry': '',
+						'proxy': pukuAIEndpoint,
+					},
+				};
+			} catch (error) {
+				this._logService.error(`[PukuTokenManager] Error fetching token from proxy:`, error);
+				return { 
+					kind: 'failure', 
+					reason: 'FailedToGetToken',
+					message: error instanceof Error ? error.message : 'Unknown error'
+				};
+			}
 		}
 
-		const allowNoAuthAccess = this.configurationService.getNonExtensionConfig<boolean>('chat.allowAnonymousAccess');
-		const session = await getAnyAuthSession(this.configurationService, { silent: true });
-		if (!session && !allowNoAuthAccess) {
-			this._logService.warn('GitHub login failed');
-			this._telemetryService.sendGHTelemetryErrorEvent('auth.github_login_failed');
-			return { kind: 'failure', reason: 'GitHubLoginFailed' };
-		}
-		if (session) {
-			// Log the steps by default, but only log actual token values when the log level is set to debug.
-			this._logService.info(`Logged in as ${session.account.label}`);
-			const tokenResult = await this.authFromGitHubToken(session.accessToken, session.account.label);
-			if (tokenResult.kind === 'success') {
-				this._logService.info(`Got Copilot token for ${session.account.label}`);
-				this._logService.info(`Copilot Chat: ${this._envService.getVersion()}, VS Code: ${this._envService.vscodeVersion}`);
-			}
-			return tokenResult;
-		} else {
-			this._logService.info(`Allowing anonymous access with devDeviceId`);
-			const tokenResult = await this.authFromDevDeviceId(env.devDeviceId);
-			if (tokenResult.kind === 'success') {
-				this._logService.info(`Got Copilot token for devDeviceId`);
-				this._logService.info(`Copilot Chat: ${this._envService.getVersion()}, VS Code: ${this._envService.vscodeVersion}`);
-			} else {
-				this._logService.warn('GitHub login failed');
-				return { kind: 'failure', reason: 'GitHubLoginFailed' };
-			}
-			return tokenResult;
-		}
+		// If no Puku AI endpoint is configured, return error (no fallback to GitHub)
+		this._logService.warn('[PukuTokenManager] No Puku AI endpoint configured');
+		return { 
+			kind: 'failure', 
+			reason: 'FailedToGetToken',
+			message: 'Puku AI endpoint must be configured'
+		};
 	}
 
 	private async _authShowWarnings(): Promise<ExtendedTokenInfo> {

@@ -73,6 +73,12 @@ export const ConfigKey = {
 	 * https://github.com/github/copilot/issues/19286
 	 */
 	UseSplitContextPrompt: 'internal.useSplitContextPrompt',
+
+	/**
+	 * Puku AI endpoint configuration - native integration for FIM completions.
+	 * When configured, uses this endpoint directly without requiring BYOK settings.
+	 */
+	PukuAIEndpoint: 'pukuai.endpoint',
 };
 
 export type ConfigKeyType = string;
@@ -306,6 +312,7 @@ const configDefaults = new Map<ConfigKeyType, unknown>([
 	[ConfigKey.DebugOverrideCapiUrlLegacy, ''],
 	[ConfigKey.DebugTestOverrideCapiUrlLegacy, ''],
 	[ConfigKey.DebugFilterLogCategories, []],
+	[ConfigKey.PukuAIEndpoint, ''],
 ]);
 
 export function getConfig<T>(accessor: ServicesAccessor, key: ConfigKeyType): T {

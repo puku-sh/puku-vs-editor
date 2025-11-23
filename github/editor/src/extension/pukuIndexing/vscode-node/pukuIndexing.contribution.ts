@@ -98,6 +98,37 @@ export class PukuIndexingContribution extends Disposable {
 			vscode.window.showInformationMessage('Starting re-index...');
 			await this._indexingService.startIndexing();
 		}));
+
+		// Clear cache command - useful for troubleshooting or after updates
+		this._register(vscode.commands.registerCommand('puku.clearIndexCache', async () => {
+			const confirm = await vscode.window.showWarningMessage(
+				'This will delete the embeddings cache and re-index the workspace. Continue?',
+				{ modal: true },
+				'Clear Cache'
+			);
+
+			if (confirm !== 'Clear Cache') {
+				return;
+			}
+
+			// Get storage path and delete database
+			const storageUri = vscode.workspace.workspaceFolders?.[0]
+				? vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, '.puku')
+				: undefined;
+
+			const { PukuEmbeddingsCache } = await import('../node/pukuEmbeddingsCache');
+			const deleted = await PukuEmbeddingsCache.deleteDatabase(storageUri);
+
+			if (deleted) {
+				vscode.window.showInformationMessage('Cache cleared. Restarting indexing...');
+				// Trigger re-index
+				if (this._indexingService) {
+					await this._indexingService.startIndexing();
+				}
+			} else {
+				vscode.window.showInformationMessage('No cache to clear or cache not found.');
+			}
+		}));
 	}
 
 	private async _initializeIndexing(): Promise<void> {

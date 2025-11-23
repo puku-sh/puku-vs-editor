@@ -15,6 +15,14 @@ export const config = {
 		port: parseInt(process.env.PORT || '11434', 10),
 		host: process.env.HOST || '127.0.0.1',
 	},
+	auth: {
+		// Enable/disable authentication requirement
+		enabled: process.env.AUTH_ENABLED === 'true',
+		// Require authentication for all endpoints (if enabled)
+		requireAuth: process.env.AUTH_REQUIRED === 'true',
+		// Default token (optional, for testing)
+		defaultToken: process.env.PROXY_DEFAULT_TOKEN,
+	},
 	models: [
 		{
 			name: 'puku-ai',

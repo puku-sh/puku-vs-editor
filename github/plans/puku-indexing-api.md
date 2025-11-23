@@ -103,6 +103,8 @@ The editor's `PukuEmbeddingsComputer` can use these endpoints to:
 - `github/editor/src/extension/pukuIndexing/common/pukuAuth.ts` - `IPukuAuthService` / `PukuAuthService` - Auth token management
 - `github/editor/src/extension/pukuIndexing/common/pukuEmbeddingTypes.ts` - `IPukuEmbeddingTypesService` / `PukuEmbeddingTypesService` - Model discovery
 - `github/editor/src/extension/pukuIndexing/node/pukuIndexingService.ts` - `IPukuIndexingService` / `PukuIndexingService` - Main indexing service
+- `github/editor/src/extension/pukuIndexing/node/pukuASTChunker.ts` - `PukuASTChunker` - AST-based semantic chunking using Tree-sitter
+- `github/editor/src/extension/pukuIndexing/node/pukuEmbeddingsCache.ts` - `PukuEmbeddingsCache` - SQLite storage with chunk metadata
 - `github/editor/src/extension/pukuIndexing/vscode-node/pukuIndexing.contribution.ts` - `PukuIndexingContribution` - Auto-triggers indexing on startup
 
 ### Service Registration
@@ -120,9 +122,16 @@ The editor's `PukuEmbeddingsComputer` can use these endpoints to:
 ├─────────────────────────────────────────────────────────────┤
 │  PukuIndexingService                                        │
 │    ├── Scans workspace files                                │
-│    ├── Chunks file content                                  │
-│    ├── Computes embeddings via PukuAuthService              │
-│    └── Stores embeddings for semantic search                │
+│    ├── AST-based chunking via PukuASTChunker (Tree-sitter)  │
+│    ├── Chunk types: function, method, class, interface, etc │
+│    ├── Computes embeddings via PukuEmbeddingsComputer       │
+│    └── Stores in SQLite via PukuEmbeddingsCache             │
+├─────────────────────────────────────────────────────────────┤
+│  PukuASTChunker                                             │
+│    ├── Uses VS Code's Tree-sitter parser (structureComputer)│
+│    ├── Extracts semantic chunks at function/class boundaries│
+│    ├── Fallback to line-based for unsupported languages     │
+│    └── Preserves chunk metadata (type, symbol name)         │
 ├─────────────────────────────────────────────────────────────┤
 │  PukuAuthService              PukuEmbeddingTypesService     │
 │    ├── GET /puku/v1/token     ├── GET /puku/v1/models       │
