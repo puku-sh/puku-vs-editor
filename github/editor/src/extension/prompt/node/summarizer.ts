@@ -6,6 +6,7 @@
 import { Raw } from '@vscode/prompt-tsx';
 import type * as vscode from 'vscode';
 import { ChatFetchResponseType, ChatLocation } from '../../../platform/chat/common/commonTypes';
+import { ConfigKey, IConfigurationService } from '../../../platform/configuration/common/configurationService';
 import { IEndpointProvider } from '../../../platform/endpoint/common/endpointProvider';
 import { ILogService } from '../../../platform/log/common/logService';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
@@ -22,6 +23,7 @@ export class ChatSummarizerProvider implements vscode.ChatSummarizer {
 		@ILogService private readonly logService: ILogService,
 		@IEndpointProvider private endpointProvider: IEndpointProvider,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
+		@IConfigurationService private readonly configurationService: IConfigurationService,
 	) { }
 
 	async provideChatSummary(
@@ -29,12 +31,27 @@ export class ChatSummarizerProvider implements vscode.ChatSummarizer {
 		token: vscode.CancellationToken,
 	): Promise<string> {
 
-		const { turns } = this.instantiationService.invokeFunction(accessor => addHistoryToConversation(accessor, context.history));
-		if (turns.filter(t => t.responseStatus === TurnStatus.Success).length === 0) {
+		// Check if summarization is enabled via configuration (following Copilot's approach)
+		const summarizationEnabled = this.configurationService.getConfig(ConfigKey.SummarizeAgentConversationHistory);
+		if (!summarizationEnabled) {
 			return '';
 		}
 
-		const endpoint = await this.endpointProvider.getChatEndpoint('copilot-fast');
+		const { turns } = this.instantiationService.invokeFunction(accessor => addHistoryToConversation(accessor, context.history));
+		const successfulTurns = turns.filter(t => t.responseStatus === TurnStatus.Success);
+		// Only summarize when there are successful turns
+		if (successfulTurns.length === 0) {
+			return '';
+		}
+
+		// Use copilot-fast endpoint (following Copilot's approach - gpt-4o-mini for summarization)
+		// Fall back to puku-ai if copilot-fast is not available
+		let endpoint;
+		try {
+			endpoint = await this.endpointProvider.getChatEndpoint('copilot-fast');
+		} catch {
+			endpoint = await this.endpointProvider.getChatEndpoint('puku-ai');
+		}
 		const promptContext: IBuildPromptContext = {
 			requestId: 'chat-summary',
 			query: '',

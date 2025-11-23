@@ -99,9 +99,11 @@ export class BYOKContrib extends Disposable implements IExtensionContribution {
 		if (shouldRegisterByok && !this._byokProvidersRegistered) {
 			this._byokProvidersRegistered = true;
 
-			// Puku Editor: Query vendor API to determine which provider to use
+			// Puku Editor: Skip BYOK registration for pukuai - PukuAIContribution handles it
+			// Only register Ollama provider if it's not a pukuai endpoint
 			let vendorName = 'ollama';
 			let provider;
+			let isPukuAI = false;
 
 			if (ollamaEndpoint) {
 				try {
@@ -113,37 +115,36 @@ export class BYOKContrib extends Disposable implements IExtensionContribution {
 					if (response.ok) {
 						const vendorInfo = await response.json();
 						if (vendorInfo.vendor === 'pukuai') {
-							// Use Puku AI provider
-							vendorName = vendorInfo.vendor;
-							provider = instantiationService.createInstance(PukuAILMProvider, ollamaEndpoint, this._byokStorageService);
-							this._logService.info(`BYOK: Using Puku AI provider with vendor name '${vendorName}'`);
-							console.log(`BYOK: Using Puku AI provider. Full info:`, vendorInfo);
+							// Puku AI is handled by PukuAIContribution, skip BYOK registration
+							isPukuAI = true;
+							this._logService.info(`BYOK: Detected Puku AI endpoint, skipping BYOK registration (handled by PukuAIContribution)`);
+							console.log(`BYOK: Detected Puku AI endpoint, skipping BYOK registration`);
 						}
 					}
 				} catch (e) {
-					this._logService.warn(`BYOK: Failed to fetch vendor info, falling back to Ollama provider: ${e}`);
-					console.log(`BYOK: Failed to fetch vendor info, falling back to Ollama provider`);
+					this._logService.warn(`BYOK: Failed to fetch vendor info: ${e}`);
+					console.log(`BYOK: Failed to fetch vendor info`);
 				}
 			}
 
-			// Fallback to Ollama provider if Puku AI detection failed
-			if (!provider) {
+			// Only register if not Puku AI
+			if (!isPukuAI) {
 				provider = instantiationService.createInstance(OllamaLMProvider, ollamaEndpoint || 'http://localhost:11434', this._byokStorageService);
 				const hasGitHubAuth = authService.copilotToken && !authService.copilotToken.isNoAuthUser;
 				vendorName = (ollamaEndpoint && !hasGitHubAuth) ? 'copilot' : OllamaLMProvider.providerName.toLowerCase();
-			}
 
-			this._logService.info(`BYOK: Creating provider with vendor name '${vendorName}' for endpoint ${ollamaEndpoint || 'http://localhost:11434'}`);
-			console.log(`BYOK: Creating provider with vendor name '${vendorName}' for endpoint ${ollamaEndpoint || 'http://localhost:11434'}`);
-			this._providers.set(vendorName, provider);
+				this._logService.info(`BYOK: Creating provider with vendor name '${vendorName}' for endpoint ${ollamaEndpoint || 'http://localhost:11434'}`);
+				console.log(`BYOK: Creating provider with vendor name '${vendorName}' for endpoint ${ollamaEndpoint || 'http://localhost:11434'}`);
+				this._providers.set(vendorName, provider);
 
-			for (const [vendorName, provider] of this._providers) {
-				this._logService.info(`BYOK: Registering language model provider with vendor '${vendorName}'`);
-				console.log(`BYOK: Registering language model provider with vendor '${vendorName}'`);
-				this._store.add(lm.registerLanguageModelChatProvider(vendorName, provider));
+				for (const [vendorName, provider] of this._providers) {
+					this._logService.info(`BYOK: Registering language model provider with vendor '${vendorName}'`);
+					console.log(`BYOK: Registering language model provider with vendor '${vendorName}'`);
+					this._store.add(lm.registerLanguageModelChatProvider(vendorName, provider));
+				}
+				this._logService.info(`BYOK: Registered ${this._providers.size} provider(s)`);
+				console.log(`BYOK: Registered ${this._providers.size} provider(s)`);
 			}
-			this._logService.info(`BYOK: Registered ${this._providers.size} provider(s)`);
-			console.log(`BYOK: Registered ${this._providers.size} provider(s)`);
 		}
 	}
 	private async fetchKnownModelList(fetcherService: IFetcherService): Promise<Record<string, BYOKKnownModels>> {

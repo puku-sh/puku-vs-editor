@@ -165,6 +165,10 @@ export class ExtensionContributedChatEndpoint implements IChatEndpoint {
 		source,
 	}: IMakeChatRequestOptions, token: CancellationToken): Promise<ChatResponse> {
 		console.log(`ExtensionContributedChatEndpoint: makeChatRequest2 called for model ${this.model}`);
+		console.log(`ExtensionContributedChatEndpoint: requestOptions.tools count: ${requestOptions?.tools?.length ?? 0}`);
+		if (requestOptions?.tools && requestOptions.tools.length > 0) {
+			console.log(`ExtensionContributedChatEndpoint: Tool names: ${requestOptions.tools.map((t: any) => t.function?.name).join(', ')}`);
+		}
 		const vscodeMessages = convertToApiChatMessage(messages);
 		const ourRequestId = generateUuid();
 
@@ -179,6 +183,10 @@ export class ExtensionContributedChatEndpoint implements IChatEndpoint {
 				inputSchema: tool.function.parameters,
 			}))
 		};
+		console.log(`ExtensionContributedChatEndpoint: vscodeOptions.tools count: ${vscodeOptions.tools?.length ?? 0}`);
+		if (vscodeOptions.tools && vscodeOptions.tools.length > 0) {
+			console.log(`ExtensionContributedChatEndpoint: VS Code tool names: ${vscodeOptions.tools.map(t => t.name).join(', ')}`);
+		}
 
 		const streamRecorder = new FetchStreamRecorder(finishedCb);
 

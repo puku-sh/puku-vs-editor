@@ -100,6 +100,10 @@ export abstract class BaseOpenAICompatibleLMProvider implements BYOKModelProvide
 	async provideLanguageModelChatResponse(model: LanguageModelChatInformation, messages: Array<LanguageModelChatMessage | LanguageModelChatMessage2>, options: ProvideLanguageModelChatResponseOptions, progress: Progress<LanguageModelResponsePart2>, token: CancellationToken): Promise<void> {
 		this._logService.info(`${this._name}: provideLanguageModelChatResponse called for model ${model.id}`);
 		console.log(`${this._name}: provideLanguageModelChatResponse called for model ${model.id}`);
+		console.log(`${this._name}: Tools count: ${options.tools?.length ?? 0}`);
+		if (options.tools && options.tools.length > 0) {
+			console.log(`${this._name}: Tool names: ${options.tools.map(t => t.name).join(', ')}`);
+		}
 		try {
 			const openAIChatEndpoint = await this.getEndpointImpl(model);
 			this._logService.info(`${this._name}: Created endpoint for ${model.id}: ${openAIChatEndpoint.constructor.name}, calling wrapper`);

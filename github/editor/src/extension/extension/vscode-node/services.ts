@@ -1,8 +1,3 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import { ExtensionContext, ExtensionMode, env } from 'vscode';
 import { IAuthenticationService } from '../../../platform/authentication/common/authentication';
 import { ICopilotTokenManager } from '../../../platform/authentication/common/copilotTokenManager';
@@ -107,6 +102,10 @@ import { LanguageContextServiceImpl } from '../../typescriptContext/vscode-node/
 import { IWorkspaceListenerService } from '../../workspaceRecorder/common/workspaceListenerService';
 import { WorkspacListenerService } from '../../workspaceRecorder/vscode-node/workspaceListenerService';
 import { registerServices as registerCommonServices } from '../vscode/services';
+import { IEmbeddingsComputer } from '../../../platform/embeddings/common/embeddingsComputer';
+import { ConditionalEmbeddingsComputer } from './conditionalEmbeddingsComputer';
+import { IPukuAuthService, PukuAuthService } from '../../pukuIndexing/common/pukuAuth';
+import { IPukuIndexingService, PukuIndexingService } from '../../pukuIndexing/node/pukuIndexingService';
 
 // ###########################################################################################
 // ###                                                                                     ###
@@ -204,6 +203,15 @@ export function registerServices(builder: IInstantiationServiceBuilder, extensio
 	builder.define(ITodoListContextProvider, new SyncDescriptor(TodoListContextProvider));
 	builder.define(IGithubAvailableEmbeddingTypesService, new SyncDescriptor(GithubAvailableEmbeddingTypesService));
 	builder.define(IRerankerService, new SyncDescriptor(RerankerService));
+	
+	// Override IEmbeddingsComputer to use ConditionalEmbeddingsComputer (which can use PukuEmbeddingsComputer)
+	builder.define(IEmbeddingsComputer, new SyncDescriptor(ConditionalEmbeddingsComputer));
+
+	// Puku Indexing Services
+	// Note: Model selection is handled internally by the proxy - no user exposure
+	const pukuEndpoint = 'http://localhost:11434';
+	builder.define(IPukuAuthService, new PukuAuthService(pukuEndpoint));
+	builder.define(IPukuIndexingService, new SyncDescriptor(PukuIndexingService));
 }
 
 function setupMSFTExperimentationService(builder: IInstantiationServiceBuilder, extensionContext: ExtensionContext) {

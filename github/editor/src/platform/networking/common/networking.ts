@@ -304,6 +304,7 @@ function networkRequest(
 	if (endpoint.interceptBody) {
 		endpoint.interceptBody(body);
 	}
+	console.log(`networkRequest: body.tools count after interceptBody: ${body?.tools?.length ?? 0}`);
 
 	const endpointFetchOptions = endpoint.getEndpointFetchOptions?.();
 	const request: FetchOptions = {

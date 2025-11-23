@@ -473,14 +473,15 @@ export class LiveOpenAIFetcher extends OpenAIFetcher {
 		}
 		const endpoint = 'completions';
 
-		// Puku Editor: Check if overrideProxyUrl is set (for BYOK models like Ollama/GLM)
-		// If set, use a dummy token since BYOK models don't require GitHub Copilot authentication
+		// Puku Editor: Check if Puku AI endpoint or overrideProxyUrl is set
+		// If set, use a dummy token since these endpoints don't require GitHub Copilot authentication
+		const pukuAIEndpoint = this.configProvider.getOptionalConfig<string>(ConfigKey.PukuAIEndpoint);
 		const overrideProxyUrl = this.configProvider.getOptionalConfig<string>(ConfigKey.DebugOverrideProxyUrl)
 			|| this.configProvider.getOptionalConfig<string>(ConfigKey.DebugOverrideProxyUrlLegacy);
 
 		let copilotToken: CopilotToken;
-		if (overrideProxyUrl) {
-			// BYOK mode: Create a dummy token with all required methods (no auth needed for Ollama)
+		if (pukuAIEndpoint || overrideProxyUrl) {
+			// Puku AI or BYOK mode: Create a dummy token (no GitHub auth needed)
 			copilotToken = createDummyToken();
 		} else {
 			// Normal Copilot mode: Get real token

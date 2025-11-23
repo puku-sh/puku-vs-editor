@@ -2,7 +2,7 @@
 	"name": "puku-editor",
 	"displayName": "Puku Editor",
 	"description": "AI-powered code editor with GLM model support via Z.AI",
-	"version": "0.34.1",
+	"version": "0.34.9",
 	"build": "1",
 	"internalAIKey": "1058ec22-3c95-4951-8443-f26c1f325911",
 	"completionsCoreVersion": "1.378.1799",
@@ -1279,6 +1279,15 @@
 						"description": "Make a model request which will result in an error",
 						"when": "github.copilot.chat.debug"
 					}
+				]
+			},
+			{
+				"id": "claude-code",
+				"name": "claude-code",
+				"fullName": "Claude Code",
+				"description": "Claude Code chat sessions",
+				"locations": [
+					"panel"
 				]
 			},
 			{
@@ -3345,6 +3354,37 @@
 							"electron-fetch",
 							"node-fetch"
 						]
+					},
+					"puku.embeddings.endpoint": {
+						"type": "string",
+						"default": "http://localhost:11434/v1/embeddings",
+						"description": "Endpoint URL for embeddings API (proxy server)",
+						"tags": [
+							"experimental"
+						]
+					},
+					"puku.embeddings.model": {
+						"type": "string",
+						"default": "voyageai/voyage-code-3",
+						"description": "Embedding model to use. Recommended: voyageai/voyage-code-3 for code embeddings",
+						"tags": [
+							"experimental"
+						]
+					},
+					"puku.embeddings.dimensions": {
+						"type": "number",
+						"default": 1024,
+						"description": "Number of dimensions for embeddings. Voyage-Code-3 supports 1024 dimensions",
+						"minimum": 256,
+						"maximum": 2048
+					},
+					"puku.embeddings.token": {
+						"type": "string",
+						"default": "",
+						"description": "Authentication token for Puku AI embeddings endpoint (Bearer token).",
+						"tags": [
+							"experimental"
+						]
 					}
 				}
 			},
@@ -5115,6 +5155,7 @@
 		"lru-cache": "^11.1.0",
 		"markdown-it": "^14.1.0",
 		"minimatch": "^10.0.3",
+		"sqlite-vec": "^0.1.7-alpha.2",
 		"undici": "^7.11.0",
 		"vscode-tas-client": "^0.1.84",
 		"web-tree-sitter": "^0.23.0"
