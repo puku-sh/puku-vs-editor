@@ -1,11 +1,12 @@
 import { Router } from 'express';
-import { ZAIClient } from '../zai-client.js';
+import { ZAIClient, OpenRouterClient } from '../zai-client.js';
 import { config } from '../config.js';
 import type { ChatCompletionRequest, CompletionRequest } from '../types.js';
 import type { AuthenticatedRequest } from '../middleware/auth.js';
 
 const router = Router();
 const zaiClient = new ZAIClient();
+const openRouterClient = new OpenRouterClient();
 
 // POST /v1/chat/completions - Chat completions endpoint
 router.post('/v1/chat/completions', async (req: AuthenticatedRequest, res) => {
@@ -158,6 +159,18 @@ Key guidelines:
 	}
 });
 
+// Helper to extract first meaningful code line for duplicate detection
+function getFirstMeaningfulLine(text: string): string {
+	const lines = text.split('\n');
+	for (const line of lines) {
+		const trimmed = line.trim();
+		if (trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('//') && !trimmed.startsWith('/*') && !trimmed.startsWith('*')) {
+			return trimmed;
+		}
+	}
+	return '';
+}
+
 // POST /v1/engines/:model/completions - GitHub Copilot style endpoint
 router.post('/v1/engines/:model/completions', async (req: AuthenticatedRequest, res) => {
 	try {
@@ -180,60 +193,26 @@ router.post('/v1/engines/:model/completions', async (req: AuthenticatedRequest, 
 		const modelConfig = config.models.find((m) => m.name === modelParam || m.id === modelParam);
 		const modelId = modelConfig?.id || config.models[0].id;
 
-		// Convert FIM request to chat format with improved prompting for GLM models
-		let prompt: string;
-		if (request.suffix && request.suffix.trim()) {
-			// FIM with suffix - provide clear context about what comes before and after
-			prompt = `Complete the missing code. You are given code before and after the cursor position.
+		// Get language hint from extra context if available
+		const language = (request as any).extra?.language || 'code';
 
-CODE BEFORE CURSOR:
-\`\`\`
-${request.prompt}
-\`\`\`
-
-CODE AFTER CURSOR:
-\`\`\`
-${request.suffix}
-\`\`\`
-
-Write ONLY the code that belongs between these two sections. Do not repeat the before/after code. Do not add explanations. Output only the completion code.`;
-		} else {
-			// Simple completion - continue the code naturally
-			prompt = `Continue this code naturally. Complete the next logical lines.
-
-EXISTING CODE:
-\`\`\`
-${request.prompt}
-\`\`\`
-
-Write ONLY the next lines of code that continue from where it left off. Do not repeat existing code. Do not add explanations or markdown. Output only the completion code.`;
-		}
-
-		const zaiRequest = {
-			model: modelId,
-			messages: [
-				{
-					role: 'system' as const,
-					content: 'You are an expert code completion assistant. Generate only the missing code, nothing else. Never include markdown formatting, explanations, or comments. Just raw code.',
-				},
-				{
-					role: 'user' as const,
-					content: prompt,
-				},
-			],
-			temperature: request.temperature ?? 0.3,
-			top_p: request.top_p ?? 0.95,
-			max_tokens: request.max_tokens ?? 500,
-			stream: request.stream || false,
-		};
+		// Use OpenRouter native FIM with Codestral
+		console.log(`[FIM Request] Using native FIM with ${openRouterClient.fimModel}`);
+		console.log(`[FIM Request] Prompt: ${request.prompt?.substring(0, 100)}...`);
+		console.log(`[FIM Request] Suffix: ${request.suffix?.substring(0, 100) || '(none)'}...`);
 
 		if (request.stream) {
-			// Streaming response - convert to completions format
+			// Streaming FIM response
 			res.setHeader('Content-Type', 'text/event-stream');
 			res.setHeader('Cache-Control', 'no-cache');
 			res.setHeader('Connection', 'keep-alive');
 
-			const stream = await zaiClient.chatCompletionStream(zaiRequest);
+			const stream = await openRouterClient.fimCompletionStream({
+				prompt: request.prompt || '',
+				suffix: request.suffix,
+				max_tokens: request.max_tokens ?? 100,
+				temperature: request.temperature ?? 0.1,
+			});
 			const reader = stream.getReader();
 			const decoder = new TextDecoder();
 
@@ -283,21 +262,24 @@ Write ONLY the next lines of code that continue from where it left off. Do not r
 				res.end();
 			}
 		} else {
-			// Non-streaming response
-			const response = await zaiClient.chatCompletion(zaiRequest);
+			// Non-streaming FIM response
+			const result = await openRouterClient.fimCompletion({
+				prompt: request.prompt || '',
+				suffix: request.suffix,
+				max_tokens: request.max_tokens ?? 100,
+				temperature: request.temperature ?? 0.1,
+			});
 
-			// Convert chat completion to text completion format
 			const completionResponse = {
-				id: response.id,
+				id: `fim-${Date.now()}`,
 				object: 'text_completion',
-				created: response.created,
-				model: response.model,
-				choices: response.choices.map((choice) => ({
-					text: choice.message.content,
-					index: choice.index,
-					finish_reason: choice.finish_reason,
-				})),
-				usage: response.usage,
+				created: Math.floor(Date.now() / 1000),
+				model: openRouterClient.fimModel,
+				choices: [{
+					text: result.text,
+					index: 0,
+					finish_reason: result.finish_reason,
+				}],
 			};
 
 			res.json(completionResponse);
@@ -318,64 +300,23 @@ router.post('/v1/completions', async (req: AuthenticatedRequest, res) => {
 	try {
 		const request: CompletionRequest = req.body;
 
-		// Find the model configuration
-		const modelConfig = config.models.find((m) => m.name === request.model);
-		const modelId = modelConfig?.id || config.models[0].id;
-
-		// Convert FIM request to chat format with improved prompting for GLM models
-		let prompt: string;
-		if (request.suffix && request.suffix.trim()) {
-			// FIM with suffix - provide clear context about what comes before and after
-			prompt = `Complete the missing code. You are given code before and after the cursor position.
-
-CODE BEFORE CURSOR:
-\`\`\`
-${request.prompt}
-\`\`\`
-
-CODE AFTER CURSOR:
-\`\`\`
-${request.suffix}
-\`\`\`
-
-Write ONLY the code that belongs between these two sections. Do not repeat the before/after code. Do not add explanations. Output only the completion code.`;
-		} else {
-			// Simple completion - continue the code naturally
-			prompt = `Continue this code naturally. Complete the next logical lines.
-
-EXISTING CODE:
-\`\`\`
-${request.prompt}
-\`\`\`
-
-Write ONLY the next lines of code that continue from where it left off. Do not repeat existing code. Do not add explanations or markdown. Output only the completion code.`;
-		}
-
-		const zaiRequest = {
-			model: modelId,
-			messages: [
-				{
-					role: 'system' as const,
-					content: 'You are an expert code completion assistant. Generate only the missing code, nothing else. Never include markdown formatting, explanations, or comments. Just raw code.',
-				},
-				{
-					role: 'user' as const,
-					content: prompt,
-				},
-			],
-			temperature: request.temperature ?? 0.3,
-			top_p: request.top_p ?? 0.95,
-			max_tokens: request.max_tokens ?? 500,
-			stream: request.stream || false,
-		};
+		// Use OpenRouter native FIM with Codestral
+		console.log(`[FIM /v1/completions] Using native FIM with ${openRouterClient.fimModel}`);
+		console.log(`[FIM /v1/completions] Prompt: ${request.prompt?.substring(0, 100)}...`);
+		console.log(`[FIM /v1/completions] Suffix: ${request.suffix?.substring(0, 100) || '(none)'}...`);
 
 		if (request.stream) {
-			// Streaming response - convert to completions format
+			// Streaming FIM response
 			res.setHeader('Content-Type', 'text/event-stream');
 			res.setHeader('Cache-Control', 'no-cache');
 			res.setHeader('Connection', 'keep-alive');
 
-			const stream = await zaiClient.chatCompletionStream(zaiRequest);
+			const stream = await openRouterClient.fimCompletionStream({
+				prompt: request.prompt || '',
+				suffix: request.suffix,
+				max_tokens: request.max_tokens ?? 100,
+				temperature: request.temperature ?? 0.1,
+			});
 			const reader = stream.getReader();
 			const decoder = new TextDecoder();
 
@@ -386,7 +327,7 @@ Write ONLY the next lines of code that continue from where it left off. Do not r
 
 					const chunk = decoder.decode(value, { stream: true });
 
-					// Parse SSE data and convert chat format to completions format
+					// Parse SSE data - native FIM returns text completions format
 					const lines = chunk.split('\n');
 					for (const line of lines) {
 						if (line.startsWith('data: ')) {
@@ -397,21 +338,9 @@ Write ONLY the next lines of code that continue from where it left off. Do not r
 							}
 							try {
 								const parsed = JSON.parse(data);
-								// Convert chat completion to text completion format
+								// Forward as text completion format
 								if (parsed.choices && parsed.choices[0]) {
-									const choice = parsed.choices[0];
-									const completionChunk = {
-										id: parsed.id,
-										object: 'text_completion',
-										created: parsed.created,
-										model: parsed.model,
-										choices: [{
-											text: choice.delta?.content || '',
-											index: 0,
-											finish_reason: choice.finish_reason,
-										}],
-									};
-									res.write(`data: ${JSON.stringify(completionChunk)}\n\n`);
+									res.write(`data: ${JSON.stringify(parsed)}\n\n`);
 								}
 							} catch (e) {
 								// Skip invalid JSON
@@ -425,21 +354,24 @@ Write ONLY the next lines of code that continue from where it left off. Do not r
 				res.end();
 			}
 		} else {
-			// Non-streaming response
-			const response = await zaiClient.chatCompletion(zaiRequest);
+			// Non-streaming FIM response
+			const result = await openRouterClient.fimCompletion({
+				prompt: request.prompt || '',
+				suffix: request.suffix,
+				max_tokens: request.max_tokens ?? 100,
+				temperature: request.temperature ?? 0.1,
+			});
 
-			// Convert chat completion to text completion format
 			const completionResponse = {
-				id: response.id,
+				id: `fim-${Date.now()}`,
 				object: 'text_completion',
-				created: response.created,
-				model: response.model,
-				choices: response.choices.map((choice) => ({
-					text: choice.message.content,
-					index: choice.index,
-					finish_reason: choice.finish_reason,
-				})),
-				usage: response.usage,
+				created: Math.floor(Date.now() / 1000),
+				model: openRouterClient.fimModel,
+				choices: [{
+					text: result.text,
+					index: 0,
+					finish_reason: result.finish_reason,
+				}],
 			};
 
 			res.json(completionResponse);
