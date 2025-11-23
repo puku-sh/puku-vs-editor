@@ -70,4 +70,9 @@ export const config = {
 			},
 		},
 	],
+	// FIM model configuration - uses Codestral via OpenRouter (supports native FIM)
+	fimModel: {
+		provider: 'openrouter',
+		model: 'mistralai/codestral-2501',
+	},
 };
