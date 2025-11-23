@@ -8,6 +8,8 @@ import sql from 'node:sqlite';
 import path from 'path';
 import * as vscode from 'vscode';
 
+import { ChunkType } from './pukuASTChunker';
+
 /**
  * Stored chunk with embedding
  */
@@ -18,6 +20,8 @@ export interface PukuChunkWithEmbedding {
 	readonly lineEnd: number;
 	readonly embedding: number[];
 	readonly contentHash: string;
+	readonly chunkType?: ChunkType;
+	readonly symbolName?: string;
 }
 
 /**
@@ -26,14 +30,54 @@ export interface PukuChunkWithEmbedding {
  * Uses the same pattern as Copilot's workspaceChunkAndEmbeddingCache.ts
  */
 export class PukuEmbeddingsCache {
-	private static readonly DB_VERSION = '1.0.0';
+	/**
+	 * Schema version - bump this when schema changes require a clean rebuild
+	 * independent of extension version (e.g., for schema-only changes).
+	 * Combined with extension version for full cache key.
+	 */
+	private static readonly SCHEMA_VERSION = '1';
 	private static readonly MODEL_ID = 'puku-embeddings-1024';
+
+	/**
+	 * Get the cache version string (extension version + schema version)
+	 * Cache is automatically rebuilt when extension is updated OR schema changes
+	 */
+	private static getCacheVersion(): string {
+		// Get extension version from vscode.extensions API
+		// Handle test environment where vscode.extensions may not be available
+		let extVersion = '0.0.0';
+		try {
+			const ext = vscode.extensions?.getExtension('puku.puku-editor') ||
+				vscode.extensions?.getExtension('github.copilot-chat'); // fallback for dev
+			extVersion = ext?.packageJSON?.version || '0.0.0';
+		} catch {
+			// In test environment, use default version
+		}
+		return `${extVersion}-s${PukuEmbeddingsCache.SCHEMA_VERSION}`;
+	}
 
 	private _db: sql.DatabaseSync | undefined;
 
 	constructor(
 		private readonly _storageUri: vscode.Uri | undefined,
 	) { }
+
+	/**
+	 * Delete the database file completely (for manual cleanup or release)
+	 */
+	static async deleteDatabase(storageUri: vscode.Uri | undefined): Promise<boolean> {
+		if (!storageUri || storageUri.scheme !== 'file') {
+			return false;
+		}
+		const dbPath = vscode.Uri.joinPath(storageUri, 'puku-embeddings.db');
+		try {
+			await fs.promises.unlink(dbPath.fsPath);
+			console.log(`[PukuEmbeddingsCache] Deleted database at ${dbPath.fsPath}`);
+			return true;
+		} catch {
+			return false;
+		}
+	}
 
 	/**
 	 * Initialize the database
@@ -96,6 +140,8 @@ export class PukuEmbeddingsCache {
 				lineStart INTEGER NOT NULL,
 				lineEnd INTEGER NOT NULL,
 				embedding BLOB NOT NULL,
+				chunkType TEXT,
+				symbolName TEXT,
 				FOREIGN KEY (fileId) REFERENCES Files(id) ON DELETE CASCADE
 			);
 
@@ -103,17 +149,58 @@ export class PukuEmbeddingsCache {
 			CREATE INDEX IF NOT EXISTS idx_chunks_fileId ON Chunks(fileId);
 		`);
 
-		// Check version and model compatibility
-		const metaResult = this._db.prepare('SELECT version, model FROM CacheMeta LIMIT 1').get();
-		if (!metaResult || metaResult.version !== PukuEmbeddingsCache.DB_VERSION || metaResult.model !== PukuEmbeddingsCache.MODEL_ID) {
-			// Clear everything - version or model changed
-			console.log('[PukuEmbeddingsCache] Cache version/model mismatch, clearing cache');
-			this._db.exec('DELETE FROM CacheMeta; DELETE FROM Files; DELETE FROM Chunks;');
+		// Check version and model compatibility - check BEFORE creating tables
+		const cacheVersion = PukuEmbeddingsCache.getCacheVersion();
+		let needsRebuild = false;
+		try {
+			const metaResult = this._db.prepare('SELECT version, model FROM CacheMeta LIMIT 1').get();
+			if (!metaResult || metaResult.version !== cacheVersion || metaResult.model !== PukuEmbeddingsCache.MODEL_ID) {
+				needsRebuild = true;
+				console.log(`[PukuEmbeddingsCache] Cache version/model mismatch (have: ${metaResult?.version}/${metaResult?.model}, need: ${cacheVersion}/${PukuEmbeddingsCache.MODEL_ID}), dropping tables`);
+			}
+		} catch {
+			// Table doesn't exist yet - that's fine
+			needsRebuild = false;
+		}
+
+		if (needsRebuild) {
+			// Drop and recreate tables to handle schema changes
+			this._db.exec('DROP TABLE IF EXISTS Chunks; DROP TABLE IF EXISTS Files; DROP TABLE IF EXISTS CacheMeta;');
+			// Now recreate with new schema
+			this._db.exec(`
+				CREATE TABLE IF NOT EXISTS CacheMeta (
+					version TEXT NOT NULL,
+					model TEXT NOT NULL
+				);
+
+				CREATE TABLE IF NOT EXISTS Files (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					uri TEXT NOT NULL UNIQUE,
+					contentHash TEXT NOT NULL,
+					lastIndexed INTEGER NOT NULL
+				);
+
+				CREATE TABLE IF NOT EXISTS Chunks (
+					id INTEGER PRIMARY KEY AUTOINCREMENT,
+					fileId INTEGER NOT NULL,
+					text TEXT NOT NULL,
+					lineStart INTEGER NOT NULL,
+					lineEnd INTEGER NOT NULL,
+					embedding BLOB NOT NULL,
+					chunkType TEXT,
+					symbolName TEXT,
+					FOREIGN KEY (fileId) REFERENCES Files(id) ON DELETE CASCADE
+				);
+
+				CREATE INDEX IF NOT EXISTS idx_files_uri ON Files(uri);
+				CREATE INDEX IF NOT EXISTS idx_chunks_fileId ON Chunks(fileId);
+			`);
 		}
 
 		// Update metadata
 		this._db.exec('DELETE FROM CacheMeta;');
-		this._db.prepare('INSERT INTO CacheMeta (version, model) VALUES (?, ?)').run(PukuEmbeddingsCache.DB_VERSION, PukuEmbeddingsCache.MODEL_ID);
+		this._db.prepare('INSERT INTO CacheMeta (version, model) VALUES (?, ?)').run(cacheVersion, PukuEmbeddingsCache.MODEL_ID);
+		console.log(`[PukuEmbeddingsCache] Cache version: ${cacheVersion}`);
 
 		console.log('[PukuEmbeddingsCache] Database initialized');
 	}
@@ -168,7 +255,7 @@ export class PukuEmbeddingsCache {
 		}
 
 		const results = this._db.prepare(`
-			SELECT f.uri, f.contentHash, c.text, c.lineStart, c.lineEnd, c.embedding
+			SELECT f.uri, f.contentHash, c.text, c.lineStart, c.lineEnd, c.embedding, c.chunkType, c.symbolName
 			FROM Files f
 			JOIN Chunks c ON f.id = c.fileId
 		`).all();
@@ -180,13 +267,22 @@ export class PukuEmbeddingsCache {
 			lineEnd: row.lineEnd as number,
 			embedding: this._unpackEmbedding(row.embedding as Uint8Array),
 			contentHash: row.contentHash as string,
+			chunkType: (row.chunkType as ChunkType) || undefined,
+			symbolName: (row.symbolName as string) || undefined,
 		}));
 	}
 
 	/**
 	 * Store chunks and embeddings for a file
 	 */
-	storeFile(uri: string, contentHash: string, chunks: Array<{ text: string; lineStart: number; lineEnd: number; embedding: number[] }>): void {
+	storeFile(uri: string, contentHash: string, chunks: Array<{
+		text: string;
+		lineStart: number;
+		lineEnd: number;
+		embedding: number[];
+		chunkType?: string;
+		symbolName?: string;
+	}>): void {
 		if (!this._db) {
 			return;
 		}
@@ -203,10 +299,10 @@ export class PukuEmbeddingsCache {
 
 			const fileId = fileResult.lastInsertRowid as number;
 
-			// Insert chunks
+			// Insert chunks with AST metadata
 			const insertStmt = this._db.prepare(`
-				INSERT INTO Chunks (fileId, text, lineStart, lineEnd, embedding)
-				VALUES (?, ?, ?, ?, ?)
+				INSERT INTO Chunks (fileId, text, lineStart, lineEnd, embedding, chunkType, symbolName)
+				VALUES (?, ?, ?, ?, ?, ?, ?)
 			`);
 
 			for (const chunk of chunks) {
@@ -215,7 +311,9 @@ export class PukuEmbeddingsCache {
 					chunk.text,
 					chunk.lineStart,
 					chunk.lineEnd,
-					this._packEmbedding(chunk.embedding)
+					this._packEmbedding(chunk.embedding),
+					chunk.chunkType || null,
+					chunk.symbolName || null
 				);
 			}
 

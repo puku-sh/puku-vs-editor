@@ -64,6 +64,6 @@ describe('PukuChatEndpoint', () => {
             mockServices.logService
         );
 
-        expect(endpoint.urlOrRequestMetadata).toBe('http://puku.ai/v1');
+        expect(endpoint.urlOrRequestMetadata).toBe('http://puku.ai/v1/chat/completions');
     });
 });

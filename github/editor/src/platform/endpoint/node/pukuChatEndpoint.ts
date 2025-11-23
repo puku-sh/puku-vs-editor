@@ -85,9 +85,13 @@ export class PukuChatEndpoint extends ChatEndpoint {
 	override get urlOrRequestMetadata() {
 		const baseEndpoint = this._configurationService.getConfig(ConfigKey.PukuAIEndpoint);
 		// Ensure the full chat completions URL is returned
-		const endpoint = baseEndpoint.endsWith('/v1/chat/completions')
-			? baseEndpoint
-			: `${baseEndpoint}/v1/chat/completions`;
-		return endpoint;
+		// Handle both '/v1' and '/v1/chat/completions' as base endpoints
+		if (baseEndpoint.endsWith('/v1/chat/completions')) {
+			return baseEndpoint;
+		} else if (baseEndpoint.endsWith('/v1')) {
+			return `${baseEndpoint}/chat/completions`;
+		} else {
+			return `${baseEndpoint}/v1/chat/completions`;
+		}
 	}
 }
