@@ -2,11 +2,13 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { IChatModelInformation } from '../../../platform/endpoint/common/endpointProvider';
+import { LanguageModelChatInformation } from 'vscode';
+import { IChatModelInformation, ModelSupportedEndpoint } from '../../../platform/endpoint/common/endpointProvider';
 import { ILogService } from '../../../platform/log/common/logService';
 import { IFetcherService } from '../../../platform/networking/common/fetcherService';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
 import { BYOKAuthType, BYOKKnownModels, BYOKModelCapabilities } from '../common/byokProvider';
+import { PukuAIEndpoint } from '../../pukuai/node/pukuaiEndpoint';
 import { BaseOpenAICompatibleLMProvider } from './baseOpenAICompatibleProvider';
 import { IBYOKStorageService } from './byokStorageService';
 
@@ -142,6 +144,17 @@ export class PukuAILMProvider extends BaseOpenAICompatibleLMProvider {
 			};
 		}
 		return super.getModelInfo(modelId, apiKey, modelCapabilities);
+	}
+
+	/**
+	 * Override to use PukuAIEndpoint which properly preserves tools
+	 */
+	protected async getEndpointImpl(model: LanguageModelChatInformation): Promise<PukuAIEndpoint> {
+		const modelInfo: IChatModelInformation = await this.getModelInfo(model.id, '');
+		const url = modelInfo.supported_endpoints?.includes(ModelSupportedEndpoint.Responses) ?
+			`${this._pukuAIBaseUrl}/v1/responses` :
+			`${this._pukuAIBaseUrl}/v1/chat/completions`;
+		return this._instantiationService.createInstance(PukuAIEndpoint, modelInfo, '', url);
 	}
 
 	/**

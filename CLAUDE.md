@@ -6,13 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This workspace contains multiple projects:
 
-- **`github/puku-editor`** - **Puku Editor** - AI-powered code editor built on GitHub Copilot Chat architecture with support for Z.AI's GLM models. Provides chat interfaces, inline completions (FIM), agent mode, and tool calling.
-- **`github/co-proxy`** - Ollama-compatible proxy server that bridges VS Code extensions with Z.AI's GLM models (GLM-4.6, GLM-4.5, GLM-4.5-Air)
-- **`github/vscode-copilot-chat`** - Reference copy of the official vscode-copilot-chat repository
+- **`github/editor`** - **Puku Editor** - AI-powered code editor extension built on GitHub Copilot Chat architecture with support for Z.AI's GLM models. Provides chat interfaces, inline completions (FIM), agent mode, and tool calling.
+- **`github/proxy`** - TypeScript proxy server that bridges VS Code extensions with Z.AI's GLM models (GLM-4.6, GLM-4.5, GLM-4.5-Air). Ollama API compatible.
+- **`github/vscode`** - **Forked VS Code** (Code-OSS) from `poridhiAILab/vscode`. Custom VS Code build for UI modifications and extension debugging.
 
 ## Requirements
 
-- Node 22.x
+- Node 23.5.0+ (use `nvm install 23.5.0 && nvm use 23.5.0`) - Required for sqlite-vec extension support
 - Python >= 3.10, <= 3.12
 - Git Large File Storage (LFS) - for running tests
 - (Windows) Visual Studio Build Tools >=2019 - for building with node-gyp
@@ -42,21 +42,20 @@ bb67b33d81b74ae7a5882c94f222f2a8.ZNWzVkKE0V1rz0m9
 **To run the proxy:**
 
 ```bash
-cd github/co-proxy
-export ZAI_API_KEY="bb67b33d81b74ae7a5882c94f222f2a8.ZNWzVkKE0V1rz0m9"
-uv run copilot-proxy --host 127.0.0.1 --port 11434
+cd github/proxy
+npm run dev
 ```
 
-**Currently running:** PID 51318 on `http://127.0.0.1:11434`
+The proxy runs on `http://127.0.0.1:11434` and uses the Z.AI API key from environment or config.
 
 **Using the Proxy with Puku Editor:**
 
-Puku Editor (in `github/puku-editor`) has built-in Ollama support. To use GLM models:
+Puku Editor (in `github/editor`) has built-in Puku AI support. To use GLM models:
 
 1. **Build and run the extension:**
 
    ```bash
-   cd github/puku-editor
+   cd github/editor
    npm install
    npm run compile
    ```
@@ -151,9 +150,133 @@ npm run lint               # ESLint with zero warnings policy
 
 ### Debugging
 
-- Use "Launch Copilot Extension - Watch Mode" or "Launch Copilot Extension" debug configurations
+There are two ways to debug the Puku Editor extension:
+
+#### Option 1: Debug with VS Code Insiders (Quick)
+
+- Use "Launch Puku Editor Extension - Watch Mode" debug configuration
 - Run `cmd+shift+B` to start build task
+- Press F5 to launch
+
+#### Option 2: Debug with Forked VS Code (Code-OSS) - Recommended
+
+Use this for full development workflow with UI modifications and extension debugging.
+
+**Setup forked VS Code (first time only):**
+
+```bash
+cd github/vscode
+source ~/.nvm/nvm.sh && nvm use 22.20.0
+npm i                    # Install dependencies
+npm run compile          # Build VS Code (takes ~5-10 min first time)
+```
+
+**Running forked VS Code with Puku Editor extension:**
+
+```bash
+# Terminal 1: Watch and build the extension
+cd github/editor
+npm run watch
+
+# Terminal 2: Run forked VS Code with extension loaded
+cd github/vscode
+source ~/.nvm/nvm.sh && nvm use 22.20.0
+./scripts/code.sh --extensionDevelopmentPath=/path/to/puku-editor/github/editor
+```
+
+Or use the full path:
+```bash
+./scripts/code.sh --extensionDevelopmentPath=/Users/sahamed/Desktop/puku-editor/github/editor
+```
+
+**Debug configurations (from `github/editor/.vscode/launch.json`):**
+
+| Configuration | Description |
+|--------------|-------------|
+| "Launch Puku Editor Extension - Watch Mode - Code OSS" | Launches forked VS Code with extension and debugger attached |
+| "Attach to Extension Host - Code OSS" | Attach debugger to already running Code-OSS (port 5870) |
+
+**To debug with breakpoints:**
+
+1. Open `github/editor` in your regular VS Code
+2. Run `npm run watch` in terminal (or use `cmd+shift+B`)
+3. Select **"Launch Puku Editor Extension - Watch Mode - Code OSS"** from debug panel
+4. Press F5 - forked VS Code launches with extension loaded
+5. Set breakpoints in your extension code - they will hit when triggered in Code-OSS
+
+**Quick Start (all-in-one command):**
+
+```bash
+# From puku-editor root
+cd github/vscode && source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
+./scripts/code.sh --extensionDevelopmentPath=$(pwd)/../editor
+```
+
+#### Debugging Tips
+
 - Use "Show Chat Debug View" command to inspect prompts, tool calls, and responses
+- Debug port for Code-OSS extension host: `5870`
+- Debug port for TypeScript Server: `9223`
+- If Code-OSS fails to start, ensure Node 22.20.0+ is active (`node -v`)
+
+## Puku Indexing (Semantic Search)
+
+Puku Editor includes a built-in semantic search system for codebase indexing using embeddings.
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    PUKU INDEXING SYSTEM                      │
+├─────────────────────────────────────────────────────────────┤
+│  PukuIndexingService                                         │
+│  ├── AST-based code chunking (functions, classes, blocks)   │
+│  ├── Batch embeddings via OpenRouter API                    │
+│  ├── Cosine similarity search                               │
+│  └── File watcher for incremental updates                   │
+├─────────────────────────────────────────────────────────────┤
+│  PukuEmbeddingsCache (SQLite)                               │
+│  ├── Files table (uri, contentHash, lastIndexed)           │
+│  ├── Chunks table (text, lineStart, lineEnd, embedding)    │
+│  └── Automatic version-based schema migration              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Cache Versioning
+
+The embeddings cache automatically rebuilds when:
+- Extension version changes (from `package.json`)
+- Schema version changes (internal `SCHEMA_VERSION`)
+
+Cache version format: `{extension_version}-s{schema_version}` (e.g., `0.34.4-s1`)
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `puku.semanticSearch` | Search codebase semantically |
+| `puku.reindex` | Force re-index the workspace |
+| `puku.clearIndexCache` | Delete cache and rebuild |
+
+### Key Files
+
+- `src/extension/pukuIndexing/node/pukuIndexingService.ts` - Main indexing service
+- `src/extension/pukuIndexing/node/pukuEmbeddingsCache.ts` - SQLite cache with version management
+- `src/extension/pukuIndexing/node/pukuASTChunker.ts` - AST-based code chunking
+- `src/extension/pukuIndexing/vscode-node/pukuIndexing.contribution.ts` - VS Code integration
+
+### Cache Location
+
+The SQLite database is stored at: `{workspace}/.puku/puku-embeddings.db`
+
+### Vector Search with sqlite-vec
+
+**sqlite-vec** is integrated for efficient KNN search (v0.34.7+):
+- Pure C extension, works everywhere (Windows/Mac/Linux/WASM)
+- KNN queries directly in SQL via `searchKNN()` method
+- Uses mapping table (`VecMapping`) to link vec_chunks rowids to chunk IDs
+- Requires Node.js 23.5.0+ for `node:sqlite` extension support
+- Non-1024-dim embeddings fall back to in-memory cosine similarity
 
 ## Architecture Overview
 

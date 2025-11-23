@@ -84,7 +84,7 @@ export class ProductionEndpointProvider implements IEndpointProvider {
 		return chatEndpoint;
 	}
 
-	async getChatEndpoint(requestOrFamilyOrModel: LanguageModelChat | ChatRequest | ChatEndpointFamily): Promise<IChatEndpoint> {
+	async getChatEndpoint(requestOrFamilyOrModel: LanguageModelChat | ChatRequest | ChatEndpointFamily | 'puku-ai'): Promise<IChatEndpoint> {
 		this._logService.trace(`Resolving chat model`);
 
 		if (this._overridenChatModel) {
@@ -107,6 +107,11 @@ export class ProductionEndpointProvider implements IEndpointProvider {
 		}
 		let endpoint: IChatEndpoint;
 		if (typeof requestOrFamilyOrModel === 'string') {
+			// Handle puku-ai directly
+			if (requestOrFamilyOrModel === 'puku-ai') {
+				this._logService.trace(`Using Puku AI endpoint`);
+				return this._instantiationService.createInstance(PukuChatEndpoint);
+			}
 			// The family case, resolve the chat model for the passed in family
 			const modelMetadata = await this._modelFetcher.getChatModelFromFamily(requestOrFamilyOrModel);
 			endpoint = this.getOrCreateChatEndpointInstance(modelMetadata!);
@@ -127,10 +132,10 @@ export class ProductionEndpointProvider implements IEndpointProvider {
 					// If we fail to resolve a model since this is panel we give GPT-4.1. This really should never happen as the picker is powered by the same service.
 					endpoint = modelMetadata ? this.getOrCreateChatEndpointInstance(modelMetadata) : await this.getChatEndpoint('gpt-4.1');
 				}
-			} else if (model) {
-				endpoint = this._instantiationService.createInstance(ExtensionContributedChatEndpoint, model);
 			} else if (model && model.id === 'puku-ai') {
 				endpoint = this._instantiationService.createInstance(PukuChatEndpoint);
+			} else if (model) {
+				endpoint = this._instantiationService.createInstance(ExtensionContributedChatEndpoint, model);
 			} else {
 				// No explicit family passed and no model picker = gpt-4.1 class model
 				endpoint = await this.getChatEndpoint('gpt-4.1');

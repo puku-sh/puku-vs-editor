@@ -17,6 +17,16 @@ type ServiceEndpoints = {
 
 function getDefaultEndpoints(accessor: ServicesAccessor): ServiceEndpoints {
 	const capi = accessor.get(ICAPIClientService);
+	// Check for Puku AI endpoint configuration - when configured, use Puku AI proxy as default
+	const pukuAIEndpoint = getConfig<string>(accessor, ConfigKey.PukuAIEndpoint);
+	if (pukuAIEndpoint) {
+		// Puku AI is configured - use it as the default proxy endpoint
+		// Note: Don't append /v1 here since getProxyEngineUrl already adds v1/engines/...
+		return {
+			proxy: pukuAIEndpoint,
+			'origin-tracker': capi.originTrackerURL,
+		};
+	}
 	return {
 		proxy: capi.proxyBaseURL,
 		'origin-tracker': capi.originTrackerURL,

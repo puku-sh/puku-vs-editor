@@ -1,4 +1,4 @@
-.PHONY: install build dev start test-health test-models test-chat test-completion clean
+.PHONY: install build dev start test-health test-models test-chat test-completion test-embeddings clean
 
 install:
 	npm install
@@ -31,6 +31,12 @@ test-completion:
 	@curl -X POST http://localhost:11434/v1/completions \
 		-H "Content-Type: application/json" \
 		-d '{"prompt":"def hello():","suffix":"","max_tokens":50,"stream":false}' | jq .
+
+test-embeddings:
+	@echo "Testing embeddings endpoint..."
+	@curl -X POST http://localhost:11434/v1/embeddings \
+		-H "Content-Type: application/json" \
+		-d '{"input":"function hello() { return world; }","model":"mistralai/codestral-embed-2505"}' | jq .
 
 clean:
 	rm -rf node_modules dist

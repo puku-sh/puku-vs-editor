@@ -92,3 +92,25 @@ export interface OllamaShowResponse {
 	};
 	capabilities?: string[];
 }
+
+export interface EmbeddingRequest {
+	model: string;
+	input: string | string[];
+	encoding_format?: 'float' | 'base64';
+	dimensions?: number;
+	user?: string;
+}
+
+export interface EmbeddingResponse {
+	object: string;
+	data: Array<{
+		object: string;
+		embedding: number[];
+		index: number;
+	}>;
+	model: string;
+	usage: {
+		prompt_tokens: number;
+		total_tokens: number;
+	};
+}

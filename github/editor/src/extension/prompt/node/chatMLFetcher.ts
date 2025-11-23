@@ -125,11 +125,16 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 		}
 
 		const postOptions = this.preparePostOptions(requestOptions);
+		console.log(`ChatMLFetcher: postOptions.tools count: ${postOptions.tools?.length ?? 0}`);
 		const requestBody = chatEndpoint.createRequestBody({
 			...opts,
 			requestId: ourRequestId,
 			postOptions
 		});
+		console.log(`ChatMLFetcher: requestBody.tools count: ${requestBody.tools?.length ?? 0}`);
+		if (requestBody.tools && requestBody.tools.length > 0) {
+			console.log(`ChatMLFetcher: requestBody tool names: ${requestBody.tools.map((t: any) => t.function?.name || t.name).join(', ')}`);
+		}
 
 
 		const baseTelemetry = TelemetryData.createAndMarkAsIssued({
@@ -357,14 +362,47 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 		this._logService.debug(`modelMaxResponseTokens ${request.max_tokens ?? 2048}`);
 		this._logService.debug(`chat model ${chatEndpointInfo.model}`);
 
-		// Puku Editor: Skip getCopilotToken for BYOK models (they provide their own API key)
-		if (!secretKey && isBYOKModel(chatEndpointInfo) !== 1) {
-			secretKey = (await this._authenticationService.getCopilotToken()).token;
+		// Puku AI: Check if this is a Puku AI endpoint (no authentication needed)
+		// Check URL pattern, family, model name, or endpoint name
+		const urlString = chatEndpointInfo.urlOrRequestMetadata?.toString() || '';
+		const isPukuAI = urlString.includes('localhost:11434') || 
+						urlString.includes('127.0.0.1:11434') ||
+						chatEndpointInfo.family === 'puku' ||
+						chatEndpointInfo.model?.startsWith('GLM-') ||
+						chatEndpointInfo.name === 'Puku AI';
+
+		// Puku Editor: Skip getCopilotToken for BYOK models or Puku AI
+		if (!secretKey && isBYOKModel(chatEndpointInfo) !== 1 && !isPukuAI) {
+			try {
+				secretKey = (await this._authenticationService.getCopilotToken()).token;
+			} catch (error) {
+				// If GitHub login fails, check if this might be a Puku AI/BYOK endpoint
+				if (error instanceof Error && (error.message === 'GitHubLoginFailed' || error.message.includes('GitHubLoginFailed'))) {
+					// Re-check Puku AI detection in case URL wasn't available before
+					const urlStringRetry = chatEndpointInfo.urlOrRequestMetadata?.toString() || '';
+					const isPukuAIRetry = urlStringRetry.includes('localhost:11434') || 
+										urlStringRetry.includes('127.0.0.1:11434') ||
+										chatEndpointInfo.family === 'puku' ||
+										chatEndpointInfo.model?.startsWith('GLM-') ||
+										chatEndpointInfo.name === 'Puku AI';
+					
+					if (isPukuAIRetry || isBYOKModel(chatEndpointInfo) === 1) {
+						this._logService.info(`[ChatMLFetcher] GitHub login failed but using Puku AI/BYOK (family: ${chatEndpointInfo.family}, model: ${chatEndpointInfo.model}), continuing with empty token`);
+						secretKey = '';
+					} else {
+						// Re-throw if not Puku AI/BYOK
+						this._logService.error(`[ChatMLFetcher] GitHub login failed and endpoint doesn't appear to be Puku AI/BYOK (family: ${chatEndpointInfo.family}, model: ${chatEndpointInfo.model}, name: ${chatEndpointInfo.name})`);
+						throw error;
+					}
+				} else {
+					throw error;
+				}
+			}
 		}
 
-		// BYOK models may use empty string for no auth (e.g., Ollama)
-		if (!secretKey && isBYOKModel(chatEndpointInfo) !== 1) {
-			// If no key is set we error (only for non-BYOK models)
+		// BYOK models and Puku AI may use empty string for no auth
+		if (!secretKey && isBYOKModel(chatEndpointInfo) !== 1 && !isPukuAI) {
+			// If no key is set we error (only for non-BYOK and non-Puku AI models)
 			const urlOrRequestMetadata = stringifyUrlOrRequestMetadata(chatEndpointInfo.urlOrRequestMetadata);
 			this._logService.error(`Failed to send request to ${urlOrRequestMetadata} due to missing key`);
 			sendCommunicationErrorTelemetry(this._telemetryService, `Failed to send request to ${urlOrRequestMetadata} due to missing key`);
@@ -376,7 +414,7 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 			};
 		}
 
-		// For BYOK models, use empty string if no key provided (e.g., Ollama with no auth)
+		// For BYOK models and Puku AI, use empty string if no key provided
 		secretKey ??= '';
 
 		// Generate unique ID to link input and output messages
@@ -995,8 +1033,11 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 			};
 		}
 		this._logService.error(errorsUtil.fromUnknown(err), `Error on conversation request`);
+		console.error('[ChatMLFetcher] Error on conversation request:', err);
+		console.error('[ChatMLFetcher] Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
 		this._telemetryService.sendGHTelemetryException(err, 'Error on conversation request');
 		const errorDetail = fetcher.getUserMessageForFetcherError(err);
+		console.log('[ChatMLFetcher] Error detail from fetcher:', errorDetail);
 		const scrubbedErrorDetail = this.scrubErrorDetail(errorDetail);
 		if (fetcher.isInternetDisconnectedError(err)) {
 			return {

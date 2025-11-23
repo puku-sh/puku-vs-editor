@@ -147,6 +147,7 @@ export function setup(serviceAccessor: ServicesAccessor, disposables: Disposable
 	// Register the context providers enabled by default.
 	const defaultContextProviders = serviceAccessor.get(ICompletionsDefaultContextProviders);
 	defaultContextProviders.add('ms-vscode.cpptools');
+	defaultContextProviders.add('puku.semanticContext'); // Puku semantic context for FIM
 
 	disposables.add(setupCompletionsExperimentationService(serviceAccessor));
 }
