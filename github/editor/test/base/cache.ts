@@ -20,6 +20,20 @@ const decompress = promisify(zlib.brotliDecompress);
 
 const DefaultCachePath = process.env.VITEST ? path.resolve(__dirname, '..', 'simulation', 'cache') : path.resolve(__dirname, '..', 'test', 'simulation', 'cache');
 
+function isValidSqliteFile(filePath: string): boolean {
+	try {
+		// SQLite files start with "SQLite format 3\0" (16 bytes header)
+		const fd = fs.openSync(filePath, 'r');
+		const buffer = Buffer.alloc(16);
+		fs.readSync(fd, buffer, 0, 16, 0);
+		fs.closeSync(fd);
+		// Check for SQLite magic header
+		return buffer.toString('utf8', 0, 15) === 'SQLite format 3';
+	} catch {
+		return false;
+	}
+}
+
 async function getGitRoot(cwd: string): Promise<string> {
 	const execAsync = promisify(exec);
 	const { stdout } = await execAsync('git rev-parse --show-toplevel', { cwd });
@@ -50,8 +64,12 @@ export class Cache extends EventEmitter {
 		this.layersPath = path.join(this.cachePath, 'layers');
 		this.externalLayersPath = process.env.EXTERNAL_CACHE_LAYERS_PATH;
 
-		if (!fs.existsSync(path.join(this.cachePath, 'base.sqlite'))) {
-			throw new Error(`Base cache file does not exist as ${path.join(this.cachePath, 'base.sqlite')}.`);
+		const baseSqlitePath = path.join(this.cachePath, 'base.sqlite');
+		if (!fs.existsSync(baseSqlitePath)) {
+			throw new Error(`Base cache file does not exist at ${baseSqlitePath}.`);
+		}
+		if (!isValidSqliteFile(baseSqlitePath)) {
+			throw new Error(`Base cache file at ${baseSqlitePath} is not a valid SQLite database. If this is a Git LFS pointer file, run 'git lfs pull' to download the actual database.`);
 		}
 
 		if (this.externalLayersPath && !fs.existsSync(this.externalLayersPath)) {

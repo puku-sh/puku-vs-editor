@@ -2,7 +2,7 @@
 	"name": "puku-editor",
 	"displayName": "Puku Editor",
 	"description": "AI-powered code editor with GLM model support via Z.AI",
-	"version": "0.34.6",
+	"version": "0.34.9",
 	"build": "1",
 	"internalAIKey": "1058ec22-3c95-4951-8443-f26c1f325911",
 	"completionsCoreVersion": "1.378.1799",
@@ -5155,6 +5155,7 @@
 		"lru-cache": "^11.1.0",
 		"markdown-it": "^14.1.0",
 		"minimatch": "^10.0.3",
+		"sqlite-vec": "^0.1.7-alpha.2",
 		"undici": "^7.11.0",
 		"vscode-tas-client": "^0.1.84",
 		"web-tree-sitter": "^0.23.0"

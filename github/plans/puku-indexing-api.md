@@ -157,6 +157,161 @@ The editor's `PukuEmbeddingsComputer` can use these endpoints to:
 └─────────────────────────────────────────────────────────────┘
 ```
 
+## Metadata & Chunking
+
+### Chunk Metadata
+
+Each code chunk stores semantic metadata for better retrieval:
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `text` | Raw code content | `function add(a, b) { return a + b; }` |
+| `chunkType` | Semantic type | `function`, `class`, `interface`, `import` |
+| `symbolName` | Extracted identifier | `add`, `UserService`, `IConfig` |
+| `lineStart` | Start line number | `42` |
+| `lineEnd` | End line number | `50` |
+| `embedding` | Vector (1024 dims) | `[0.123, -0.456, ...]` |
+
+### Comparison with Cursor
+
+| Feature | Cursor | Puku |
+|---------|--------|------|
+| File path | ✅ (obfuscated, remote) | ✅ (local) |
+| Line numbers | ✅ | ✅ |
+| Chunk type | ❓ Unknown | ✅ (function/class/etc) |
+| Symbol name | ❓ Unknown | ✅ |
+| Hash caching | ✅ (AWS) | ✅ (SQLite) |
+| Vector DB | Turbopuffer (remote) | SQLite (local) |
+| Privacy | Embeddings sent to server | 100% local |
+
+### AST-Based Chunking
+
+The `PukuASTChunker` uses Tree-sitter to extract semantic boundaries:
+
+```
+Source File
+    │
+    ▼
+┌─────────────────────────────────────┐
+│  Tree-sitter Parser                 │
+│  (via VS Code structureComputer)    │
+└─────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────┐
+│  Chunk Extraction                   │
+│  ├── Functions/Methods              │
+│  ├── Classes                        │
+│  ├── Interfaces/Types               │
+│  ├── Imports                        │
+│  └── Top-level blocks               │
+└─────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────┐
+│  Metadata Extraction                │
+│  ├── Symbol name (regex patterns)   │
+│  ├── Chunk type classification      │
+│  └── Line range                     │
+└─────────────────────────────────────┘
+```
+
+## Vector Search Implementation
+
+### sqlite-vec Integration (v0.34.7+)
+
+We've integrated [sqlite-vec](https://github.com/asg017/sqlite-vec) for efficient vector search:
+
+| Feature | sqlite-vss (deprecated) | sqlite-vec |
+|---------|------------------------|------------|
+| Implementation | C++ (Faiss wrapper) | Pure C |
+| Binary size | ~10MB | ~100KB |
+| Platforms | Linux/Mac only | All (Windows/Mac/Linux/WASM) |
+| Status | Deprecated | Active development |
+| KNN queries | ✅ | ✅ |
+
+**Requirements:**
+- Node.js 23.5.0+ (for `node:sqlite` extension support)
+- `npm install sqlite-vec`
+
+### Implementation Details
+
+```typescript
+// PukuEmbeddingsCache automatically loads sqlite-vec
+await cache.initialize();
+
+// Check if sqlite-vec is available
+if (cache.vecEnabled) {
+  console.log('Using sqlite-vec KNN search');
+}
+
+// KNN search with automatic fallback
+const results = cache.searchKNN(queryEmbedding, k);
+// Returns: Array<PukuChunkWithEmbedding & { distance: number }>
+```
+
+**Schema:**
+```sql
+-- Virtual table for vector search (auto-created)
+CREATE VIRTUAL TABLE vec_chunks USING vec0(
+  embedding float[1024]
+);
+
+-- Mapping table to link vec_chunks rowids to chunk IDs
+CREATE TABLE VecMapping (
+  vec_rowid INTEGER PRIMARY KEY,
+  chunk_id INTEGER NOT NULL,
+  FOREIGN KEY (chunk_id) REFERENCES Chunks(id) ON DELETE CASCADE
+);
+```
+
+**Features:**
+- Automatic sqlite-vec extension loading on initialization
+- Mapping table approach for reliable rowid handling with `node:sqlite`
+- Dimension validation (only 1024-dim embeddings use vec_chunks)
+- Synchronized inserts/deletes across Chunks, vec_chunks, and VecMapping tables
+
+**KNN Query:**
+```sql
+SELECT m.chunk_id, v.distance, c.text, ...
+FROM vec_chunks v
+INNER JOIN VecMapping m ON v.rowid = m.vec_rowid
+INNER JOIN Chunks c ON m.chunk_id = c.id
+INNER JOIN Files f ON c.fileId = f.id
+WHERE v.embedding MATCH ? AND k = ?
+ORDER BY v.distance
+```
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    VECTOR SEARCH FLOW                        │
+├─────────────────────────────────────────────────────────────┤
+│  Query Embedding (1024-dim)                                  │
+│       │                                                      │
+│       ▼                                                      │
+│  ┌─────────────────────────────────────────────────┐        │
+│  │  vec_chunks (sqlite-vec virtual table)          │        │
+│  │  └── KNN search: WHERE embedding MATCH ? AND k=?│        │
+│  └─────────────────────────────────────────────────┘        │
+│       │ rowid                                                │
+│       ▼                                                      │
+│  ┌─────────────────────────────────────────────────┐        │
+│  │  VecMapping (rowid → chunk_id)                  │        │
+│  └─────────────────────────────────────────────────┘        │
+│       │ chunk_id                                             │
+│       ▼                                                      │
+│  ┌─────────────────────────────────────────────────┐        │
+│  │  Chunks + Files (metadata, content)             │        │
+│  └─────────────────────────────────────────────────┘        │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Non-1024-dim Embeddings
+
+For embeddings that don't match the 1024-dim requirement (e.g., test embeddings), the system uses in-memory cosine similarity search as a fallback.
+
 ## Testing
 
 ```bash

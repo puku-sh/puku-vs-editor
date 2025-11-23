@@ -7,6 +7,7 @@ import fs from 'fs';
 import sql from 'node:sqlite';
 import path from 'path';
 import * as vscode from 'vscode';
+import * as sqliteVec from 'sqlite-vec';
 
 import { ChunkType } from './pukuASTChunker';
 
@@ -35,8 +36,9 @@ export class PukuEmbeddingsCache {
 	 * independent of extension version (e.g., for schema-only changes).
 	 * Combined with extension version for full cache key.
 	 */
-	private static readonly SCHEMA_VERSION = '1';
+	private static readonly SCHEMA_VERSION = '3'; // Bumped for sqlite-vec mapping table
 	private static readonly MODEL_ID = 'puku-embeddings-1024';
+	private static readonly EMBEDDING_DIMENSIONS = 1024;
 
 	/**
 	 * Get the cache version string (extension version + schema version)
@@ -57,10 +59,18 @@ export class PukuEmbeddingsCache {
 	}
 
 	private _db: sql.DatabaseSync | undefined;
+	private _vecEnabled = false;
 
 	constructor(
 		private readonly _storageUri: vscode.Uri | undefined,
 	) { }
+
+	/**
+	 * Check if sqlite-vec is enabled
+	 */
+	get vecEnabled(): boolean {
+		return this._vecEnabled;
+	}
 
 	/**
 	 * Delete the database file completely (for manual cleanup or release)
@@ -89,7 +99,8 @@ export class PukuEmbeddingsCache {
 
 		const syncOptions: sql.DatabaseSyncOptions = {
 			open: true,
-			enableForeignKeyConstraints: true
+			enableForeignKeyConstraints: true,
+			allowExtension: true // Required for sqlite-vec
 		};
 
 		// Try to create on-disk database if we have storage
@@ -108,6 +119,17 @@ export class PukuEmbeddingsCache {
 		if (!this._db) {
 			this._db = new sql.DatabaseSync(':memory:', syncOptions);
 			console.log('[PukuEmbeddingsCache] Using in-memory database');
+		}
+
+		// Load sqlite-vec extension for vector search
+		try {
+			sqliteVec.load(this._db);
+			this._vecEnabled = true;
+			const version = this._db.prepare('SELECT vec_version() as version').get() as { version: string };
+			console.log(`[PukuEmbeddingsCache] sqlite-vec loaded: v${version.version}`);
+		} catch (e) {
+			console.warn('[PukuEmbeddingsCache] Failed to load sqlite-vec, falling back to in-memory search:', e);
+			this._vecEnabled = false;
 		}
 
 		// Optimize for performance
@@ -149,6 +171,29 @@ export class PukuEmbeddingsCache {
 			CREATE INDEX IF NOT EXISTS idx_chunks_fileId ON Chunks(fileId);
 		`);
 
+		// Create vec_chunks virtual table and mapping for KNN search (if sqlite-vec is available)
+		if (this._vecEnabled) {
+			try {
+				this._db.exec(`
+					CREATE VIRTUAL TABLE IF NOT EXISTS vec_chunks USING vec0(
+						embedding float[${PukuEmbeddingsCache.EMBEDDING_DIMENSIONS}]
+					);
+
+					CREATE TABLE IF NOT EXISTS VecMapping (
+						vec_rowid INTEGER PRIMARY KEY,
+						chunk_id INTEGER NOT NULL,
+						FOREIGN KEY (chunk_id) REFERENCES Chunks(id) ON DELETE CASCADE
+					);
+
+					CREATE INDEX IF NOT EXISTS idx_vecmapping_chunk_id ON VecMapping(chunk_id);
+				`);
+				console.log('[PukuEmbeddingsCache] vec_chunks virtual table and mapping created');
+			} catch (e) {
+				console.warn('[PukuEmbeddingsCache] Failed to create vec_chunks table:', e);
+				this._vecEnabled = false;
+			}
+		}
+
 		// Check version and model compatibility - check BEFORE creating tables
 		const cacheVersion = PukuEmbeddingsCache.getCacheVersion();
 		let needsRebuild = false;
@@ -165,7 +210,7 @@ export class PukuEmbeddingsCache {
 
 		if (needsRebuild) {
 			// Drop and recreate tables to handle schema changes
-			this._db.exec('DROP TABLE IF EXISTS Chunks; DROP TABLE IF EXISTS Files; DROP TABLE IF EXISTS CacheMeta;');
+			this._db.exec('DROP TABLE IF EXISTS VecMapping; DROP TABLE IF EXISTS vec_chunks; DROP TABLE IF EXISTS Chunks; DROP TABLE IF EXISTS Files; DROP TABLE IF EXISTS CacheMeta;');
 			// Now recreate with new schema
 			this._db.exec(`
 				CREATE TABLE IF NOT EXISTS CacheMeta (
@@ -195,6 +240,28 @@ export class PukuEmbeddingsCache {
 				CREATE INDEX IF NOT EXISTS idx_files_uri ON Files(uri);
 				CREATE INDEX IF NOT EXISTS idx_chunks_fileId ON Chunks(fileId);
 			`);
+
+			// Recreate vec_chunks virtual table and mapping if sqlite-vec is available
+			if (this._vecEnabled) {
+				try {
+					this._db.exec(`
+						CREATE VIRTUAL TABLE IF NOT EXISTS vec_chunks USING vec0(
+							embedding float[${PukuEmbeddingsCache.EMBEDDING_DIMENSIONS}]
+						);
+
+						CREATE TABLE IF NOT EXISTS VecMapping (
+							vec_rowid INTEGER PRIMARY KEY,
+							chunk_id INTEGER NOT NULL,
+							FOREIGN KEY (chunk_id) REFERENCES Chunks(id) ON DELETE CASCADE
+						);
+
+						CREATE INDEX IF NOT EXISTS idx_vecmapping_chunk_id ON VecMapping(chunk_id);
+					`);
+				} catch (e) {
+					console.warn('[PukuEmbeddingsCache] Failed to recreate vec_chunks table:', e);
+					this._vecEnabled = false;
+				}
+			}
 		}
 
 		// Update metadata
@@ -305,8 +372,16 @@ export class PukuEmbeddingsCache {
 				VALUES (?, ?, ?, ?, ?, ?, ?)
 			`);
 
+			// Prepare vec_chunks insert and mapping if sqlite-vec is enabled
+			const vecInsertStmt = this._vecEnabled
+				? this._db.prepare('INSERT INTO vec_chunks (embedding) VALUES (?)')
+				: null;
+			const mappingInsertStmt = this._vecEnabled
+				? this._db.prepare('INSERT INTO VecMapping (vec_rowid, chunk_id) VALUES (?, ?)')
+				: null;
+
 			for (const chunk of chunks) {
-				insertStmt.run(
+				const chunkResult = insertStmt.run(
 					fileId,
 					chunk.text,
 					chunk.lineStart,
@@ -315,6 +390,17 @@ export class PukuEmbeddingsCache {
 					chunk.chunkType || null,
 					chunk.symbolName || null
 				);
+
+				// Also insert into vec_chunks for KNN search (only if dimensions match)
+				if (vecInsertStmt && mappingInsertStmt && chunk.embedding.length === PukuEmbeddingsCache.EMBEDDING_DIMENSIONS) {
+					const chunkId = Number(chunkResult.lastInsertRowid);
+					const vecEmbedding = new Float32Array(chunk.embedding);
+					// Insert embedding (let sqlite-vec auto-generate rowid)
+					const vecResult = vecInsertStmt.run(new Uint8Array(vecEmbedding.buffer));
+					const vecRowid = Number(vecResult.lastInsertRowid);
+					// Create mapping between vec_chunks rowid and chunk id
+					mappingInsertStmt.run(vecRowid, chunkId);
+				}
 			}
 
 			this._db.exec('COMMIT');
@@ -330,6 +416,26 @@ export class PukuEmbeddingsCache {
 	removeFile(uri: string): void {
 		if (!this._db) {
 			return;
+		}
+
+		// First delete from vec_chunks and mapping if enabled
+		if (this._vecEnabled) {
+			// Get chunk IDs for this file
+			const chunkIds = this._db.prepare(`
+				SELECT c.id FROM Chunks c
+				JOIN Files f ON c.fileId = f.id
+				WHERE f.uri = ?
+			`).all(uri);
+
+			for (const row of chunkIds) {
+				const chunkId = (row as { id: number }).id;
+				// Get vec_rowid from mapping and delete from vec_chunks
+				const mapping = this._db.prepare('SELECT vec_rowid FROM VecMapping WHERE chunk_id = ?').get(chunkId);
+				if (mapping) {
+					this._db.prepare('DELETE FROM vec_chunks WHERE rowid = ?').run((mapping as { vec_rowid: number }).vec_rowid);
+					this._db.prepare('DELETE FROM VecMapping WHERE chunk_id = ?').run(chunkId);
+				}
+			}
 		}
 
 		this._db.prepare('DELETE FROM Files WHERE uri = ?').run(uri);
@@ -357,7 +463,87 @@ export class PukuEmbeddingsCache {
 			return;
 		}
 
+		if (this._vecEnabled) {
+			this._db.exec('DELETE FROM VecMapping; DELETE FROM vec_chunks;');
+		}
 		this._db.exec('DELETE FROM Files; DELETE FROM Chunks;');
+	}
+
+	/**
+	 * KNN search using sqlite-vec with mapping table
+	 */
+	searchKNN(queryEmbedding: number[], k: number = 10): Array<PukuChunkWithEmbedding & { distance: number }> {
+		if (!this._db) {
+			return [];
+		}
+
+		if (this._vecEnabled && queryEmbedding.length === PukuEmbeddingsCache.EMBEDDING_DIMENSIONS) {
+			// Use sqlite-vec for efficient KNN search via mapping table
+			const vecQueryFloat = new Float32Array(queryEmbedding);
+			const vecQuery = new Uint8Array(vecQueryFloat.buffer);
+			const results = this._db.prepare(`
+				SELECT
+					m.chunk_id,
+					v.distance,
+					c.text,
+					c.lineStart,
+					c.lineEnd,
+					c.chunkType,
+					c.symbolName,
+					f.uri,
+					f.contentHash,
+					c.embedding
+				FROM vec_chunks v
+				INNER JOIN VecMapping m ON v.rowid = m.vec_rowid
+				INNER JOIN Chunks c ON m.chunk_id = c.id
+				INNER JOIN Files f ON c.fileId = f.id
+				WHERE v.embedding MATCH ? AND k = ?
+				ORDER BY v.distance
+			`).all(vecQuery, k);
+
+			return results.map(row => ({
+				uri: row.uri as string,
+				text: row.text as string,
+				lineStart: row.lineStart as number,
+				lineEnd: row.lineEnd as number,
+				embedding: this._unpackEmbedding(row.embedding as Uint8Array),
+				contentHash: row.contentHash as string,
+				chunkType: (row.chunkType as ChunkType) || undefined,
+				symbolName: (row.symbolName as string) || undefined,
+				distance: row.distance as number,
+			}));
+		}
+
+		// For non-1024 dimension embeddings, use in-memory cosine similarity
+		const allChunks = this.getAllChunks();
+		const scored = allChunks.map(chunk => ({
+			...chunk,
+			distance: 1 - this._cosineSimilarity(queryEmbedding, chunk.embedding),
+		}));
+		scored.sort((a, b) => a.distance - b.distance);
+		return scored.slice(0, k);
+	}
+
+	/**
+	 * Compute cosine similarity between two vectors
+	 */
+	private _cosineSimilarity(a: number[], b: number[]): number {
+		if (a.length !== b.length) {
+			return 0;
+		}
+
+		let dotProduct = 0;
+		let normA = 0;
+		let normB = 0;
+
+		for (let i = 0; i < a.length; i++) {
+			dotProduct += a[i] * b[i];
+			normA += a[i] * a[i];
+			normB += b[i] * b[i];
+		}
+
+		const magnitude = Math.sqrt(normA) * Math.sqrt(normB);
+		return magnitude === 0 ? 0 : dotProduct / magnitude;
 	}
 
 	/**

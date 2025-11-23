@@ -12,7 +12,7 @@ This workspace contains multiple projects:
 
 ## Requirements
 
-- Node 22.20.0+ (use `nvm install 22.20.0 && nvm use 22.20.0`)
+- Node 23.5.0+ (use `nvm install 23.5.0 && nvm use 23.5.0`) - Required for sqlite-vec extension support
 - Python >= 3.10, <= 3.12
 - Git Large File Storage (LFS) - for running tests
 - (Windows) Visual Studio Build Tools >=2019 - for building with node-gyp
@@ -269,15 +269,14 @@ Cache version format: `{extension_version}-s{schema_version}` (e.g., `0.34.4-s1`
 
 The SQLite database is stored at: `{workspace}/.puku/puku-embeddings.db`
 
-### Current Limitations & Future Improvements
+### Vector Search with sqlite-vec
 
-**Current**: Cosine similarity search is done in-memory (O(n) linear scan)
-
-**Planned**: Integrate **sqlite-vec** for efficient vector search:
+**sqlite-vec** is integrated for efficient KNN search (v0.34.7+):
 - Pure C extension, works everywhere (Windows/Mac/Linux/WASM)
-- KNN queries directly in SQL
-- No memory pressure for large codebases
-- ~100KB binary size
+- KNN queries directly in SQL via `searchKNN()` method
+- Uses mapping table (`VecMapping`) to link vec_chunks rowids to chunk IDs
+- Requires Node.js 23.5.0+ for `node:sqlite` extension support
+- Non-1024-dim embeddings fall back to in-memory cosine similarity
 
 ## Architecture Overview
 
