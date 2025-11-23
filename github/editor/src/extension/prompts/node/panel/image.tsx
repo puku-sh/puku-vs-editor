@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { RequestType } from '@vscode/copilot-api';
+import { RequestType } from '../../../../platform/api/common/pukuRequestTypes';
 import * as l10n from '@vscode/l10n';
 import { Image as BaseImage, BasePromptElementProps, ChatResponseReferencePartStatusKind, PromptElement, PromptReference, PromptSizing, UserMessage } from '@vscode/prompt-tsx';
 import { IAuthenticationService } from '../../../../platform/authentication/common/authentication';

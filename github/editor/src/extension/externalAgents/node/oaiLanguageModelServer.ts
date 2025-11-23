@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { RequestMetadata } from '@vscode/copilot-api';
+import { RequestMetadata } from '../../../platform/api/common/pukuRequestTypes';
 import { Raw } from '@vscode/prompt-tsx';
 import * as http from 'http';
 import { ClientHttp2Stream } from 'http2';

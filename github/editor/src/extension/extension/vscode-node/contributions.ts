@@ -50,6 +50,7 @@ import * as workspaceIndexingContribution from '../../workspaceChunkSearch/vscod
 import { WorkspaceRecorderFeature } from '../../workspaceRecorder/vscode-node/workspaceRecorderFeature';
 import { PukuIndexingContribution } from '../../pukuIndexing/vscode-node/pukuIndexing.contribution';
 import { PukuSemanticContextProvider } from '../../pukuIndexing/vscode-node/pukuSemanticContextProvider';
+import { PukuChatContribution } from '../../pukuChat/vscode-node/pukuChat.contribution';
 import vscodeContributions from '../vscode/contributions';
 
 // ###################################################################################################
@@ -92,6 +93,7 @@ export const vscodeNodeContributions: IExtensionContributionFactory[] = [
 	asContributionFactory(ChatSessionsContrib),
 	asContributionFactory(PukuIndexingContribution),
 	asContributionFactory(PukuSemanticContextProvider),
+	asContributionFactory(PukuChatContribution),
 ];
 
 /**

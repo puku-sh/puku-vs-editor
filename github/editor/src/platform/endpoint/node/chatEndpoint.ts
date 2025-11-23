@@ -2,7 +2,7 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-import { RequestMetadata, RequestType } from '@vscode/copilot-api';
+import { RequestMetadata, RequestType } from '../../api/common/pukuRequestTypes';
 import { OpenAI, Raw } from '@vscode/prompt-tsx';
 import type { CancellationToken } from 'vscode';
 import { createRequestHMAC } from '../../../util/common/crypto';

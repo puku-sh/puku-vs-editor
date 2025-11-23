@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { RequestType } from '@vscode/copilot-api';
+import { RequestType } from '../../api/common/pukuRequestTypes';
 import type { LanguageModelChat } from 'vscode';
 import { createRequestHMAC } from '../../../util/common/crypto';
 import { TokenizerType } from '../../../util/common/tokenizer';

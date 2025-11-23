@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { RequestMetadata, RequestType } from '@vscode/copilot-api';
+import { RequestMetadata, RequestType } from '../../api/common/pukuRequestTypes';
 import { CancellationToken } from '../../../util/vs/base/common/cancellation';
 import { CancellationError } from '../../../util/vs/base/common/errors';
 import { IAuthenticationService } from '../../authentication/common/authentication';

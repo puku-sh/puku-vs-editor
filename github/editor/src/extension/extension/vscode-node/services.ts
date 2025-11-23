@@ -106,6 +106,8 @@ import { IEmbeddingsComputer } from '../../../platform/embeddings/common/embeddi
 import { ConditionalEmbeddingsComputer } from './conditionalEmbeddingsComputer';
 import { IPukuAuthService, PukuAuthService } from '../../pukuIndexing/common/pukuAuth';
 import { IPukuIndexingService, PukuIndexingService } from '../../pukuIndexing/node/pukuIndexingService';
+import { IPukuChatService } from '../../pukuChat/common/pukuChatService';
+import { PukuChatService } from '../../pukuChat/node/pukuChatService';
 
 // ###########################################################################################
 // ###                                                                                     ###
@@ -212,6 +214,9 @@ export function registerServices(builder: IInstantiationServiceBuilder, extensio
 	const pukuEndpoint = 'http://localhost:11434';
 	builder.define(IPukuAuthService, new PukuAuthService(pukuEndpoint));
 	builder.define(IPukuIndexingService, new SyncDescriptor(PukuIndexingService));
+
+	// Puku Chat Service
+	builder.define(IPukuChatService, new SyncDescriptor(PukuChatService));
 }
 
 function setupMSFTExperimentationService(builder: IInstantiationServiceBuilder, extensionContext: ExtensionContext) {

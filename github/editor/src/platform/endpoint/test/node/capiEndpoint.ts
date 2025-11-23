@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { RequestType } from '@vscode/copilot-api';
+import { RequestType } from '../../../api/common/pukuRequestTypes';
 import { IInstantiationService } from '../../../../util/vs/platform/instantiation/common/instantiation';
 import { IAuthenticationService } from '../../../authentication/common/authentication';
 import { IChatMLFetcher } from '../../../chat/common/chatMLFetcher';

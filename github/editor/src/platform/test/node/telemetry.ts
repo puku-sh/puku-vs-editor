@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CopilotToken, FetchOptions, IDomainChangeResponse, RequestMetadata } from '@vscode/copilot-api';
+import { CopilotToken, FetchOptions, IDomainChangeResponse, RequestMetadata } from '../../api/common/pukuRequestTypes';
 import assert from 'assert';
 import { IConfigurationService } from '../../configuration/common/configurationService';
 import { ICAPIClientService } from '../../endpoint/common/capiClient';

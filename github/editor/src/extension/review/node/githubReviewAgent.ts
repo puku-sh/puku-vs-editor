@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { RequestType } from '@vscode/copilot-api';
+import { RequestType } from '../../../platform/api/common/pukuRequestTypes';
 import * as readline from 'readline';
 import type { Selection, TextDocument, TextEditor } from 'vscode';
 import { IAuthenticationService } from '../../../platform/authentication/common/authentication';

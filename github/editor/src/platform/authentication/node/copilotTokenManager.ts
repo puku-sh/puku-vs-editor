@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { RequestType } from '@vscode/copilot-api';
+import { RequestType } from '../../api/common/pukuRequestTypes';
 import { Emitter } from '../../../util/vs/base/common/event';
 import { Disposable, toDisposable } from '../../../util/vs/base/common/lifecycle';
 import { SyncDescriptor } from '../../../util/vs/platform/instantiation/common/descriptors';

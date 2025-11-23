@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { CAPIClient } from '@vscode/copilot-api';
+import { CAPIClient } from '../../api/common/pukuApiClient';
 import { createServiceIdentifier } from '../../../util/common/services';
 import { IEnvService } from '../../env/common/envService';
 import { IFetcherService } from '../../networking/common/fetcherService';

@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { RequestMetadata, RequestType } from '@vscode/copilot-api';
+import { RequestMetadata, RequestType } from '../../api/common/pukuRequestTypes';
 import { ITokenizer } from '../../../util/common/tokenizer';
 import { LEGACY_EMBEDDING_MODEL_ID } from '../../embeddings/common/embeddingsComputer';
 import { IEmbeddingsEndpoint } from '../../networking/common/networking';

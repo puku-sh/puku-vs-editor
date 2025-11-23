@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { RequestType } from '@vscode/copilot-api';
+import { RequestType } from '../../../api/common/pukuRequestTypes';
 import assert from 'assert';
 import { suite, test } from 'vitest';
 import { ICAPIClientService } from '../../../endpoint/common/capiClient';
