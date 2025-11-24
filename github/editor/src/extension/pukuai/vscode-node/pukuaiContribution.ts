@@ -122,7 +122,7 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 			console.log('Puku AI: About to register inline completion provider with vscode.languages');
 			const disposable = vscode.languages.registerInlineCompletionItemProvider(selector, inlineProvider, {
 				debounceDelayMs: 0,
-				groupId: 'pukuai-completions'
+				groupId: 'puku' // Must match the exclude in completionsCoreContribution to disable Copilot FIM
 			});
 			this._register(disposable);
 			console.log('Puku AI: Registered with proposed API metadata');
