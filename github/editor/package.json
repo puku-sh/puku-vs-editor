@@ -2592,13 +2592,13 @@
 					},
 					"puku.pukuai.endpoint": {
 						"type": "string",
-						"default": "http://localhost:11434",
-						"description": "The endpoint URL for Puku AI (e.g., http://localhost:11434 for Ollama/Proxy)."
+						"default": "https://api.puku.sh",
+						"description": "The endpoint URL for Puku AI (e.g., https://api.puku.sh for Puku cloud service)."
 					},
 					"puku.pukuai.model": {
 						"type": "string",
-						"default": "GLM-4.6",
-						"description": "The model name to use for Puku AI (e.g., GLM-4.6)."
+						"default": "puku-ai",
+						"description": "The model name to use for Puku AI (e.g., puku-ai, puku-ai-air)."
 					},
 					"puku.chat.byok.ollamaEndpoint": {
 						"type": "string",

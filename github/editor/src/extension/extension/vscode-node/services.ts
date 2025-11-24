@@ -104,7 +104,8 @@ import { WorkspacListenerService } from '../../workspaceRecorder/vscode-node/wor
 import { registerServices as registerCommonServices } from '../vscode/services';
 import { IEmbeddingsComputer } from '../../../platform/embeddings/common/embeddingsComputer';
 import { ConditionalEmbeddingsComputer } from './conditionalEmbeddingsComputer';
-import { IPukuAuthService, PukuAuthService } from '../../pukuIndexing/common/pukuAuth';
+import { IPukuAuthService } from '../../pukuIndexing/common/pukuAuth';
+import { VsCodePukuAuthService } from '../../pukuIndexing/vscode-node/vscodePukuAuthService';
 import { IPukuIndexingService, PukuIndexingService } from '../../pukuIndexing/node/pukuIndexingService';
 import { IPukuChatService } from '../../pukuChat/common/pukuChatService';
 import { PukuChatService } from '../../pukuChat/node/pukuChatService';
@@ -210,9 +211,8 @@ export function registerServices(builder: IInstantiationServiceBuilder, extensio
 	builder.define(IEmbeddingsComputer, new SyncDescriptor(ConditionalEmbeddingsComputer));
 
 	// Puku Indexing Services
-	// Note: Model selection is handled internally by the proxy - no user exposure
-	const pukuEndpoint = 'http://localhost:11434';
-	builder.define(IPukuAuthService, new PukuAuthService(pukuEndpoint));
+	// Note: Authentication is bridged from VS Code layer via internal commands
+	builder.define(IPukuAuthService, new SyncDescriptor(VsCodePukuAuthService));
 	builder.define(IPukuIndexingService, new SyncDescriptor(PukuIndexingService));
 
 	// Puku Chat Service
