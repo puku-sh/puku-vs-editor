@@ -11,7 +11,15 @@ import { ILogService } from '../../log/common/logService';
 import { BaseAuthenticationService } from '../common/authentication';
 import { ICopilotTokenManager } from '../common/copilotTokenManager';
 import { ICopilotTokenStore } from '../common/copilotTokenStore';
-import { authProviderId, getAlignedSession, getAnyAuthSession } from './session';
+
+// GitHub authentication removed - using Puku authentication only
+function authProviderId(configurationService: IConfigurationService): AuthProviderId {
+	return (
+		configurationService.getConfig({} as any).authProvider === AuthProviderId.GitHubEnterprise
+			? AuthProviderId.GitHubEnterprise
+			: AuthProviderId.GitHub
+	);
+}
 
 export class AuthenticationService extends BaseAuthenticationService {
 	private _taskSingler = new TaskSingler<AuthenticationSession | undefined>();
@@ -41,19 +49,15 @@ export class AuthenticationService extends BaseAuthenticationService {
 	}
 
 	async getAnyGitHubSession(options?: AuthenticationGetSessionOptions): Promise<AuthenticationSession | undefined> {
-		const func = () => getAnyAuthSession(this._configurationService, options);
-		// If we are doing an interactive flow, don't use the singler so that we don't get hung up on the user's choice
-		const session = options?.createIfNone || options?.forceNewSession ? await func() : await this._taskSingler.getOrCreate('any', func);
-		this._anyGitHubSession = session;
-		return session;
+		// GitHub authentication removed - always return undefined
+		this._logService.info('[AuthenticationService] GitHub auth removed, returning undefined');
+		return undefined;
 	}
 
 	async getPermissiveGitHubSession(options: AuthenticationGetSessionOptions): Promise<AuthenticationSession | undefined> {
-		const func = () => getAlignedSession(this._configurationService, options);
-		// If we are doing an interactive flow, don't use the singler so that we don't get hung up on the user's choice
-		const session = options?.createIfNone || options?.forceNewSession ? await func() : await this._taskSingler.getOrCreate('permissive', func);
-		this._permissiveGitHubSession = session;
-		return session;
+		// GitHub authentication removed - always return undefined
+		this._logService.info('[AuthenticationService] GitHub auth removed, returning undefined');
+		return undefined;
 	}
 
 	protected async getAnyAdoSession(options?: AuthenticationGetSessionOptions): Promise<AuthenticationSession | undefined> {

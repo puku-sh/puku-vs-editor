@@ -8,7 +8,6 @@ import * as pathLib from 'path';
 import * as vscode from 'vscode';
 import { Uri } from 'vscode';
 import { IAuthenticationService } from '../../../platform/authentication/common/authentication';
-import { IAuthenticationChatUpgradeService } from '../../../platform/authentication/common/authenticationUpgrade';
 import { IGitExtensionService } from '../../../platform/git/common/gitExtensionService';
 import { IGitService } from '../../../platform/git/common/gitService';
 import { PullRequestSearchItem, SessionInfo } from '../../../platform/github/common/githubAPI';
@@ -154,7 +153,6 @@ export class CopilotCloudSessionsProvider extends Disposable implements vscode.C
 		@IGitExtensionService private readonly _gitExtensionService: IGitExtensionService,
 		@IPullRequestFileChangesService private readonly _prFileChangesService: IPullRequestFileChangesService,
 		@IAuthenticationService private readonly _authenticationService: IAuthenticationService,
-		@IAuthenticationChatUpgradeService private readonly _authenticationUpgradeService: IAuthenticationChatUpgradeService,
 	) {
 		super();
 		const interval = setInterval(async () => {
@@ -787,7 +785,6 @@ export class CopilotCloudSessionsProvider extends Disposable implements vscode.C
 				return {};
 			}
 			if (findAuthConfirmRequest) {
-				const result = await this._authenticationUpgradeService.handleConfirmationRequestWithContext(stream, request, context.history);
 				request = result.request;
 				context = result.context ?? context;
 			} else {
@@ -800,7 +797,6 @@ export class CopilotCloudSessionsProvider extends Disposable implements vscode.C
 			// NOTE: Temporarily suppress the permissive session upgrade prompt to avoid showing
 			// the "Additional GitHub permissions required" banner in the UI.
 			// If authentication is required again in the future, re-enable the call below.
-			// this._authenticationUpgradeService.showPermissiveSessionUpgradeInChat(
 			// 	stream,
 			// 	request,
 			// 	vscode.l10n.t('GitHub Copilot Cloud Agent requires access to your repositories on GitHub for handling requests.'),

@@ -44,9 +44,17 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 		// Get endpoint - always try to register if endpoint is set
 		const endpoint = this._configurationService.getConfig(ConfigKey.PukuAIEndpoint);
 		console.log(`Puku AI: _registerProvider called, endpoint=${endpoint}`);
+		this._logService.info(`Puku AI: _registerProvider called, endpoint=${endpoint}`);
 
 		if (this._providerRegistered) {
 			this._logService.info('Puku AI: Provider already registered');
+			console.log('Puku AI: Provider already registered');
+			return;
+		}
+
+		if (!endpoint) {
+			console.log('Puku AI: No endpoint configured, skipping registration');
+			this._logService.info('Puku AI: No endpoint configured, skipping registration');
 			return;
 		}
 
@@ -55,15 +63,20 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 			// Check if the endpoint is reachable
 			const versionUrl = `${endpoint}/api/version`; // Standard Ollama/Proxy version check
 			console.log(`Puku AI: Checking version at ${versionUrl}`);
+			this._logService.info(`Puku AI: Checking version at ${versionUrl}`);
 
 			const response = await this._fetcherService.fetch(versionUrl, { method: 'GET' });
 			console.log(`Puku AI: Version response status: ${response.status}`);
+			this._logService.info(`Puku AI: Version response status: ${response.status}`);
+
 			if (!response.ok) {
-				console.log('Puku AI: Endpoint not reachable or not an Ollama-compatible proxy');
+				console.log(`Puku AI: Endpoint not reachable or not an Ollama-compatible proxy (status ${response.status})`);
+				this._logService.warn(`Puku AI: Endpoint not reachable or not an Ollama-compatible proxy (status ${response.status})`);
 				return;
 			}
 
 			console.log('Puku AI: Detected compatible proxy, registering provider');
+			this._logService.info('Puku AI: Detected compatible proxy, registering provider');
 
 			const provider = this._instantiationService.createInstance(PukuAILanguageModelProvider, endpoint);
 
@@ -77,12 +90,14 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 
 			this._providerRegistered = true;
 			console.log('Puku AI: Provider registered successfully');
+			this._logService.info('Puku AI: Provider registered successfully');
 
 			// Also register inline completion provider
 			this._registerInlineCompletionProvider(endpoint);
 
 		} catch (error) {
 			console.error(`Puku AI: Failed to register provider: ${error}`);
+			this._logService.error(`Puku AI: Failed to register provider`, error);
 		}
 	}
 

@@ -4,9 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ExtensionContext, ExtensionMode, l10n } from 'vscode';
-import { IAuthenticationChatUpgradeService } from '../../../platform/authentication/common/authenticationUpgrade';
-import { AuthenticationChatUpgradeService } from '../../../platform/authentication/common/authenticationUpgradeService';
 import { CopilotTokenStore, ICopilotTokenStore } from '../../../platform/authentication/common/copilotTokenStore';
+import { AuthenticationChatUpgradeService, IAuthenticationChatUpgradeService } from '../../../platform/authentication/common/authenticationUpgrade';
 import { BlockedExtensionService, IBlockedExtensionService } from '../../../platform/chat/common/blockedExtensionService';
 import { IChatQuotaService } from '../../../platform/chat/common/chatQuotaService';
 import { ChatQuotaService } from '../../../platform/chat/common/chatQuotaServiceImpl';

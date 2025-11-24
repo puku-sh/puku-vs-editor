@@ -6,7 +6,6 @@
 import * as l10n from '@vscode/l10n';
 import type { ChatRequest, ChatRequestTurn2, ChatResponseStream, ChatResult, Location } from 'vscode';
 import { IAuthenticationService } from '../../../platform/authentication/common/authentication';
-import { IAuthenticationChatUpgradeService } from '../../../platform/authentication/common/authenticationUpgrade';
 import { getChatParticipantIdFromName, getChatParticipantNameFromId, workspaceAgentName } from '../../../platform/chat/common/chatAgents';
 import { CanceledMessage, ChatLocation } from '../../../platform/chat/common/commonTypes';
 import { IEndpointProvider } from '../../../platform/endpoint/common/endpointProvider';
@@ -83,7 +82,6 @@ export class ChatParticipantRequestHandler {
 		@ITabsAndEditorsService tabsAndEditorsService: ITabsAndEditorsService,
 		@ILogService private readonly _logService: ILogService,
 		@IAuthenticationService private readonly _authService: IAuthenticationService,
-		@IAuthenticationChatUpgradeService private readonly _authenticationUpgradeService: IAuthenticationChatUpgradeService,
 	) {
 		this.location = this.getLocation(request);
 
@@ -184,19 +182,11 @@ export class ChatParticipantRequestHandler {
 		// The user has confirmed that they want to auth, so prompt them.
 		const findConfirmRequest = this.request.acceptedConfirmationData?.find(ref => ref?.authPermissionPrompted);
 		if (findConfirmRequest) {
-			this.request = await this._authenticationUpgradeService.handleConfirmationRequest(this.stream, this.request, this.rawHistory);
 			this.turn.request.message = this.request.prompt;
 			return false;
 		}
 
-		// Only ask for confirmation if we're invoking the codebase tool or workspace chat participant
-		const isWorkspaceCall = this.request.toolReferences.some(ref => ref.name === ContributedToolName.Codebase) ||
-			this.chatAgentArgs.agentId === getChatParticipantIdFromName(workspaceAgentName);
-		// and only if we can't access all repos in the workspace
-		if (isWorkspaceCall && await this._authenticationUpgradeService.shouldRequestPermissiveSessionUpgrade()) {
-			this._authenticationUpgradeService.showPermissiveSessionUpgradeInChat(this.stream, this.request);
-			return true;
-		}
+		// GitHub authentication removed - always return false
 		return false;
 	}
 

@@ -13,14 +13,7 @@ import { CopilotToken } from './copilotToken';
 import { ICopilotTokenManager } from './copilotTokenManager';
 import { ICopilotTokenStore } from './copilotTokenStore';
 
-// Minimum set of scopes needed for Copilot to work
-export const GITHUB_SCOPE_USER_EMAIL = ['user:email'];
-
-// Old list of scopes still used for backwards compatibility
-export const GITHUB_SCOPE_READ_USER = ['read:user'];
-
-// The same scopes that GitHub Pull Request, GitHub Repositories, and others use
-export const GITHUB_SCOPE_ALIGNED = ['read:user', 'user:email', 'repo', 'workflow'];
+// GitHub authentication removed - using Puku authentication only
 
 export class MinimalModeError extends Error {
 	constructor() {
@@ -176,21 +169,17 @@ export abstract class BaseAuthenticationService extends Disposable implements IA
 
 	//#endregion
 
-	//#region Any GitHub Token
+	//#region GitHub Token - REMOVED (Using Puku Auth)
 
 	protected _anyGitHubSession: AuthenticationSession | undefined;
 	get anyGitHubSession(): AuthenticationSession | undefined {
-		return this._anyGitHubSession;
+		return undefined; // GitHub auth removed
 	}
 	abstract getAnyGitHubSession(options?: AuthenticationGetSessionOptions): Promise<AuthenticationSession | undefined>;
 
-	//#endregion
-
-	//#region Permissive GitHub Token
-
 	protected _permissiveGitHubSession: AuthenticationSession | undefined;
 	get permissiveGitHubSession(): AuthenticationSession | undefined {
-		return this._permissiveGitHubSession;
+		return undefined; // GitHub auth removed
 	}
 	abstract getPermissiveGitHubSession(options: AuthenticationGetSessionOptions): Promise<AuthenticationSession | undefined>;
 
@@ -220,6 +209,13 @@ export abstract class BaseAuthenticationService extends Disposable implements IA
 			return token;
 		} catch (afterError) {
 			this._tokenStore.copilotToken = undefined;
+
+			// Special handling for PukuLoginRequired - don't store as error, auth flow will handle it
+			if (afterError instanceof Error && afterError.name === 'PukuLoginRequired') {
+				this._logService.debug('PukuLoginRequired error caught - auth flow will handle sign-in');
+				throw afterError;
+			}
+
 			const beforeError = this._copilotTokenError;
 			this._copilotTokenError = afterError;
 			// This handles the case where the user still can't get a Copilot Token,

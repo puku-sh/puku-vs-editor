@@ -9,7 +9,6 @@ import * as sinon from 'sinon';
 import * as vscode from 'vscode';
 import { IAuthenticationService } from '../../../../platform/authentication/common/authentication';
 import { CopilotToken } from '../../../../platform/authentication/common/copilotToken';
-import { setCopilotToken } from '../../../../platform/authentication/common/staticGitHubAuthenticationService';
 import { FailingDevContainerConfigurationService, IDevContainerConfigurationService } from '../../../../platform/devcontainer/common/devContainerConfigurationService';
 import { ICombinedEmbeddingIndex, VSCodeCombinedIndexImpl } from '../../../../platform/embeddings/common/vscodeIndex';
 import { IVSCodeExtensionContext } from '../../../../platform/extContext/common/extensionContext';

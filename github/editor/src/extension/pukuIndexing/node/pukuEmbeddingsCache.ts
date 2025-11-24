@@ -158,12 +158,12 @@ export class PukuEmbeddingsCache {
 			this._vecEnabled = false;
 		}
 
-		// Optimize for performance
+		// Optimize for performance and handle concurrent access
 		this._db.exec(`
-			PRAGMA journal_mode = OFF;
-			PRAGMA synchronous = 0;
+			PRAGMA busy_timeout = 5000;
+			PRAGMA journal_mode = WAL;
+			PRAGMA synchronous = NORMAL;
 			PRAGMA cache_size = 1000000;
-			PRAGMA locking_mode = EXCLUSIVE;
 			PRAGMA temp_store = MEMORY;
 		`);
 

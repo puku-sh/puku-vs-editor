@@ -1649,55 +1649,6 @@
 			{
 				"vendor": "pukuai",
 				"displayName": "Puku AI"
-			},
-			{
-				"vendor": "puku",
-				"displayName": "Puku AI"
-			},
-			{
-				"vendor": "azure",
-				"displayName": "Azure",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "anthropic",
-				"displayName": "Anthropic",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "xai",
-				"displayName": "xAI",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "ollama",
-				"displayName": "Ollama"
-			},
-			{
-				"vendor": "openai",
-				"displayName": "OpenAI",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "gemini",
-				"displayName": "Google",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "groq",
-				"displayName": "Groq",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "openrouter",
-				"displayName": "OpenRouter",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "customoai",
-				"when": "productQualityType != 'stable'",
-				"displayName": "OpenAI Compatible",
-				"managementCommand": "puku.chat.manageBYOK"
 			}
 		],
 		"interactiveSession": [
@@ -3357,8 +3308,8 @@
 					},
 					"puku.embeddings.endpoint": {
 						"type": "string",
-						"default": "http://localhost:11434/v1/embeddings",
-						"description": "Endpoint URL for embeddings API (proxy server)",
+						"default": "https://api.puku.sh/v1/embeddings",
+						"description": "Endpoint URL for embeddings API (Puku cloud service)",
 						"tags": [
 							"experimental"
 						]
