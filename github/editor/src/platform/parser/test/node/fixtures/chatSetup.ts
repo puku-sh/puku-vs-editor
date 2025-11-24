@@ -226,7 +226,7 @@ class SetupChatAgent extends Disposable implements IChatAgentImplementation {
 		} catch (error) {
 			progress({
 				kind: 'warning',
-				content: new MarkdownString(localize('copilotUnavailableWarning', "Copilot failed to get a response. Please try again."))
+				content: new MarkdownString(localize('copilotUnavailableWarning', "Puku AI failed to get a response. Please try again."))
 			});
 		}
 	}
@@ -263,7 +263,7 @@ class SetupChatAgent extends Disposable implements IChatAgentImplementation {
 			const timeoutHandle = setTimeout(() => {
 				progress({
 					kind: 'progressMessage',
-					content: new MarkdownString(localize('waitingCopilot2', "Copilot is almost ready.")),
+					content: new MarkdownString(localize('waitingCopilot2', "Puku AI is almost ready.")),
 				});
 			}, 10000);
 
@@ -278,8 +278,8 @@ class SetupChatAgent extends Disposable implements IChatAgentImplementation {
 					progress({
 						kind: 'warning',
 						content: new MarkdownString(ready === 'timedout' ?
-							localize('copilotTookLongWarning', "Copilot took too long to get ready. Please review the guidance in the Chat view.") :
-							localize('copilotFailedWarning', "Copilot failed to get ready. Please review the guidance in the Chat view.")
+							localize('copilotTookLongWarning', "Puku AI took too long to get ready. Please review the guidance in the Chat view.") :
+							localize('copilotFailedWarning', "Puku AI failed to get ready. Please review the guidance in the Chat view.")
 						)
 					});
 
@@ -386,7 +386,7 @@ class SetupChatAgent extends Disposable implements IChatAgentImplementation {
 				if (result.dialogSkipped) {
 					progress({
 						kind: 'progressMessage',
-						content: new MarkdownString(localize('copilotSetupSuccess', "Copilot setup finished successfully."))
+						content: new MarkdownString(localize('copilotSetupSuccess', "Puku AI setup finished successfully."))
 					});
 				} else if (requestModel) {
 					// Replace agent part with the actual Copilot agent
@@ -398,7 +398,7 @@ class SetupChatAgent extends Disposable implements IChatAgentImplementation {
 			} else {
 				progress({
 					kind: 'warning',
-					content: new MarkdownString(localize('copilotSetupError', "Copilot setup failed."))
+					content: new MarkdownString(localize('copilotSetupError', "Puku AI setup failed."))
 				});
 			}
 		}
@@ -700,7 +700,7 @@ class ChatSetup {
 
 		// SKU Settings
 		if (this.telemetryService.telemetryLevel !== TelemetryLevel.NONE) {
-			const settings = localize({ key: 'settings', comment: ['{Locked="["}', '{Locked="]({0})"}', '{Locked="]({1})"}'] }, "Copilot Free and Pro may show [public code]({0}) suggestions and we may use your data for product improvement. You can change these [settings]({1}) at any time.", defaultChat.publicCodeMatchesUrl, defaultChat.manageSettingsUrl);
+			const settings = localize({ key: 'settings', comment: ['{Locked="["}', '{Locked="]({0})"}', '{Locked="]({1})"}'] }, "Puku AI Free and Pro may show [public code]({0}) suggestions and we may use your data for product improvement. You can change these [settings]({1}) at any time.", defaultChat.publicCodeMatchesUrl, defaultChat.manageSettingsUrl);
 			element.appendChild($('p.setup-settings', undefined, disposables.add(markdown.render(new MarkdownString(settings, { isTrusted: true }))).element));
 		}
 
@@ -847,7 +847,7 @@ export class ChatSetupContribution extends Disposable implements IWorkbenchContr
 				if (success === false && !lifecycleService.willShutdown) {
 					const { confirmed } = await dialogService.confirm({
 						type: Severity.Error,
-						message: localize('setupErrorDialog', "Copilot setup failed. Would you like to try again?"),
+						message: localize('setupErrorDialog', "Puku AI setup failed. Would you like to try again?"),
 						primaryButton: localize('retry', "Retry"),
 					});
 
@@ -1139,7 +1139,7 @@ class ChatSetupController extends Disposable {
 			}
 
 			const trusted = await this.workspaceTrustRequestService.requestWorkspaceTrust({
-				message: localize('copilotWorkspaceTrust', "Copilot is currently only supported in trusted workspaces.")
+				message: localize('copilotWorkspaceTrust', "Puku AI is currently only supported in trusted workspaces.")
 			});
 			if (!trusted) {
 				this.telemetryService.publicLog2<InstallChatEvent, InstallChatClassification>('commandCenter.chatInstall', { installResult: 'failedNotTrusted', installDuration: watch.elapsed(), signUpErrorCode: undefined });

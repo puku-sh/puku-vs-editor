@@ -74,7 +74,7 @@ export class InlineChatIntent implements IIntent {
 		if (await this._ignoreService.isCopilotIgnored(request.location2.document.uri, token)) {
 			return {
 				errorDetails: {
-					message: l10n.t('inlineChat.ignored', "Copilot is disabled for this file."),
+					message: l10n.t('inlineChat.ignored', "Puku AI is disabled for this file."),
 				}
 			};
 		}

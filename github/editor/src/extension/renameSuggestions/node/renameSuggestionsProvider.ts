@@ -397,7 +397,7 @@ export class RenameSuggestionsProvider implements vscode.NewSymbolNamesProvider 
 				"languageId": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "Language ID of the document." },
 				"cancellationReason": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "Specify when exactly during the provider call the cancellation happened. Empty string if the cancellation didn't happen." },
 				"fetchResultType": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "Result of a fetch to endpoint" },
-				"replyFormat": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "Copilot reply format: 'jsonStringArray' | 'multiJsonStringArray' | 'list' | 'unknown'" },
+				"replyFormat": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "Puku AI reply format: 'jsonStringArray' | 'multiJsonStringArray' | 'list' | 'unknown'" },
 				"triggerKind": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "Rename suggestion trigger kind - 'automatic' | 'manual'" },
 				"promptConstructionTime": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "Time it took to construct the prompt", "isMeasurement": true },
 				"timeElapsedBeforeDelay": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "Time elapsed before delay starts", "isMeasurement": true },
