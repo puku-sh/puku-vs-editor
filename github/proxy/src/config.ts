@@ -42,33 +42,6 @@ export const config = {
 				contextLength: 128000,
 			},
 		},
-		{
-			name: 'GLM-4.6',
-			id: 'GLM-4.6',
-			capabilities: {
-				tools: true,
-				vision: true,
-				contextLength: 128000,
-			},
-		},
-		{
-			name: 'GLM-4.5',
-			id: 'GLM-4.5',
-			capabilities: {
-				tools: true,
-				vision: false,
-				contextLength: 128000,
-			},
-		},
-		{
-			name: 'GLM-4.5-Air',
-			id: 'GLM-4.5-Air',
-			capabilities: {
-				tools: false,
-				vision: false,
-				contextLength: 128000,
-			},
-		},
 	],
 	// FIM model configuration - uses Codestral via OpenRouter (supports native FIM)
 	fimModel: {

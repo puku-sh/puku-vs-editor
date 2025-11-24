@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
  *  Puku Editor - AI-powered code editor
  *  VS Code-specific implementation of Puku Authentication Service
- *  Bridges to VS Code layer's PukuAuthService via internal commands
+ *  Delegates to VS Code workbench's PukuAuthService for actual auth
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
@@ -9,9 +9,11 @@ import { IPukuAuthService, PukuAuthStatus, PukuToken, PukuUser } from '../common
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { Emitter } from '../../../util/vs/base/common/event';
 
+const PUKU_API_ENDPOINT = 'https://api.puku.sh';
+
 /**
  * VS Code-specific implementation of PukuAuthService
- * Bridges to VS Code core layer's PukuAuthService
+ * Delegates to VS Code workbench's PukuAuthService for actual authentication
  */
 export class VsCodePukuAuthService extends Disposable implements IPukuAuthService {
 	declare readonly _serviceBrand: undefined;
@@ -26,26 +28,32 @@ export class VsCodePukuAuthService extends Disposable implements IPukuAuthServic
 
 	constructor() {
 		super();
+	}
 
-		// Listen for authentication commands that might indicate auth state changed
-		// This ensures we refresh when VS Code layer authenticates
-		this._register(vscode.commands.registerCommand('_puku.refreshAuth', async () => {
-			console.log('[VsCodePukuAuthService] Refreshing auth state');
-			await this.initialize();
-		}));
+	/**
+	 * Get session token from VS Code workbench's Puku auth service
+	 */
+	private async _getSessionTokenFromVSCode(): Promise<string | undefined> {
+		try {
+			const result = await vscode.commands.executeCommand<{ token: string } | undefined>('_puku.getSessionToken');
+			return result?.token;
+		} catch (error) {
+			console.error('[VsCodePukuAuthService] Error getting session token:', error);
+			return undefined;
+		}
+	}
 
-		// Poll for auth changes every 5 seconds (as a fallback)
-		const pollInterval = setInterval(async () => {
-			if (this._status === PukuAuthStatus.Unauthenticated) {
-				const token = await this.getToken();
-				if (token) {
-					console.log('[VsCodePukuAuthService] Auth state changed, initializing');
-					await this.initialize();
-				}
-			}
-		}, 5000);
-
-		this._register({ dispose: () => clearInterval(pollInterval) });
+	/**
+	 * Get user info from VS Code workbench's Puku auth service
+	 */
+	private async _getUserInfoFromVSCode(): Promise<PukuUser | undefined> {
+		try {
+			const userInfo = await vscode.commands.executeCommand<{ id: string; name: string; email: string } | undefined>('_puku.getUserInfo');
+			return userInfo;
+		} catch (error) {
+			console.error('[VsCodePukuAuthService] Error getting user info:', error);
+			return undefined;
+		}
 	}
 
 	get status(): PukuAuthStatus {
@@ -65,53 +73,71 @@ export class VsCodePukuAuthService extends Disposable implements IPukuAuthServic
 	}
 
 	async initialize(): Promise<void> {
+		console.log('[VsCodePukuAuthService] Initializing extension auth service');
 		try {
 			const token = await this.getToken();
 			if (token) {
 				await this.getUser();
 				this._setStatus(PukuAuthStatus.Authenticated);
+				console.log('[VsCodePukuAuthService] Initialized as authenticated');
 			} else {
 				this._setStatus(PukuAuthStatus.Unauthenticated);
+				console.log('[VsCodePukuAuthService] Initialized as unauthenticated');
 			}
 		} catch (error) {
-			console.error('[PukuAuth] Initialization failed:', error);
+			console.error('[VsCodePukuAuthService] Initialization failed:', error);
 			this._setStatus(PukuAuthStatus.Error);
 		}
 	}
 
 	async getToken(): Promise<PukuToken | undefined> {
+		console.log('[VsCodePukuAuthService] getToken() called');
+
 		// Return cached token if still valid
 		if (this._token && this._token.expiresAt > Date.now() / 1000) {
+			console.log('[VsCodePukuAuthService] Returning cached token');
 			return this._token;
 		}
 
 		try {
-			// Bridge to VS Code layer: Use internal command to get Puku session token
-			const tokenData: any = await vscode.commands.executeCommand('_puku.getSessionToken');
+			// Get session token from VS Code workbench's Puku auth service via command
+			console.log('[VsCodePukuAuthService] Fetching session token from VS Code service...');
+			const sessionToken = await this._getSessionTokenFromVSCode();
+			console.log(`[VsCodePukuAuthService] Session token result: ${sessionToken ? 'FOUND (length: ' + sessionToken.length + ')' : 'NOT FOUND'}`);
 
-			if (!tokenData) {
-				console.log('[PukuAuth] No session token available from VS Code layer');
+			if (!sessionToken) {
+				console.log('[VsCodePukuAuthService] No session token from VS Code service');
 				return undefined;
 			}
 
+			console.log('[VsCodePukuAuthService] Got session token from VS Code service');
+
+			// Get user info from VS Code service
+			const userInfo = await this._getUserInfoFromVSCode();
+			if (userInfo) {
+				this._user = userInfo;
+				console.log('[VsCodePukuAuthService] User info:', userInfo.email);
+			}
+
 			this._token = {
-				token: tokenData.token || tokenData,
-				expiresAt: tokenData.expiresAt || (Date.now() / 1000 + 3600), // 1 hour default
-				refreshIn: tokenData.refreshIn || 3500,
-				endpoints: tokenData.endpoints || {
-					api: 'https://api.puku.sh',
-					embeddings: 'https://api.puku.sh/v1/embeddings'
+				token: sessionToken,
+				expiresAt: (Date.now() / 1000) + (7 * 24 * 3600), // 7 days
+				refreshIn: (7 * 24 * 3600) - 3600, // Refresh 1 hour before expiry
+				username: userInfo?.email || 'puku-user',
+				endpoints: {
+					api: PUKU_API_ENDPOINT,
+					embeddings: `${PUKU_API_ENDPOINT}/v1/embeddings`
 				},
-				indexingEnabled: tokenData.indexingEnabled !== false,
-				semanticSearchEnabled: tokenData.semanticSearchEnabled !== false,
+				indexingEnabled: true,
+				semanticSearchEnabled: true,
 			};
 
-			// Schedule token refresh
+			console.log('[VsCodePukuAuthService] Created PukuToken, updating status to Authenticated');
+			this._setStatus(PukuAuthStatus.Authenticated);
 			this._scheduleTokenRefresh();
-
 			return this._token;
 		} catch (error) {
-			console.error('[PukuAuth] Error fetching token:', error);
+			console.error('[VsCodePukuAuthService] Error fetching token:', error);
 			return undefined;
 		}
 	}
@@ -122,24 +148,25 @@ export class VsCodePukuAuthService extends Disposable implements IPukuAuthServic
 		}
 
 		try {
-			// Bridge to VS Code layer: Use internal command to get Puku user info
-			const userData: any = await vscode.commands.executeCommand('_puku.getUserInfo');
-
-			if (!userData) {
-				console.log('[PukuAuth] No user info available from VS Code layer');
-				return undefined;
-			}
-
-			this._user = {
-				id: userData.id,
-				name: userData.name,
-				email: userData.email,
-			};
-
+			this._user = await this._getUserInfoFromVSCode();
 			return this._user;
 		} catch (error) {
-			console.error('[PukuAuth] Error fetching user:', error);
+			console.error('[VsCodePukuAuthService] Error fetching user:', error);
 			return undefined;
+		}
+	}
+
+	async signIn(): Promise<void> {
+		try {
+			console.log('[VsCodePukuAuthService] Triggering sign-in via VS Code workbench service');
+			// Call VS Code workbench's Puku auth service to start Google OAuth
+			await vscode.commands.executeCommand('_puku.signIn');
+			// Wait a bit for the sign-in to complete
+			await new Promise(resolve => setTimeout(resolve, 1000));
+			await this.initialize();
+		} catch (error) {
+			console.error('[VsCodePukuAuthService] Sign-in failed:', error);
+			throw error;
 		}
 	}
 
@@ -151,6 +178,7 @@ export class VsCodePukuAuthService extends Disposable implements IPukuAuthServic
 			this._refreshTimeout = undefined;
 		}
 		this._setStatus(PukuAuthStatus.Unauthenticated);
+		vscode.window.showInformationMessage('Signed out from Puku');
 	}
 
 	private _setStatus(status: PukuAuthStatus): void {

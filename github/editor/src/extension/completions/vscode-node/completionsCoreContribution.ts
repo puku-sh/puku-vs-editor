@@ -43,8 +43,9 @@ export class CompletionsCoreContribution extends Disposable {
 			const overrideProxyUrl = configurationService.getConfig(ConfigKey.Shared.DebugOverrideProxyUrl);
 			const copilotToken = this._copilotToken.read(reader);
 
-			// Puku Editor: Force enable inline completions for testing
-			const forceEnable = true;
+			// Puku Editor: Disable Copilot inline completions if Puku AI is configured
+			const pukuAIEndpoint = configurationService.getConfig(ConfigKey.PukuAIEndpoint);
+			const usePukuAI = !!pukuAIEndpoint;
 
 			console.log('[CompletionsCoreContribution] Autorun triggered:', {
 				codeUnification: unificationStateValue?.codeUnification,
@@ -53,15 +54,17 @@ export class CompletionsCoreContribution extends Disposable {
 				isNoAuthUser: copilotToken?.isNoAuthUser,
 				overrideProxyUrl,
 				hasToken: copilotToken !== undefined,
-				forceEnable
+				usePukuAI,
+				pukuAIEndpoint
 			});
 
-			if (unificationStateValue?.codeUnification || extensionUnification || configEnabled || copilotToken?.isNoAuthUser || overrideProxyUrl || forceEnable) {
-				console.log('[CompletionsCoreContribution] Registering inline completion provider');
+			// Puku Editor: Don't register Copilot provider if Puku AI is configured
+			if (!usePukuAI && (unificationStateValue?.codeUnification || extensionUnification || configEnabled || copilotToken?.isNoAuthUser || overrideProxyUrl)) {
+				console.log('[CompletionsCoreContribution] Registering Copilot inline completion provider');
 				const provider = this._getOrCreateProvider();
 				reader.store.add(languages.registerInlineCompletionItemProvider({ pattern: '**' }, provider, { debounceDelayMs: 0, excludes: ['puku'], groupId: 'completions' }));
 			} else {
-				console.log('[CompletionsCoreContribution] NOT registering inline completion provider - conditions not met');
+				console.log('[CompletionsCoreContribution] NOT registering Copilot inline completion provider -', usePukuAI ? 'Puku AI is configured' : 'conditions not met');
 			}
 
 			void commands.executeCommand('setContext', 'puku.extensionUnification.activated', extensionUnification);
