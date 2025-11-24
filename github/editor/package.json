@@ -20,7 +20,7 @@
 		"url": "https://github.com/puku-ai/puku-editor/issues"
 	},
 	"qna": "https://github.com/puku-ai/puku-editor/discussions",
-	"icon": "assets/copilot.png",
+	"icon": "assets/puku.png",
 	"pricing": "Trial",
 	"engines": {
 		"vscode": "^1.107.0",
@@ -81,7 +81,7 @@
 	],
 	"activationEvents": [
 		"onStartupFinished",
-		"onLanguageModelChat:copilot",
+		"onLanguageModelChat:puku",
 		"onUri",
 		"onFileSystem:ccreq",
 		"onFileSystem:ccsettings"
@@ -143,9 +143,9 @@
 			{
 				"name": "puku_searchCodebase",
 				"toolReferenceName": "codebase",
-				"displayName": "%copilot.tools.searchCodebase.name%",
+				"displayName": "%puku.tools.searchCodebase.name%",
 				"icon": "$(folder)",
-				"userDescription": "%copilot.codebase.tool.description%",
+				"userDescription": "%puku.codebase.tool.description%",
 				"modelDescription": "Run a natural language search for relevant code or documentation comments from the user's current workspace. Returns relevant code snippets from the user's current workspace if it is large, or the full contents of the workspace if it is small.",
 				"tags": [
 					"codesearch",
@@ -167,9 +167,9 @@
 			{
 				"name": "puku_searchWorkspaceSymbols",
 				"toolReferenceName": "symbols",
-				"displayName": "%copilot.tools.searchWorkspaceSymbols.name%",
+				"displayName": "%puku.tools.searchWorkspaceSymbols.name%",
 				"icon": "$(symbol)",
-				"userDescription": "%copilot.workspaceSymbols.tool.description%",
+				"userDescription": "%puku.workspaceSymbols.tool.description%",
 				"modelDescription": "Search the user's workspace for code symbols using language services. Use this tool when the user is looking for a specific symbol in their workspace.",
 				"tags": [
 					"vscode_codesearch"
@@ -190,10 +190,10 @@
 			{
 				"name": "puku_listCodeUsages",
 				"toolReferenceName": "usages",
-				"displayName": "%copilot.tools.listCodeUsages.name%",
+				"displayName": "%puku.tools.listCodeUsages.name%",
 				"icon": "$(references)",
 				"canBeReferencedInPrompt": true,
-				"userDescription": "%copilot.listCodeUsages.tool.description%",
+				"userDescription": "%puku.listCodeUsages.tool.description%",
 				"modelDescription": "Request to list all usages (references, definitions, implementations etc) of a function, class, method, variable etc. Use this tool when \n1. Looking for a sample implementation of an interface or class\n2. Checking how a function is used throughout the codebase.\n3. Including and updating all usages when changing a function, method, or constructor",
 				"tags": [
 					"vscode_codesearch"
@@ -221,9 +221,9 @@
 			{
 				"name": "puku_getVSCodeAPI",
 				"toolReferenceName": "vscodeAPI",
-				"displayName": "%copilot.tools.getVSCodeAPI.name%",
+				"displayName": "%puku.tools.getVSCodeAPI.name%",
 				"icon": "$(references)",
-				"userDescription": "%copilot.vscode.tool.description%",
+				"userDescription": "%puku.vscode.tool.description%",
 				"modelDescription": "Get comprehensive VS Code API documentation and references for extension development. This tool provides authoritative documentation for VS Code's extensive API surface, including proposed APIs, contribution points, and best practices. Use this tool for understanding complex VS Code API interactions.\n\nWhen to use this tool:\n- User asks about specific VS Code APIs, interfaces, or extension capabilities\n- Need documentation for VS Code extension contribution points (commands, views, settings, etc.)\n- Questions about proposed APIs and their usage patterns\n- Understanding VS Code extension lifecycle, activation events, and packaging\n- Best practices for VS Code extension development architecture\n- API examples and code patterns for extension features\n- Troubleshooting extension-specific issues or API limitations\n\nWhen NOT to use this tool:\n- Creating simple standalone files or scripts unrelated to VS Code extensions\n- General programming questions not specific to VS Code extension development\n- Questions about using VS Code as an editor (user-facing features)\n- Non-extension related development tasks\n- File creation or editing that doesn't involve VS Code extension APIs\n\nCRITICAL usage guidelines:\n1. Always include specific API names, interfaces, or concepts in your query\n2. Mention the extension feature you're trying to implement\n3. Include context about proposed vs stable APIs when relevant\n4. Reference specific contribution points when asking about extension manifest\n5. Be specific about the VS Code version or API version when known\n\nScope: This tool is for EXTENSION DEVELOPMENT ONLY - building tools that extend VS Code itself, not for general file creation or non-extension programming tasks.",
 				"inputSchema": {
 					"type": "object",
@@ -243,7 +243,7 @@
 			{
 				"name": "puku_findFiles",
 				"toolReferenceName": "fileSearch",
-				"displayName": "%copilot.tools.findFiles.name%",
+				"displayName": "%puku.tools.findFiles.name%",
 				"modelDescription": "Search for files in the workspace by glob pattern. This only returns the paths of matching files. Use this tool when you know the exact filename pattern of the files you're searching for. Glob patterns match from the root of the workspace folder. Examples:\n- **/*.{js,ts} to match all js/ts files in the workspace.\n- src/** to match all files under the top-level src folder.\n- **/foo/**/*.js to match all js files under any foo folder in the workspace.",
 				"tags": [
 					"vscode_codesearch"
@@ -268,7 +268,7 @@
 			{
 				"name": "puku_findTextInFiles",
 				"toolReferenceName": "textSearch",
-				"displayName": "%copilot.tools.findTextInFiles.name%",
+				"displayName": "%puku.tools.findTextInFiles.name%",
 				"modelDescription": "Do a fast text search in the workspace. Use this tool when you want to search with an exact string or regex. If you are not sure what words will appear in the workspace, prefer using regex patterns with alternation (|) or character classes to search for multiple potential words at once instead of making separate searches. For example, use 'function|method|procedure' to look for all of those words at once. Use includePattern to search within files matching a specific pattern, or in a specific file, using a relative path. Use this tool when you want to see an overview of a particular file, instead of using read_file many times to look for code within a file.",
 				"tags": [
 					"vscode_codesearch"
@@ -301,9 +301,9 @@
 			},
 			{
 				"name": "puku_applyPatch",
-				"displayName": "%copilot.tools.applyPatch.name%",
+				"displayName": "%puku.tools.applyPatch.name%",
 				"toolReferenceName": "applyPatch",
-				"userDescription": "%copilot.tools.applyPatch.description%",
+				"userDescription": "%puku.tools.applyPatch.description%",
 				"modelDescription": "Edit text files. Do not use this tool to edit Jupyter notebooks. `apply_patch` allows you to execute a diff/patch against a text file, but the format of the diff specification is unique to this task, so pay careful attention to these instructions. To use the `apply_patch` command, you should pass a message of the following structure as \"input\":\n\n*** Begin Patch\n[YOUR_PATCH]\n*** End Patch\n\nWhere [YOUR_PATCH] is the actual content of your patch, specified in the following V4A diff format.\n\n*** [ACTION] File: [/absolute/path/to/file] -> ACTION can be one of Add, Update, or Delete.\nAn example of a message that you might pass as \"input\" to this function, in order to apply a patch, is shown below.\n\n*** Begin Patch\n*** Update File: /Users/someone/pygorithm/searching/binary_search.py\n@@class BaseClass\n@@    def search():\n-        pass\n+        raise NotImplementedError()\n\n@@class Subclass\n@@    def search():\n-        pass\n+        raise NotImplementedError()\n\n*** End Patch\nDo not use line numbers in this diff format.",
 				"inputSchema": {
 					"type": "object",
@@ -326,7 +326,7 @@
 			{
 				"name": "puku_readFile",
 				"toolReferenceName": "readFile",
-				"displayName": "%copilot.tools.readFile.name%",
+				"displayName": "%puku.tools.readFile.name%",
 				"modelDescription": "Read the contents of a file.\n\nYou must specify the line range you're interested in. Line numbers are 1-indexed. If the file contents returned are insufficient for your task, you may call this tool again to retrieve more content. Prefer reading larger ranges over doing many small reads.",
 				"tags": [
 					"vscode_codesearch"
@@ -357,7 +357,7 @@
 			{
 				"name": "puku_listDirectory",
 				"toolReferenceName": "listDirectory",
-				"displayName": "%copilot.tools.listDirectory.name%",
+				"displayName": "%puku.tools.listDirectory.name%",
 				"modelDescription": "List the contents of a directory. Result will have the name of the child. If the name ends in /, it's a folder, otherwise a file",
 				"tags": [
 					"vscode_codesearch"
@@ -377,11 +377,11 @@
 			},
 			{
 				"name": "puku_getErrors",
-				"displayName": "%copilot.tools.getErrors.name%",
+				"displayName": "%puku.tools.getErrors.name%",
 				"toolReferenceName": "problems",
 				"canBeReferencedInPrompt": true,
 				"icon": "$(error)",
-				"userDescription": "%copilot.tools.errors.description%",
+				"userDescription": "%puku.tools.errors.description%",
 				"modelDescription": "Get any compile or lint errors in a specific file or across all files. If the user mentions errors or problems in a file, they may be referring to these. Use the tool to see the same errors that the user is seeing. If the user asks you to analyze all errors, or does not specify a file, use this tool to gather errors for all files. Also use this tool after editing a file to validate the change.",
 				"tags": [],
 				"inputSchema": {
@@ -399,17 +399,17 @@
 			},
 			{
 				"name": "puku_readProjectStructure",
-				"displayName": "%copilot.tools.readProjectStructure.name%",
+				"displayName": "%puku.tools.readProjectStructure.name%",
 				"modelDescription": "Get a file tree representation of the workspace.",
 				"tags": []
 			},
 			{
 				"name": "puku_getChangedFiles",
-				"displayName": "%copilot.tools.getChangedFiles.name%",
+				"displayName": "%puku.tools.getChangedFiles.name%",
 				"toolReferenceName": "changes",
 				"icon": "$(diff)",
 				"canBeReferencedInPrompt": true,
-				"userDescription": "%copilot.tools.changes.description%",
+				"userDescription": "%puku.tools.changes.description%",
 				"modelDescription": "Get git diffs of current file changes in a git repository. Don't forget that you can use run_in_terminal to run git commands in a terminal as well.",
 				"tags": [
 					"vscode_codesearch"
@@ -439,9 +439,9 @@
 			{
 				"name": "puku_testFailure",
 				"toolReferenceName": "testFailure",
-				"displayName": "%copilot.tools.testFailure.name%",
+				"displayName": "%puku.tools.testFailure.name%",
 				"icon": "$(beaker)",
-				"userDescription": "%copilot.testFailure.tool.description%",
+				"userDescription": "%puku.testFailure.tool.description%",
 				"modelDescription": "Includes test failure information in the prompt.",
 				"inputSchema": {},
 				"tags": [
@@ -456,7 +456,7 @@
 			{
 				"name": "puku_updateUserPreferences",
 				"toolReferenceName": "updateUserPreferences",
-				"displayName": "%copilot.tools.updateUserPreferences.name%",
+				"displayName": "%puku.tools.updateUserPreferences.name%",
 				"modelDescription": "Update the user's preferences file with new information about the user and their coding preferences, based on the current chat history.",
 				"canBeReferencedInPrompt": true,
 				"tags": [],
@@ -585,7 +585,7 @@
 				"icon": "$(notebook)",
 				"toolReferenceName": "newJupyterNotebook",
 				"modelDescription": "Generates a new Jupyter Notebook (.ipynb) in VS Code. Jupyter Notebooks are interactive documents commonly used for data exploration, analysis, visualization, and combining code with narrative text. Prefer creating plain Python files or similar unless a user explicitly requests creating a new Jupyter Notebook or already has a Jupyter Notebook opened or exists in the workspace.",
-				"userDescription": "%copilot.tools.newJupyterNotebook.description%",
+				"userDescription": "%puku.tools.newJupyterNotebook.description%",
 				"inputSchema": {
 					"type": "object",
 					"properties": {
@@ -603,7 +603,7 @@
 			{
 				"name": "puku_insertEdit",
 				"toolReferenceName": "insertEdit",
-				"displayName": "%copilot.tools.insertEdit.name%",
+				"displayName": "%puku.tools.insertEdit.name%",
 				"modelDescription": "Insert new code into an existing file in the workspace. Use this tool once per file that needs to be modified, even if there are multiple changes for a file. Generate the \"explanation\" property first.\nThe system is very smart and can understand how to apply your edits to the files, you just need to provide minimal hints.\nAvoid repeating existing code, instead use comments to represent regions of unchanged code. Be as concise as possible. For example:\n// ...existing code...\n{ changed code }\n// ...existing code...\n{ changed code }\n// ...existing code...\n\nHere is an example of how you should use format an edit to an existing Person class:\nclass Person {\n\t// ...existing code...\n\tage: number;\n\t// ...existing code...\n\tgetAge() {\n\treturn this.age;\n\t}\n}",
 				"tags": [],
 				"inputSchema": {
@@ -632,8 +632,8 @@
 			{
 				"name": "puku_createFile",
 				"toolReferenceName": "createFile",
-				"displayName": "%copilot.tools.createFile.name%",
-				"userDescription": "%copilot.tools.createFile.description%",
+				"displayName": "%puku.tools.createFile.name%",
+				"userDescription": "%puku.tools.createFile.description%",
 				"modelDescription": "This is a tool for creating a new file in the workspace. The file will be created with the specified content. The directory will be created if it does not already exist. Never use this tool to edit a file that already exists.",
 				"tags": [],
 				"inputSchema": {
@@ -657,8 +657,8 @@
 			{
 				"name": "puku_createDirectory",
 				"toolReferenceName": "createDirectory",
-				"displayName": "%copilot.tools.createDirectory.name%",
-				"userDescription": "%copilot.tools.createDirectory.description%",
+				"displayName": "%puku.tools.createDirectory.name%",
+				"userDescription": "%puku.tools.createDirectory.description%",
 				"modelDescription": "Create a new directory structure in the workspace. Will recursively create all directories in the path, like mkdir -p. You do not need to use this tool before using create_file, that tool will automatically create the needed directories.",
 				"tags": [],
 				"inputSchema": {
@@ -676,9 +676,9 @@
 			},
 			{
 				"name": "puku_openSimpleBrowser",
-				"displayName": "%copilot.tools.openSimpleBrowser.name%",
+				"displayName": "%puku.tools.openSimpleBrowser.name%",
 				"modelDescription": "Preview a website or open a URL in the editor's Simple Browser. Useful for quickly viewing locally hosted websites, demos, or resources without leaving the coding environment.",
-				"userDescription": "%copilot.tools.openSimpleBrowser.description%",
+				"userDescription": "%puku.tools.openSimpleBrowser.description%",
 				"toolReferenceName": "openSimpleBrowser",
 				"canBeReferencedInPrompt": true,
 				"tags": [],
@@ -698,7 +698,7 @@
 			{
 				"name": "puku_replaceString",
 				"toolReferenceName": "replaceString",
-				"displayName": "%copilot.tools.replaceString.name%",
+				"displayName": "%puku.tools.replaceString.name%",
 				"modelDescription": "This is a tool for making edits in an existing file in the workspace. For moving or renaming files, use run in terminal tool with the 'mv' command instead. For larger edits, split them into smaller edits and call the edit tool multiple times to ensure accuracy. Before editing, always ensure you have the context to understand the file's contents and context. To edit a file, provide: 1) filePath (absolute path), 2) oldString (MUST be the exact literal text to replace including all whitespace, indentation, newlines, and surrounding code etc), and 3) newString (MUST be the exact literal text to replace \\`oldString\\` with (also including all whitespace, indentation, newlines, and surrounding code etc.). Ensure the resulting code is correct and idiomatic.). Each use of this tool replaces exactly ONE occurrence of oldString.\n\nCRITICAL for \\`oldString\\`: Must uniquely identify the single instance to change. Include at least 3 lines of context BEFORE and AFTER the target text, matching whitespace and indentation precisely. If this string matches multiple locations, or does not match exactly, the tool will fail. Never use 'Lines 123-456 omitted' from summarized documents or ...existing code... comments in the oldString or newString.",
 				"when": "!config.puku.chat.disableReplaceTool",
 				"inputSchema": {
@@ -727,7 +727,7 @@
 			{
 				"name": "puku_multiReplaceString",
 				"toolReferenceName": "multiReplaceString",
-				"displayName": "%copilot.tools.multiReplaceString.name%",
+				"displayName": "%puku.tools.multiReplaceString.name%",
 				"modelDescription": "This tool allows you to apply multiple replace_string_in_file operations in a single call, which is more efficient than calling replace_string_in_file multiple times. It takes an array of replacement operations and applies them sequentially. Each replacement operation has the same parameters as replace_string_in_file: filePath, oldString, newString, and explanation. This tool is ideal when you need to make multiple edits across different files or multiple edits in the same file. The tool will provide a summary of successful and failed operations.",
 				"when": "!config.puku.chat.disableReplaceTool",
 				"inputSchema": {
@@ -779,7 +779,7 @@
 			{
 				"name": "puku_editNotebook",
 				"toolReferenceName": "editNotebook",
-				"displayName": "%copilot.tools.editNotebook.name%",
+				"displayName": "%puku.tools.editNotebook.name%",
 				"modelDescription": "This is a tool for editing an existing Notebook file in the workspace. Generate the \"explanation\" property first.\nThe system is very smart and can understand how to apply your edits to the notebooks.\nWhen updating the content of an existing cell, ensure newCode preserves whitespace and indentation exactly and does NOT include any code markers such as (...existing code...).",
 				"tags": [
 					"enable_other_tool_puku_getNotebookSummary"
@@ -833,11 +833,11 @@
 			},
 			{
 				"name": "puku_runNotebookCell",
-				"displayName": "%copilot.tools.runNotebookCell.name%",
+				"displayName": "%puku.tools.runNotebookCell.name%",
 				"toolReferenceName": "runCell",
 				"icon": "$(play)",
 				"modelDescription": "This is a tool for running a code cell in a notebook file directly in the notebook editor. The output from the execution will be returned. Code cells should be run as they are added or edited when working through a problem to bring the kernel state up to date and ensure the code executes successfully. Code cells are ready to run and don't require any pre-processing. If asked to run the first cell in a notebook, you should run the first code cell since markdown cells cannot be executed. NOTE: Avoid executing Markdown cells or providing Markdown cell IDs, as Markdown cells cannot be  executed.",
-				"userDescription": "%copilot.tools.runNotebookCell.description%",
+				"userDescription": "%puku.tools.runNotebookCell.description%",
 				"tags": [
 					"enable_other_tool_puku_getNotebookSummary"
 				],
@@ -888,11 +888,11 @@
 			},
 			{
 				"name": "puku_readNotebookCellOutput",
-				"displayName": "%copilot.tools.getNotebookCellOutput.name%",
+				"displayName": "%puku.tools.getNotebookCellOutput.name%",
 				"toolReferenceName": "readNotebookCellOutput",
 				"icon": "$(notebook-render-output)",
 				"modelDescription": "This tool will retrieve the output for a notebook cell from its most recent execution or restored from disk. The cell may have output even when it has not been run in the current kernel session. This tool has a higher token limit for output length than the runNotebookCell tool.",
-				"userDescription": "%copilot.tools.getNotebookCellOutput.description%",
+				"userDescription": "%puku.tools.getNotebookCellOutput.description%",
 				"when": "userHasOpenedNotebook",
 				"tags": [],
 				"inputSchema": {
@@ -915,12 +915,12 @@
 			},
 			{
 				"name": "puku_fetchWebPage",
-				"displayName": "%copilot.tools.fetchWebPage.name%",
+				"displayName": "%puku.tools.fetchWebPage.name%",
 				"toolReferenceName": "fetch",
 				"when": "!isWeb",
 				"canBeReferencedInPrompt": true,
 				"icon": "$(globe)",
-				"userDescription": "%copilot.tools.fetchWebPage.description%",
+				"userDescription": "%puku.tools.fetchWebPage.description%",
 				"modelDescription": "Fetches the main content from a web page. This tool is useful for summarizing or analyzing the content of a webpage. You should use this tool when you think the user is looking for information from a specific webpage.",
 				"tags": [],
 				"inputSchema": {
@@ -946,11 +946,11 @@
 			},
 			{
 				"name": "puku_findTestFiles",
-				"displayName": "%copilot.tools.findTestFiles.name%",
+				"displayName": "%puku.tools.findTestFiles.name%",
 				"icon": "$(beaker)",
 				"canBeReferencedInPrompt": false,
 				"toolReferenceName": "findTestFiles",
-				"userDescription": "%copilot.tools.findTestFiles.description%",
+				"userDescription": "%puku.tools.findTestFiles.description%",
 				"modelDescription": "For a source code file, find the file that contains the tests. For a test file find the file that contains the code under test.",
 				"tags": [],
 				"inputSchema": {
@@ -970,11 +970,11 @@
 			},
 			{
 				"name": "puku_getDocInfo",
-				"displayName": "%copilot.tools.getDocInfo.name%",
+				"displayName": "%puku.tools.getDocInfo.name%",
 				"icon": "$(beaker)",
 				"canBeReferencedInPrompt": false,
 				"toolReferenceName": "docInfo",
-				"userDescription": "%copilot.tools.getDocInfo.description%",
+				"userDescription": "%puku.tools.getDocInfo.description%",
 				"modelDescription": "Find information about how to document it a symbol like a class or function. This tool is useful for generating documentation comments for code symbols. You should use this tool when you think the user is looking for information about how to document a specific code symbol.",
 				"tags": [],
 				"inputSchema": {
@@ -1053,8 +1053,8 @@
 			{
 				"name": "puku_memory",
 				"toolReferenceName": "memory",
-				"displayName": "%copilot.tools.memory.name%",
-				"userDescription": "%copilot.tools.memory.description%",
+				"displayName": "%puku.tools.memory.name%",
+				"userDescription": "%puku.tools.memory.description%",
 				"modelDescription": "Manage persistent memory across conversations. This tool allows you to create, view, update, and delete memory files that persist between chat sessions. Use this to remember important information about the user, their preferences, project context, or anything that should be recalled in future conversations. Available commands: view (list/read memories), create (new memory file), str_replace (edit content), insert (add content), delete (remove memory), rename (change filename).",
 				"icon": "$(database)",
 				"when": "config.puku.chat.tools.memory.enabled",
@@ -1134,7 +1134,7 @@
 		"languageModelToolSets": [
 			{
 				"name": "edit",
-				"description": "%copilot.toolSet.editing.description%",
+				"description": "%puku.toolSet.editing.description%",
 				"icon": "$(pencil)",
 				"tools": [
 					"createFile",
@@ -1146,7 +1146,7 @@
 			},
 			{
 				"name": "runNotebooks",
-				"description": "%copilot.toolSet.runNotebook.description%",
+				"description": "%puku.toolSet.runNotebook.description%",
 				"icon": "$(notebook)",
 				"tools": [
 					"runCell",
@@ -1156,7 +1156,7 @@
 			},
 			{
 				"name": "search",
-				"description": "%copilot.toolSet.search.description%",
+				"description": "%puku.toolSet.search.description%",
 				"icon": "$(search)",
 				"tools": [
 					"fileSearch",
@@ -1169,7 +1169,7 @@
 			},
 			{
 				"name": "new",
-				"description": "%copilot.toolSet.new.description%",
+				"description": "%puku.toolSet.new.description%",
 				"icon": "$(new-folder)",
 				"tools": [
 					"newWorkspace",
@@ -1184,7 +1184,7 @@
 				"id": "puku.default",
 				"name": "Puku",
 				"fullName": "Puku Editor",
-				"description": "%copilot.description%",
+				"description": "%puku.description%",
 				"isDefault": true,
 				"locations": [
 					"panel"
@@ -1220,7 +1220,7 @@
 				"id": "puku.editingSession",
 				"name": "Puku",
 				"fullName": "Puku Editor",
-				"description": "%copilot.edits.description%",
+				"description": "%puku.edits.description%",
 				"isDefault": true,
 				"locations": [
 					"panel"
@@ -1234,7 +1234,7 @@
 				"id": "puku.editingSessionEditor",
 				"name": "Puku",
 				"fullName": "Puku Editor",
-				"description": "%copilot.edits.description%",
+				"description": "%puku.edits.description%",
 				"isDefault": true,
 				"when": "config.inlineChat.enableV2",
 				"locations": [
@@ -1245,7 +1245,7 @@
 				"id": "puku.editingSession2",
 				"name": "Puku",
 				"fullName": "Puku Editor",
-				"description": "%copilot.edits.description%",
+				"description": "%puku.edits.description%",
 				"isDefault": true,
 				"locations": [
 					"panel"
@@ -1259,7 +1259,7 @@
 				"id": "puku.editsAgent",
 				"name": "agent",
 				"fullName": "Puku Editor",
-				"description": "%copilot.agent.description%",
+				"description": "%puku.agent.description%",
 				"locations": [
 					"panel"
 				],
@@ -1294,7 +1294,7 @@
 				"id": "puku.editor",
 				"name": "Puku",
 				"fullName": "Puku Editor",
-				"description": "%copilot.description%",
+				"description": "%puku.description%",
 				"isDefault": true,
 				"locations": [
 					"editor"
@@ -1312,7 +1312,7 @@
 				"commands": [
 					{
 						"name": "generate",
-						"description": "%copilot.workspace.generate.description%",
+						"description": "%puku.workspace.generate.description%",
 						"disambiguation": [
 							{
 								"category": "generate",
@@ -1325,7 +1325,7 @@
 					},
 					{
 						"name": "edit",
-						"description": "%copilot.workspace.edit.inline.description%",
+						"description": "%puku.workspace.edit.inline.description%",
 						"disambiguation": [
 							{
 								"category": "edit",
@@ -1338,7 +1338,7 @@
 					},
 					{
 						"name": "doc",
-						"description": "%copilot.workspace.doc.description%",
+						"description": "%puku.workspace.doc.description%",
 						"disambiguation": [
 							{
 								"category": "doc",
@@ -1351,7 +1351,7 @@
 					},
 					{
 						"name": "fix",
-						"description": "%copilot.workspace.fix.description%",
+						"description": "%puku.workspace.fix.description%",
 						"disambiguation": [
 							{
 								"category": "fix",
@@ -1364,7 +1364,7 @@
 					},
 					{
 						"name": "explain",
-						"description": "%copilot.workspace.explain.description%",
+						"description": "%puku.workspace.explain.description%",
 						"disambiguation": [
 							{
 								"category": "explain",
@@ -1377,12 +1377,12 @@
 					},
 					{
 						"name": "review",
-						"description": "%copilot.workspace.review.description%",
+						"description": "%puku.workspace.review.description%",
 						"when": "puku.advanced.review.intent"
 					},
 					{
 						"name": "tests",
-						"description": "%copilot.workspace.tests.description%",
+						"description": "%puku.workspace.tests.description%",
 						"disambiguation": [
 							{
 								"category": "tests",
@@ -1399,7 +1399,7 @@
 				"id": "puku.notebook",
 				"name": "Puku",
 				"fullName": "Puku Editor",
-				"description": "%copilot.description%",
+				"description": "%puku.description%",
 				"isDefault": true,
 				"locations": [
 					"notebook"
@@ -1408,11 +1408,11 @@
 				"commands": [
 					{
 						"name": "fix",
-						"description": "%copilot.workspace.fix.description%"
+						"description": "%puku.workspace.fix.description%"
 					},
 					{
 						"name": "explain",
-						"description": "%copilot.workspace.explain.description%"
+						"description": "%puku.workspace.explain.description%"
 					}
 				]
 			},
@@ -1420,7 +1420,7 @@
 				"id": "puku.notebookEditorAgent",
 				"name": "Puku",
 				"fullName": "Puku Editor",
-				"description": "%copilot.description%",
+				"description": "%puku.description%",
 				"isDefault": true,
 				"locations": [
 					"notebook"
@@ -1429,11 +1429,11 @@
 				"commands": [
 					{
 						"name": "fix",
-						"description": "%copilot.workspace.fix.description%"
+						"description": "%puku.workspace.fix.description%"
 					},
 					{
 						"name": "explain",
-						"description": "%copilot.workspace.explain.description%"
+						"description": "%puku.workspace.explain.description%"
 					}
 				]
 			},
@@ -1441,9 +1441,9 @@
 				"id": "puku.workspace",
 				"name": "workspace",
 				"fullName": "Workspace",
-				"description": "%copilot.workspace.description%",
+				"description": "%puku.workspace.description%",
 				"when": "!puku.interactiveSession.disabled",
-				"sampleRequest": "%copilot.workspace.sampleRequest%",
+				"sampleRequest": "%puku.workspace.sampleRequest%",
 				"locations": [
 					"panel"
 				],
@@ -1473,16 +1473,16 @@
 				"commands": [
 					{
 						"name": "explain",
-						"description": "%copilot.workspace.explain.description%"
+						"description": "%puku.workspace.explain.description%"
 					},
 					{
 						"name": "review",
-						"description": "%copilot.workspace.review.description%",
+						"description": "%puku.workspace.review.description%",
 						"when": "puku.advanced.review.intent"
 					},
 					{
 						"name": "tests",
-						"description": "%copilot.workspace.tests.description%",
+						"description": "%puku.workspace.tests.description%",
 						"disambiguation": [
 							{
 								"category": "create_tests",
@@ -1495,13 +1495,13 @@
 					},
 					{
 						"name": "fix",
-						"description": "%copilot.workspace.fix.description%",
-						"sampleRequest": "%copilot.workspace.fix.sampleRequest%"
+						"description": "%puku.workspace.fix.description%",
+						"sampleRequest": "%puku.workspace.fix.sampleRequest%"
 					},
 					{
 						"name": "new",
-						"description": "%copilot.workspace.new.description%",
-						"sampleRequest": "%copilot.workspace.new.sampleRequest%",
+						"description": "%puku.workspace.new.description%",
+						"sampleRequest": "%puku.workspace.new.sampleRequest%",
 						"isSticky": true,
 						"disambiguation": [
 							{
@@ -1517,8 +1517,8 @@
 					},
 					{
 						"name": "newNotebook",
-						"description": "%copilot.workspace.newNotebook.description%",
-						"sampleRequest": "%copilot.workspace.newNotebook.sampleRequest%",
+						"description": "%puku.workspace.newNotebook.description%",
+						"sampleRequest": "%puku.workspace.newNotebook.sampleRequest%",
 						"disambiguation": [
 							{
 								"category": "create_jupyter_notebook",
@@ -1531,14 +1531,14 @@
 					},
 					{
 						"name": "semanticSearch",
-						"description": "%copilot.workspace.semanticSearch.description%",
-						"sampleRequest": "%copilot.workspace.semanticSearch.sampleRequest%",
+						"description": "%puku.workspace.semanticSearch.description%",
+						"sampleRequest": "%puku.workspace.semanticSearch.sampleRequest%",
 						"when": "config.puku.semanticSearch.enabled"
 					},
 					{
 						"name": "setupTests",
-						"description": "%copilot.vscode.setupTests.description%",
-						"sampleRequest": "%copilot.vscode.setupTests.sampleRequest%",
+						"description": "%puku.vscode.setupTests.description%",
+						"sampleRequest": "%puku.vscode.setupTests.sampleRequest%",
 						"when": "config.puku.chat.setupTests.enabled",
 						"disambiguation": [
 							{
@@ -1556,9 +1556,9 @@
 				"id": "puku.vscode",
 				"name": "vscode",
 				"fullName": "VS Code",
-				"description": "%copilot.vscode.description%",
+				"description": "%puku.vscode.description%",
 				"when": "!puku.interactiveSession.disabled",
-				"sampleRequest": "%copilot.vscode.sampleRequest%",
+				"sampleRequest": "%puku.vscode.sampleRequest%",
 				"locations": [
 					"panel"
 				],
@@ -1584,8 +1584,8 @@
 				"commands": [
 					{
 						"name": "search",
-						"description": "%copilot.vscode.search.description%",
-						"sampleRequest": "%copilot.vscode.search.sampleRequest%"
+						"description": "%puku.vscode.search.description%",
+						"sampleRequest": "%puku.vscode.search.sampleRequest%"
 					}
 				]
 			},
@@ -1593,9 +1593,9 @@
 				"id": "puku.terminal",
 				"name": "terminal",
 				"fullName": "Terminal",
-				"description": "%copilot.terminal.description%",
+				"description": "%puku.terminal.description%",
 				"when": "!puku.interactiveSession.disabled",
-				"sampleRequest": "%copilot.terminal.sampleRequest%",
+				"sampleRequest": "%puku.terminal.sampleRequest%",
 				"isDefault": true,
 				"locations": [
 					"terminal"
@@ -1603,8 +1603,8 @@
 				"commands": [
 					{
 						"name": "explain",
-						"description": "%copilot.terminal.explain.description%",
-						"sampleRequest": "%copilot.terminal.explain.sampleRequest%"
+						"description": "%puku.terminal.explain.description%",
+						"sampleRequest": "%puku.terminal.explain.sampleRequest%"
 					}
 				]
 			},
@@ -1612,17 +1612,17 @@
 				"id": "puku.terminalPanel",
 				"name": "terminal",
 				"fullName": "Terminal",
-				"description": "%copilot.terminalPanel.description%",
+				"description": "%puku.terminalPanel.description%",
 				"when": "!puku.interactiveSession.disabled",
-				"sampleRequest": "%copilot.terminal.sampleRequest%",
+				"sampleRequest": "%puku.terminal.sampleRequest%",
 				"locations": [
 					"panel"
 				],
 				"commands": [
 					{
 						"name": "explain",
-						"description": "%copilot.terminal.explain.description%",
-						"sampleRequest": "%copilot.terminal.explain.sampleRequest%",
+						"description": "%puku.terminal.explain.description%",
+						"sampleRequest": "%puku.terminal.explain.sampleRequest%",
 						"disambiguation": [
 							{
 								"category": "terminal_state_questions",
@@ -1651,8 +1651,8 @@
 				"displayName": "Puku AI"
 			},
 			{
-				"vendor": "copilot",
-				"displayName": "Copilot"
+				"vendor": "puku",
+				"displayName": "Puku AI"
 			},
 			{
 				"vendor": "azure",
@@ -1703,7 +1703,7 @@
 		"interactiveSession": [
 			{
 				"label": "Puku Editor",
-				"id": "copilot",
+				"id": "puku",
 				"icon": "",
 				"when": "!puku.interactiveSession.disabled"
 			}
@@ -1724,37 +1724,37 @@
 				"contents": "%puku.viewsWelcome.codexWelcomeView%"
 			},
 			{
-				"view": "copilot-agents-placeholder",
+				"view": "puku-agents-placeholder",
 				"when": "true",
 				"contents": "%puku.viewsWelcome.agentsPlaceholder%"
 			},
 			{
-				"view": "workbench.view.chat.sessions.copilot-cloud-agent",
+				"view": "workbench.view.chat.sessions.puku-cloud-agent",
 				"when": "puku.auth.missingPermissiveSession",
 				"contents": "%puku.viewsWelcome.noPermissiveToken.contents%"
 			},
 			{
-				"view": "workbench.view.chat.sessions.copilot-cloud-agent",
+				"view": "workbench.view.chat.sessions.puku-cloud-agent",
 				"when": "workspaceFolderCount == 0",
 				"contents": "%puku.viewsWelcome.noFolder.contents%"
 			},
 			{
-				"view": "workbench.view.chat.sessions.copilot-cloud-agent",
+				"view": "workbench.view.chat.sessions.puku-cloud-agent",
 				"when": "git.state == initialized && gitOpenRepositoryCount == 0 && workspaceFolderCount > 0 && git.parentRepositoryCount == 0",
 				"contents": "%puku.viewsWelcome.noRepo.contents%"
 			},
 			{
-				"view": "workbench.view.chat.sessions.copilot-cloud-agent",
+				"view": "workbench.view.chat.sessions.puku-cloud-agent",
 				"when": "git.state == initialized && workspaceFolderCount > 0 && (git.parentRepositoryCount > 0 || gitOpenRepositoryCount > 0) && !github:hasGitHubRemotes",
 				"contents": "%puku.viewsWelcome.noGitHub.contents%"
 			},
 			{
-				"view": "workbench.view.chat.sessions.copilot-cloud-agent",
+				"view": "workbench.view.chat.sessions.puku-cloud-agent",
 				"when": "puku.chat.cloudSessionsEmpty",
 				"contents": "%puku.viewsWelcome.cloudSessionsEmpty.contents%"
 			},
 			{
-				"view": "workbench.view.chat.sessions.copilotcli",
+				"view": "workbench.view.chat.sessions.pukucli",
 				"when": "puku.chat.cliSessionsEmpty",
 				"contents": "%puku.viewsWelcome.cliSessionsEmpty.contents%"
 			}
@@ -1762,43 +1762,43 @@
 		"chatViewsWelcome": [
 			{
 				"icon": "$(copilot-large)",
-				"title": "Ask Copilot",
+				"title": "Ask Puku AI",
 				"content": "%puku.viewsWelcome.signIn%",
 				"when": "!puku-chat.activated && !puku.offline && !puku.interactiveSession.individual.expired && !puku.interactiveSession.enterprise.disabled && !puku.interactiveSession.contactSupport && !puku.interactiveSession.chatDisabled && !puku.interactiveSession.switchToReleaseChannel"
 			},
 			{
 				"icon": "$(copilot-large)",
-				"title": "Ask Copilot",
+				"title": "Ask Puku AI",
 				"content": "%puku.viewsWelcome.individual.expired%",
 				"when": "puku.interactiveSession.individual.expired"
 			},
 			{
 				"icon": "$(copilot-large)",
-				"title": "Ask Copilot",
+				"title": "Ask Puku AI",
 				"content": "%puku.viewsWelcome.enterprise%",
 				"when": "puku.interactiveSession.enterprise.disabled"
 			},
 			{
 				"icon": "$(copilot-large)",
-				"title": "Ask Copilot",
+				"title": "Ask Puku AI",
 				"content": "%puku.viewsWelcome.offline%",
 				"when": "puku.offline"
 			},
 			{
 				"icon": "$(copilot-large)",
-				"title": "Ask Copilot",
+				"title": "Ask Puku AI",
 				"content": "%puku.viewsWelcome.contactSupport%",
 				"when": "puku.interactiveSession.contactSupport"
 			},
 			{
 				"icon": "$(copilot-large)",
-				"title": "Ask Copilot",
+				"title": "Ask Puku AI",
 				"content": "%puku.viewsWelcome.chatDisabled%",
 				"when": "puku.interactiveSession.chatDisabled"
 			},
 			{
 				"icon": "$(copilot-large)",
-				"title": "Ask Copilot",
+				"title": "Ask Puku AI",
 				"content": "%puku.viewsWelcome.switchToReleaseChannel%",
 				"when": "puku.interactiveSession.switchToReleaseChannel"
 			}
@@ -1818,25 +1818,25 @@
 				"command": "puku.cli.sessions.refresh",
 				"title": "%puku.command.refreshAgentSessions%",
 				"icon": "$(refresh)",
-				"category": "Copilot CLI"
+				"category": "Puku CLI"
 			},
 			{
 				"command": "puku.cli.sessions.delete",
 				"title": "%puku.command.deleteAgentSession%",
 				"icon": "$(close)",
-				"category": "Copilot CLI"
+				"category": "Puku CLI"
 			},
 			{
 				"command": "puku.cli.sessions.resumeInTerminal",
 				"title": "%puku.command.cli.sessions.resumeInTerminal%",
 				"icon": "$(terminal)",
-				"category": "Copilot CLI"
+				"category": "Puku CLI"
 			},
 			{
 				"command": "puku.cli.sessions.newTerminalSession",
 				"title": "%puku.cli.sessions.newTerminalSession%",
 				"icon": "$(terminal)",
-				"category": "Copilot CLI"
+				"category": "Puku CLI"
 			},
 			{
 				"command": "puku.chat.replay",
@@ -2153,7 +2153,7 @@
 			},
 			{
 				"command": "puku.chat.startCopilotDebugCommand",
-				"title": "Start Copilot Debug"
+				"title": "Start Puku Debug"
 			},
 			{
 				"command": "puku.chat.clearTemporalContext",
@@ -2480,7 +2480,7 @@
 					"puku.selectedCompletionModel": {
 						"type": "string",
 						"default": "",
-						"markdownDescription": "The currently selected completion model ID. To select from a list of available models, use the __\"Change Completions Model\"__ command or open the model picker (from the Copilot menu in the VS Code title bar, select __\"Configure Code Completions\"__ then __\"Change Completions Model\"__. The value must be a valid model ID. An empty value indicates that the default model will be used."
+						"markdownDescription": "The currently selected completion model ID. To select from a list of available models, use the __\"Change Completions Model\"__ command or open the model picker (from the Puku AI menu in the VS Code title bar, select __\"Configure Code Completions\"__ then __\"Change Completions Model\"__. The value must be a valid model ID. An empty value indicates that the default model will be used."
 					}
 				}
 			},
@@ -4206,7 +4206,7 @@
 				},
 				{
 					"command": "puku.cli.sessions.refresh",
-					"when": "view == workbench.view.chat.sessions.copilotcli",
+					"when": "view == workbench.view.chat.sessions.pukucli",
 					"group": "navigation@1"
 				},
 				{
@@ -4231,7 +4231,7 @@
 				},
 				{
 					"command": "puku.cloud.sessions.refresh",
-					"when": "view == workbench.view.chat.sessions.copilot-cloud-agent",
+					"when": "view == workbench.view.chat.sessions.puku-cloud-agent",
 					"group": "navigation@1"
 				}
 			],
@@ -4506,12 +4506,12 @@
 				},
 				{
 					"command": "puku.cli.sessions.newTerminalSession",
-					"when": "view == workbench.view.chat.sessions.copilotcli",
+					"when": "view == workbench.view.chat.sessions.pukucli",
 					"group": "submenu"
 				},
 				{
 					"command": "puku.cli.sessions.refresh",
-					"when": "view == workbench.view.chat.sessions.copilotcli",
+					"when": "view == workbench.view.chat.sessions.pukucli",
 					"group": "navigation@1"
 				},
 				{
@@ -4655,7 +4655,7 @@
 					"icon": "$(file)"
 				},
 				{
-					"id": "copilot-agents-placeholder",
+					"id": "puku-agents-placeholder",
 					"name": "Puku Editor Agents",
 					"when": "chatEntitlementSignedOut || !chatIsEnabled",
 					"icon": "$(copilot)"
