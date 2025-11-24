@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+#
+# Puku Editor CLI
+# Usage: puku [folder_path]
+
+APP_PATH="/Users/sahamed/Desktop/puku-editor/github/vscode/.build/electron/Code - OSS.app"
+ELECTRON="$APP_PATH/Contents/MacOS/Electron"
+VSCODE_ROOT="/Users/sahamed/Desktop/puku-editor/github/vscode"
+EDITOR_EXT="/Users/sahamed/Desktop/puku-editor/github/editor"
+
+# Get folder path (default to current directory)
+FOLDER="${1:-.}"
+
+# Convert to absolute path
+if [[ "$FOLDER" != /* ]]; then
+    FOLDER="$(cd "$FOLDER" 2>/dev/null && pwd)" || FOLDER="$(pwd)/$1"
+fi
+
+# Launch Electron directly (not via CLI which triggers npm scripts in dev mode)
+open -a "$APP_PATH" --args "$VSCODE_ROOT" --extensionDevelopmentPath="$EDITOR_EXT" "$FOLDER"

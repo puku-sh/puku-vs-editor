@@ -14,3 +14,6 @@ __pycache__/
 coverage/
 l10n/
 *.log
+build/
+*.puku/
+nohup.out
