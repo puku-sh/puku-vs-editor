@@ -141,7 +141,7 @@
 	"contributes": {
 		"languageModelTools": [
 			{
-				"name": "copilot_searchCodebase",
+				"name": "puku_searchCodebase",
 				"toolReferenceName": "codebase",
 				"displayName": "%copilot.tools.searchCodebase.name%",
 				"icon": "$(folder)",
@@ -165,7 +165,7 @@
 				}
 			},
 			{
-				"name": "copilot_searchWorkspaceSymbols",
+				"name": "puku_searchWorkspaceSymbols",
 				"toolReferenceName": "symbols",
 				"displayName": "%copilot.tools.searchWorkspaceSymbols.name%",
 				"icon": "$(symbol)",
@@ -188,7 +188,7 @@
 				}
 			},
 			{
-				"name": "copilot_listCodeUsages",
+				"name": "puku_listCodeUsages",
 				"toolReferenceName": "usages",
 				"displayName": "%copilot.tools.listCodeUsages.name%",
 				"icon": "$(references)",
@@ -219,7 +219,7 @@
 				}
 			},
 			{
-				"name": "copilot_getVSCodeAPI",
+				"name": "puku_getVSCodeAPI",
 				"toolReferenceName": "vscodeAPI",
 				"displayName": "%copilot.tools.getVSCodeAPI.name%",
 				"icon": "$(references)",
@@ -241,7 +241,7 @@
 				"canBeReferencedInPrompt": true
 			},
 			{
-				"name": "copilot_findFiles",
+				"name": "puku_findFiles",
 				"toolReferenceName": "fileSearch",
 				"displayName": "%copilot.tools.findFiles.name%",
 				"modelDescription": "Search for files in the workspace by glob pattern. This only returns the paths of matching files. Use this tool when you know the exact filename pattern of the files you're searching for. Glob patterns match from the root of the workspace folder. Examples:\n- **/*.{js,ts} to match all js/ts files in the workspace.\n- src/** to match all files under the top-level src folder.\n- **/foo/**/*.js to match all js files under any foo folder in the workspace.",
@@ -266,7 +266,7 @@
 				}
 			},
 			{
-				"name": "copilot_findTextInFiles",
+				"name": "puku_findTextInFiles",
 				"toolReferenceName": "textSearch",
 				"displayName": "%copilot.tools.findTextInFiles.name%",
 				"modelDescription": "Do a fast text search in the workspace. Use this tool when you want to search with an exact string or regex. If you are not sure what words will appear in the workspace, prefer using regex patterns with alternation (|) or character classes to search for multiple potential words at once instead of making separate searches. For example, use 'function|method|procedure' to look for all of those words at once. Use includePattern to search within files matching a specific pattern, or in a specific file, using a relative path. Use this tool when you want to see an overview of a particular file, instead of using read_file many times to look for code within a file.",
@@ -300,7 +300,7 @@
 				}
 			},
 			{
-				"name": "copilot_applyPatch",
+				"name": "puku_applyPatch",
 				"displayName": "%copilot.tools.applyPatch.name%",
 				"toolReferenceName": "applyPatch",
 				"userDescription": "%copilot.tools.applyPatch.description%",
@@ -324,7 +324,7 @@
 				}
 			},
 			{
-				"name": "copilot_readFile",
+				"name": "puku_readFile",
 				"toolReferenceName": "readFile",
 				"displayName": "%copilot.tools.readFile.name%",
 				"modelDescription": "Read the contents of a file.\n\nYou must specify the line range you're interested in. Line numbers are 1-indexed. If the file contents returned are insufficient for your task, you may call this tool again to retrieve more content. Prefer reading larger ranges over doing many small reads.",
@@ -355,7 +355,7 @@
 				}
 			},
 			{
-				"name": "copilot_listDirectory",
+				"name": "puku_listDirectory",
 				"toolReferenceName": "listDirectory",
 				"displayName": "%copilot.tools.listDirectory.name%",
 				"modelDescription": "List the contents of a directory. Result will have the name of the child. If the name ends in /, it's a folder, otherwise a file",
@@ -376,7 +376,7 @@
 				}
 			},
 			{
-				"name": "copilot_getErrors",
+				"name": "puku_getErrors",
 				"displayName": "%copilot.tools.getErrors.name%",
 				"toolReferenceName": "problems",
 				"canBeReferencedInPrompt": true,
@@ -398,13 +398,13 @@
 				}
 			},
 			{
-				"name": "copilot_readProjectStructure",
+				"name": "puku_readProjectStructure",
 				"displayName": "%copilot.tools.readProjectStructure.name%",
 				"modelDescription": "Get a file tree representation of the workspace.",
 				"tags": []
 			},
 			{
-				"name": "copilot_getChangedFiles",
+				"name": "puku_getChangedFiles",
 				"displayName": "%copilot.tools.getChangedFiles.name%",
 				"toolReferenceName": "changes",
 				"icon": "$(diff)",
@@ -437,7 +437,7 @@
 				}
 			},
 			{
-				"name": "copilot_testFailure",
+				"name": "puku_testFailure",
 				"toolReferenceName": "testFailure",
 				"displayName": "%copilot.tools.testFailure.name%",
 				"icon": "$(beaker)",
@@ -446,15 +446,15 @@
 				"inputSchema": {},
 				"tags": [
 					"vscode_editing_with_tests",
-					"enable_other_tool_copilot_readFile",
-					"enable_other_tool_copilot_listDirectory",
-					"enable_other_tool_copilot_findFiles",
-					"enable_other_tool_copilot_runTests"
+					"enable_other_tool_puku_readFile",
+					"enable_other_tool_puku_listDirectory",
+					"enable_other_tool_puku_findFiles",
+					"enable_other_tool_puku_runTests"
 				],
 				"canBeReferencedInPrompt": true
 			},
 			{
-				"name": "copilot_updateUserPreferences",
+				"name": "puku_updateUserPreferences",
 				"toolReferenceName": "updateUserPreferences",
 				"displayName": "%copilot.tools.updateUserPreferences.name%",
 				"modelDescription": "Update the user's preferences file with new information about the user and their coding preferences, based on the current chat history.",
@@ -478,7 +478,7 @@
 				"when": "config.github.copilot.chat.enableUserPreferences"
 			},
 			{
-				"name": "copilot_createNewWorkspace",
+				"name": "puku_createNewWorkspace",
 				"displayName": "%github.copilot.tools.createNewWorkspace.name%",
 				"toolReferenceName": "newWorkspace",
 				"icon": "$(new-folder)",
@@ -503,7 +503,7 @@
 				]
 			},
 			{
-				"name": "copilot_getProjectSetupInfo",
+				"name": "puku_getProjectSetupInfo",
 				"displayName": "%github.copilot.tools.getProjectSetupInfo.name%",
 				"when": "config.github.copilot.chat.newWorkspaceCreation.enabled",
 				"toolReferenceName": "getProjectSetupInfo",
@@ -523,7 +523,7 @@
 				"tags": []
 			},
 			{
-				"name": "copilot_installExtension",
+				"name": "puku_installExtension",
 				"displayName": "Install Extension in VS Code",
 				"when": "config.github.copilot.chat.newWorkspaceCreation.enabled",
 				"toolReferenceName": "installExtension",
@@ -548,7 +548,7 @@
 				"tags": []
 			},
 			{
-				"name": "copilot_runVscodeCommand",
+				"name": "puku_runVscodeCommand",
 				"displayName": "Run VS Code Command",
 				"when": "config.github.copilot.chat.newWorkspaceCreation.enabled",
 				"toolReferenceName": "runVscodeCommand",
@@ -580,7 +580,7 @@
 				"tags": []
 			},
 			{
-				"name": "copilot_createNewJupyterNotebook",
+				"name": "puku_createNewJupyterNotebook",
 				"displayName": "Create New Jupyter Notebook",
 				"icon": "$(notebook)",
 				"toolReferenceName": "newJupyterNotebook",
@@ -601,7 +601,7 @@
 				"tags": []
 			},
 			{
-				"name": "copilot_insertEdit",
+				"name": "puku_insertEdit",
 				"toolReferenceName": "insertEdit",
 				"displayName": "%copilot.tools.insertEdit.name%",
 				"modelDescription": "Insert new code into an existing file in the workspace. Use this tool once per file that needs to be modified, even if there are multiple changes for a file. Generate the \"explanation\" property first.\nThe system is very smart and can understand how to apply your edits to the files, you just need to provide minimal hints.\nAvoid repeating existing code, instead use comments to represent regions of unchanged code. Be as concise as possible. For example:\n// ...existing code...\n{ changed code }\n// ...existing code...\n{ changed code }\n// ...existing code...\n\nHere is an example of how you should use format an edit to an existing Person class:\nclass Person {\n\t// ...existing code...\n\tage: number;\n\t// ...existing code...\n\tgetAge() {\n\treturn this.age;\n\t}\n}",
@@ -630,7 +630,7 @@
 				}
 			},
 			{
-				"name": "copilot_createFile",
+				"name": "puku_createFile",
 				"toolReferenceName": "createFile",
 				"displayName": "%copilot.tools.createFile.name%",
 				"userDescription": "%copilot.tools.createFile.description%",
@@ -655,7 +655,7 @@
 				}
 			},
 			{
-				"name": "copilot_createDirectory",
+				"name": "puku_createDirectory",
 				"toolReferenceName": "createDirectory",
 				"displayName": "%copilot.tools.createDirectory.name%",
 				"userDescription": "%copilot.tools.createDirectory.description%",
@@ -675,7 +675,7 @@
 				}
 			},
 			{
-				"name": "copilot_openSimpleBrowser",
+				"name": "puku_openSimpleBrowser",
 				"displayName": "%copilot.tools.openSimpleBrowser.name%",
 				"modelDescription": "Preview a website or open a URL in the editor's Simple Browser. Useful for quickly viewing locally hosted websites, demos, or resources without leaving the coding environment.",
 				"userDescription": "%copilot.tools.openSimpleBrowser.description%",
@@ -696,7 +696,7 @@
 				}
 			},
 			{
-				"name": "copilot_replaceString",
+				"name": "puku_replaceString",
 				"toolReferenceName": "replaceString",
 				"displayName": "%copilot.tools.replaceString.name%",
 				"modelDescription": "This is a tool for making edits in an existing file in the workspace. For moving or renaming files, use run in terminal tool with the 'mv' command instead. For larger edits, split them into smaller edits and call the edit tool multiple times to ensure accuracy. Before editing, always ensure you have the context to understand the file's contents and context. To edit a file, provide: 1) filePath (absolute path), 2) oldString (MUST be the exact literal text to replace including all whitespace, indentation, newlines, and surrounding code etc), and 3) newString (MUST be the exact literal text to replace \\`oldString\\` with (also including all whitespace, indentation, newlines, and surrounding code etc.). Ensure the resulting code is correct and idiomatic.). Each use of this tool replaces exactly ONE occurrence of oldString.\n\nCRITICAL for \\`oldString\\`: Must uniquely identify the single instance to change. Include at least 3 lines of context BEFORE and AFTER the target text, matching whitespace and indentation precisely. If this string matches multiple locations, or does not match exactly, the tool will fail. Never use 'Lines 123-456 omitted' from summarized documents or ...existing code... comments in the oldString or newString.",
@@ -725,7 +725,7 @@
 				}
 			},
 			{
-				"name": "copilot_multiReplaceString",
+				"name": "puku_multiReplaceString",
 				"toolReferenceName": "multiReplaceString",
 				"displayName": "%copilot.tools.multiReplaceString.name%",
 				"modelDescription": "This tool allows you to apply multiple replace_string_in_file operations in a single call, which is more efficient than calling replace_string_in_file multiple times. It takes an array of replacement operations and applies them sequentially. Each replacement operation has the same parameters as replace_string_in_file: filePath, oldString, newString, and explanation. This tool is ideal when you need to make multiple edits across different files or multiple edits in the same file. The tool will provide a summary of successful and failed operations.",
@@ -777,12 +777,12 @@
 				}
 			},
 			{
-				"name": "copilot_editNotebook",
+				"name": "puku_editNotebook",
 				"toolReferenceName": "editNotebook",
 				"displayName": "%copilot.tools.editNotebook.name%",
 				"modelDescription": "This is a tool for editing an existing Notebook file in the workspace. Generate the \"explanation\" property first.\nThe system is very smart and can understand how to apply your edits to the notebooks.\nWhen updating the content of an existing cell, ensure newCode preserves whitespace and indentation exactly and does NOT include any code markers such as (...existing code...).",
 				"tags": [
-					"enable_other_tool_copilot_getNotebookSummary"
+					"enable_other_tool_puku_getNotebookSummary"
 				],
 				"inputSchema": {
 					"type": "object",
@@ -832,14 +832,14 @@
 				}
 			},
 			{
-				"name": "copilot_runNotebookCell",
+				"name": "puku_runNotebookCell",
 				"displayName": "%copilot.tools.runNotebookCell.name%",
 				"toolReferenceName": "runCell",
 				"icon": "$(play)",
 				"modelDescription": "This is a tool for running a code cell in a notebook file directly in the notebook editor. The output from the execution will be returned. Code cells should be run as they are added or edited when working through a problem to bring the kernel state up to date and ensure the code executes successfully. Code cells are ready to run and don't require any pre-processing. If asked to run the first cell in a notebook, you should run the first code cell since markdown cells cannot be executed. NOTE: Avoid executing Markdown cells or providing Markdown cell IDs, as Markdown cells cannot be  executed.",
 				"userDescription": "%copilot.tools.runNotebookCell.description%",
 				"tags": [
-					"enable_other_tool_copilot_getNotebookSummary"
+					"enable_other_tool_puku_getNotebookSummary"
 				],
 				"inputSchema": {
 					"type": "object",
@@ -868,7 +868,7 @@
 				}
 			},
 			{
-				"name": "copilot_getNotebookSummary",
+				"name": "puku_getNotebookSummary",
 				"toolReferenceName": "getNotebookSummary",
 				"displayName": "Get the structure of a notebook",
 				"modelDescription": "This is a tool returns the list of the Notebook cells along with the id, cell types, line ranges, language, execution information and output mime types for each cell. This is useful to get Cell Ids when executing a notebook or determine what cells have been executed and what order, or what cells have outputs. If required to read contents of a cell use this to determine the line range of a cells, and then use read_file tool to read a specific line range. Requery this tool if the contents of the notebook change.",
@@ -887,7 +887,7 @@
 				}
 			},
 			{
-				"name": "copilot_readNotebookCellOutput",
+				"name": "puku_readNotebookCellOutput",
 				"displayName": "%copilot.tools.getNotebookCellOutput.name%",
 				"toolReferenceName": "readNotebookCellOutput",
 				"icon": "$(notebook-render-output)",
@@ -914,7 +914,7 @@
 				}
 			},
 			{
-				"name": "copilot_fetchWebPage",
+				"name": "puku_fetchWebPage",
 				"displayName": "%copilot.tools.fetchWebPage.name%",
 				"toolReferenceName": "fetch",
 				"when": "!isWeb",
@@ -945,7 +945,7 @@
 				}
 			},
 			{
-				"name": "copilot_findTestFiles",
+				"name": "puku_findTestFiles",
 				"displayName": "%copilot.tools.findTestFiles.name%",
 				"icon": "$(beaker)",
 				"canBeReferencedInPrompt": false,
@@ -969,7 +969,7 @@
 				}
 			},
 			{
-				"name": "copilot_getDocInfo",
+				"name": "puku_getDocInfo",
 				"displayName": "%copilot.tools.getDocInfo.name%",
 				"icon": "$(beaker)",
 				"canBeReferencedInPrompt": false,
@@ -994,7 +994,7 @@
 				}
 			},
 			{
-				"name": "copilot_getSearchResults",
+				"name": "puku_getSearchResults",
 				"toolReferenceName": "searchResults",
 				"displayName": "%github.copilot.tools.searchResults.name%",
 				"icon": "$(search)",
@@ -1002,7 +1002,7 @@
 				"modelDescription": "The results from the search view"
 			},
 			{
-				"name": "copilot_githubRepo",
+				"name": "puku_githubRepo",
 				"toolReferenceName": "githubRepo",
 				"displayName": "%github.copilot.tools.githubRepo.name%",
 				"modelDescription": "Searches a GitHub repository for relevant source code snippets. Only use this tool if the user is very clearly asking for code snippets from a specific GitHub repository. Do not use this tool for Github repos that the user has open in their workspace.",
@@ -1028,7 +1028,7 @@
 				}
 			},
 			{
-				"name": "copilot_toolReplay",
+				"name": "puku_toolReplay",
 				"modelDescription": "Replays a tool call from a previous chat session.",
 				"displayName": "tool replay",
 				"when": "false",
@@ -1051,7 +1051,7 @@
 				}
 			},
 			{
-				"name": "copilot_memory",
+				"name": "puku_memory",
 				"toolReferenceName": "memory",
 				"displayName": "%copilot.tools.memory.name%",
 				"userDescription": "%copilot.tools.memory.description%",
@@ -1123,7 +1123,7 @@
 				}
 			},
 			{
-				"name": "copilot_editFiles",
+				"name": "puku_editFiles",
 				"modelDescription": "This is a placeholder tool, do not use",
 				"userDescription": "Edit files",
 				"icon": "$(pencil)",
