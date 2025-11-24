@@ -31,7 +31,7 @@ export class BaseTelemetryService implements ITelemetryService {
 			/* __GDPR__
 				"token" : {
 					"owner": "digitarald",
-					"comment": "Copilot token received from the service.",
+					"comment": "Puku AI token received from the service.",
 					"chatEnabled": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true, "comment": "Indicates if the token enabled chat." },
 					"snippyEnabled": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true, "comment": "If the block setting for public suggestions is enabled." },
 					"telemetryEnabled": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true, "comment": "If the subscription has telemetry enabled." },

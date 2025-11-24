@@ -218,7 +218,7 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 			if (endpoint instanceof AutoChatEndpoint) {
 				modelCategory = { label: '', order: Number.MIN_SAFE_INTEGER };
 			} else if (endpoint.isPremium === undefined || this._authenticationService.copilotToken?.isFreeUser) {
-				modelCategory = { label: localize('languageModelHeader.copilot', "Copilot Models"), order: 0 };
+				modelCategory = { label: localize('languageModelHeader.copilot', "Puku AI Models"), order: 0 };
 			} else if (endpoint.isPremium) {
 				modelCategory = { label: localize('languageModelHeader.premium', "Premium Models"), order: 1 };
 			} else {

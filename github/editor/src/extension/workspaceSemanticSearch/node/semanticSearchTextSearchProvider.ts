@@ -324,7 +324,7 @@ export class SemanticSearchTextSearchProvider implements vscode.AITextSearchProv
 		/* __GDPR__
 		"copilot.search.request" : {
 			"owner": "osortega",
-			"comment": "Copilot search request.",
+			"comment": "Puku AI search request.",
 			"chunkCount": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true, "comment": "Count of copilot search code chunks." },
 			"rankResult": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "Result of the copilot search ranking." },
 			"rankResultsCount": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true, "comment": "Count of the results from copilot search ranking." },
@@ -588,7 +588,7 @@ export class SemanticSearchTextSearchProvider implements vscode.AITextSearchProv
 			/* __GDPR__
 		"copilot.search.keywords" : {
 			"owner": "osortega",
-			"comment": "Copilot keywords request.",
+			"comment": "Puku AI keywords request.",
 			"keywordResult": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "Result of the copilot keywords request." },
 			"keywordsCount": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true, "comment": "Count of keywords found by copilot search." },
 			"keywordSearchDuration": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true, "comment": "Duration of the keyword search" }
