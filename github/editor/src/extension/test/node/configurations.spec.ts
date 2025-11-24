@@ -87,7 +87,7 @@ describe('Configurations', () => {
 
 		// Validate Internal settings have the correct prefix
 		internalKeys.forEach(key => {
-			expect(key, 'Internal settings must start with github.copilot.chat.advanced.').toMatch(/^github\.copilot\.chat\.advanced\./);
+			expect(key, 'Internal settings must start with puku.chat.advanced.').toMatch(/^github\.copilot\.chat\.advanced\./);
 		});
 
 		// Validate public settings in code are in package.json
@@ -97,7 +97,7 @@ describe('Configurations', () => {
 
 		// Validate advanced settings in code are in the advanced section of package.json
 		advancedPublicKeys.forEach(key => {
-			expect(key, 'Advanced settings must not start wih github.copilot.chat.advanced.').not.toMatch(/^github\.copilot\.chat\.advanced\./);
+			expect(key, 'Advanced settings must not start wih puku.chat.advanced.').not.toMatch(/^github\.copilot\.chat\.advanced\./);
 			expect(advancedConfigurationsInPackageJson, `Advanced setting ${key} should be defined in the advanced section of package.json`).toContain(key);
 		});
 

@@ -26,7 +26,7 @@ import { getInlineCompletions } from '../../../lib/src/inlineCompletion';
 import { telemetry } from '../../../lib/src/telemetry';
 import { wrapDoc } from '../textDocumentManager';
 
-const postInsertCmdName = '_github.copilot.ghostTextPostInsert2';
+const postInsertCmdName = '_puku.ghostTextPostInsert2';
 
 export class GhostTextProvider implements InlineCompletionItemProvider {
 	constructor(@IInstantiationService private readonly instantiationService: IInstantiationService) { }
@@ -106,7 +106,7 @@ export function registerGhostTextDependencies(accessor: ServicesAccessor) {
 	const postCmdHandler = commands.registerCommand(postInsertCmdName, async (e: CopilotCompletion) => {
 		instantiationService.invokeFunction(handleGhostTextPostInsert, e);
 		try {
-			await commands.executeCommand('github.copilot.survey.signalUsage', 'completions');
+			await commands.executeCommand('puku.survey.signalUsage', 'completions');
 		} catch (e) {
 			// Ignore errors from the survey command execution
 		}

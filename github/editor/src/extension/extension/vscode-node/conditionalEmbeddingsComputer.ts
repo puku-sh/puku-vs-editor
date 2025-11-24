@@ -39,7 +39,7 @@ export class ConditionalEmbeddingsComputer implements IEmbeddingsComputer {
 	private _shouldUsePukuEmbeddings(): boolean {
 		// Check if PukuAI endpoint is configured, which indicates we're using Puku AI
 		const pukuAIEndpoint = this._configurationService.getNonExtensionConfig('pukuai.endpoint');
-		const ollamaEndpoint = this._configurationService.getNonExtensionConfig('github.copilot.chat.byok.ollamaEndpoint');
+		const ollamaEndpoint = this._configurationService.getNonExtensionConfig('puku.chat.byok.ollamaEndpoint');
 		const pukuEmbeddingsEndpoint = this._configurationService.getNonExtensionConfig('puku.embeddings.endpoint');
 		
 		// Use Puku embeddings if any of these are configured

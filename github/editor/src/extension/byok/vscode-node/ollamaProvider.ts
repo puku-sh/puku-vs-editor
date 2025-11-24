@@ -84,7 +84,7 @@ export class OllamaLMProvider extends BaseOpenAICompatibleLMProvider {
 				throw e;
 			}
 			this._logService.error(`Ollama: Failed to fetch models: ${e}`);
-			throw new Error('Failed to fetch models from Ollama. Please ensure Ollama is running. If ollama is on another host, please configure the `"github.copilot.chat.byok.ollamaEndpoint"` setting.');
+			throw new Error('Failed to fetch models from Ollama. Please ensure Ollama is running. If ollama is on another host, please configure the `"puku.chat.byok.ollamaEndpoint"` setting.');
 		}
 	}
 

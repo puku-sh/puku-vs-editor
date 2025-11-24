@@ -113,51 +113,51 @@ export class ConfigurationMigrationContribution implements IExtensionContributio
 }
 
 ConfigurationMigrationRegistry.registerConfigurationMigrations([{
-	key: 'github.copilot.chat.experimental.setupTests.enabled',
+	key: 'puku.chat.experimental.setupTests.enabled',
 	migrateFn: async (value: any) => {
 		return [
-			['github.copilot.chat.setupTests.enabled', { value }],
-			['github.copilot.chat.experimental.setupTests.enabled', { value: undefined }]
+			['puku.chat.setupTests.enabled', { value }],
+			['puku.chat.experimental.setupTests.enabled', { value: undefined }]
 		];
 	}
 }]);
 
 ConfigurationMigrationRegistry.registerConfigurationMigrations([{
-	key: 'github.copilot.chat.experimental.codeGeneration.instructions',
+	key: 'puku.chat.experimental.codeGeneration.instructions',
 	migrateFn: async (value: any) => {
 		return [
-			['github.copilot.chat.codeGeneration.instructions', { value }],
-			['github.copilot.chat.experimental.codeGeneration.instructions', { value: undefined }]
+			['puku.chat.codeGeneration.instructions', { value }],
+			['puku.chat.experimental.codeGeneration.instructions', { value: undefined }]
 		];
 	}
 }]);
 
 ConfigurationMigrationRegistry.registerConfigurationMigrations([{
-	key: 'github.copilot.chat.experimental.codeGeneration.useInstructionFiles',
+	key: 'puku.chat.experimental.codeGeneration.useInstructionFiles',
 	migrateFn: async (value: any) => {
 		return [
-			['github.copilot.chat.codeGeneration.useInstructionFiles', { value }],
-			['github.copilot.chat.experimental.codeGeneration.useInstructionFiles', { value: undefined }]
+			['puku.chat.codeGeneration.useInstructionFiles', { value }],
+			['puku.chat.experimental.codeGeneration.useInstructionFiles', { value: undefined }]
 		];
 	}
 }]);
 
 ConfigurationMigrationRegistry.registerConfigurationMigrations([{
-	key: 'github.copilot.chat.experimental.testGeneration.instructions',
+	key: 'puku.chat.experimental.testGeneration.instructions',
 	migrateFn: async (value: any) => {
 		return [
-			['github.copilot.chat.testGeneration.instructions', { value }],
-			['github.copilot.chat.experimental.testGeneration.instructions', { value: undefined }]
+			['puku.chat.testGeneration.instructions', { value }],
+			['puku.chat.experimental.testGeneration.instructions', { value: undefined }]
 		];
 	}
 }]);
 
 ConfigurationMigrationRegistry.registerConfigurationMigrations([{
-	key: 'github.copilot.chat.experimental.generateTests.codeLens',
+	key: 'puku.chat.experimental.generateTests.codeLens',
 	migrateFn: async (value: any) => {
 		return [
-			['github.copilot.chat.generateTests.codeLens', { value }],
-			['github.copilot.chat.experimental.generateTests.codeLens', { value: undefined }]
+			['puku.chat.generateTests.codeLens', { value }],
+			['puku.chat.experimental.generateTests.codeLens', { value: undefined }]
 		];
 	}
 }]);

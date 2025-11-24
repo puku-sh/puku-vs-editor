@@ -46,7 +46,7 @@ export interface CrossChatSessionWithPR extends vscode.ChatSessionItem {
 	};
 }
 
-const CLOSE_SESSION_PR_CMD = 'github.copilot.cloud.sessions.proxy.closeChatSessionPullRequest';
+const CLOSE_SESSION_PR_CMD = 'puku.cloud.sessions.proxy.closeChatSessionPullRequest';
 export class ChatSessionsContrib extends Disposable implements IExtensionContribution {
 	readonly id = 'chatSessions';
 	readonly copilotcliSessionType = 'copilotcli';
@@ -71,7 +71,7 @@ export class ChatSessionsContrib extends Disposable implements IExtensionContrib
 
 		const sessionItemProvider = this._register(claudeAgentInstaService.createInstance(ClaudeChatSessionItemProvider));
 		this._register(vscode.chat.registerChatSessionItemProvider(ClaudeChatSessionItemProvider.claudeSessionType, sessionItemProvider));
-		this._register(vscode.commands.registerCommand('github.copilot.claude.sessions.refresh', () => {
+		this._register(vscode.commands.registerCommand('puku.claude.sessions.refresh', () => {
 			sessionItemProvider.refresh();
 		}));
 
@@ -148,12 +148,12 @@ export class ChatSessionsContrib extends Disposable implements IExtensionContrib
 			)
 		);
 		this.copilotCloudRegistrations.add(
-			vscode.commands.registerCommand('github.copilot.cloud.sessions.refresh', () => {
+			vscode.commands.registerCommand('puku.cloud.sessions.refresh', () => {
 				cloudSessionsProvider.refresh();
 			})
 		);
 		this.copilotCloudRegistrations.add(
-			vscode.commands.registerCommand('github.copilot.cloud.sessions.openInBrowser', async (chatSessionItem: vscode.ChatSessionItem) => {
+			vscode.commands.registerCommand('puku.cloud.sessions.openInBrowser', async (chatSessionItem: vscode.ChatSessionItem) => {
 				cloudSessionsProvider.openSessionsInBrowser(chatSessionItem);
 			})
 		);

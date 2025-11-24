@@ -53,10 +53,10 @@ export class VSCodeConfigProvider extends ConfigProvider {
 	override onDidChangeCopilotSettings: ConfigProvider['onDidChangeCopilotSettings'] = transformEvent(
 		vscode.workspace.onDidChangeConfiguration,
 		event => {
-			if (event.affectsConfiguration('github.copilot')) {
+			if (event.affectsConfiguration('puku')) {
 				return this;
 			}
-			if (event.affectsConfiguration('github.copilot-chat')) {
+			if (event.affectsConfiguration('puku-chat')) {
 				return this;
 			}
 		}
@@ -111,7 +111,7 @@ export class VSCodeEditorInfo implements ICompletionsEditorAndPluginInfo {
 			'vscode.typescript-language-features',
 			'ms-vscode.vscode-typescript-next',
 			'ms-dotnettools.csharp',
-			'github.copilot-chat',
+			'puku-chat',
 		]
 			.map(name => {
 				const extpj = vscode.extensions.getExtension(name)?.packageJSON as unknown;
@@ -200,7 +200,7 @@ export async function enableCompletions(accessor: ServicesAccessor) {
 		}
 	}
 
-	// The rest of this function is the inverse of disableCompletions(), updating the github.copilot.enable setting.
+	// The rest of this function is the inverse of disableCompletions(), updating the puku.enable setting.
 	const languageId = vscode.window.activeTextEditor?.document.languageId;
 	if (!languageId) { return; }
 	const config = vscode.workspace.getConfiguration(CopilotConfigPrefix);
@@ -219,7 +219,7 @@ export async function enableCompletions(accessor: ServicesAccessor) {
 }
 
 /**
- * Disable completions using the github.copilot.enable setting.
+ * Disable completions using the puku.enable setting.
  */
 export async function disableCompletions(accessor: ServicesAccessor) {
 	const instantiationService = accessor.get(IInstantiationService);

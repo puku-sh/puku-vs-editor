@@ -22,12 +22,12 @@ import { ChatRequest } from '../../../vscodeTypes';
 import { IExtensionContribution } from '../../common/contributions';
 
 const showHtmlCommand = 'vscode.copilot.chat.showRequestHtmlItem';
-const exportLogItemCommand = 'github.copilot.chat.debug.exportLogItem';
-const exportPromptArchiveCommand = 'github.copilot.chat.debug.exportPromptArchive';
-const exportPromptLogsAsJsonCommand = 'github.copilot.chat.debug.exportPromptLogsAsJson';
-const exportAllPromptLogsAsJsonCommand = 'github.copilot.chat.debug.exportAllPromptLogsAsJson';
-const saveCurrentMarkdownCommand = 'github.copilot.chat.debug.saveCurrentMarkdown';
-const showRawRequestBodyCommand = 'github.copilot.chat.debug.showRawRequestBody';
+const exportLogItemCommand = 'puku.chat.debug.exportLogItem';
+const exportPromptArchiveCommand = 'puku.chat.debug.exportPromptArchive';
+const exportPromptLogsAsJsonCommand = 'puku.chat.debug.exportPromptLogsAsJson';
+const exportAllPromptLogsAsJsonCommand = 'puku.chat.debug.exportAllPromptLogsAsJson';
+const saveCurrentMarkdownCommand = 'puku.chat.debug.saveCurrentMarkdown';
+const showRawRequestBodyCommand = 'puku.chat.debug.showRawRequestBody';
 
 export class RequestLogTree extends Disposable implements IExtensionContribution {
 	readonly id = 'requestLogTree';
@@ -500,7 +500,7 @@ export class RequestLogTree extends Disposable implements IExtensionContribution
 			await vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(ChatRequestScheme.buildUri({ kind: 'request', id: requestId }, 'rawrequest')));
 		}));
 
-		this._register(vscode.commands.registerCommand('github.copilot.debug.showOutputChannel', async () => {
+		this._register(vscode.commands.registerCommand('puku.debug.showOutputChannel', async () => {
 			// Yes this is the correct auto-generated command for our output channel
 			await vscode.commands.executeCommand(`workbench.action.output.show.GitHub.copilot-chat.${OutputChannelName}`);
 		}));
@@ -766,7 +766,7 @@ class LogTreeFilters extends Disposable {
 	}
 
 	private getStorageKey(name: string): string {
-		return `github.copilot.chat.debug.${name}Hidden`;
+		return `puku.chat.debug.${name}Hidden`;
 	}
 
 	setElementsShown(value: boolean) {
@@ -807,7 +807,7 @@ class LogTreeFilters extends Disposable {
 	}
 
 	private setShown(name: string, value: boolean): void {
-		vscode.commands.executeCommand('setContext', `github.copilot.chat.debug.${name}Hidden`, !value);
+		vscode.commands.executeCommand('setContext', `puku.chat.debug.${name}Hidden`, !value);
 		this.vscodeExtensionContext.workspaceState.update(this.getStorageKey(name), !value);
 		this._onDidChangeFilters.fire();
 	}
@@ -817,11 +817,11 @@ class LogTreeFilterCommands extends Disposable {
 	constructor(filters: LogTreeFilters) {
 		super();
 
-		this._register(vscode.commands.registerCommand('github.copilot.chat.debug.showElements', () => filters.setElementsShown(true)));
-		this._register(vscode.commands.registerCommand('github.copilot.chat.debug.hideElements', () => filters.setElementsShown(false)));
-		this._register(vscode.commands.registerCommand('github.copilot.chat.debug.showTools', () => filters.setToolsShown(true)));
-		this._register(vscode.commands.registerCommand('github.copilot.chat.debug.hideTools', () => filters.setToolsShown(false)));
-		this._register(vscode.commands.registerCommand('github.copilot.chat.debug.showNesRequests', () => filters.setNesRequestsShown(true)));
-		this._register(vscode.commands.registerCommand('github.copilot.chat.debug.hideNesRequests', () => filters.setNesRequestsShown(false)));
+		this._register(vscode.commands.registerCommand('puku.chat.debug.showElements', () => filters.setElementsShown(true)));
+		this._register(vscode.commands.registerCommand('puku.chat.debug.hideElements', () => filters.setElementsShown(false)));
+		this._register(vscode.commands.registerCommand('puku.chat.debug.showTools', () => filters.setToolsShown(true)));
+		this._register(vscode.commands.registerCommand('puku.chat.debug.hideTools', () => filters.setToolsShown(false)));
+		this._register(vscode.commands.registerCommand('puku.chat.debug.showNesRequests', () => filters.setNesRequestsShown(true)));
+		this._register(vscode.commands.registerCommand('puku.chat.debug.hideNesRequests', () => filters.setNesRequestsShown(false)));
 	}
 }

@@ -17,7 +17,7 @@ import { EXTENSION_ID } from '../../common/constants';
 import { getRepoId } from './copilotCodingAgentUtils';
 
 export const GHPR_EXTENSION_ID = 'GitHub.vscode-pull-request-github';
-const PENDING_CHAT_SESSION_STORAGE_KEY = 'github.copilot.pendingChatSession';
+const PENDING_CHAT_SESSION_STORAGE_KEY = 'puku.pendingChatSession';
 
 export enum UriHandlerPaths {
 	OpenSession = '/openAgentSession',

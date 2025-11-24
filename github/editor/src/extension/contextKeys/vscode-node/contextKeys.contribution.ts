@@ -17,27 +17,27 @@ import { autorun } from '../../../util/vs/base/common/observableInternal';
 import { GHPR_EXTENSION_ID } from '../../chatSessions/vscode/chatSessionsUriHandler';
 
 const welcomeViewContextKeys = {
-	Activated: 'github.copilot-chat.activated',
-	Offline: 'github.copilot.offline',
-	IndividualDisabled: 'github.copilot.interactiveSession.individual.disabled',
-	IndividualExpired: 'github.copilot.interactiveSession.individual.expired',
-	ContactSupport: 'github.copilot.interactiveSession.contactSupport',
-	EnterpriseDisabled: 'github.copilot.interactiveSession.enterprise.disabled',
-	CopilotChatDisabled: 'github.copilot.interactiveSession.chatDisabled'
+	Activated: 'puku-chat.activated',
+	Offline: 'puku.offline',
+	IndividualDisabled: 'puku.interactiveSession.individual.disabled',
+	IndividualExpired: 'puku.interactiveSession.individual.expired',
+	ContactSupport: 'puku.interactiveSession.contactSupport',
+	EnterpriseDisabled: 'puku.interactiveSession.enterprise.disabled',
+	CopilotChatDisabled: 'puku.interactiveSession.chatDisabled'
 };
 
-const chatQuotaExceededContextKey = 'github.copilot.chat.quotaExceeded';
+const chatQuotaExceededContextKey = 'puku.chat.quotaExceeded';
 
-const showLogViewContextKey = `github.copilot.chat.showLogView`;
-const debugReportFeedbackContextKey = 'github.copilot.debugReportFeedback';
+const showLogViewContextKey = `puku.chat.showLogView`;
+const debugReportFeedbackContextKey = 'puku.debugReportFeedback';
 
-const previewFeaturesDisabledContextKey = 'github.copilot.previewFeaturesDisabled';
+const previewFeaturesDisabledContextKey = 'puku.previewFeaturesDisabled';
 
-const debugContextKey = 'github.copilot.chat.debug';
+const debugContextKey = 'puku.chat.debug';
 
-const missingPermissiveSessionContextKey = 'github.copilot.auth.missingPermissiveSession';
+const missingPermissiveSessionContextKey = 'puku.auth.missingPermissiveSession';
 
-export const prExtensionInstalledContextKey = 'github.copilot.prExtensionInstalled';
+export const prExtensionInstalledContextKey = 'puku.prExtensionInstalled';
 
 export class ContextKeysContribution extends Disposable {
 
@@ -58,8 +58,8 @@ export class ContextKeysContribution extends Disposable {
 		void this._inspectContext().catch(console.error);
 		void this._updatePermissiveSessionContext().catch(console.error);
 		this._register(_authenticationService.onDidAuthenticationChange(async () => await this._onAuthenticationChange()));
-		this._register(commands.registerCommand('github.copilot.refreshToken', async () => await this._inspectContext()));
-		this._register(commands.registerCommand('github.copilot.debug.showChatLogView', async () => {
+		this._register(commands.registerCommand('puku.refreshToken', async () => await this._inspectContext()));
+		this._register(commands.registerCommand('puku.debug.showChatLogView', async () => {
 			this._showLogView = true;
 			await commands.executeCommand('setContext', showLogViewContextKey, true);
 			await commands.executeCommand('copilot-chat.focus');

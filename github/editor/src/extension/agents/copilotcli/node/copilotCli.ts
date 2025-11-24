@@ -16,7 +16,7 @@ import { getCopilotLogger } from './logger';
 import { ensureNodePtyShim } from './nodePtyShim';
 import { PermissionRequest } from './permissionHelpers';
 
-const COPILOT_CLI_MODEL_MEMENTO_KEY = 'github.copilot.cli.sessionModel';
+const COPILOT_CLI_MODEL_MEMENTO_KEY = 'puku.cli.sessionModel';
 const DEFAULT_CLI_MODEL = 'claude-sonnet-4';
 
 export class CopilotCLISessionOptions {

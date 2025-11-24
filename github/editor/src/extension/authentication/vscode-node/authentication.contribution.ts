@@ -38,7 +38,7 @@ class AuthUpgradeAsk extends Disposable {
 		@IAuthenticationChatUpgradeService private readonly _authenticationChatUpgradeService: IAuthenticationChatUpgradeService,
 	) {
 		super();
-		this._register(commands.registerCommand('github.copilot.chat.triggerPermissiveSignIn', async () => {
+		this._register(commands.registerCommand('puku.chat.triggerPermissiveSignIn', async () => {
 			await this._authenticationChatUpgradeService.showPermissiveSessionModal(true);
 		}));
 	}

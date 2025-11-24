@@ -10,35 +10,35 @@
 // - These IDs should be used in package.json
 // - These IDs should only be registered if they appear in the package.json (meaning the command palette) or if the command needs to be supported when both extensions are loaded/active.
 
-export const CMDOpenPanelClient = 'github.copilot.generate';
-export const CMDOpenPanelChat = 'github.copilot.chat.openSuggestionsPanel'; // "github.copilot.chat.generate" is already being used
+export const CMDOpenPanelClient = 'puku.generate';
+export const CMDOpenPanelChat = 'puku.chat.openSuggestionsPanel'; // "puku.chat.generate" is already being used
 
-export const CMDAcceptCursorPanelSolutionClient = 'github.copilot.acceptCursorPanelSolution';
-export const CMDNavigatePreviousPanelSolutionClient = 'github.copilot.previousPanelSolution';
-export const CMDNavigateNextPanelSolutionClient = 'github.copilot.nextPanelSolution';
+export const CMDAcceptCursorPanelSolutionClient = 'puku.acceptCursorPanelSolution';
+export const CMDNavigatePreviousPanelSolutionClient = 'puku.previousPanelSolution';
+export const CMDNavigateNextPanelSolutionClient = 'puku.nextPanelSolution';
 
-export const CMDToggleStatusMenuClient = 'github.copilot.toggleStatusMenu';
-export const CMDToggleStatusMenuChat = 'github.copilot.chat.toggleStatusMenu';
+export const CMDToggleStatusMenuClient = 'puku.toggleStatusMenu';
+export const CMDToggleStatusMenuChat = 'puku.chat.toggleStatusMenu';
 
 // Needs to be supported in both extensions when they are loaded/active. Requires a different ID.
-export const CMDSendCompletionsFeedbackChat = 'github.copilot.chat.sendCompletionFeedback';
+export const CMDSendCompletionsFeedbackChat = 'puku.chat.sendCompletionFeedback';
 
-export const CMDEnableCompletionsChat = 'github.copilot.chat.completions.enable';
-export const CMDDisableCompletionsChat = 'github.copilot.chat.completions.disable';
-export const CMDToggleCompletionsChat = 'github.copilot.chat.completions.toggle';
-export const CMDEnableCompletionsClient = 'github.copilot.completions.enable';
-export const CMDDisableCompletionsClient = 'github.copilot.completions.disable';
-export const CMDToggleCompletionsClient = 'github.copilot.completions.toggle';
+export const CMDEnableCompletionsChat = 'puku.chat.completions.enable';
+export const CMDDisableCompletionsChat = 'puku.chat.completions.disable';
+export const CMDToggleCompletionsChat = 'puku.chat.completions.toggle';
+export const CMDEnableCompletionsClient = 'puku.completions.enable';
+export const CMDDisableCompletionsClient = 'puku.completions.disable';
+export const CMDToggleCompletionsClient = 'puku.completions.toggle';
 
-export const CMDOpenLogsClient = 'github.copilot.openLogs';
-export const CMDOpenDocumentationClient = 'github.copilot.openDocs';
+export const CMDOpenLogsClient = 'puku.openLogs';
+export const CMDOpenDocumentationClient = 'puku.openDocs';
 
 // Existing chat command reused for diagnostics
-export const CMDCollectDiagnosticsChat = 'github.copilot.debug.collectDiagnostics';
+export const CMDCollectDiagnosticsChat = 'puku.debug.collectDiagnostics';
 
 // Context variable that enable/disable panel-specific commands
-export const CopilotPanelVisible = 'github.copilot.panelVisible';
-export const ComparisonPanelVisible = 'github.copilot.comparisonPanelVisible';
+export const CopilotPanelVisible = 'puku.panelVisible';
+export const ComparisonPanelVisible = 'puku.comparisonPanelVisible';
 
-export const CMDOpenModelPickerClient = 'github.copilot.openModelPicker';
-export const CMDOpenModelPickerChat = 'github.copilot.chat.openModelPicker';
+export const CMDOpenModelPickerClient = 'puku.openModelPicker';
+export const CMDOpenModelPickerChat = 'puku.chat.openModelPicker';

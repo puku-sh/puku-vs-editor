@@ -199,7 +199,7 @@ export class RemoteAgentContribution implements IDisposable {
 
 	private registerAgent(agentData: IAgent | null): Disposable {
 		const store = new DisposableStore();
-		const participantId = `github.copilot-dynamic.${agentData?.slug ?? GITHUB_PLATFORM_AGENT_ID}`;
+		const participantId = `puku-dynamic.${agentData?.slug ?? GITHUB_PLATFORM_AGENT_ID}`;
 		const slug = agentData?.slug ?? GITHUB_PLATFORM_AGENT_NAME;
 		const description = agentData?.description ?? l10n.t("Get answers grounded in web search and code search");
 		const dynamicProps: DynamicChatParticipantProps = {
@@ -254,11 +254,11 @@ export class RemoteAgentContribution implements IDisposable {
 				accessToken = this.authenticationService.permissiveGitHubSession?.accessToken;
 				if (!accessToken) {
 					if (this.authenticationService.isMinimalMode) {
-						responseStream.markdown(l10n.t('Minimal mode is enabled. You will need to change `github.copilot.advanced.authPermissions` to `default` to use this feature.'));
+						responseStream.markdown(l10n.t('Minimal mode is enabled. You will need to change `puku.advanced.authPermissions` to `default` to use this feature.'));
 						responseStream.button({
 							title: l10n.t('Open Settings (JSON)'),
 							command: 'workbench.action.openSettingsJson',
-							arguments: [{ revealSetting: { key: 'github.copilot.advanced.authPermissions' } }]
+							arguments: [{ revealSetting: { key: 'puku.advanced.authPermissions' } }]
 						});
 					} else {
 						// Otherwise, show the permissive session upgrade prompt because it's required
