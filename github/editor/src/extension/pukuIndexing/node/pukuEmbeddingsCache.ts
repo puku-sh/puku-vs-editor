@@ -7,9 +7,33 @@ import fs from 'fs';
 import sql from 'node:sqlite';
 import path from 'path';
 import * as vscode from 'vscode';
-import * as sqliteVec from 'sqlite-vec';
+import { arch, platform } from 'process';
 
 import { ChunkType } from './pukuASTChunker';
+
+/**
+ * Get the path to sqlite-vec native extension
+ * Works around import.meta.url issue in esbuild-bundled code
+ * Note: SQLite's loadExtension automatically appends platform extension (.dylib/.so/.dll)
+ * so we return path WITHOUT extension
+ */
+function getSqliteVecPath(): string {
+	// Package naming: sqlite-vec-{platform}-{arch}
+	// platform: darwin, linux, win32
+	// arch: arm64, x64
+	const packageName = `sqlite-vec-${platform}-${arch}`;
+
+	// Try to resolve from node_modules - return WITHOUT extension
+	// SQLite loadExtension will append the appropriate extension
+	try {
+		const packagePath = require.resolve(`${packageName}/package.json`);
+		return path.join(path.dirname(packagePath), 'vec0');
+	} catch {
+		// Fallback: try relative path from sqlite-vec package
+		const sqliteVecPath = require.resolve('sqlite-vec');
+		return path.join(path.dirname(sqliteVecPath), '..', packageName, 'vec0');
+	}
+}
 
 /**
  * Stored chunk with embedding
@@ -123,7 +147,9 @@ export class PukuEmbeddingsCache {
 
 		// Load sqlite-vec extension for vector search
 		try {
-			sqliteVec.load(this._db);
+			const vecPath = getSqliteVecPath();
+			console.log(`[PukuEmbeddingsCache] Loading sqlite-vec from: ${vecPath}`);
+			this._db.loadExtension(vecPath);
 			this._vecEnabled = true;
 			const version = this._db.prepare('SELECT vec_version() as version').get() as { version: string };
 			console.log(`[PukuEmbeddingsCache] sqlite-vec loaded: v${version.version}`);
