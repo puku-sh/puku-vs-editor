@@ -44,9 +44,25 @@ class AuthUpgradeAsk extends Disposable {
 	}
 
 	async run() {
+		// Skip GitHub permission upgrade when using Puku authentication
+		const isPukuAuth = await this.checkIfPukuAuthenticated();
+		if (isPukuAuth) {
+			this._logService.info('[AuthUpgradeAsk] Skipping GitHub permission upgrade - using Puku authentication');
+			return;
+		}
+
 		await this.waitForChatEnabled();
 		this.registerListeners();
 		await this.showPrompt();
+	}
+
+	private async checkIfPukuAuthenticated(): Promise<boolean> {
+		try {
+			const tokenData = await commands.executeCommand('_puku.getSessionToken');
+			return !!tokenData;
+		} catch {
+			return false;
+		}
 	}
 
 	private async waitForChatEnabled() {
@@ -71,6 +87,11 @@ class AuthUpgradeAsk extends Disposable {
 
 	private registerListeners() {
 		this._register(this._authenticationService.onDidAuthenticationChange(async () => {
+			// Skip if using Puku authentication
+			if (await this.checkIfPukuAuthenticated()) {
+				return;
+			}
+
 			if (this._authenticationService.permissiveGitHubSession) {
 				return;
 			}

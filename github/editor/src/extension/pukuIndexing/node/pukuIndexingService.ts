@@ -172,7 +172,10 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 		// Listen for auth status changes
 		this._register(this._authService.onDidChangeAuthStatus((status) => {
 			if (status === PukuAuthStatus.Authenticated) {
-				console.log('[PukuIndexing] Auth ready, can start indexing');
+				console.log('[PukuIndexing] Auth ready, starting indexing initialization');
+				this.initialize().catch(err => {
+					console.error('[PukuIndexing] Failed to initialize after auth ready:', err);
+				});
 			} else if (status === PukuAuthStatus.Unauthenticated) {
 				this._setStatus(PukuIndexingStatus.Disabled);
 			}
@@ -344,6 +347,11 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 				this._setStatus(PukuIndexingStatus.Ready);
 			} else {
 				this._setStatus(PukuIndexingStatus.Idle);
+				// Auto-start indexing for fresh cache
+				console.log('[PukuIndexing] Fresh cache detected, starting automatic indexing');
+				this.startIndexing().catch(err => {
+					console.error('[PukuIndexing] Auto-indexing failed:', err);
+				});
 			}
 		} catch (error) {
 			console.error('[PukuIndexing] Initialization failed:', error);
@@ -666,6 +674,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 		try {
 			console.log(`[PukuIndexing] Computing embeddings for ${texts.length} chunks in batch`);
+			console.log(`[PukuIndexing] Using token: ${token.token?.substring(0, 10)}... (length: ${token.token?.length})`);
 
 			// Send all texts in a single API call
 			const response = await fetch(token.endpoints.embeddings, {
@@ -681,6 +690,8 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 			if (!response.ok) {
 				console.error('[PukuIndexing] Batch embedding request failed:', response.status);
+				const errorText = await response.text();
+				console.error('[PukuIndexing] Error response:', errorText);
 				return texts.map(() => null);
 			}
 

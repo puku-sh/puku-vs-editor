@@ -124,6 +124,9 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 		this._logService.info(`Puku AI: getAllModels called for endpoint ${this._pukuBaseUrl}`);
 		console.log(`Puku AI: getAllModels called for endpoint ${this._pukuBaseUrl}`);
 
+		// Only allow these two models
+		const allowedModels = ['puku-ai', 'puku-ai-air'];
+
 		try {
 			const response = await this._fetcherService.fetch(`${this._pukuBaseUrl}/api/tags`, { method: 'GET' });
 			const data = await response.json();
@@ -133,6 +136,13 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 
 			const knownModels = new Map<string, PukuAIKnownModel>();
 			for (const model of models) {
+				// Filter: only process allowed models
+				if (!allowedModels.includes(model.model)) {
+					this._logService.info(`Puku AI: Skipping model ${model.model} (not in allowed list)`);
+					console.log(`Puku AI: Skipping model ${model.model} (not in allowed list)`);
+					continue;
+				}
+
 				this._logService.info(`Puku AI: Processing model ${model.model}`);
 				const modelInfo = await this._getModelInfo(model.model);
 				this._modelCache.set(model.model, modelInfo);
@@ -156,7 +166,7 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 		} catch (e) {
 			this._logService.error(`Puku AI: Failed to fetch models: ${e}`);
 			console.error(`Puku AI: Failed to fetch models: ${e}`);
-			throw new Error('Failed to fetch models from Puku AI proxy. Please ensure the proxy is running.');
+			throw new Error('Failed to fetch models from Puku AI. Please check your connection to api.puku.sh.');
 		}
 	}
 
