@@ -14,6 +14,7 @@ export interface PukuToken {
 	readonly token: string;
 	readonly expiresAt: number;
 	readonly refreshIn: number;
+	readonly username?: string; // Optional username from session
 	readonly endpoints: {
 		api: string;
 		embeddings: string;
@@ -85,6 +86,11 @@ export interface IPukuAuthService {
 	 * Initialize authentication
 	 */
 	initialize(): Promise<void>;
+
+	/**
+	 * Sign in (trigger authentication flow)
+	 */
+	signIn(): Promise<void>;
 
 	/**
 	 * Sign out / clear token
@@ -200,6 +206,11 @@ export class PukuAuthService extends Disposable implements IPukuAuthService {
 			console.error('[PukuAuth] Error fetching user:', error);
 			return undefined;
 		}
+	}
+
+	async signIn(): Promise<void> {
+		// Base implementation - override in subclasses for custom auth flow
+		throw new Error('signIn() must be implemented by subclass');
 	}
 
 	signOut(): void {

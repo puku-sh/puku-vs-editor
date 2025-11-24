@@ -45,7 +45,7 @@ export class PukuEmbeddingsComputer implements IEmbeddingsComputer {
 		@IFileSystemService private readonly _fileSystemService: IFileSystemService,
 	) {
 		// Get configuration values with defaults
-		this._endpoint = this._configurationService.getNonExtensionConfig('puku.embeddings.endpoint') || 'http://localhost:11434/v1/embeddings';
+		this._endpoint = this._configurationService.getNonExtensionConfig('puku.embeddings.endpoint') || 'https://api.puku.sh/v1/embeddings';
 		this._model = this._configurationService.getNonExtensionConfig('puku.embeddings.model') || 'mistralai/codestral-embed-2505';
 		this._dimensions = this._configurationService.getNonExtensionConfig('puku.embeddings.dimensions') || 1024;
 		this._authToken = this._configurationService.getNonExtensionConfig('puku.embeddings.token');

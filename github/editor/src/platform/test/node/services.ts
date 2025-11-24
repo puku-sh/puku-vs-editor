@@ -12,13 +12,10 @@ import { IInstantiationService } from '../../../util/vs/platform/instantiation/c
 import { InstantiationService } from '../../../util/vs/platform/instantiation/common/instantiationService';
 import { ServiceCollection } from '../../../util/vs/platform/instantiation/common/serviceCollection';
 import { IAuthenticationService } from '../../authentication/common/authentication';
-import { IAuthenticationChatUpgradeService } from '../../authentication/common/authenticationUpgrade';
-import { AuthenticationChatUpgradeService } from '../../authentication/common/authenticationUpgradeService';
+import { AuthenticationChatUpgradeService, IAuthenticationChatUpgradeService } from '../../authentication/common/authenticationUpgrade';
 import { ICopilotTokenManager } from '../../authentication/common/copilotTokenManager';
 import { CopilotTokenStore, ICopilotTokenStore } from '../../authentication/common/copilotTokenStore';
-import { StaticGitHubAuthenticationService } from '../../authentication/common/staticGitHubAuthenticationService';
 import { createStaticGitHubTokenProvider } from '../../authentication/node/copilotTokenManager';
-import { SimulationTestCopilotTokenManager } from '../../authentication/test/node/simulationTestCopilotTokenManager';
 import { IChatAgentService } from '../../chat/common/chatAgents';
 import { IChatQuotaService } from '../../chat/common/chatQuotaService';
 import { ChatQuotaService } from '../../chat/common/chatQuotaServiceImpl';

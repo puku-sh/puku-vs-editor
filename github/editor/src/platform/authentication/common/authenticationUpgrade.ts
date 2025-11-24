@@ -1,54 +1,40 @@
 /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *  Puku Editor - AI-powered code editor
+ *  Stub implementation - GitHub authentication upgrade removed
  *--------------------------------------------------------------------------------------------*/
 
-import type { ChatContext, ChatRequest, ChatResponseStream } from 'vscode';
 import { createServiceIdentifier } from '../../../util/common/services';
-import { Event } from '../../../util/vs/base/common/event';
-
 
 export const IAuthenticationChatUpgradeService = createServiceIdentifier<IAuthenticationChatUpgradeService>('IAuthenticationChatUpgradeService');
 
 export interface IAuthenticationChatUpgradeService {
-	_serviceBrand: undefined;
-
-	readonly onDidGrantAuthUpgrade: Event<void>;
+	readonly _serviceBrand: undefined;
 
 	/**
-	 * Checks if the user should be prompted for a permissive session upgrade.
-	 * @returns Promise<boolean> - indicating whether an upgrade is required.
+	 * Check if should request permissive session upgrade
 	 */
 	shouldRequestPermissiveSessionUpgrade(): Promise<boolean>;
 
 	/**
-	 * Displays a modal dialog requesting the user to grant an upgrade to a more permissive session.
-	 * @returns A promise that resolves to a boolean indicating whether the user granted the upgrade.
+	 * Show permissive session modal
 	 */
-	showPermissiveSessionModal(skipRepeatCheck?: boolean): Promise<boolean>;
+	showPermissiveSessionModal(force?: boolean): Promise<boolean>;
+}
 
-	/**
-	 * Presents the upgrade prompt within the chat interface itself.
-	 * @param stream - The live chat response stream where the prompt will be rendered.
-	 * @param data - The initial chat request data for context.
-	 * @param detail - Optional detail overriding
-	 */
-	showPermissiveSessionUpgradeInChat(stream: ChatResponseStream, data: ChatRequest, detail?: string, context?: ChatContext): void;
+/**
+ * Stub implementation - GitHub authentication upgrade functionality removed
+ * All methods return false/no-op since GitHub auth is disabled
+ */
+export class AuthenticationChatUpgradeService implements IAuthenticationChatUpgradeService {
+	declare readonly _serviceBrand: undefined;
 
-	/**
-	 * Manages the user's input regarding the confirmation request for a session upgrade.
-	 * @param request - The chat request object containing details necessary for the upgrade flow.
-	 * @returns Promise<ChatRequest> - The ChatRequest that was originally presented the confirmation, or the request that
-	 * was passed in if we don't detect that the confirmation was presented.
-	 */
-	handleConfirmationRequest(stream: ChatResponseStream, request: ChatRequest, history: ChatContext['history']): Promise<ChatRequest>;
+	async shouldRequestPermissiveSessionUpgrade(): Promise<boolean> {
+		// GitHub auth upgrade removed - always return false
+		return false;
+	}
 
-	/**
-	 * TODO: Fold this into one API with the above
-	 * Manages the user's input regarding the confirmation request for a session upgrade.
-	 * @param request - The chat request object containing details necessary for the upgrade flow.
-	 * @returns Promise<ChatRequest> - The ChatRequest that was originally presented the confirmation, or the request that
-	 * was passed in if we don't detect that the confirmation was presented.
-	 */
-	handleConfirmationRequestWithContext(stream: ChatResponseStream, request: ChatRequest, history: ChatContext['history']): Promise<{ request: ChatRequest; context?: ChatContext }>;
+	async showPermissiveSessionModal(_force?: boolean): Promise<boolean> {
+		// GitHub auth upgrade removed - always return false
+		return false;
+	}
 }

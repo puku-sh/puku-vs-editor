@@ -260,6 +260,25 @@ async function typeScriptServerPluginPackageJsonInstall(): Promise<void> {
 	}
 }
 
+async function copyTiktokenFiles(): Promise<void> {
+	const tokenizerSourceDir = path.join(__dirname, './src/platform/tokenizer/node');
+	const destDir = path.join(__dirname, './dist');
+
+	try {
+		await mkdir(destDir, { recursive: true });
+		const tiktokenFiles = await glob('*.tiktoken', { cwd: tokenizerSourceDir, absolute: false });
+
+		for (const file of tiktokenFiles) {
+			const source = path.join(tokenizerSourceDir, file);
+			const destination = path.join(destDir, file);
+			await copyFile(source, destination);
+			console.log(`Copied tiktoken file: ${file}`);
+		}
+	} catch (error) {
+		console.error('Error copying tiktoken files:', error);
+	}
+}
+
 const typeScriptServerPluginBuildOptions = {
 	bundle: true,
 	format: 'cjs',
@@ -286,6 +305,7 @@ async function main() {
 	}
 
 	await typeScriptServerPluginPackageJsonInstall();
+	await copyTiktokenFiles();
 
 	if (isWatch) {
 

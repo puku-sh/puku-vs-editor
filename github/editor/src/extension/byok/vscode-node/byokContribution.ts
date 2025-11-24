@@ -20,7 +20,6 @@ import { CustomOAIModelConfigurator } from './customOAIModelConfigurator';
 import { CustomOAIBYOKModelProvider } from './customOAIProvider';
 import { GeminiNativeBYOKLMProvider } from './geminiNativeProvider';
 import { GroqBYOKLMProvider } from './groqProvider';
-import { OllamaLMProvider } from './ollamaProvider';
 import { OAIBYOKLMProvider } from './openAIProvider';
 import { OpenRouterLMProvider } from './openRouterProvider';
 import { PukuAILMProvider } from './pukuAIProvider';
@@ -89,14 +88,11 @@ export class BYOKContrib extends Disposable implements IExtensionContribution {
 	}
 
 	private async _authChange(authService: IAuthenticationService, instantiationService: IInstantiationService) {
-		// Puku Editor: Register Ollama/PukuAI provider if endpoint is configured, regardless of GitHub auth
-		const ollamaEndpoint = this._configurationService.getConfig(ConfigKey.OllamaEndpoint);
-		const shouldRegisterByok = ollamaEndpoint || (authService.copilotToken && isBYOKEnabled(authService.copilotToken, this._capiClientService));
+		// Puku Editor: BYOK disabled - only Puku AI provider is used
+		this._logService.info(`BYOK: _authChange called. BYOK disabled, using Puku AI only`);
+		console.log(`BYOK: _authChange called. BYOK disabled, using Puku AI only`);
 
-		this._logService.info(`BYOK: _authChange called. ollamaEndpoint=${ollamaEndpoint}, shouldRegisterByok=${shouldRegisterByok}, already registered=${this._byokProvidersRegistered}`);
-		console.log(`BYOK: _authChange called. ollamaEndpoint=${ollamaEndpoint}, shouldRegisterByok=${shouldRegisterByok}, already registered=${this._byokProvidersRegistered}`);
-
-		if (shouldRegisterByok && !this._byokProvidersRegistered) {
+		if (false && !this._byokProvidersRegistered) {
 			this._byokProvidersRegistered = true;
 
 			// Puku Editor: Skip BYOK registration for pukuai - PukuAIContribution handles it

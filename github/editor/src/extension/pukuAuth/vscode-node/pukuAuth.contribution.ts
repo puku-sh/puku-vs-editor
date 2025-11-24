@@ -33,6 +33,12 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 		);
 		this._register(this._statusBarItem);
 
+		// Register URI handler for OAuth callback (only once, in contribution)
+		if ('handleUri' in this._pukuAuthService) {
+			this._register(vscode.window.registerUriHandler(this._pukuAuthService as vscode.UriHandler));
+			this._logService.info('PukuAuthContribution: Registered URI handler for OAuth callback');
+		}
+
 		// Register commands
 		this._registerCommands();
 
@@ -83,6 +89,43 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 					await this._pukuAuthService.signIn();
 				}
 			}
+		}));
+
+		// Internal command: Refresh auth state (called by chat entitlement service)
+		this._register(vscode.commands.registerCommand('_puku.refreshAuth', async () => {
+			this._logService.info('PukuAuthContribution: Refresh auth command triggered');
+			await this._pukuAuthService.initialize();
+		}));
+
+		// Internal command: Get session token
+		// This is called by other services to get the current auth token
+		this._register(vscode.commands.registerCommand('_puku.getSessionToken', async () => {
+			const token = this._pukuAuthService.token;
+			if (!token) {
+				return undefined;
+			}
+			return {
+				token: token.token,
+				expiresAt: token.expiresAt,
+				refreshIn: token.refreshIn,
+				endpoints: token.endpoints,
+				indexingEnabled: token.indexingEnabled,
+				semanticSearchEnabled: token.semanticSearchEnabled,
+			};
+		}));
+
+		// Internal command: Get user info
+		// This is called by other services to get current user info
+		this._register(vscode.commands.registerCommand('_puku.getUserInfo', async () => {
+			const user = this._pukuAuthService.user;
+			if (!user) {
+				return undefined;
+			}
+			return {
+				id: user.id,
+				name: user.name,
+				email: user.email,
+			};
 		}));
 	}
 
