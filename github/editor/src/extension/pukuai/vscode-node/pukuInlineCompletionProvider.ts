@@ -278,6 +278,9 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			return null;
 		}
 
+		// Get configured model (worker will handle model mapping)
+		const model = this._configurationService.getConfig(ConfigKey.PukuAIModel);
+
 		const response = await this._fetcherService.fetch(url, {
 			method: 'POST',
 			headers: {
@@ -285,7 +288,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 				'Authorization': `Bearer ${authToken.token}`,
 			},
 			body: JSON.stringify({
-				model: 'GLM-4.6',
+				model: model,
 				messages: [
 					{
 						role: 'system',
