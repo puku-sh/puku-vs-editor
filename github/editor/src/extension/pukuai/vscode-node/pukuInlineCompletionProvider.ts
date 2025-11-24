@@ -7,6 +7,7 @@ import { ConfigKey, IConfigurationService } from '../../../platform/configuratio
 import { ILogService } from '../../../platform/log/common/logService';
 import { IFetcherService } from '../../../platform/networking/common/fetcherService';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
+import { IPukuAuthService } from '../../pukuIndexing/common/pukuAuth';
 
 /**
  * Supported languages for inline completions
@@ -94,6 +95,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		@IFetcherService private readonly _fetcherService: IFetcherService,
 		@ILogService private readonly _logService: ILogService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
+		@IPukuAuthService private readonly _authService: IPukuAuthService,
 	) {
 		super();
 		console.log(`[PukuInlineCompletion] Provider created with endpoint: ${_endpoint}`);
@@ -209,10 +211,18 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		const url = `${this._endpoint}/v1/completions`;
 		console.log(`[PukuInlineCompletion] Trying native completion at ${url}`);
 
+		// Get auth token
+		const authToken = await this._authService.getToken();
+		if (!authToken) {
+			console.log('[PukuInlineCompletion] No auth token available, skipping completion');
+			return null;
+		}
+
 		const response = await this._fetcherService.fetch(url, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${authToken.token}`,
 			},
 			body: JSON.stringify({
 				prompt: prefix,
@@ -261,10 +271,18 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		// Build the FIM prompt
 		const prompt = buildFIMPrompt(prefix, suffix);
 
+		// Get auth token
+		const authToken = await this._authService.getToken();
+		if (!authToken) {
+			console.log('[PukuInlineCompletion] No auth token available, skipping chat completion');
+			return null;
+		}
+
 		const response = await this._fetcherService.fetch(url, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${authToken.token}`,
 			},
 			body: JSON.stringify({
 				model: 'GLM-4.6',
