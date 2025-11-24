@@ -44,7 +44,7 @@ export class BYOKContrib extends Disposable implements IExtensionContribution {
 		super();
 		this._logService.info('BYOK: BYOKContrib constructor called');
 		console.log('BYOK: BYOKContrib constructor called');
-		this._register(commands.registerCommand('github.copilot.chat.manageBYOK', async (vendor: string) => {
+		this._register(commands.registerCommand('puku.chat.manageBYOK', async (vendor: string) => {
 			const provider = this._providers.get(vendor);
 
 			// Show quick pick for Azure and CustomOAI providers
@@ -57,7 +57,7 @@ export class BYOKContrib extends Disposable implements IExtensionContribution {
 			}
 		}));
 
-		this._register(commands.registerCommand('github.copilot.chat.manageBYOKAPIKey', async (vendor: string, envVarName: string, action?: 'update' | 'remove', modelId?: string) => {
+		this._register(commands.registerCommand('puku.chat.manageBYOKAPIKey', async (vendor: string, envVarName: string, action?: 'update' | 'remove', modelId?: string) => {
 			const provider = this._providers.get(vendor);
 			if (!provider) {
 				this._logService.error(`BYOK: Provider ${vendor} not found`);

@@ -59,12 +59,12 @@ export class CompletionsCoreContribution extends Disposable {
 			if (unificationStateValue?.codeUnification || extensionUnification || configEnabled || copilotToken?.isNoAuthUser || overrideProxyUrl || forceEnable) {
 				console.log('[CompletionsCoreContribution] Registering inline completion provider');
 				const provider = this._getOrCreateProvider();
-				reader.store.add(languages.registerInlineCompletionItemProvider({ pattern: '**' }, provider, { debounceDelayMs: 0, excludes: ['github.copilot'], groupId: 'completions' }));
+				reader.store.add(languages.registerInlineCompletionItemProvider({ pattern: '**' }, provider, { debounceDelayMs: 0, excludes: ['puku'], groupId: 'completions' }));
 			} else {
 				console.log('[CompletionsCoreContribution] NOT registering inline completion provider - conditions not met');
 			}
 
-			void commands.executeCommand('setContext', 'github.copilot.extensionUnification.activated', extensionUnification);
+			void commands.executeCommand('setContext', 'puku.extensionUnification.activated', extensionUnification);
 
 			if (extensionUnification && this._completionsInstantiationService) {
 				reader.store.add(this._completionsInstantiationService.invokeFunction(registerUnificationCommands));
@@ -73,7 +73,7 @@ export class CompletionsCoreContribution extends Disposable {
 
 		this._register(autorun(reader => {
 			const token = this._copilotToken.read(reader);
-			void commands.executeCommand('setContext', 'github.copilot.activated', token !== undefined);
+			void commands.executeCommand('setContext', 'puku.activated', token !== undefined);
 		}));
 	}
 

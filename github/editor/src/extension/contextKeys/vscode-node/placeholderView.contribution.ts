@@ -12,7 +12,7 @@ import { disposableTimeout } from '../../../util/vs/base/common/async';
 import { Event } from '../../../util/vs/base/common/event';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 
-const ShowCodexPlaceholderKey = 'github.copilot.chat.codex.showPlaceholder';
+const ShowCodexPlaceholderKey = 'puku.chat.codex.showPlaceholder';
 
 export class PlaceholderViewContribution extends Disposable {
 	constructor(
@@ -38,7 +38,7 @@ export class PlaceholderViewContribution extends Disposable {
 		this._register(vscode.extensions.onDidChange(updateContextKey));
 		this._register(Event.runAndSubscribe(authenticationService.onDidAuthenticationChange, updateContextKey));
 
-		this._register(vscode.commands.registerCommand('github.copilot.chat.installAgent', this.installAgentCommand, this));
+		this._register(vscode.commands.registerCommand('puku.chat.installAgent', this.installAgentCommand, this));
 	}
 
 	private async installAgentCommand(args: unknown) {

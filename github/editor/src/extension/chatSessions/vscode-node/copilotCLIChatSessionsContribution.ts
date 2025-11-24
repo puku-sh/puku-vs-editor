@@ -35,8 +35,8 @@ const ISOLATION_OPTION_ID = 'isolation';
 const _sessionModel: Map<string, vscode.ChatSessionProviderOptionItem | undefined> = new Map();
 
 export class CopilotCLIWorktreeManager {
-	static COPILOT_CLI_DEFAULT_ISOLATION_MEMENTO_KEY = 'github.copilot.cli.sessionIsolation';
-	static COPILOT_CLI_SESSION_WORKTREE_MEMENTO_KEY = 'github.copilot.cli.sessionWorktrees';
+	static COPILOT_CLI_DEFAULT_ISOLATION_MEMENTO_KEY = 'puku.cli.sessionIsolation';
+	static COPILOT_CLI_SESSION_WORKTREE_MEMENTO_KEY = 'puku.cli.sessionWorktrees';
 
 	private _sessionIsolation: Map<string, boolean> = new Map();
 	private _sessionWorktrees: Map<string, string> = new Map();
@@ -167,7 +167,7 @@ export class CopilotCLIChatSessionItemProvider extends Disposable implements vsc
 		const diskSessions = await Promise.all(sessions.map(async session => this._toChatSessionItem(session)));
 
 		const count = diskSessions.length;
-		this.commandExecutionService.executeCommand('setContext', 'github.copilot.chat.cliSessionsEmpty', count === 0);
+		this.commandExecutionService.executeCommand('setContext', 'puku.chat.cliSessionsEmpty', count === 0);
 
 		return diskSessions;
 	}
@@ -554,13 +554,13 @@ export class CopilotCLIChatSessionParticipant extends Disposable {
 
 export function registerCLIChatCommands(copilotcliSessionItemProvider: CopilotCLIChatSessionItemProvider, copilotCLISessionService: ICopilotCLISessionService, gitService: IGitService): IDisposable {
 	const disposableStore = new DisposableStore();
-	disposableStore.add(vscode.commands.registerCommand('github.copilot.copilotcli.sessions.refresh', () => {
+	disposableStore.add(vscode.commands.registerCommand('puku.copilotcli.sessions.refresh', () => {
 		copilotcliSessionItemProvider.refresh();
 	}));
-	disposableStore.add(vscode.commands.registerCommand('github.copilot.cli.sessions.refresh', () => {
+	disposableStore.add(vscode.commands.registerCommand('puku.cli.sessions.refresh', () => {
 		copilotcliSessionItemProvider.refresh();
 	}));
-	disposableStore.add(vscode.commands.registerCommand('github.copilot.cli.sessions.delete', async (sessionItem?: vscode.ChatSessionItem) => {
+	disposableStore.add(vscode.commands.registerCommand('puku.cli.sessions.delete', async (sessionItem?: vscode.ChatSessionItem) => {
 		if (sessionItem?.resource) {
 			const id = SessionIdForCLI.parse(sessionItem.resource);
 			const worktreePath = copilotcliSessionItemProvider.worktreeManager.getWorktreePath(id);
@@ -591,12 +591,12 @@ export function registerCLIChatCommands(copilotcliSessionItemProvider: CopilotCL
 			}
 		}
 	}));
-	disposableStore.add(vscode.commands.registerCommand('github.copilot.cli.sessions.resumeInTerminal', async (sessionItem?: vscode.ChatSessionItem) => {
+	disposableStore.add(vscode.commands.registerCommand('puku.cli.sessions.resumeInTerminal', async (sessionItem?: vscode.ChatSessionItem) => {
 		if (sessionItem?.resource) {
 			await copilotcliSessionItemProvider.resumeCopilotCLISessionInTerminal(sessionItem);
 		}
 	}));
-	disposableStore.add(vscode.commands.registerCommand('github.copilot.cli.sessions.newTerminalSession', async () => {
+	disposableStore.add(vscode.commands.registerCommand('puku.cli.sessions.newTerminalSession', async () => {
 		await copilotcliSessionItemProvider.createCopilotCLITerminal();
 	}));
 	disposableStore.add(vscode.commands.registerCommand('agentSession.copilotcli.openChanges', async (sessionItemResource?: vscode.Uri) => {
@@ -641,7 +641,7 @@ export function registerCLIChatCommands(copilotcliSessionItemProvider: CopilotCL
 
 		await vscode.commands.executeCommand('_workbench.openMultiDiffEditor', { multiDiffSourceUri, title, resources });
 	}));
-	disposableStore.add(vscode.commands.registerCommand('github.copilot.chat.applyCopilotCLIAgentSessionChanges', async (sessionItemResource?: vscode.Uri) => {
+	disposableStore.add(vscode.commands.registerCommand('puku.chat.applyCopilotCLIAgentSessionChanges', async (sessionItemResource?: vscode.Uri) => {
 		if (!sessionItemResource) {
 			return;
 		}

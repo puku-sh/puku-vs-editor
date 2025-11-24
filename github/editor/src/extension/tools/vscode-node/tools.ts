@@ -29,12 +29,12 @@ export class ToolsContribution extends Disposable {
 			this._register(vscode.lm.registerTool(getContributedToolName(name), tool));
 		}
 
-		this._register(vscode.commands.registerCommand('github.copilot.debug.resetVirtualToolGroups', async () => {
+		this._register(vscode.commands.registerCommand('puku.debug.resetVirtualToolGroups', async () => {
 			await toolGrouping.clear();
 			vscode.window.showInformationMessage(l10n.t('Tool groups have been reset. They will be regenerated on the next agent request.'));
 		}));
 
-		this._register(vscode.commands.registerCommand('github.copilot.chat.tools.memory.openFolder', async () => {
+		this._register(vscode.commands.registerCommand('puku.chat.tools.memory.openFolder', async () => {
 			const storageUri = this.extensionContext.storageUri;
 			if (!storageUri) {
 				vscode.window.showErrorMessage(l10n.t('No workspace is currently open. Memory operations require an active workspace.'));

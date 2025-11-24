@@ -61,22 +61,22 @@
 		{
 			"url": "https://img.shields.io/badge/GitHub%20Copilot-Subscription%20Required-orange",
 			"href": "https://github.com/github-copilot/signup?editor=vscode",
-			"description": "%github.copilot.badge.signUp%"
+			"description": "%puku.badge.signUp%"
 		},
 		{
 			"url": "https://img.shields.io/github/stars/github/copilot-docs?style=social",
 			"href": "https://github.com/github/copilot-docs",
-			"description": "%github.copilot.badge.star%"
+			"description": "%puku.badge.star%"
 		},
 		{
 			"url": "https://img.shields.io/youtube/channel/views/UC7c3Kb6jYCRj4JOHHZTxKsQ?style=social",
 			"href": "https://www.youtube.com/@GitHub/search?query=copilot",
-			"description": "%github.copilot.badge.youtube%"
+			"description": "%puku.badge.youtube%"
 		},
 		{
 			"url": "https://img.shields.io/twitter/follow/github?style=social",
 			"href": "https://twitter.com/github",
-			"description": "%github.copilot.badge.twitter%"
+			"description": "%puku.badge.twitter%"
 		}
 	],
 	"activationEvents": [
@@ -475,15 +475,15 @@
 						"facts"
 					]
 				},
-				"when": "config.github.copilot.chat.enableUserPreferences"
+				"when": "config.puku.chat.enableUserPreferences"
 			},
 			{
 				"name": "puku_createNewWorkspace",
-				"displayName": "%github.copilot.tools.createNewWorkspace.name%",
+				"displayName": "%puku.tools.createNewWorkspace.name%",
 				"toolReferenceName": "newWorkspace",
 				"icon": "$(new-folder)",
-				"userDescription": "%github.copilot.tools.createNewWorkspace.userDescription%",
-				"when": "config.github.copilot.chat.newWorkspaceCreation.enabled",
+				"userDescription": "%puku.tools.createNewWorkspace.userDescription%",
+				"when": "config.puku.chat.newWorkspaceCreation.enabled",
 				"modelDescription": "Get comprehensive setup steps to help the user create complete project structures in a VS Code workspace. This tool is designed for full project initialization and scaffolding, not for creating individual files.\n\nWhen to use this tool:\n- User wants to create a new complete project from scratch\n- Setting up entire project frameworks (TypeScript projects, React apps, Node.js servers, etc.)\n- Initializing Model Context Protocol (MCP) servers with full structure\n- Creating VS Code extensions with proper scaffolding\n- Setting up Next.js, Vite, or other framework-based projects\n- User asks for \"new project\", \"create a workspace\", \"set up a [framework] project\"\n- Need to establish complete development environment with dependencies, config files, and folder structure\n\nWhen NOT to use this tool:\n- Creating single files or small code snippets\n- Adding individual files to existing projects\n- Making modifications to existing codebases\n- User asks to \"create a file\" or \"add a component\"\n- Simple code examples or demonstrations\n- Debugging or fixing existing code\n\nThis tool provides complete project setup including:\n- Folder structure creation\n- Package.json and dependency management\n- Configuration files (tsconfig, eslint, etc.)\n- Initial boilerplate code\n- Development environment setup\n- Build and run instructions\n\nUse other file creation tools for individual files within existing projects.",
 				"inputSchema": {
 					"type": "object",
@@ -504,8 +504,8 @@
 			},
 			{
 				"name": "puku_getProjectSetupInfo",
-				"displayName": "%github.copilot.tools.getProjectSetupInfo.name%",
-				"when": "config.github.copilot.chat.newWorkspaceCreation.enabled",
+				"displayName": "%puku.tools.getProjectSetupInfo.name%",
+				"when": "config.puku.chat.newWorkspaceCreation.enabled",
 				"toolReferenceName": "getProjectSetupInfo",
 				"modelDescription": "Do not call this tool without first calling the tool to create a workspace. This tool provides a project setup information for a Visual Studio Code workspace based on a project type and programming language.",
 				"inputSchema": {
@@ -525,7 +525,7 @@
 			{
 				"name": "puku_installExtension",
 				"displayName": "Install Extension in VS Code",
-				"when": "config.github.copilot.chat.newWorkspaceCreation.enabled",
+				"when": "config.puku.chat.newWorkspaceCreation.enabled",
 				"toolReferenceName": "installExtension",
 				"modelDescription": "Install an extension in VS Code. Use this tool to install an extension in Visual Studio Code as part of a new workspace creation process only.",
 				"inputSchema": {
@@ -550,7 +550,7 @@
 			{
 				"name": "puku_runVscodeCommand",
 				"displayName": "Run VS Code Command",
-				"when": "config.github.copilot.chat.newWorkspaceCreation.enabled",
+				"when": "config.puku.chat.newWorkspaceCreation.enabled",
 				"toolReferenceName": "runVscodeCommand",
 				"modelDescription": "Run a command in VS Code. Use this tool to run a command in Visual Studio Code as part of a new workspace creation process only.",
 				"inputSchema": {
@@ -700,7 +700,7 @@
 				"toolReferenceName": "replaceString",
 				"displayName": "%copilot.tools.replaceString.name%",
 				"modelDescription": "This is a tool for making edits in an existing file in the workspace. For moving or renaming files, use run in terminal tool with the 'mv' command instead. For larger edits, split them into smaller edits and call the edit tool multiple times to ensure accuracy. Before editing, always ensure you have the context to understand the file's contents and context. To edit a file, provide: 1) filePath (absolute path), 2) oldString (MUST be the exact literal text to replace including all whitespace, indentation, newlines, and surrounding code etc), and 3) newString (MUST be the exact literal text to replace \\`oldString\\` with (also including all whitespace, indentation, newlines, and surrounding code etc.). Ensure the resulting code is correct and idiomatic.). Each use of this tool replaces exactly ONE occurrence of oldString.\n\nCRITICAL for \\`oldString\\`: Must uniquely identify the single instance to change. Include at least 3 lines of context BEFORE and AFTER the target text, matching whitespace and indentation precisely. If this string matches multiple locations, or does not match exactly, the tool will fail. Never use 'Lines 123-456 omitted' from summarized documents or ...existing code... comments in the oldString or newString.",
-				"when": "!config.github.copilot.chat.disableReplaceTool",
+				"when": "!config.puku.chat.disableReplaceTool",
 				"inputSchema": {
 					"type": "object",
 					"properties": {
@@ -729,7 +729,7 @@
 				"toolReferenceName": "multiReplaceString",
 				"displayName": "%copilot.tools.multiReplaceString.name%",
 				"modelDescription": "This tool allows you to apply multiple replace_string_in_file operations in a single call, which is more efficient than calling replace_string_in_file multiple times. It takes an array of replacement operations and applies them sequentially. Each replacement operation has the same parameters as replace_string_in_file: filePath, oldString, newString, and explanation. This tool is ideal when you need to make multiple edits across different files or multiple edits in the same file. The tool will provide a summary of successful and failed operations.",
-				"when": "!config.github.copilot.chat.disableReplaceTool",
+				"when": "!config.puku.chat.disableReplaceTool",
 				"inputSchema": {
 					"type": "object",
 					"properties": {
@@ -996,17 +996,17 @@
 			{
 				"name": "puku_getSearchResults",
 				"toolReferenceName": "searchResults",
-				"displayName": "%github.copilot.tools.searchResults.name%",
+				"displayName": "%puku.tools.searchResults.name%",
 				"icon": "$(search)",
-				"userDescription": "%github.copilot.tools.searchResults.description%",
+				"userDescription": "%puku.tools.searchResults.description%",
 				"modelDescription": "The results from the search view"
 			},
 			{
 				"name": "puku_githubRepo",
 				"toolReferenceName": "githubRepo",
-				"displayName": "%github.copilot.tools.githubRepo.name%",
+				"displayName": "%puku.tools.githubRepo.name%",
 				"modelDescription": "Searches a GitHub repository for relevant source code snippets. Only use this tool if the user is very clearly asking for code snippets from a specific GitHub repository. Do not use this tool for Github repos that the user has open in their workspace.",
-				"userDescription": "%github.copilot.tools.githubRepo.userDescription%",
+				"userDescription": "%puku.tools.githubRepo.userDescription%",
 				"icon": "$(repo)",
 				"canBeReferencedInPrompt": true,
 				"inputSchema": {
@@ -1057,7 +1057,7 @@
 				"userDescription": "%copilot.tools.memory.description%",
 				"modelDescription": "Manage persistent memory across conversations. This tool allows you to create, view, update, and delete memory files that persist between chat sessions. Use this to remember important information about the user, their preferences, project context, or anything that should be recalled in future conversations. Available commands: view (list/read memories), create (new memory file), str_replace (edit content), insert (add content), delete (remove memory), rename (change filename).",
 				"icon": "$(database)",
-				"when": "config.github.copilot.chat.tools.memory.enabled",
+				"when": "config.puku.chat.tools.memory.enabled",
 				"canBeReferencedInPrompt": true,
 				"tags": [],
 				"inputSchema": {
@@ -1181,7 +1181,7 @@
 		],
 		"chatParticipants": [
 			{
-				"id": "github.copilot.default",
+				"id": "puku.default",
 				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.description%",
@@ -1217,7 +1217,7 @@
 				]
 			},
 			{
-				"id": "github.copilot.editingSession",
+				"id": "puku.editingSession",
 				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.edits.description%",
@@ -1231,7 +1231,7 @@
 				"when": "!config.chat.edits2.enabled"
 			},
 			{
-				"id": "github.copilot.editingSessionEditor",
+				"id": "puku.editingSessionEditor",
 				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.edits.description%",
@@ -1242,7 +1242,7 @@
 				]
 			},
 			{
-				"id": "github.copilot.editingSession2",
+				"id": "puku.editingSession2",
 				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.edits.description%",
@@ -1256,7 +1256,7 @@
 				"when": "config.chat.edits2.enabled"
 			},
 			{
-				"id": "github.copilot.editsAgent",
+				"id": "puku.editsAgent",
 				"name": "agent",
 				"fullName": "Puku Editor",
 				"description": "%copilot.agent.description%",
@@ -1277,7 +1277,7 @@
 					{
 						"name": "error",
 						"description": "Make a model request which will result in an error",
-						"when": "github.copilot.chat.debug"
+						"when": "puku.chat.debug"
 					}
 				]
 			},
@@ -1291,7 +1291,7 @@
 				]
 			},
 			{
-				"id": "github.copilot.editor",
+				"id": "puku.editor",
 				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.description%",
@@ -1378,7 +1378,7 @@
 					{
 						"name": "review",
 						"description": "%copilot.workspace.review.description%",
-						"when": "github.copilot.advanced.review.intent"
+						"when": "puku.advanced.review.intent"
 					},
 					{
 						"name": "tests",
@@ -1396,7 +1396,7 @@
 				]
 			},
 			{
-				"id": "github.copilot.notebook",
+				"id": "puku.notebook",
 				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.description%",
@@ -1417,7 +1417,7 @@
 				]
 			},
 			{
-				"id": "github.copilot.notebookEditorAgent",
+				"id": "puku.notebookEditorAgent",
 				"name": "Puku",
 				"fullName": "Puku Editor",
 				"description": "%copilot.description%",
@@ -1438,11 +1438,11 @@
 				]
 			},
 			{
-				"id": "github.copilot.workspace",
+				"id": "puku.workspace",
 				"name": "workspace",
 				"fullName": "Workspace",
 				"description": "%copilot.workspace.description%",
-				"when": "!github.copilot.interactiveSession.disabled",
+				"when": "!puku.interactiveSession.disabled",
 				"sampleRequest": "%copilot.workspace.sampleRequest%",
 				"locations": [
 					"panel"
@@ -1478,7 +1478,7 @@
 					{
 						"name": "review",
 						"description": "%copilot.workspace.review.description%",
-						"when": "github.copilot.advanced.review.intent"
+						"when": "puku.advanced.review.intent"
 					},
 					{
 						"name": "tests",
@@ -1533,13 +1533,13 @@
 						"name": "semanticSearch",
 						"description": "%copilot.workspace.semanticSearch.description%",
 						"sampleRequest": "%copilot.workspace.semanticSearch.sampleRequest%",
-						"when": "config.github.copilot.semanticSearch.enabled"
+						"when": "config.puku.semanticSearch.enabled"
 					},
 					{
 						"name": "setupTests",
 						"description": "%copilot.vscode.setupTests.description%",
 						"sampleRequest": "%copilot.vscode.setupTests.sampleRequest%",
-						"when": "config.github.copilot.chat.setupTests.enabled",
+						"when": "config.puku.chat.setupTests.enabled",
 						"disambiguation": [
 							{
 								"category": "set_up_tests",
@@ -1553,11 +1553,11 @@
 				]
 			},
 			{
-				"id": "github.copilot.vscode",
+				"id": "puku.vscode",
 				"name": "vscode",
 				"fullName": "VS Code",
 				"description": "%copilot.vscode.description%",
-				"when": "!github.copilot.interactiveSession.disabled",
+				"when": "!puku.interactiveSession.disabled",
 				"sampleRequest": "%copilot.vscode.sampleRequest%",
 				"locations": [
 					"panel"
@@ -1590,11 +1590,11 @@
 				]
 			},
 			{
-				"id": "github.copilot.terminal",
+				"id": "puku.terminal",
 				"name": "terminal",
 				"fullName": "Terminal",
 				"description": "%copilot.terminal.description%",
-				"when": "!github.copilot.interactiveSession.disabled",
+				"when": "!puku.interactiveSession.disabled",
 				"sampleRequest": "%copilot.terminal.sampleRequest%",
 				"isDefault": true,
 				"locations": [
@@ -1609,11 +1609,11 @@
 				]
 			},
 			{
-				"id": "github.copilot.terminalPanel",
+				"id": "puku.terminalPanel",
 				"name": "terminal",
 				"fullName": "Terminal",
 				"description": "%copilot.terminalPanel.description%",
-				"when": "!github.copilot.interactiveSession.disabled",
+				"when": "!puku.interactiveSession.disabled",
 				"sampleRequest": "%copilot.terminal.sampleRequest%",
 				"locations": [
 					"panel"
@@ -1636,7 +1636,7 @@
 				]
 			},
 			{
-				"id": "github.copilot.chatReplay",
+				"id": "puku.chatReplay",
 				"name": "chatReplay",
 				"fullName": "Chat Replay",
 				"when": "debugType == 'vscode-chat-replay'",
@@ -1657,17 +1657,17 @@
 			{
 				"vendor": "azure",
 				"displayName": "Azure",
-				"managementCommand": "github.copilot.chat.manageBYOK"
+				"managementCommand": "puku.chat.manageBYOK"
 			},
 			{
 				"vendor": "anthropic",
 				"displayName": "Anthropic",
-				"managementCommand": "github.copilot.chat.manageBYOK"
+				"managementCommand": "puku.chat.manageBYOK"
 			},
 			{
 				"vendor": "xai",
 				"displayName": "xAI",
-				"managementCommand": "github.copilot.chat.manageBYOK"
+				"managementCommand": "puku.chat.manageBYOK"
 			},
 			{
 				"vendor": "ollama",
@@ -1676,28 +1676,28 @@
 			{
 				"vendor": "openai",
 				"displayName": "OpenAI",
-				"managementCommand": "github.copilot.chat.manageBYOK"
+				"managementCommand": "puku.chat.manageBYOK"
 			},
 			{
 				"vendor": "gemini",
 				"displayName": "Google",
-				"managementCommand": "github.copilot.chat.manageBYOK"
+				"managementCommand": "puku.chat.manageBYOK"
 			},
 			{
 				"vendor": "groq",
 				"displayName": "Groq",
-				"managementCommand": "github.copilot.chat.manageBYOK"
+				"managementCommand": "puku.chat.manageBYOK"
 			},
 			{
 				"vendor": "openrouter",
 				"displayName": "OpenRouter",
-				"managementCommand": "github.copilot.chat.manageBYOK"
+				"managementCommand": "puku.chat.manageBYOK"
 			},
 			{
 				"vendor": "customoai",
 				"when": "productQualityType != 'stable'",
 				"displayName": "OpenAI Compatible",
-				"managementCommand": "github.copilot.chat.manageBYOK"
+				"managementCommand": "puku.chat.manageBYOK"
 			}
 		],
 		"interactiveSession": [
@@ -1705,628 +1705,628 @@
 				"label": "Puku Editor",
 				"id": "copilot",
 				"icon": "",
-				"when": "!github.copilot.interactiveSession.disabled"
+				"when": "!puku.interactiveSession.disabled"
 			}
 		],
 		"viewsWelcome": [
 			{
 				"view": "debug",
-				"when": "github.copilot-chat.activated",
-				"contents": "%github.copilot.viewsWelcome.debug%"
+				"when": "puku-chat.activated",
+				"contents": "%puku.viewsWelcome.debug%"
 			},
 			{
 				"view": "codex-placeholder",
 				"when": "true",
-				"contents": "%github.copilot.viewsWelcome.codexPlaceholder%"
+				"contents": "%puku.viewsWelcome.codexPlaceholder%"
 			},
 			{
 				"view": "workbench.view.chat.sessions.openai-codex",
-				"contents": "%github.copilot.viewsWelcome.codexWelcomeView%"
+				"contents": "%puku.viewsWelcome.codexWelcomeView%"
 			},
 			{
 				"view": "copilot-agents-placeholder",
 				"when": "true",
-				"contents": "%github.copilot.viewsWelcome.agentsPlaceholder%"
+				"contents": "%puku.viewsWelcome.agentsPlaceholder%"
 			},
 			{
 				"view": "workbench.view.chat.sessions.copilot-cloud-agent",
-				"when": "github.copilot.auth.missingPermissiveSession",
-				"contents": "%github.copilot.viewsWelcome.noPermissiveToken.contents%"
+				"when": "puku.auth.missingPermissiveSession",
+				"contents": "%puku.viewsWelcome.noPermissiveToken.contents%"
 			},
 			{
 				"view": "workbench.view.chat.sessions.copilot-cloud-agent",
 				"when": "workspaceFolderCount == 0",
-				"contents": "%github.copilot.viewsWelcome.noFolder.contents%"
+				"contents": "%puku.viewsWelcome.noFolder.contents%"
 			},
 			{
 				"view": "workbench.view.chat.sessions.copilot-cloud-agent",
 				"when": "git.state == initialized && gitOpenRepositoryCount == 0 && workspaceFolderCount > 0 && git.parentRepositoryCount == 0",
-				"contents": "%github.copilot.viewsWelcome.noRepo.contents%"
+				"contents": "%puku.viewsWelcome.noRepo.contents%"
 			},
 			{
 				"view": "workbench.view.chat.sessions.copilot-cloud-agent",
 				"when": "git.state == initialized && workspaceFolderCount > 0 && (git.parentRepositoryCount > 0 || gitOpenRepositoryCount > 0) && !github:hasGitHubRemotes",
-				"contents": "%github.copilot.viewsWelcome.noGitHub.contents%"
+				"contents": "%puku.viewsWelcome.noGitHub.contents%"
 			},
 			{
 				"view": "workbench.view.chat.sessions.copilot-cloud-agent",
-				"when": "github.copilot.chat.cloudSessionsEmpty",
-				"contents": "%github.copilot.viewsWelcome.cloudSessionsEmpty.contents%"
+				"when": "puku.chat.cloudSessionsEmpty",
+				"contents": "%puku.viewsWelcome.cloudSessionsEmpty.contents%"
 			},
 			{
 				"view": "workbench.view.chat.sessions.copilotcli",
-				"when": "github.copilot.chat.cliSessionsEmpty",
-				"contents": "%github.copilot.viewsWelcome.cliSessionsEmpty.contents%"
+				"when": "puku.chat.cliSessionsEmpty",
+				"contents": "%puku.viewsWelcome.cliSessionsEmpty.contents%"
 			}
 		],
 		"chatViewsWelcome": [
 			{
 				"icon": "$(copilot-large)",
 				"title": "Ask Copilot",
-				"content": "%github.copilot.viewsWelcome.signIn%",
-				"when": "!github.copilot-chat.activated && !github.copilot.offline && !github.copilot.interactiveSession.individual.expired && !github.copilot.interactiveSession.enterprise.disabled && !github.copilot.interactiveSession.contactSupport && !github.copilot.interactiveSession.chatDisabled && !github.copilot.interactiveSession.switchToReleaseChannel"
+				"content": "%puku.viewsWelcome.signIn%",
+				"when": "!puku-chat.activated && !puku.offline && !puku.interactiveSession.individual.expired && !puku.interactiveSession.enterprise.disabled && !puku.interactiveSession.contactSupport && !puku.interactiveSession.chatDisabled && !puku.interactiveSession.switchToReleaseChannel"
 			},
 			{
 				"icon": "$(copilot-large)",
 				"title": "Ask Copilot",
-				"content": "%github.copilot.viewsWelcome.individual.expired%",
-				"when": "github.copilot.interactiveSession.individual.expired"
+				"content": "%puku.viewsWelcome.individual.expired%",
+				"when": "puku.interactiveSession.individual.expired"
 			},
 			{
 				"icon": "$(copilot-large)",
 				"title": "Ask Copilot",
-				"content": "%github.copilot.viewsWelcome.enterprise%",
-				"when": "github.copilot.interactiveSession.enterprise.disabled"
+				"content": "%puku.viewsWelcome.enterprise%",
+				"when": "puku.interactiveSession.enterprise.disabled"
 			},
 			{
 				"icon": "$(copilot-large)",
 				"title": "Ask Copilot",
-				"content": "%github.copilot.viewsWelcome.offline%",
-				"when": "github.copilot.offline"
+				"content": "%puku.viewsWelcome.offline%",
+				"when": "puku.offline"
 			},
 			{
 				"icon": "$(copilot-large)",
 				"title": "Ask Copilot",
-				"content": "%github.copilot.viewsWelcome.contactSupport%",
-				"when": "github.copilot.interactiveSession.contactSupport"
+				"content": "%puku.viewsWelcome.contactSupport%",
+				"when": "puku.interactiveSession.contactSupport"
 			},
 			{
 				"icon": "$(copilot-large)",
 				"title": "Ask Copilot",
-				"content": "%github.copilot.viewsWelcome.chatDisabled%",
-				"when": "github.copilot.interactiveSession.chatDisabled"
+				"content": "%puku.viewsWelcome.chatDisabled%",
+				"when": "puku.interactiveSession.chatDisabled"
 			},
 			{
 				"icon": "$(copilot-large)",
 				"title": "Ask Copilot",
-				"content": "%github.copilot.viewsWelcome.switchToReleaseChannel%",
-				"when": "github.copilot.interactiveSession.switchToReleaseChannel"
+				"content": "%puku.viewsWelcome.switchToReleaseChannel%",
+				"when": "puku.interactiveSession.switchToReleaseChannel"
 			}
 		],
 		"commands": [
 			{
-				"command": "github.copilot.chat.triggerPermissiveSignIn",
-				"title": "%github.copilot.command.triggerPermissiveSignIn%"
+				"command": "puku.chat.triggerPermissiveSignIn",
+				"title": "%puku.command.triggerPermissiveSignIn%"
 			},
 			{
-				"command": "github.copilot.claude.sessions.refresh",
-				"title": "%github.copilot.command.refreshClaudeCodeSessions%",
+				"command": "puku.claude.sessions.refresh",
+				"title": "%puku.command.refreshClaudeCodeSessions%",
 				"icon": "$(refresh)",
 				"category": "Claude Code"
 			},
 			{
-				"command": "github.copilot.cli.sessions.refresh",
-				"title": "%github.copilot.command.refreshAgentSessions%",
+				"command": "puku.cli.sessions.refresh",
+				"title": "%puku.command.refreshAgentSessions%",
 				"icon": "$(refresh)",
 				"category": "Copilot CLI"
 			},
 			{
-				"command": "github.copilot.cli.sessions.delete",
-				"title": "%github.copilot.command.deleteAgentSession%",
+				"command": "puku.cli.sessions.delete",
+				"title": "%puku.command.deleteAgentSession%",
 				"icon": "$(close)",
 				"category": "Copilot CLI"
 			},
 			{
-				"command": "github.copilot.cli.sessions.resumeInTerminal",
-				"title": "%github.copilot.command.cli.sessions.resumeInTerminal%",
+				"command": "puku.cli.sessions.resumeInTerminal",
+				"title": "%puku.command.cli.sessions.resumeInTerminal%",
 				"icon": "$(terminal)",
 				"category": "Copilot CLI"
 			},
 			{
-				"command": "github.copilot.cli.sessions.newTerminalSession",
-				"title": "%github.copilot.cli.sessions.newTerminalSession%",
+				"command": "puku.cli.sessions.newTerminalSession",
+				"title": "%puku.cli.sessions.newTerminalSession%",
 				"icon": "$(terminal)",
 				"category": "Copilot CLI"
 			},
 			{
-				"command": "github.copilot.chat.replay",
+				"command": "puku.chat.replay",
 				"title": "Start Chat Replay",
 				"icon": "$(debug-line-by-line)",
 				"enablement": "resourceFilename === 'benchRun.chatReplay.json' && !inDebugMode"
 			},
 			{
-				"command": "github.copilot.chat.replay.enableWorkspaceEditTracing",
-				"title": "%github.copilot.command.enableEditTracing%",
+				"command": "puku.chat.replay.enableWorkspaceEditTracing",
+				"title": "%puku.command.enableEditTracing%",
 				"category": "Developer",
-				"enablement": "!github.copilot.chat.replay.workspaceEditTracing"
+				"enablement": "!puku.chat.replay.workspaceEditTracing"
 			},
 			{
-				"command": "github.copilot.chat.replay.disableWorkspaceEditTracing",
-				"title": "%github.copilot.command.disableEditTracing%",
+				"command": "puku.chat.replay.disableWorkspaceEditTracing",
+				"title": "%puku.command.disableEditTracing%",
 				"category": "Developer",
-				"enablement": "github.copilot.chat.replay.workspaceEditTracing"
+				"enablement": "puku.chat.replay.workspaceEditTracing"
 			},
 			{
-				"command": "github.copilot.chat.explain",
-				"title": "%github.copilot.command.explainThis%",
-				"enablement": "!github.copilot.interactiveSession.disabled",
+				"command": "puku.chat.explain",
+				"title": "%puku.command.explainThis%",
+				"enablement": "!puku.interactiveSession.disabled",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.explain.palette",
-				"title": "%github.copilot.command.explainThis%",
-				"enablement": "!github.copilot.interactiveSession.disabled && !editorReadonly",
+				"command": "puku.chat.explain.palette",
+				"title": "%puku.command.explainThis%",
+				"enablement": "!puku.interactiveSession.disabled && !editorReadonly",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review",
-				"title": "%github.copilot.command.reviewAndComment%",
-				"enablement": "config.github.copilot.chat.reviewSelection.enabled && !github.copilot.interactiveSession.disabled",
+				"command": "puku.chat.review",
+				"title": "%puku.command.reviewAndComment%",
+				"enablement": "config.puku.chat.reviewSelection.enabled && !puku.interactiveSession.disabled",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.apply",
-				"title": "%github.copilot.command.applyReviewSuggestion%",
+				"command": "puku.chat.review.apply",
+				"title": "%puku.command.applyReviewSuggestion%",
 				"icon": "$(sparkle)",
 				"enablement": "commentThread =~ /hasSuggestion/",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.applyAndNext",
-				"title": "%github.copilot.command.applyReviewSuggestionAndNext%",
+				"command": "puku.chat.review.applyAndNext",
+				"title": "%puku.command.applyReviewSuggestionAndNext%",
 				"icon": "$(sparkle)",
 				"enablement": "commentThread =~ /hasSuggestion/",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.discard",
-				"title": "%github.copilot.command.discardReviewSuggestion%",
+				"command": "puku.chat.review.discard",
+				"title": "%puku.command.discardReviewSuggestion%",
 				"icon": "$(close)",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.discardAndNext",
-				"title": "%github.copilot.command.discardReviewSuggestionAndNext%",
+				"command": "puku.chat.review.discardAndNext",
+				"title": "%puku.command.discardReviewSuggestionAndNext%",
 				"icon": "$(close)",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.discardAll",
-				"title": "%github.copilot.command.discardAllReviewSuggestion%",
+				"command": "puku.chat.review.discardAll",
+				"title": "%puku.command.discardAllReviewSuggestion%",
 				"icon": "$(close-all)",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.stagedChanges",
-				"title": "%github.copilot.command.reviewStagedChanges%",
+				"command": "puku.chat.review.stagedChanges",
+				"title": "%puku.command.reviewStagedChanges%",
 				"icon": "$(code-review)",
-				"enablement": "github.copilot.chat.reviewDiff.enabled && !github.copilot.interactiveSession.disabled",
+				"enablement": "puku.chat.reviewDiff.enabled && !puku.interactiveSession.disabled",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.unstagedChanges",
-				"title": "%github.copilot.command.reviewUnstagedChanges%",
+				"command": "puku.chat.review.unstagedChanges",
+				"title": "%puku.command.reviewUnstagedChanges%",
 				"icon": "$(code-review)",
-				"enablement": "github.copilot.chat.reviewDiff.enabled && !github.copilot.interactiveSession.disabled",
+				"enablement": "puku.chat.reviewDiff.enabled && !puku.interactiveSession.disabled",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.changes",
-				"title": "%github.copilot.command.reviewChanges%",
+				"command": "puku.chat.review.changes",
+				"title": "%puku.command.reviewChanges%",
 				"icon": "$(code-review)",
-				"enablement": "github.copilot.chat.reviewDiff.enabled && !github.copilot.interactiveSession.disabled",
+				"enablement": "puku.chat.reviewDiff.enabled && !puku.interactiveSession.disabled",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.stagedFileChange",
-				"title": "%github.copilot.command.reviewFileChange%",
+				"command": "puku.chat.review.stagedFileChange",
+				"title": "%puku.command.reviewFileChange%",
 				"icon": "$(code-review)",
-				"enablement": "github.copilot.chat.reviewDiff.enabled && !github.copilot.interactiveSession.disabled",
+				"enablement": "puku.chat.reviewDiff.enabled && !puku.interactiveSession.disabled",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.unstagedFileChange",
-				"title": "%github.copilot.command.reviewFileChange%",
+				"command": "puku.chat.review.unstagedFileChange",
+				"title": "%puku.command.reviewFileChange%",
 				"icon": "$(code-review)",
-				"enablement": "github.copilot.chat.reviewDiff.enabled && !github.copilot.interactiveSession.disabled",
+				"enablement": "puku.chat.reviewDiff.enabled && !puku.interactiveSession.disabled",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.previous",
-				"title": "%github.copilot.command.gotoPreviousReviewSuggestion%",
+				"command": "puku.chat.review.previous",
+				"title": "%puku.command.gotoPreviousReviewSuggestion%",
 				"icon": "$(arrow-up)",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.next",
-				"title": "%github.copilot.command.gotoNextReviewSuggestion%",
+				"command": "puku.chat.review.next",
+				"title": "%puku.command.gotoNextReviewSuggestion%",
 				"icon": "$(arrow-down)",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.continueInInlineChat",
-				"title": "%github.copilot.command.continueReviewInInlineChat%",
+				"command": "puku.chat.review.continueInInlineChat",
+				"title": "%puku.command.continueReviewInInlineChat%",
 				"icon": "$(comment-discussion)",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.continueInChat",
-				"title": "%github.copilot.command.continueReviewInChat%",
+				"command": "puku.chat.review.continueInChat",
+				"title": "%puku.command.continueReviewInChat%",
 				"icon": "$(comment-discussion)",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.review.markHelpful",
-				"title": "%github.copilot.command.helpfulReviewSuggestion%",
+				"command": "puku.chat.review.markHelpful",
+				"title": "%puku.command.helpfulReviewSuggestion%",
 				"icon": "$(thumbsup)",
 				"enablement": "!(commentThread =~ /markedAsHelpful/)",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.openUserPreferences",
-				"title": "%github.copilot.command.openUserPreferences%",
+				"command": "puku.chat.openUserPreferences",
+				"title": "%puku.command.openUserPreferences%",
 				"category": "Chat",
-				"enablement": "config.github.copilot.chat.enableUserPreferences"
+				"enablement": "config.puku.chat.enableUserPreferences"
 			},
 			{
-				"command": "github.copilot.chat.tools.memory.openFolder",
-				"title": "%github.copilot.command.openMemoryFolder%",
+				"command": "puku.chat.tools.memory.openFolder",
+				"title": "%puku.command.openMemoryFolder%",
 				"category": "Chat",
-				"enablement": "config.github.copilot.chat.tools.memory.enabled"
+				"enablement": "config.puku.chat.tools.memory.enabled"
 			},
 			{
-				"command": "github.copilot.chat.review.markUnhelpful",
-				"title": "%github.copilot.command.unhelpfulReviewSuggestion%",
+				"command": "puku.chat.review.markUnhelpful",
+				"title": "%puku.command.unhelpfulReviewSuggestion%",
 				"icon": "$(thumbsdown)",
 				"enablement": "!(commentThread =~ /markedAsUnhelpful/)",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.generate",
-				"title": "%github.copilot.command.generateThis%",
+				"command": "puku.chat.generate",
+				"title": "%puku.command.generateThis%",
 				"icon": "$(sparkle)",
-				"enablement": "!github.copilot.interactiveSession.disabled && !editorReadonly",
+				"enablement": "!puku.interactiveSession.disabled && !editorReadonly",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.generateDocs",
-				"title": "%github.copilot.command.generateDocs%",
-				"enablement": "!github.copilot.interactiveSession.disabled && !editorReadonly",
+				"command": "puku.chat.generateDocs",
+				"title": "%puku.command.generateDocs%",
+				"enablement": "!puku.interactiveSession.disabled && !editorReadonly",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.generateTests",
-				"title": "%github.copilot.command.generateTests%",
-				"enablement": "!github.copilot.interactiveSession.disabled && !editorReadonly",
+				"command": "puku.chat.generateTests",
+				"title": "%puku.command.generateTests%",
+				"enablement": "!puku.interactiveSession.disabled && !editorReadonly",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.fix",
-				"title": "%github.copilot.command.fixThis%",
-				"enablement": "!github.copilot.interactiveSession.disabled && !editorReadonly",
+				"command": "puku.chat.fix",
+				"title": "%puku.command.fixThis%",
+				"enablement": "!puku.interactiveSession.disabled && !editorReadonly",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.interactiveSession.feedback",
-				"title": "%github.copilot.command.sendChatFeedback%",
-				"enablement": "github.copilot-chat.activated && !github.copilot.interactiveSession.disabled",
+				"command": "puku.interactiveSession.feedback",
+				"title": "%puku.command.sendChatFeedback%",
+				"enablement": "puku-chat.activated && !puku.interactiveSession.disabled",
 				"icon": "$(feedback)",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.debug.workbenchState",
-				"title": "%github.copilot.command.logWorkbenchState%",
+				"command": "puku.debug.workbenchState",
+				"title": "%puku.command.logWorkbenchState%",
 				"category": "Developer"
 			},
 			{
-				"command": "github.copilot.debug.showChatLogView",
-				"title": "%github.copilot.command.showChatLogView%",
+				"command": "puku.debug.showChatLogView",
+				"title": "%puku.command.showChatLogView%",
 				"category": "Developer"
 			},
 			{
-				"command": "github.copilot.debug.showOutputChannel",
-				"title": "%github.copilot.command.showOutputChannel%",
+				"command": "puku.debug.showOutputChannel",
+				"title": "%puku.command.showOutputChannel%",
 				"category": "Developer"
 			},
 			{
-				"command": "github.copilot.debug.showContextInspectorView",
-				"title": "%github.copilot.command.showContextInspectorView%",
+				"command": "puku.debug.showContextInspectorView",
+				"title": "%puku.command.showContextInspectorView%",
 				"icon": "$(inspect)",
 				"category": "Developer"
 			},
 			{
-				"command": "github.copilot.debug.resetVirtualToolGroups",
-				"title": "%github.copilot.command.resetVirtualToolGroups%",
+				"command": "puku.debug.resetVirtualToolGroups",
+				"title": "%puku.command.resetVirtualToolGroups%",
 				"icon": "$(inspect)",
 				"category": "Developer"
 			},
 			{
-				"command": "github.copilot.terminal.explainTerminalLastCommand",
-				"title": "%github.copilot.command.explainTerminalLastCommand%",
+				"command": "puku.terminal.explainTerminalLastCommand",
+				"title": "%puku.command.explainTerminalLastCommand%",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.git.generateCommitMessage",
-				"title": "%github.copilot.git.generateCommitMessage%",
+				"command": "puku.git.generateCommitMessage",
+				"title": "%puku.git.generateCommitMessage%",
 				"icon": "$(sparkle)",
-				"enablement": "!github.copilot.interactiveSession.disabled",
+				"enablement": "!puku.interactiveSession.disabled",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.git.resolveMergeConflicts",
-				"title": "%github.copilot.git.resolveMergeConflicts%",
+				"command": "puku.git.resolveMergeConflicts",
+				"title": "%puku.git.resolveMergeConflicts%",
 				"icon": "$(chat-sparkle)",
-				"enablement": "!github.copilot.interactiveSession.disabled",
+				"enablement": "!puku.interactiveSession.disabled",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.devcontainer.generateDevContainerConfig",
-				"title": "%github.copilot.devcontainer.generateDevContainerConfig%",
+				"command": "puku.devcontainer.generateDevContainerConfig",
+				"title": "%puku.devcontainer.generateDevContainerConfig%",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.tests.fixTestFailure",
+				"command": "puku.tests.fixTestFailure",
 				"icon": "$(sparkle)",
-				"title": "%github.copilot.command.fixTestFailure%",
+				"title": "%puku.command.fixTestFailure%",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.tests.fixTestFailure.fromInline",
+				"command": "puku.tests.fixTestFailure.fromInline",
 				"icon": "$(sparkle)",
-				"title": "%github.copilot.command.fixTestFailure%"
+				"title": "%puku.command.fixTestFailure%"
 			},
 			{
-				"command": "github.copilot.chat.attachFile",
-				"title": "%github.copilot.chat.attachFile%",
+				"command": "puku.chat.attachFile",
+				"title": "%puku.chat.attachFile%",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.attachSelection",
-				"title": "%github.copilot.chat.attachSelection%",
+				"command": "puku.chat.attachSelection",
+				"title": "%puku.chat.attachSelection%",
 				"icon": "$(comment-discussion)",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.debug.collectDiagnostics",
-				"title": "%github.copilot.command.collectDiagnostics%",
+				"command": "puku.debug.collectDiagnostics",
+				"title": "%puku.command.collectDiagnostics%",
 				"category": "Developer"
 			},
 			{
-				"command": "github.copilot.debug.inlineEdit.clearCache",
-				"title": "%github.copilot.command.inlineEdit.clearCache%",
+				"command": "puku.debug.inlineEdit.clearCache",
+				"title": "%puku.command.inlineEdit.clearCache%",
 				"category": "Developer"
 			},
 			{
-				"command": "github.copilot.debug.inlineEdit.reportNotebookNESIssue",
-				"title": "%github.copilot.command.inlineEdit.reportNotebookNESIssue%",
-				"enablement": "config.github.copilot.chat.advanced.notebook.alternativeNESFormat.enabled || github.copilot.chat.enableEnhancedNotebookNES",
+				"command": "puku.debug.inlineEdit.reportNotebookNESIssue",
+				"title": "%puku.command.inlineEdit.reportNotebookNESIssue%",
+				"enablement": "config.puku.chat.advanced.notebook.alternativeNESFormat.enabled || puku.chat.enableEnhancedNotebookNES",
 				"category": "Developer"
 			},
 			{
-				"command": "github.copilot.debug.generateSTest",
-				"title": "%github.copilot.command.generateSTest%",
-				"enablement": "github.copilot.debugReportFeedback",
+				"command": "puku.debug.generateSTest",
+				"title": "%puku.command.generateSTest%",
+				"enablement": "puku.debugReportFeedback",
 				"category": "Developer"
 			},
 			{
-				"command": "github.copilot.open.walkthrough",
-				"title": "%github.copilot.command.openWalkthrough%",
+				"command": "puku.open.walkthrough",
+				"title": "%puku.command.openWalkthrough%",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.debug.generateInlineEditTests",
+				"command": "puku.debug.generateInlineEditTests",
 				"title": "Generate Inline Edit Tests",
 				"category": "Chat",
 				"enablement": "resourceScheme == 'ccreq'"
 			},
 			{
-				"command": "github.copilot.buildLocalWorkspaceIndex",
-				"title": "%github.copilot.command.buildLocalWorkspaceIndex%",
+				"command": "puku.buildLocalWorkspaceIndex",
+				"title": "%puku.command.buildLocalWorkspaceIndex%",
 				"category": "Chat",
-				"enablement": "github.copilot-chat.activated"
+				"enablement": "puku-chat.activated"
 			},
 			{
-				"command": "github.copilot.buildRemoteWorkspaceIndex",
-				"title": "%github.copilot.command.buildRemoteWorkspaceIndex%",
+				"command": "puku.buildRemoteWorkspaceIndex",
+				"title": "%puku.command.buildRemoteWorkspaceIndex%",
 				"category": "Chat",
-				"enablement": "github.copilot-chat.activated"
+				"enablement": "puku-chat.activated"
 			},
 			{
-				"command": "github.copilot.report",
+				"command": "puku.report",
 				"title": "Report Issue",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.rerunWithCopilotDebug",
-				"title": "%github.copilot.command.rerunWithCopilotDebug%",
+				"command": "puku.chat.rerunWithCopilotDebug",
+				"title": "%puku.command.rerunWithCopilotDebug%",
 				"category": "Chat"
 			},
 			{
-				"command": "github.copilot.chat.startCopilotDebugCommand",
+				"command": "puku.chat.startCopilotDebugCommand",
 				"title": "Start Copilot Debug"
 			},
 			{
-				"command": "github.copilot.chat.clearTemporalContext",
+				"command": "puku.chat.clearTemporalContext",
 				"title": "Clear Temporal Context",
 				"category": "Developer"
 			},
 			{
-				"command": "github.copilot.search.markHelpful",
+				"command": "puku.search.markHelpful",
 				"title": "Helpful",
 				"icon": "$(thumbsup)",
-				"enablement": "!github.copilot.search.feedback.sent"
+				"enablement": "!puku.search.feedback.sent"
 			},
 			{
-				"command": "github.copilot.search.markUnhelpful",
+				"command": "puku.search.markUnhelpful",
 				"title": "Unhelpful",
 				"icon": "$(thumbsdown)",
-				"enablement": "!github.copilot.search.feedback.sent"
+				"enablement": "!puku.search.feedback.sent"
 			},
 			{
-				"command": "github.copilot.search.feedback",
+				"command": "puku.search.feedback",
 				"title": "Feedback",
 				"icon": "$(feedback)",
-				"enablement": "!github.copilot.search.feedback.sent"
+				"enablement": "!puku.search.feedback.sent"
 			},
 			{
-				"command": "github.copilot.chat.debug.showElements",
+				"command": "puku.chat.debug.showElements",
 				"title": "Show Rendered Elements"
 			},
 			{
-				"command": "github.copilot.chat.debug.hideElements",
+				"command": "puku.chat.debug.hideElements",
 				"title": "Hide Rendered Elements"
 			},
 			{
-				"command": "github.copilot.chat.debug.showTools",
+				"command": "puku.chat.debug.showTools",
 				"title": "Show Tools"
 			},
 			{
-				"command": "github.copilot.chat.debug.hideTools",
+				"command": "puku.chat.debug.hideTools",
 				"title": "Hide Tools"
 			},
 			{
-				"command": "github.copilot.chat.debug.showNesRequests",
+				"command": "puku.chat.debug.showNesRequests",
 				"title": "Show NES Requests"
 			},
 			{
-				"command": "github.copilot.chat.debug.hideNesRequests",
+				"command": "puku.chat.debug.hideNesRequests",
 				"title": "Hide NES Requests"
 			},
 			{
-				"command": "github.copilot.chat.debug.showRawRequestBody",
+				"command": "puku.chat.debug.showRawRequestBody",
 				"title": "Show Raw Request Body"
 			},
 			{
-				"command": "github.copilot.chat.debug.exportLogItem",
+				"command": "puku.chat.debug.exportLogItem",
 				"title": "Export as...",
 				"icon": "$(export)"
 			},
 			{
-				"command": "github.copilot.chat.debug.exportPromptArchive",
+				"command": "puku.chat.debug.exportPromptArchive",
 				"title": "Export All as Archive...",
 				"icon": "$(archive)"
 			},
 			{
-				"command": "github.copilot.chat.debug.exportPromptLogsAsJson",
+				"command": "puku.chat.debug.exportPromptLogsAsJson",
 				"title": "Export All as JSON...",
 				"icon": "$(export)"
 			},
 			{
-				"command": "github.copilot.chat.debug.exportAllPromptLogsAsJson",
+				"command": "puku.chat.debug.exportAllPromptLogsAsJson",
 				"title": "Export All Prompt Logs as JSON...",
 				"icon": "$(export)"
 			},
 			{
-				"command": "github.copilot.chat.showAsChatSession",
+				"command": "puku.chat.showAsChatSession",
 				"title": "Show as chat session",
 				"icon": "$(chat-sparkle)"
 			},
 			{
-				"command": "github.copilot.debug.collectWorkspaceIndexDiagnostics",
-				"title": "%github.copilot.command.collectWorkspaceIndexDiagnostics%",
+				"command": "puku.debug.collectWorkspaceIndexDiagnostics",
+				"title": "%puku.command.collectWorkspaceIndexDiagnostics%",
 				"category": "Developer"
 			},
 			{
-				"command": "github.copilot.chat.mcp.setup.check",
+				"command": "puku.chat.mcp.setup.check",
 				"title": "MCP Check: is supported"
 			},
 			{
-				"command": "github.copilot.chat.mcp.setup.validatePackage",
+				"command": "puku.chat.mcp.setup.validatePackage",
 				"title": "MCP Check: validate package"
 			},
 			{
-				"command": "github.copilot.chat.mcp.setup.flow",
+				"command": "puku.chat.mcp.setup.flow",
 				"title": "MCP Check: do prompts"
 			},
 			{
-				"command": "github.copilot.chat.generateAltText",
+				"command": "puku.chat.generateAltText",
 				"title": "Generate/Refine Alt Text"
 			},
 			{
-				"command": "github.copilot.chat.notebook.enableFollowCellExecution",
+				"command": "puku.chat.notebook.enableFollowCellExecution",
 				"title": "Enable Follow Cell Execution from Chat",
 				"shortTitle": "Follow",
 				"icon": "$(pinned)"
 			},
 			{
-				"command": "github.copilot.chat.notebook.disableFollowCellExecution",
+				"command": "puku.chat.notebook.disableFollowCellExecution",
 				"title": "Disable Follow Cell Execution from Chat",
 				"shortTitle": "Unfollow",
 				"icon": "$(pinned-dirty)"
 			},
 			{
-				"command": "github.copilot.chat.manageBYOK",
+				"command": "puku.chat.manageBYOK",
 				"title": "Manage Bring Your Own Key Vendor",
 				"enablement": "false"
 			},
 			{
-				"command": "github.copilot.chat.manageBYOKAPIKey",
+				"command": "puku.chat.manageBYOKAPIKey",
 				"title": "Manage Bring Your Own Key API Key",
 				"enablement": "false"
 			},
 			{
-				"command": "github.copilot.cloud.sessions.refresh",
-				"title": "%github.copilot.command.refreshAgentSessions%",
+				"command": "puku.cloud.sessions.refresh",
+				"title": "%puku.command.refreshAgentSessions%",
 				"icon": "$(refresh)"
 			},
 			{
-				"command": "github.copilot.cloud.sessions.openInBrowser",
-				"title": "%github.copilot.command.openCopilotAgentSessionsInBrowser%",
+				"command": "puku.cloud.sessions.openInBrowser",
+				"title": "%puku.command.openCopilotAgentSessionsInBrowser%",
 				"icon": "$(link-external)"
 			},
 			{
-				"command": "github.copilot.cloud.sessions.proxy.closeChatSessionPullRequest",
-				"title": "%github.copilot.command.closeChatSessionPullRequest.title%"
+				"command": "puku.cloud.sessions.proxy.closeChatSessionPullRequest",
+				"title": "%puku.command.closeChatSessionPullRequest.title%"
 			},
 			{
-				"command": "github.copilot.chat.openSuggestionsPanel",
+				"command": "puku.chat.openSuggestionsPanel",
 				"title": "Open Completions Panel",
-				"enablement": "github.copilot.extensionUnification.activated && !isWeb",
+				"enablement": "puku.extensionUnification.activated && !isWeb",
 				"category": "Puku Editor"
 			},
 			{
-				"command": "github.copilot.chat.toggleStatusMenu",
+				"command": "puku.chat.toggleStatusMenu",
 				"title": "Open Status Menu",
-				"enablement": "github.copilot.extensionUnification.activated",
+				"enablement": "puku.extensionUnification.activated",
 				"category": "Puku Editor"
 			},
 			{
-				"command": "github.copilot.chat.completions.disable",
+				"command": "puku.chat.completions.disable",
 				"title": "Disable Inline Suggestions",
-				"enablement": "github.copilot.extensionUnification.activated && github.copilot.activated && config.editor.inlineSuggest.enabled && github.copilot.completions.enabled",
+				"enablement": "puku.extensionUnification.activated && puku.activated && config.editor.inlineSuggest.enabled && puku.completions.enabled",
 				"category": "Puku Editor"
 			},
 			{
-				"command": "github.copilot.chat.completions.enable",
+				"command": "puku.chat.completions.enable",
 				"title": "Enable Inline Suggestions",
-				"enablement": "github.copilot.extensionUnification.activated && github.copilot.activated && !(config.editor.inlineSuggest.enabled && github.copilot.completions.enabled)",
+				"enablement": "puku.extensionUnification.activated && puku.activated && !(config.editor.inlineSuggest.enabled && puku.completions.enabled)",
 				"category": "Puku Editor"
 			},
 			{
-				"command": "github.copilot.chat.completions.toggle",
+				"command": "puku.chat.completions.toggle",
 				"title": "Toggle (Enable/Disable) Inline Suggestions",
-				"enablement": "github.copilot.extensionUnification.activated && github.copilot.activated",
+				"enablement": "puku.extensionUnification.activated && puku.activated",
 				"category": "Puku Editor"
 			},
 			{
-				"command": "github.copilot.chat.openModelPicker",
+				"command": "puku.chat.openModelPicker",
 				"title": "Change Completions Model",
 				"category": "Puku Editor",
-				"enablement": "github.copilot.extensionUnification.activated && !isWeb"
+				"enablement": "puku.extensionUnification.activated && !isWeb"
 			},
 			{
-				"command": "github.copilot.chat.applyCopilotCLIAgentSessionChanges",
-				"title": "%github.copilot.command.applyCopilotCLIAgentSessionChanges%",
+				"command": "puku.chat.applyCopilotCLIAgentSessionChanges",
+				"title": "%puku.command.applyCopilotCLIAgentSessionChanges%",
 				"icon": "$(git-stash-pop)",
 				"category": "Puku Editor"
 			}
@@ -2336,22 +2336,22 @@
 				"title": "Puku Editor Chat",
 				"id": "stable",
 				"properties": {
-					"github.copilot.chat.codeGeneration.useInstructionFiles": {
+					"puku.chat.codeGeneration.useInstructionFiles": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "%github.copilot.config.codeGeneration.useInstructionFiles%"
+						"markdownDescription": "%puku.config.codeGeneration.useInstructionFiles%"
 					},
-					"github.copilot.editor.enableCodeActions": {
+					"puku.editor.enableCodeActions": {
 						"type": "boolean",
 						"default": true,
-						"description": "%github.copilot.config.enableCodeActions%"
+						"description": "%puku.config.enableCodeActions%"
 					},
-					"github.copilot.renameSuggestions.triggerAutomatically": {
+					"puku.renameSuggestions.triggerAutomatically": {
 						"type": "boolean",
 						"default": true,
-						"description": "%github.copilot.config.renameSuggestions.triggerAutomatically%"
+						"description": "%puku.config.renameSuggestions.triggerAutomatically%"
 					},
-					"github.copilot.chat.localeOverride": {
+					"puku.chat.localeOverride": {
 						"type": "string",
 						"enum": [
 							"auto",
@@ -2388,16 +2388,16 @@
 							"polski"
 						],
 						"default": "auto",
-						"markdownDescription": "%github.copilot.config.localeOverride%"
+						"markdownDescription": "%puku.config.localeOverride%"
 					},
-					"github.copilot.chat.terminalChatLocation": {
+					"puku.chat.terminalChatLocation": {
 						"type": "string",
 						"default": "chatView",
-						"markdownDescription": "%github.copilot.config.terminalChatLocation%",
+						"markdownDescription": "%puku.config.terminalChatLocation%",
 						"markdownEnumDescriptions": [
-							"%github.copilot.config.terminalChatLocation.chatView%",
-							"%github.copilot.config.terminalChatLocation.quickChat%",
-							"%github.copilot.config.terminalChatLocation.terminal%"
+							"%puku.config.terminalChatLocation.chatView%",
+							"%puku.config.terminalChatLocation.quickChat%",
+							"%puku.config.terminalChatLocation.terminal%"
 						],
 						"enum": [
 							"chatView",
@@ -2405,65 +2405,65 @@
 							"terminal"
 						]
 					},
-					"github.copilot.chat.scopeSelection": {
+					"puku.chat.scopeSelection": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.scopeSelection%"
+						"markdownDescription": "%puku.config.scopeSelection%"
 					},
-					"github.copilot.chat.useProjectTemplates": {
+					"puku.chat.useProjectTemplates": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "%github.copilot.config.useProjectTemplates%"
+						"markdownDescription": "%puku.config.useProjectTemplates%"
 					},
-					"github.copilot.nextEditSuggestions.enabled": {
+					"puku.nextEditSuggestions.enabled": {
 						"type": "boolean",
 						"default": false,
 						"tags": [
 							"nextEditSuggestions",
 							"onExp"
 						],
-						"markdownDescription": "%github.copilot.nextEditSuggestions.enabled%",
+						"markdownDescription": "%puku.nextEditSuggestions.enabled%",
 						"scope": "language-overridable"
 					},
-					"github.copilot.nextEditSuggestions.fixes": {
+					"puku.nextEditSuggestions.fixes": {
 						"type": "boolean",
 						"default": true,
 						"tags": [
 							"nextEditSuggestions",
 							"onExp"
 						],
-						"markdownDescription": "%github.copilot.nextEditSuggestions.fixes%",
+						"markdownDescription": "%puku.nextEditSuggestions.fixes%",
 						"scope": "language-overridable"
 					},
-					"github.copilot.nextEditSuggestions.allowWhitespaceOnlyChanges": {
+					"puku.nextEditSuggestions.allowWhitespaceOnlyChanges": {
 						"type": "boolean",
 						"default": true,
 						"tags": [
 							"nextEditSuggestions",
 							"onExp"
 						],
-						"markdownDescription": "%github.copilot.nextEditSuggestions.allowWhitespaceOnlyChanges%",
+						"markdownDescription": "%puku.nextEditSuggestions.allowWhitespaceOnlyChanges%",
 						"scope": "language-overridable"
 					},
-					"github.copilot.chat.agent.autoFix": {
+					"puku.chat.agent.autoFix": {
 						"type": "boolean",
 						"default": true,
-						"description": "%github.copilot.config.autoFix%",
+						"description": "%puku.config.autoFix%",
 						"tags": [
 							"onExp"
 						]
 					},
-					"github.copilot.chat.customInstructionsInSystemMessage": {
+					"puku.chat.customInstructionsInSystemMessage": {
 						"type": "boolean",
 						"default": true,
-						"description": "%github.copilot.config.customInstructionsInSystemMessage%"
+						"description": "%puku.config.customInstructionsInSystemMessage%"
 					},
-					"github.copilot.chat.agent.currentEditorContext.enabled": {
+					"puku.chat.agent.currentEditorContext.enabled": {
 						"type": "boolean",
 						"default": true,
-						"description": "%github.copilot.config.agent.currentEditorContext.enabled%"
+						"description": "%puku.config.agent.currentEditorContext.enabled%"
 					},
-					"github.copilot.enable": {
+					"puku.enable": {
 						"type": "object",
 						"scope": "window",
 						"default": {
@@ -2477,7 +2477,7 @@
 						},
 						"markdownDescription": "Enable or disable auto triggering of Copilot completions for specified [languages](https://code.visualstudio.com/docs/languages/identifiers). You can still trigger suggestions manually using `Alt + \\`"
 					},
-					"github.copilot.selectedCompletionModel": {
+					"puku.selectedCompletionModel": {
 						"type": "string",
 						"default": "",
 						"markdownDescription": "The currently selected completion model ID. To select from a list of available models, use the __\"Change Completions Model\"__ command or open the model picker (from the Copilot menu in the VS Code title bar, select __\"Configure Code Completions\"__ then __\"Change Completions Model\"__. The value must be a valid model ID. An empty value indicates that the default model will be used."
@@ -2487,29 +2487,29 @@
 			{
 				"id": "preview",
 				"properties": {
-					"github.copilot.chat.reviewAgent.enabled": {
+					"puku.chat.reviewAgent.enabled": {
 						"type": "boolean",
 						"default": true,
-						"description": "%github.copilot.config.reviewAgent.enabled%",
+						"description": "%puku.config.reviewAgent.enabled%",
 						"tags": [
 							"preview"
 						]
 					},
-					"github.copilot.chat.reviewSelection.enabled": {
+					"puku.chat.reviewSelection.enabled": {
 						"type": "boolean",
 						"default": true,
-						"description": "%github.copilot.config.reviewSelection.enabled%",
+						"description": "%puku.config.reviewSelection.enabled%",
 						"tags": [
 							"preview"
 						]
 					},
-					"github.copilot.chat.reviewSelection.instructions": {
+					"puku.chat.reviewSelection.instructions": {
 						"type": "array",
 						"items": {
 							"oneOf": [
 								{
 									"type": "object",
-									"markdownDescription": "%github.copilot.config.reviewSelection.instruction.file%",
+									"markdownDescription": "%puku.config.reviewSelection.instruction.file%",
 									"properties": {
 										"file": {
 											"type": "string",
@@ -2532,7 +2532,7 @@
 								},
 								{
 									"type": "object",
-									"markdownDescription": "%github.copilot.config.reviewSelection.instruction.text%",
+									"markdownDescription": "%puku.config.reviewSelection.instruction.text%",
 									"properties": {
 										"text": {
 											"type": "string",
@@ -2559,7 +2559,7 @@
 							]
 						},
 						"default": [],
-						"markdownDescription": "%github.copilot.config.reviewSelection.instructions%",
+						"markdownDescription": "%puku.config.reviewSelection.instructions%",
 						"examples": [
 							[
 								{
@@ -2574,41 +2574,41 @@
 							"preview"
 						]
 					},
-					"github.copilot.chat.copilotDebugCommand.enabled": {
+					"puku.chat.copilotDebugCommand.enabled": {
 						"type": "boolean",
 						"default": true,
 						"tags": [
 							"preview"
 						],
-						"description": "%github.copilot.chat.copilotDebugCommand.enabled%"
+						"description": "%puku.chat.copilotDebugCommand.enabled%"
 					},
-					"github.copilot.chat.codesearch.enabled": {
+					"puku.chat.codesearch.enabled": {
 						"type": "boolean",
 						"default": false,
 						"tags": [
 							"preview"
 						],
-						"markdownDescription": "%github.copilot.config.codesearch.enabled%"
+						"markdownDescription": "%puku.config.codesearch.enabled%"
 					},
-					"github.copilot.pukuai.endpoint": {
+					"puku.pukuai.endpoint": {
 						"type": "string",
 						"default": "http://localhost:11434",
 						"description": "The endpoint URL for Puku AI (e.g., http://localhost:11434 for Ollama/Proxy)."
 					},
-					"github.copilot.pukuai.model": {
+					"puku.pukuai.model": {
 						"type": "string",
 						"default": "GLM-4.6",
 						"description": "The model name to use for Puku AI (e.g., GLM-4.6)."
 					},
-					"github.copilot.chat.byok.ollamaEndpoint": {
+					"puku.chat.byok.ollamaEndpoint": {
 						"type": "string",
 						"default": "http://localhost:11434",
 						"tags": [
 							"preview"
 						],
-						"markdownDescription": "%github.copilot.config.byok.ollamaEndpoint%"
+						"markdownDescription": "%puku.config.byok.ollamaEndpoint%"
 					},
-					"github.copilot.advanced.debug.overrideProxyUrl": {
+					"puku.advanced.debug.overrideProxyUrl": {
 						"type": "string",
 						"tags": [
 							"preview"
@@ -2620,39 +2620,39 @@
 			{
 				"id": "experimental",
 				"properties": {
-					"github.copilot.chat.imageUpload.enabled": {
+					"puku.chat.imageUpload.enabled": {
 						"type": "boolean",
 						"default": true,
 						"tags": [
 							"experimental",
 							"onExp"
 						],
-						"markdownDescription": "%github.copilot.config.imageUpload.enabled%"
+						"markdownDescription": "%puku.config.imageUpload.enabled%"
 					},
-					"github.copilot.chat.edits.suggestRelatedFilesFromGitHistory": {
+					"puku.chat.edits.suggestRelatedFilesFromGitHistory": {
 						"type": "boolean",
 						"default": true,
 						"tags": [
 							"experimental"
 						],
-						"markdownDescription": "%github.copilot.config.edits.suggestRelatedFilesFromGitHistory%"
+						"markdownDescription": "%puku.config.edits.suggestRelatedFilesFromGitHistory%"
 					},
-					"github.copilot.chat.edits.suggestRelatedFilesForTests": {
+					"puku.chat.edits.suggestRelatedFilesForTests": {
 						"type": "boolean",
 						"default": true,
 						"tags": [
 							"experimental"
 						],
-						"markdownDescription": "%github.copilot.chat.edits.suggestRelatedFilesForTests%"
+						"markdownDescription": "%puku.chat.edits.suggestRelatedFilesForTests%"
 					},
-					"github.copilot.chat.codeGeneration.instructions": {
-						"markdownDeprecationMessage": "%github.copilot.config.codeGeneration.instructions.deprecated%",
+					"puku.chat.codeGeneration.instructions": {
+						"markdownDeprecationMessage": "%puku.config.codeGeneration.instructions.deprecated%",
 						"type": "array",
 						"items": {
 							"oneOf": [
 								{
 									"type": "object",
-									"markdownDescription": "%github.copilot.config.codeGeneration.instruction.file%",
+									"markdownDescription": "%puku.config.codeGeneration.instruction.file%",
 									"properties": {
 										"file": {
 											"type": "string",
@@ -2675,7 +2675,7 @@
 								},
 								{
 									"type": "object",
-									"markdownDescription": "%github.copilot.config.codeGeneration.instruction.text%",
+									"markdownDescription": "%puku.config.codeGeneration.instruction.text%",
 									"properties": {
 										"text": {
 											"type": "string",
@@ -2702,7 +2702,7 @@
 							]
 						},
 						"default": [],
-						"markdownDescription": "%github.copilot.config.codeGeneration.instructions%",
+						"markdownDescription": "%puku.config.codeGeneration.instructions%",
 						"examples": [
 							[
 								{
@@ -2717,14 +2717,14 @@
 							"experimental"
 						]
 					},
-					"github.copilot.chat.testGeneration.instructions": {
-						"markdownDeprecationMessage": "%github.copilot.config.testGeneration.instructions.deprecated%",
+					"puku.chat.testGeneration.instructions": {
+						"markdownDeprecationMessage": "%puku.config.testGeneration.instructions.deprecated%",
 						"type": "array",
 						"items": {
 							"oneOf": [
 								{
 									"type": "object",
-									"markdownDescription": "%github.copilot.config.experimental.testGeneration.instruction.file%",
+									"markdownDescription": "%puku.config.experimental.testGeneration.instruction.file%",
 									"properties": {
 										"file": {
 											"type": "string",
@@ -2747,7 +2747,7 @@
 								},
 								{
 									"type": "object",
-									"markdownDescription": "%github.copilot.config.experimental.testGeneration.instruction.text%",
+									"markdownDescription": "%puku.config.experimental.testGeneration.instruction.text%",
 									"properties": {
 										"text": {
 											"type": "string",
@@ -2771,7 +2771,7 @@
 							]
 						},
 						"default": [],
-						"markdownDescription": "%github.copilot.config.testGeneration.instructions%",
+						"markdownDescription": "%puku.config.testGeneration.instructions%",
 						"examples": [
 							[
 								{
@@ -2786,13 +2786,13 @@
 							"experimental"
 						]
 					},
-					"github.copilot.chat.commitMessageGeneration.instructions": {
+					"puku.chat.commitMessageGeneration.instructions": {
 						"type": "array",
 						"items": {
 							"oneOf": [
 								{
 									"type": "object",
-									"markdownDescription": "%github.copilot.config.commitMessageGeneration.instruction.file%",
+									"markdownDescription": "%puku.config.commitMessageGeneration.instruction.file%",
 									"properties": {
 										"file": {
 											"type": "string",
@@ -2812,7 +2812,7 @@
 								},
 								{
 									"type": "object",
-									"markdownDescription": "%github.copilot.config.commitMessageGeneration.instruction.text%",
+									"markdownDescription": "%puku.config.commitMessageGeneration.instruction.text%",
 									"properties": {
 										"text": {
 											"type": "string",
@@ -2833,7 +2833,7 @@
 							]
 						},
 						"default": [],
-						"markdownDescription": "%github.copilot.config.commitMessageGeneration.instructions%",
+						"markdownDescription": "%puku.config.commitMessageGeneration.instructions%",
 						"examples": [
 							[
 								{
@@ -2848,13 +2848,13 @@
 							"experimental"
 						]
 					},
-					"github.copilot.chat.pullRequestDescriptionGeneration.instructions": {
+					"puku.chat.pullRequestDescriptionGeneration.instructions": {
 						"type": "array",
 						"items": {
 							"oneOf": [
 								{
 									"type": "object",
-									"markdownDescription": "%github.copilot.config.pullRequestDescriptionGeneration.instruction.file%",
+									"markdownDescription": "%puku.config.pullRequestDescriptionGeneration.instruction.file%",
 									"properties": {
 										"file": {
 											"type": "string",
@@ -2874,7 +2874,7 @@
 								},
 								{
 									"type": "object",
-									"markdownDescription": "%github.copilot.config.pullRequestDescriptionGeneration.instruction.text%",
+									"markdownDescription": "%puku.config.pullRequestDescriptionGeneration.instruction.text%",
 									"properties": {
 										"text": {
 											"type": "string",
@@ -2895,7 +2895,7 @@
 							]
 						},
 						"default": [],
-						"markdownDescription": "%github.copilot.config.pullRequestDescriptionGeneration.instructions%",
+						"markdownDescription": "%puku.config.pullRequestDescriptionGeneration.instructions%",
 						"examples": [
 							[
 								{
@@ -2910,23 +2910,23 @@
 							"experimental"
 						]
 					},
-					"github.copilot.chat.generateTests.codeLens": {
+					"puku.chat.generateTests.codeLens": {
 						"type": "boolean",
 						"default": false,
-						"description": "%github.copilot.config.generateTests.codeLens%",
+						"description": "%puku.config.generateTests.codeLens%",
 						"tags": [
 							"experimental"
 						]
 					},
-					"github.copilot.chat.setupTests.enabled": {
+					"puku.chat.setupTests.enabled": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "%github.copilot.config.setupTests.enabled%",
+						"markdownDescription": "%puku.config.setupTests.enabled%",
 						"tags": [
 							"experimental"
 						]
 					},
-					"github.copilot.chat.languageContext.typescript.enabled": {
+					"puku.chat.languageContext.typescript.enabled": {
 						"type": "boolean",
 						"default": false,
 						"scope": "resource",
@@ -2934,9 +2934,9 @@
 							"experimental",
 							"onExP"
 						],
-						"markdownDescription": "%github.copilot.chat.languageContext.typescript.enabled%"
+						"markdownDescription": "%puku.chat.languageContext.typescript.enabled%"
 					},
-					"github.copilot.chat.languageContext.typescript.items": {
+					"puku.chat.languageContext.typescript.items": {
 						"type": "string",
 						"enum": [
 							"minimal",
@@ -2950,9 +2950,9 @@
 							"experimental",
 							"onExP"
 						],
-						"markdownDescription": "%github.copilot.chat.languageContext.typescript.items%"
+						"markdownDescription": "%puku.chat.languageContext.typescript.items%"
 					},
-					"github.copilot.chat.languageContext.typescript.includeDocumentation": {
+					"puku.chat.languageContext.typescript.includeDocumentation": {
 						"type": "boolean",
 						"default": false,
 						"scope": "resource",
@@ -2960,9 +2960,9 @@
 							"experimental",
 							"onExP"
 						],
-						"markdownDescription": "%github.copilot.chat.languageContext.typescript.includeDocumentation%"
+						"markdownDescription": "%puku.chat.languageContext.typescript.includeDocumentation%"
 					},
-					"github.copilot.chat.languageContext.typescript.cacheTimeout": {
+					"puku.chat.languageContext.typescript.cacheTimeout": {
 						"type": "number",
 						"default": 500,
 						"scope": "resource",
@@ -2970,9 +2970,9 @@
 							"experimental",
 							"onExP"
 						],
-						"markdownDescription": "%github.copilot.chat.languageContext.typescript.cacheTimeout%"
+						"markdownDescription": "%puku.chat.languageContext.typescript.cacheTimeout%"
 					},
-					"github.copilot.chat.languageContext.fix.typescript.enabled": {
+					"puku.chat.languageContext.fix.typescript.enabled": {
 						"type": "boolean",
 						"default": false,
 						"scope": "resource",
@@ -2980,9 +2980,9 @@
 							"experimental",
 							"onExP"
 						],
-						"markdownDescription": "%github.copilot.chat.languageContext.fix.typescript.enabled%"
+						"markdownDescription": "%puku.chat.languageContext.fix.typescript.enabled%"
 					},
-					"github.copilot.chat.languageContext.inline.typescript.enabled": {
+					"puku.chat.languageContext.inline.typescript.enabled": {
 						"type": "boolean",
 						"default": false,
 						"scope": "resource",
@@ -2990,50 +2990,50 @@
 							"experimental",
 							"onExP"
 						],
-						"markdownDescription": "%github.copilot.chat.languageContext.inline.typescript.enabled%"
+						"markdownDescription": "%puku.chat.languageContext.inline.typescript.enabled%"
 					},
-					"github.copilot.chat.newWorkspaceCreation.enabled": {
+					"puku.chat.newWorkspaceCreation.enabled": {
 						"type": "boolean",
 						"default": true,
 						"tags": [
 							"experimental"
 						],
-						"description": "%github.copilot.config.newWorkspaceCreation.enabled%"
+						"description": "%puku.config.newWorkspaceCreation.enabled%"
 					},
-					"github.copilot.chat.newWorkspace.useContext7": {
+					"puku.chat.newWorkspace.useContext7": {
 						"type": "boolean",
 						"default": false,
 						"tags": [
 							"experimental"
 						],
-						"markdownDescription": "%github.copilot.config.newWorkspace.useContext7%"
+						"markdownDescription": "%puku.config.newWorkspace.useContext7%"
 					},
-					"github.copilot.chat.notebook.followCellExecution.enabled": {
+					"puku.chat.notebook.followCellExecution.enabled": {
 						"type": "boolean",
 						"default": false,
 						"tags": [
 							"experimental"
 						],
-						"description": "%github.copilot.config.notebook.followCellExecution%"
+						"description": "%puku.config.notebook.followCellExecution%"
 					},
-					"github.copilot.chat.notebook.enhancedNextEditSuggestions.enabled": {
+					"puku.chat.notebook.enhancedNextEditSuggestions.enabled": {
 						"type": "boolean",
 						"default": false,
 						"tags": [
 							"experimental",
 							"onExp"
 						],
-						"description": "%github.copilot.config.notebook.enhancedNextEditSuggestions%"
+						"description": "%puku.config.notebook.enhancedNextEditSuggestions%"
 					},
-					"github.copilot.chat.summarizeAgentConversationHistory.enabled": {
+					"puku.chat.summarizeAgentConversationHistory.enabled": {
 						"type": "boolean",
 						"default": true,
 						"tags": [
 							"experimental"
 						],
-						"description": "%github.copilot.config.summarizeAgentConversationHistory.enabled%"
+						"description": "%puku.config.summarizeAgentConversationHistory.enabled%"
 					},
-					"github.copilot.chat.virtualTools.threshold": {
+					"puku.chat.virtualTools.threshold": {
 						"type": "number",
 						"minimum": 0,
 						"maximum": 128,
@@ -3041,9 +3041,9 @@
 						"tags": [
 							"experimental"
 						],
-						"markdownDescription": "%github.copilot.config.virtualTools.threshold%"
+						"markdownDescription": "%puku.config.virtualTools.threshold%"
 					},
-					"github.copilot.chat.azureModels": {
+					"puku.chat.azureModels": {
 						"type": "object",
 						"default": {},
 						"tags": [
@@ -3058,7 +3058,7 @@
 								},
 								"url": {
 									"type": "string",
-									"markdownDescription": "URL endpoint for the Azure model.\n\n**Important:** Base URLs default to Chat Completions API. Explicit API paths including `/responses` or `/chat/completions` are respected. Both behaviors are independent of the `#github.copilot.chat.useResponsesApi#` setting."
+									"markdownDescription": "URL endpoint for the Azure model.\n\n**Important:** Base URLs default to Chat Completions API. Explicit API paths including `/responses` or `/chat/completions` are respected. Both behaviors are independent of the `#puku.chat.useResponsesApi#` setting."
 								},
 								"toolCalling": {
 									"type": "boolean",
@@ -3101,7 +3101,7 @@
 						},
 						"markdownDescription": "Configure custom Azure OpenAI models. Each key should be a unique model ID, and the value should be an object with model configuration including name, url, toolCalling, vision, maxInputTokens, and maxOutputTokens properties."
 					},
-					"github.copilot.chat.customOAIModels": {
+					"puku.chat.customOAIModels": {
 						"type": "object",
 						"default": {},
 						"tags": [
@@ -3116,7 +3116,7 @@
 								},
 								"url": {
 									"type": "string",
-									"markdownDescription": "URL endpoint for the custom OpenAI-compatible model.\n\n**Important:** Base URLs default to Chat Completions API. Explicit API paths including `/responses` or `/chat/completions` are respected. Both behaviors are independent of the `#github.copilot.chat.useResponsesApi#` setting."
+									"markdownDescription": "URL endpoint for the custom OpenAI-compatible model.\n\n**Important:** Base URLs default to Chat Completions API. Explicit API paths including `/responses` or `/chat/completions` are respected. Both behaviors are independent of the `#puku.chat.useResponsesApi#` setting."
 								},
 								"toolCalling": {
 									"type": "boolean",
@@ -3178,27 +3178,27 @@
 						},
 						"markdownDescription": "Configure custom OpenAI-compatible models. Each key should be a unique model ID, and the value should be an object with model configuration including name, url, toolCalling, vision, maxInputTokens, and maxOutputTokens properties."
 					},
-					"github.copilot.chat.alternateGptPrompt.enabled": {
+					"puku.chat.alternateGptPrompt.enabled": {
 						"type": "boolean",
 						"default": false,
 						"tags": [
 							"experimental"
 						],
-						"description": "%github.copilot.config.alternateGptPrompt.enabled%"
+						"description": "%puku.config.alternateGptPrompt.enabled%"
 					},
-					"github.copilot.chat.useResponsesApi": {
+					"puku.chat.useResponsesApi": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "%github.copilot.config.useResponsesApi%",
+						"markdownDescription": "%puku.config.useResponsesApi%",
 						"tags": [
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.responsesApiReasoningEffort": {
+					"puku.chat.responsesApiReasoningEffort": {
 						"type": "string",
 						"default": "default",
-						"markdownDescription": "%github.copilot.config.responsesApiReasoningEffort%",
+						"markdownDescription": "%puku.config.responsesApiReasoningEffort%",
 						"tags": [
 							"experimental",
 							"onExp"
@@ -3210,10 +3210,10 @@
 							"default"
 						]
 					},
-					"github.copilot.chat.responsesApiReasoningSummary": {
+					"puku.chat.responsesApiReasoningSummary": {
 						"type": "string",
 						"default": "detailed",
-						"markdownDescription": "%github.copilot.config.responsesApiReasoningSummary%",
+						"markdownDescription": "%puku.config.responsesApiReasoningSummary%",
 						"tags": [
 							"experimental",
 							"onExp"
@@ -3223,22 +3223,22 @@
 							"detailed"
 						]
 					},
-					"github.copilot.chat.anthropic.thinking.enabled": {
+					"puku.chat.anthropic.thinking.enabled": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.anthropic.thinking.enabled%",
+						"markdownDescription": "%puku.config.anthropic.thinking.enabled%",
 						"tags": [
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.anthropic.thinking.maxTokens": {
+					"puku.chat.anthropic.thinking.maxTokens": {
 						"type": [
 							"number",
 							"null"
 						],
 						"default": null,
-						"markdownDescription": "%github.copilot.config.anthropic.thinking.maxTokens%",
+						"markdownDescription": "%puku.config.anthropic.thinking.maxTokens%",
 						"minimum": 1024,
 						"maximum": 32000,
 						"tags": [
@@ -3246,29 +3246,29 @@
 							"onExp"
 						]
 					},
-					"github.copilot.chat.anthropic.tools.websearch.enabled": {
+					"puku.chat.anthropic.tools.websearch.enabled": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.anthropic.tools.websearch.enabled%",
+						"markdownDescription": "%puku.config.anthropic.tools.websearch.enabled%",
 						"tags": [
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.anthropic.tools.websearch.maxUses": {
+					"puku.chat.anthropic.tools.websearch.maxUses": {
 						"type": "number",
 						"default": 5,
-						"markdownDescription": "%github.copilot.config.anthropic.tools.websearch.maxUses%",
+						"markdownDescription": "%puku.config.anthropic.tools.websearch.maxUses%",
 						"minimum": 1,
 						"maximum": 20,
 						"tags": [
 							"experimental"
 						]
 					},
-					"github.copilot.chat.anthropic.tools.websearch.allowedDomains": {
+					"puku.chat.anthropic.tools.websearch.allowedDomains": {
 						"type": "array",
 						"default": [],
-						"markdownDescription": "%github.copilot.config.anthropic.tools.websearch.allowedDomains%",
+						"markdownDescription": "%puku.config.anthropic.tools.websearch.allowedDomains%",
 						"items": {
 							"type": "string"
 						},
@@ -3276,10 +3276,10 @@
 							"experimental"
 						]
 					},
-					"github.copilot.chat.anthropic.tools.websearch.blockedDomains": {
+					"puku.chat.anthropic.tools.websearch.blockedDomains": {
 						"type": "array",
 						"default": [],
-						"markdownDescription": "%github.copilot.config.anthropic.tools.websearch.blockedDomains%",
+						"markdownDescription": "%puku.config.anthropic.tools.websearch.blockedDomains%",
 						"items": {
 							"type": "string"
 						},
@@ -3287,13 +3287,13 @@
 							"experimental"
 						]
 					},
-					"github.copilot.chat.anthropic.tools.websearch.userLocation": {
+					"puku.chat.anthropic.tools.websearch.userLocation": {
 						"type": [
 							"object",
 							"null"
 						],
 						"default": null,
-						"markdownDescription": "%github.copilot.config.anthropic.tools.websearch.userLocation%",
+						"markdownDescription": "%puku.config.anthropic.tools.websearch.userLocation%",
 						"properties": {
 							"city": {
 								"type": "string",
@@ -3316,21 +3316,21 @@
 							"experimental"
 						]
 					},
-					"github.copilot.chat.tools.memory.enabled": {
+					"puku.chat.tools.memory.enabled": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.tools.memory.enabled%",
+						"markdownDescription": "%puku.config.tools.memory.enabled%",
 						"tags": [
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.completionsFetcher": {
+					"puku.chat.completionsFetcher": {
 						"type": [
 							"string",
 							"null"
 						],
-						"markdownDescription": "%github.copilot.config.completionsFetcher%",
+						"markdownDescription": "%puku.config.completionsFetcher%",
 						"tags": [
 							"experimental",
 							"onExp"
@@ -3340,12 +3340,12 @@
 							"node-fetch"
 						]
 					},
-					"github.copilot.chat.nesFetcher": {
+					"puku.chat.nesFetcher": {
 						"type": [
 							"string",
 							"null"
 						],
-						"markdownDescription": "%github.copilot.config.nesFetcher%",
+						"markdownDescription": "%puku.config.nesFetcher%",
 						"tags": [
 							"experimental",
 							"onExp"
@@ -3391,477 +3391,477 @@
 			{
 				"id": "advanced",
 				"properties": {
-					"github.copilot.chat.debug.overrideChatEngine": {
+					"puku.chat.debug.overrideChatEngine": {
 						"type": [
 							"string",
 							"null"
 						],
-						"markdownDescription": "%github.copilot.config.debug.overrideChatEngine%",
+						"markdownDescription": "%puku.config.debug.overrideChatEngine%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.projectLabels.expanded": {
+					"puku.chat.projectLabels.expanded": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.projectLabels.expanded%",
+						"markdownDescription": "%puku.config.projectLabels.expanded%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.projectLabels.chat": {
+					"puku.chat.projectLabels.chat": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.projectLabels.chat%",
+						"markdownDescription": "%puku.config.projectLabels.chat%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.projectLabels.inline": {
+					"puku.chat.projectLabels.inline": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.projectLabels.inline%",
+						"markdownDescription": "%puku.config.projectLabels.inline%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.workspace.maxLocalIndexSize": {
+					"puku.chat.workspace.maxLocalIndexSize": {
 						"type": "number",
 						"default": 100000,
-						"markdownDescription": "%github.copilot.config.workspace.maxLocalIndexSize%",
+						"markdownDescription": "%puku.config.workspace.maxLocalIndexSize%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.workspace.enableFullWorkspace": {
+					"puku.chat.workspace.enableFullWorkspace": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "%github.copilot.config.workspace.enableFullWorkspace%",
+						"markdownDescription": "%puku.config.workspace.enableFullWorkspace%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.workspace.enableCodeSearch": {
+					"puku.chat.workspace.enableCodeSearch": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "%github.copilot.config.workspace.enableCodeSearch%",
+						"markdownDescription": "%puku.config.workspace.enableCodeSearch%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.workspace.enableEmbeddingsSearch": {
+					"puku.chat.workspace.enableEmbeddingsSearch": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "%github.copilot.config.workspace.enableEmbeddingsSearch%",
+						"markdownDescription": "%puku.config.workspace.enableEmbeddingsSearch%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.workspace.preferredEmbeddingsModel": {
+					"puku.chat.workspace.preferredEmbeddingsModel": {
 						"type": "string",
 						"default": "",
-						"markdownDescription": "%github.copilot.config.workspace.preferredEmbeddingsModel%",
+						"markdownDescription": "%puku.config.workspace.preferredEmbeddingsModel%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.workspace.prototypeAdoCodeSearchEndpointOverride": {
+					"puku.chat.workspace.prototypeAdoCodeSearchEndpointOverride": {
 						"type": "string",
 						"default": "",
-						"markdownDescription": "%github.copilot.config.workspace.prototypeAdoCodeSearchEndpointOverride%",
+						"markdownDescription": "%puku.config.workspace.prototypeAdoCodeSearchEndpointOverride%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.feedback.onChange": {
+					"puku.chat.feedback.onChange": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.feedback.onChange%",
+						"markdownDescription": "%puku.config.feedback.onChange%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.review.intent": {
+					"puku.chat.review.intent": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.review.intent%",
+						"markdownDescription": "%puku.config.review.intent%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.notebook.summaryExperimentEnabled": {
+					"puku.chat.notebook.summaryExperimentEnabled": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.notebook.summaryExperimentEnabled%",
+						"markdownDescription": "%puku.config.notebook.summaryExperimentEnabled%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.notebook.variableFilteringEnabled": {
+					"puku.chat.notebook.variableFilteringEnabled": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.notebook.variableFilteringEnabled%",
+						"markdownDescription": "%puku.config.notebook.variableFilteringEnabled%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.notebook.alternativeFormat": {
+					"puku.chat.notebook.alternativeFormat": {
 						"type": "string",
 						"default": "xml",
 						"enum": [
 							"xml",
 							"markdown"
 						],
-						"markdownDescription": "%github.copilot.config.notebook.alternativeFormat%",
+						"markdownDescription": "%puku.config.notebook.alternativeFormat%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.notebook.alternativeNESFormat.enabled": {
+					"puku.chat.notebook.alternativeNESFormat.enabled": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.notebook.alternativeNESFormat.enabled%",
+						"markdownDescription": "%puku.config.notebook.alternativeNESFormat.enabled%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.debugTerminalCommandPatterns": {
+					"puku.chat.debugTerminalCommandPatterns": {
 						"type": "array",
 						"default": [],
 						"items": {
 							"type": "string"
 						},
-						"markdownDescription": "%github.copilot.config.debugTerminalCommandPatterns%",
+						"markdownDescription": "%puku.config.debugTerminalCommandPatterns%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.editSourceTracking.showDecorations": {
+					"puku.chat.editSourceTracking.showDecorations": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.editSourceTracking.showDecorations%",
+						"markdownDescription": "%puku.config.editSourceTracking.showDecorations%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.editSourceTracking.showStatusBar": {
+					"puku.chat.editSourceTracking.showStatusBar": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.editSourceTracking.showStatusBar%",
+						"markdownDescription": "%puku.config.editSourceTracking.showStatusBar%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.localWorkspaceRecording.enabled": {
+					"puku.chat.localWorkspaceRecording.enabled": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.localWorkspaceRecording.enabled%",
+						"markdownDescription": "%puku.config.localWorkspaceRecording.enabled%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.editRecording.enabled": {
+					"puku.chat.editRecording.enabled": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.editRecording.enabled%",
+						"markdownDescription": "%puku.config.editRecording.enabled%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.temporalContext.maxAge": {
+					"puku.chat.temporalContext.maxAge": {
 						"type": "number",
 						"default": 100,
-						"markdownDescription": "%github.copilot.config.temporalContext.maxAge%",
+						"markdownDescription": "%puku.config.temporalContext.maxAge%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.temporalContext.preferSameLang": {
+					"puku.chat.temporalContext.preferSameLang": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.temporalContext.preferSameLang%",
+						"markdownDescription": "%puku.config.temporalContext.preferSameLang%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.codesearch.agent.enabled": {
+					"puku.chat.codesearch.agent.enabled": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "%github.copilot.config.codesearch.agent.enabled%",
+						"markdownDescription": "%puku.config.codesearch.agent.enabled%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.agent.temperature": {
+					"puku.chat.agent.temperature": {
 						"type": [
 							"number",
 							"null"
 						],
-						"markdownDescription": "%github.copilot.config.agent.temperature%",
+						"markdownDescription": "%puku.config.agent.temperature%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.instantApply.shortContextModelName": {
+					"puku.chat.instantApply.shortContextModelName": {
 						"type": "string",
 						"default": "gpt-4o-instant-apply-full-ft-v66-short",
-						"markdownDescription": "%github.copilot.config.instantApply.shortContextModelName%",
+						"markdownDescription": "%puku.config.instantApply.shortContextModelName%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.instantApply.shortContextLimit": {
+					"puku.chat.instantApply.shortContextLimit": {
 						"type": "number",
 						"default": 8000,
-						"markdownDescription": "%github.copilot.config.instantApply.shortContextLimit%",
+						"markdownDescription": "%puku.config.instantApply.shortContextLimit%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.enableUserPreferences": {
+					"puku.chat.enableUserPreferences": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.enableUserPreferences%",
+						"markdownDescription": "%puku.config.enableUserPreferences%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.summarizeAgentConversationHistoryThreshold": {
+					"puku.chat.summarizeAgentConversationHistoryThreshold": {
 						"type": [
 							"number",
 							"null"
 						],
-						"markdownDescription": "%github.copilot.config.summarizeAgentConversationHistoryThreshold%",
+						"markdownDescription": "%puku.config.summarizeAgentConversationHistoryThreshold%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.agentHistorySummarizationMode": {
+					"puku.chat.agentHistorySummarizationMode": {
 						"type": [
 							"string",
 							"null"
 						],
-						"markdownDescription": "%github.copilot.config.agentHistorySummarizationMode%",
+						"markdownDescription": "%puku.config.agentHistorySummarizationMode%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.agentHistorySummarizationWithPromptCache": {
+					"puku.chat.agentHistorySummarizationWithPromptCache": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.agentHistorySummarizationWithPromptCache%",
+						"markdownDescription": "%puku.config.agentHistorySummarizationWithPromptCache%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.agentHistorySummarizationForceGpt41": {
+					"puku.chat.agentHistorySummarizationForceGpt41": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.agentHistorySummarizationForceGpt41%",
+						"markdownDescription": "%puku.config.agentHistorySummarizationForceGpt41%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.useResponsesApiTruncation": {
+					"puku.chat.useResponsesApiTruncation": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.useResponsesApiTruncation%",
+						"markdownDescription": "%puku.config.useResponsesApiTruncation%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.omitBaseAgentInstructions": {
+					"puku.chat.omitBaseAgentInstructions": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.omitBaseAgentInstructions%",
+						"markdownDescription": "%puku.config.omitBaseAgentInstructions%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.promptFileContextProvider.enabled": {
+					"puku.chat.promptFileContextProvider.enabled": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "%github.copilot.config.promptFileContextProvider.enabled%",
+						"markdownDescription": "%puku.config.promptFileContextProvider.enabled%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.tools.defaultToolsGrouped": {
+					"puku.chat.tools.defaultToolsGrouped": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.tools.defaultToolsGrouped%",
+						"markdownDescription": "%puku.config.tools.defaultToolsGrouped%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.virtualTools.embeddingRanking": {
+					"puku.chat.virtualTools.embeddingRanking": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.virtualTools.embeddingRanking%",
+						"markdownDescription": "%puku.config.virtualTools.embeddingRanking%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.multiReplaceStringGrok.enabled": {
+					"puku.chat.multiReplaceStringGrok.enabled": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.multiReplaceStringGrok.enabled%",
+						"markdownDescription": "%puku.config.multiReplaceStringGrok.enabled%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.claudeCode.enabled": {
+					"puku.chat.claudeCode.enabled": {
 						"type": [
 							"boolean",
 							"string"
 						],
 						"default": false,
-						"markdownDescription": "%github.copilot.config.claudeCode.enabled%",
+						"markdownDescription": "%puku.config.claudeCode.enabled%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.claudeCode.debug": {
+					"puku.chat.claudeCode.debug": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.claudeCode.debug%",
+						"markdownDescription": "%puku.config.claudeCode.debug%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.copilotCLI.enabled": {
+					"puku.chat.copilotCLI.enabled": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "%github.copilot.config.copilotCLI.enabled%",
+						"markdownDescription": "%puku.config.copilotCLI.enabled%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.gpt5AlternativePatch": {
+					"puku.chat.gpt5AlternativePatch": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.gpt5AlternativePatch%",
+						"markdownDescription": "%puku.config.gpt5AlternativePatch%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.inlineEdits.triggerOnEditorChangeAfterSeconds": {
+					"puku.chat.inlineEdits.triggerOnEditorChangeAfterSeconds": {
 						"type": [
 							"number",
 							"null"
 						],
-						"markdownDescription": "%github.copilot.config.inlineEdits.triggerOnEditorChangeAfterSeconds%",
+						"markdownDescription": "%puku.config.inlineEdits.triggerOnEditorChangeAfterSeconds%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.inlineEdits.nextCursorPrediction.displayLine": {
+					"puku.chat.inlineEdits.nextCursorPrediction.displayLine": {
 						"type": "boolean",
 						"default": true,
-						"markdownDescription": "%github.copilot.config.inlineEdits.nextCursorPrediction.displayLine%",
+						"markdownDescription": "%puku.config.inlineEdits.nextCursorPrediction.displayLine%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.inlineEdits.nextCursorPrediction.currentFileMaxTokens": {
+					"puku.chat.inlineEdits.nextCursorPrediction.currentFileMaxTokens": {
 						"type": "number",
 						"default": 2000,
-						"markdownDescription": "%github.copilot.config.inlineEdits.nextCursorPrediction.currentFileMaxTokens%",
+						"markdownDescription": "%puku.config.inlineEdits.nextCursorPrediction.currentFileMaxTokens%",
 						"tags": [
 							"advanced",
 							"experimental",
 							"onExp"
 						]
 					},
-					"github.copilot.chat.suggestRelatedFilesFromGitHistory.useEmbeddings": {
+					"puku.chat.suggestRelatedFilesFromGitHistory.useEmbeddings": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.suggestRelatedFilesFromGitHistory.useEmbeddings%",
+						"markdownDescription": "%puku.config.suggestRelatedFilesFromGitHistory.useEmbeddings%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.cli.isolation.enabled": {
+					"puku.chat.cli.isolation.enabled": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.cli.isolation.enabled%",
+						"markdownDescription": "%puku.config.cli.isolation.enabled%",
 						"tags": [
 							"advanced",
 							"experimental"
 						]
 					},
-					"github.copilot.chat.cli.mcp.enabled": {
+					"puku.chat.cli.mcp.enabled": {
 						"type": "boolean",
 						"default": false,
-						"markdownDescription": "%github.copilot.config.cli.mcp.enabled%",
+						"markdownDescription": "%puku.config.cli.mcp.enabled%",
 						"tags": [
 							"advanced",
 							"experimental"
@@ -3873,23 +3873,23 @@
 		"submenus": [
 			{
 				"id": "copilot/reviewComment/additionalActions/applyAndNext",
-				"label": "%github.copilot.submenu.reviewComment.applyAndNext.label%"
+				"label": "%puku.submenu.reviewComment.applyAndNext.label%"
 			},
 			{
 				"id": "copilot/reviewComment/additionalActions/discardAndNext",
-				"label": "%github.copilot.submenu.reviewComment.discardAndNext.label%"
+				"label": "%puku.submenu.reviewComment.discardAndNext.label%"
 			},
 			{
 				"id": "copilot/reviewComment/additionalActions/discard",
-				"label": "%github.copilot.submenu.reviewComment.discard.label%"
+				"label": "%puku.submenu.reviewComment.discard.label%"
 			},
 			{
-				"id": "github.copilot.chat.debug.filter",
+				"id": "puku.chat.debug.filter",
 				"label": "Filter",
 				"icon": "$(filter)"
 			},
 			{
-				"id": "github.copilot.chat.debug.exportAllPromptLogsAsJson",
+				"id": "puku.chat.debug.exportAllPromptLogsAsJson",
 				"label": "Export All Logs as JSON",
 				"icon": "$(file-export)"
 			}
@@ -3897,408 +3897,408 @@
 		"menus": {
 			"editor/title": [
 				{
-					"command": "github.copilot.debug.generateInlineEditTests",
+					"command": "puku.debug.generateInlineEditTests",
 					"when": "resourceScheme == 'ccreq'"
 				},
 				{
-					"command": "github.copilot.chat.notebook.enableFollowCellExecution",
-					"when": "config.github.copilot.chat.notebook.followCellExecution.enabled && !github.copilot.notebookFollowInSessionEnabled && github.copilot.notebookAgentModeUsage && !config.notebook.globalToolbar",
+					"command": "puku.chat.notebook.enableFollowCellExecution",
+					"when": "config.puku.chat.notebook.followCellExecution.enabled && !puku.notebookFollowInSessionEnabled && puku.notebookAgentModeUsage && !config.notebook.globalToolbar",
 					"group": "navigation@10"
 				},
 				{
-					"command": "github.copilot.chat.notebook.disableFollowCellExecution",
-					"when": "config.github.copilot.chat.notebook.followCellExecution.enabled && github.copilot.notebookFollowInSessionEnabled && github.copilot.notebookAgentModeUsage && !config.notebook.globalToolbar",
+					"command": "puku.chat.notebook.disableFollowCellExecution",
+					"when": "config.puku.chat.notebook.followCellExecution.enabled && puku.notebookFollowInSessionEnabled && puku.notebookAgentModeUsage && !config.notebook.globalToolbar",
 					"group": "navigation@10"
 				},
 				{
-					"command": "github.copilot.chat.replay",
+					"command": "puku.chat.replay",
 					"group": "navigation@9",
 					"when": "resourceFilename === 'benchRun.chatReplay.json'"
 				},
 				{
-					"command": "github.copilot.chat.showAsChatSession",
+					"command": "puku.chat.showAsChatSession",
 					"group": "navigation@9",
 					"when": "resourceFilename === 'benchRun.chatReplay.json' || resourceFilename === 'chat-export-logs.json'"
 				},
 				{
-					"command": "github.copilot.chat.applyCopilotCLIAgentSessionChanges",
+					"command": "puku.chat.applyCopilotCLIAgentSessionChanges",
 					"group": "navigation@1",
 					"when": "resourceScheme == copilotcli-worktree-changes"
 				}
 			],
 			"explorer/context": [
 				{
-					"command": "github.copilot.chat.showAsChatSession",
+					"command": "puku.chat.showAsChatSession",
 					"when": "resourceFilename === 'benchRun.chatReplay.json' || resourceFilename === 'chat-export-logs.json'",
 					"group": "2_copilot@1"
 				}
 			],
 			"editor/context": [
 				{
-					"command": "github.copilot.chat.explain",
-					"when": "!github.copilot.interactiveSession.disabled",
+					"command": "puku.chat.explain",
+					"when": "!puku.interactiveSession.disabled",
 					"group": "1_chat@4"
 				}
 			],
 			"editor/context/chat": [
 				{
-					"command": "github.copilot.chat.fix",
-					"when": "!github.copilot.interactiveSession.disabled && !editorReadonly",
+					"command": "puku.chat.fix",
+					"when": "!puku.interactiveSession.disabled && !editorReadonly",
 					"group": "copilotAction@1"
 				},
 				{
-					"command": "github.copilot.chat.review",
-					"when": "config.github.copilot.chat.reviewSelection.enabled && !github.copilot.interactiveSession.disabled && resourceScheme != 'vscode-chat-code-block'",
+					"command": "puku.chat.review",
+					"when": "config.puku.chat.reviewSelection.enabled && !puku.interactiveSession.disabled && resourceScheme != 'vscode-chat-code-block'",
 					"group": "copilotAction@2"
 				},
 				{
-					"command": "github.copilot.chat.generateDocs",
-					"when": "!github.copilot.interactiveSession.disabled && !editorReadonly",
+					"command": "puku.chat.generateDocs",
+					"when": "!puku.interactiveSession.disabled && !editorReadonly",
 					"group": "copilotGenerate@1"
 				},
 				{
-					"command": "github.copilot.chat.generateTests",
-					"when": "!github.copilot.interactiveSession.disabled && !editorReadonly",
+					"command": "puku.chat.generateTests",
+					"when": "!puku.interactiveSession.disabled && !editorReadonly",
 					"group": "copilotGenerate@2"
 				}
 			],
 			"testing/item/result": [
 				{
-					"command": "github.copilot.tests.fixTestFailure.fromInline",
+					"command": "puku.tests.fixTestFailure.fromInline",
 					"when": "testResultState == failed && !testResultOutdated",
 					"group": "inline@2"
 				}
 			],
 			"testing/item/context": [
 				{
-					"command": "github.copilot.tests.fixTestFailure.fromInline",
+					"command": "puku.tests.fixTestFailure.fromInline",
 					"when": "testResultState == failed && !testResultOutdated",
 					"group": "inline@2"
 				}
 			],
 			"commandPalette": [
 				{
-					"command": "github.copilot.chat.triggerPermissiveSignIn",
+					"command": "puku.chat.triggerPermissiveSignIn",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.interactiveSession.feedback",
-					"when": "github.copilot-chat.activated && !github.copilot.interactiveSession.disabled"
+					"command": "puku.interactiveSession.feedback",
+					"when": "puku-chat.activated && !puku.interactiveSession.disabled"
 				},
 				{
-					"command": "github.copilot.debug.workbenchState",
+					"command": "puku.debug.workbenchState",
 					"when": "true"
 				},
 				{
-					"command": "github.copilot.chat.rerunWithCopilotDebug",
+					"command": "puku.chat.rerunWithCopilotDebug",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.startCopilotDebugCommand",
+					"command": "puku.chat.startCopilotDebugCommand",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.git.generateCommitMessage",
+					"command": "puku.git.generateCommitMessage",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.git.resolveMergeConflicts",
+					"command": "puku.git.resolveMergeConflicts",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.explain",
+					"command": "puku.chat.explain",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review",
-					"when": "!github.copilot.interactiveSession.disabled"
+					"command": "puku.chat.review",
+					"when": "!puku.interactiveSession.disabled"
 				},
 				{
-					"command": "github.copilot.chat.review.apply",
+					"command": "puku.chat.review.apply",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.applyAndNext",
+					"command": "puku.chat.review.applyAndNext",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.discard",
+					"command": "puku.chat.review.discard",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.discardAndNext",
+					"command": "puku.chat.review.discardAndNext",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.discardAll",
+					"command": "puku.chat.review.discardAll",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.stagedChanges",
+					"command": "puku.chat.review.stagedChanges",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.unstagedChanges",
+					"command": "puku.chat.review.unstagedChanges",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.changes",
+					"command": "puku.chat.review.changes",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.stagedFileChange",
+					"command": "puku.chat.review.stagedFileChange",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.unstagedFileChange",
+					"command": "puku.chat.review.unstagedFileChange",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.previous",
+					"command": "puku.chat.review.previous",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.next",
+					"command": "puku.chat.review.next",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.continueInInlineChat",
+					"command": "puku.chat.review.continueInInlineChat",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.continueInChat",
+					"command": "puku.chat.review.continueInChat",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.markHelpful",
+					"command": "puku.chat.review.markHelpful",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.review.markUnhelpful",
+					"command": "puku.chat.review.markUnhelpful",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.devcontainer.generateDevContainerConfig",
+					"command": "puku.devcontainer.generateDevContainerConfig",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.tests.fixTestFailure",
+					"command": "puku.tests.fixTestFailure",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.tests.fixTestFailure.fromInline",
+					"command": "puku.tests.fixTestFailure.fromInline",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.search.markHelpful",
+					"command": "puku.search.markHelpful",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.search.markUnhelpful",
+					"command": "puku.search.markUnhelpful",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.search.feedback",
+					"command": "puku.search.feedback",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.debug.showElements",
+					"command": "puku.chat.debug.showElements",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.debug.hideElements",
+					"command": "puku.chat.debug.hideElements",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.debug.showTools",
+					"command": "puku.chat.debug.showTools",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.debug.hideTools",
+					"command": "puku.chat.debug.hideTools",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.debug.showNesRequests",
+					"command": "puku.chat.debug.showNesRequests",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.debug.hideNesRequests",
+					"command": "puku.chat.debug.hideNesRequests",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.debug.exportLogItem",
+					"command": "puku.chat.debug.exportLogItem",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.debug.exportPromptArchive",
+					"command": "puku.chat.debug.exportPromptArchive",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.debug.exportPromptLogsAsJson",
+					"command": "puku.chat.debug.exportPromptLogsAsJson",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.debug.exportAllPromptLogsAsJson",
+					"command": "puku.chat.debug.exportAllPromptLogsAsJson",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.mcp.setup.check",
+					"command": "puku.chat.mcp.setup.check",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.mcp.setup.validatePackage",
+					"command": "puku.chat.mcp.setup.validatePackage",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.mcp.setup.flow",
+					"command": "puku.chat.mcp.setup.flow",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.debug.showRawRequestBody",
+					"command": "puku.chat.debug.showRawRequestBody",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.debug.showOutputChannel",
+					"command": "puku.debug.showOutputChannel",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.cli.sessions.delete",
+					"command": "puku.cli.sessions.delete",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.cli.sessions.refresh",
+					"command": "puku.cli.sessions.refresh",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.cli.sessions.resumeInTerminal",
+					"command": "puku.cli.sessions.resumeInTerminal",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.cli.sessions.newTerminalSession",
+					"command": "puku.cli.sessions.newTerminalSession",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.cloud.sessions.refresh",
+					"command": "puku.cloud.sessions.refresh",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.cloud.sessions.openInBrowser",
+					"command": "puku.cloud.sessions.openInBrowser",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.cloud.sessions.proxy.closeChatSessionPullRequest",
+					"command": "puku.cloud.sessions.proxy.closeChatSessionPullRequest",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.applyCopilotCLIAgentSessionChanges",
+					"command": "puku.chat.applyCopilotCLIAgentSessionChanges",
 					"when": "false"
 				},
 				{
-					"command": "github.copilot.chat.showAsChatSession",
+					"command": "puku.chat.showAsChatSession",
 					"when": "false"
 				}
 			],
 			"view/title": [
 				{
-					"command": "github.copilot.claude.sessions.refresh",
+					"command": "puku.claude.sessions.refresh",
 					"when": "view == workbench.view.chat.sessions.claude-code",
 					"group": "navigation@1"
 				},
 				{
-					"command": "github.copilot.cli.sessions.refresh",
+					"command": "puku.cli.sessions.refresh",
 					"when": "view == workbench.view.chat.sessions.copilotcli",
 					"group": "navigation@1"
 				},
 				{
-					"submenu": "github.copilot.chat.debug.filter",
+					"submenu": "puku.chat.debug.filter",
 					"when": "view == copilot-chat",
 					"group": "navigation"
 				},
 				{
-					"command": "github.copilot.chat.debug.exportAllPromptLogsAsJson",
+					"command": "puku.chat.debug.exportAllPromptLogsAsJson",
 					"when": "view == copilot-chat",
 					"group": "export@1"
 				},
 				{
-					"command": "github.copilot.debug.showOutputChannel",
+					"command": "puku.debug.showOutputChannel",
 					"when": "view == copilot-chat",
 					"group": "3_show@1"
 				},
 				{
-					"command": "github.copilot.debug.showChatLogView",
+					"command": "puku.debug.showChatLogView",
 					"when": "view == workbench.panel.chat.view.copilot",
 					"group": "3_show"
 				},
 				{
-					"command": "github.copilot.cloud.sessions.refresh",
+					"command": "puku.cloud.sessions.refresh",
 					"when": "view == workbench.view.chat.sessions.copilot-cloud-agent",
 					"group": "navigation@1"
 				}
 			],
 			"view/item/context": [
 				{
-					"command": "github.copilot.chat.debug.showRawRequestBody",
+					"command": "puku.chat.debug.showRawRequestBody",
 					"when": "view == copilot-chat && viewItem == request",
 					"group": "export@0"
 				},
 				{
-					"command": "github.copilot.chat.debug.exportLogItem",
+					"command": "puku.chat.debug.exportLogItem",
 					"when": "view == copilot-chat && (viewItem == toolcall || viewItem == request)",
 					"group": "export@1"
 				},
 				{
-					"command": "github.copilot.chat.debug.exportPromptArchive",
+					"command": "puku.chat.debug.exportPromptArchive",
 					"when": "view == copilot-chat && viewItem == chatprompt",
 					"group": "export@2"
 				},
 				{
-					"command": "github.copilot.chat.debug.exportPromptLogsAsJson",
+					"command": "puku.chat.debug.exportPromptLogsAsJson",
 					"when": "view == copilot-chat && viewItem == chatprompt",
 					"group": "export@3"
 				}
 			],
 			"searchPanel/aiResults/commands": [
 				{
-					"command": "github.copilot.search.markHelpful",
+					"command": "puku.search.markHelpful",
 					"group": "inline@0",
 					"when": "aiResultsTitle && aiResultsRequested"
 				},
 				{
-					"command": "github.copilot.search.markUnhelpful",
+					"command": "puku.search.markUnhelpful",
 					"group": "inline@1",
 					"when": "aiResultsTitle && aiResultsRequested"
 				},
 				{
-					"command": "github.copilot.search.feedback",
+					"command": "puku.search.feedback",
 					"group": "inline@2",
-					"when": "aiResultsTitle && aiResultsRequested && github.copilot.debugReportFeedback"
+					"when": "aiResultsTitle && aiResultsRequested && puku.debugReportFeedback"
 				}
 			],
 			"comments/comment/title": [
 				{
-					"command": "github.copilot.chat.review.markHelpful",
+					"command": "puku.chat.review.markHelpful",
 					"group": "inline@0",
 					"when": "commentController == github-copilot-review"
 				},
 				{
-					"command": "github.copilot.chat.review.markUnhelpful",
+					"command": "puku.chat.review.markUnhelpful",
 					"group": "inline@1",
 					"when": "commentController == github-copilot-review"
 				}
 			],
 			"commentsView/commentThread/context": [
 				{
-					"command": "github.copilot.chat.review.apply",
+					"command": "puku.chat.review.apply",
 					"group": "context@1",
 					"when": "commentController == github-copilot-review"
 				},
 				{
-					"command": "github.copilot.chat.review.discard",
+					"command": "puku.chat.review.discard",
 					"group": "context@2",
 					"when": "commentController == github-copilot-review"
 				},
 				{
-					"command": "github.copilot.chat.review.discardAll",
+					"command": "puku.chat.review.discardAll",
 					"group": "context@3",
 					"when": "commentController == github-copilot-review"
 				}
@@ -4307,225 +4307,225 @@
 				{
 					"submenu": "copilot/reviewComment/additionalActions/applyAndNext",
 					"group": "inline@1",
-					"when": "commentController == github-copilot-review && github.copilot.chat.review.numberOfComments > 1"
+					"when": "commentController == github-copilot-review && puku.chat.review.numberOfComments > 1"
 				},
 				{
-					"command": "github.copilot.chat.review.apply",
+					"command": "puku.chat.review.apply",
 					"group": "inline@1",
-					"when": "commentController == github-copilot-review && github.copilot.chat.review.numberOfComments == 1"
+					"when": "commentController == github-copilot-review && puku.chat.review.numberOfComments == 1"
 				},
 				{
 					"submenu": "copilot/reviewComment/additionalActions/discardAndNext",
 					"group": "inline@2",
-					"when": "commentController == github-copilot-review && github.copilot.chat.review.numberOfComments > 1"
+					"when": "commentController == github-copilot-review && puku.chat.review.numberOfComments > 1"
 				},
 				{
 					"submenu": "copilot/reviewComment/additionalActions/discard",
 					"group": "inline@2",
-					"when": "commentController == github-copilot-review && github.copilot.chat.review.numberOfComments == 1"
+					"when": "commentController == github-copilot-review && puku.chat.review.numberOfComments == 1"
 				}
 			],
 			"copilot/reviewComment/additionalActions/applyAndNext": [
 				{
-					"command": "github.copilot.chat.review.applyAndNext",
+					"command": "puku.chat.review.applyAndNext",
 					"group": "inline@1",
 					"when": "commentController == github-copilot-review"
 				},
 				{
-					"command": "github.copilot.chat.review.apply",
+					"command": "puku.chat.review.apply",
 					"group": "inline@2",
 					"when": "commentController == github-copilot-review"
 				}
 			],
 			"copilot/reviewComment/additionalActions/discardAndNext": [
 				{
-					"command": "github.copilot.chat.review.discardAndNext",
+					"command": "puku.chat.review.discardAndNext",
 					"group": "inline@1",
 					"when": "commentController == github-copilot-review"
 				},
 				{
-					"command": "github.copilot.chat.review.discard",
+					"command": "puku.chat.review.discard",
 					"group": "inline@2",
 					"when": "commentController == github-copilot-review"
 				},
 				{
-					"command": "github.copilot.chat.review.continueInInlineChat",
+					"command": "puku.chat.review.continueInInlineChat",
 					"group": "inline@3",
 					"when": "commentController == github-copilot-review"
 				}
 			],
 			"copilot/reviewComment/additionalActions/discard": [
 				{
-					"command": "github.copilot.chat.review.discard",
+					"command": "puku.chat.review.discard",
 					"group": "inline@2",
 					"when": "commentController == github-copilot-review"
 				},
 				{
-					"command": "github.copilot.chat.review.continueInInlineChat",
+					"command": "puku.chat.review.continueInInlineChat",
 					"group": "inline@3",
 					"when": "commentController == github-copilot-review"
 				}
 			],
 			"comments/commentThread/title": [
 				{
-					"command": "github.copilot.chat.review.previous",
+					"command": "puku.chat.review.previous",
 					"group": "inline@1",
 					"when": "commentController == github-copilot-review"
 				},
 				{
-					"command": "github.copilot.chat.review.next",
+					"command": "puku.chat.review.next",
 					"group": "inline@2",
 					"when": "commentController == github-copilot-review"
 				},
 				{
-					"command": "github.copilot.chat.review.continueInChat",
+					"command": "puku.chat.review.continueInChat",
 					"group": "inline@3",
 					"when": "commentController == github-copilot-review"
 				},
 				{
-					"command": "github.copilot.chat.review.discardAll",
+					"command": "puku.chat.review.discardAll",
 					"group": "inline@4",
 					"when": "commentController == github-copilot-review"
 				}
 			],
 			"scm/title": [
 				{
-					"command": "github.copilot.chat.review.changes",
+					"command": "puku.chat.review.changes",
 					"group": "navigation",
-					"when": "config.github.copilot.chat.reviewAgent.enabled && github.copilot.chat.reviewDiff.enabled && scmProvider == git && scmProviderRootUri in github.copilot.chat.reviewDiff.enabledRootUris"
+					"when": "config.puku.chat.reviewAgent.enabled && puku.chat.reviewDiff.enabled && scmProvider == git && scmProviderRootUri in puku.chat.reviewDiff.enabledRootUris"
 				}
 			],
 			"scm/resourceGroup/context": [
 				{
-					"command": "github.copilot.chat.review.stagedChanges",
-					"when": "config.github.copilot.chat.reviewAgent.enabled && github.copilot.chat.reviewDiff.enabled && scmProvider == git && scmResourceGroup == index",
+					"command": "puku.chat.review.stagedChanges",
+					"when": "config.puku.chat.reviewAgent.enabled && puku.chat.reviewDiff.enabled && scmProvider == git && scmResourceGroup == index",
 					"group": "inline@-3"
 				},
 				{
-					"command": "github.copilot.chat.review.unstagedChanges",
-					"when": "config.github.copilot.chat.reviewAgent.enabled && github.copilot.chat.reviewDiff.enabled && scmProvider == git && scmResourceGroup == workingTree",
+					"command": "puku.chat.review.unstagedChanges",
+					"when": "config.puku.chat.reviewAgent.enabled && puku.chat.reviewDiff.enabled && scmProvider == git && scmResourceGroup == workingTree",
 					"group": "inline@-3"
 				}
 			],
 			"scm/resourceState/context": [
 				{
-					"command": "github.copilot.git.resolveMergeConflicts",
+					"command": "puku.git.resolveMergeConflicts",
 					"when": "scmProvider == git && scmResourceGroup == merge && git.activeResourceHasMergeConflicts",
 					"group": "z_chat@1"
 				},
 				{
-					"command": "github.copilot.chat.review.stagedFileChange",
+					"command": "puku.chat.review.stagedFileChange",
 					"group": "3_copilot",
-					"when": "config.github.copilot.chat.reviewAgent.enabled && github.copilot.chat.reviewDiff.enabled && scmProvider == git && scmResourceGroup == index"
+					"when": "config.puku.chat.reviewAgent.enabled && puku.chat.reviewDiff.enabled && scmProvider == git && scmResourceGroup == index"
 				},
 				{
-					"command": "github.copilot.chat.review.unstagedFileChange",
+					"command": "puku.chat.review.unstagedFileChange",
 					"group": "3_copilot",
-					"when": "config.github.copilot.chat.reviewAgent.enabled && github.copilot.chat.reviewDiff.enabled && scmProvider == git && scmResourceGroup == workingTree"
+					"when": "config.puku.chat.reviewAgent.enabled && puku.chat.reviewDiff.enabled && scmProvider == git && scmResourceGroup == workingTree"
 				}
 			],
 			"scm/inputBox": [
 				{
-					"command": "github.copilot.git.generateCommitMessage",
+					"command": "puku.git.generateCommitMessage",
 					"when": "scmProvider == git"
 				}
 			],
 			"testing/message/context": [
 				{
-					"command": "github.copilot.tests.fixTestFailure",
+					"command": "puku.tests.fixTestFailure",
 					"when": "testing.testItemHasUri",
 					"group": "inline@1"
 				}
 			],
 			"issue/reporter": [
 				{
-					"command": "github.copilot.report"
+					"command": "puku.report"
 				}
 			],
-			"github.copilot.chat.debug.filter": [
+			"puku.chat.debug.filter": [
 				{
-					"command": "github.copilot.chat.debug.showElements",
-					"when": "github.copilot.chat.debug.elementsHidden",
+					"command": "puku.chat.debug.showElements",
+					"when": "puku.chat.debug.elementsHidden",
 					"group": "commands@0"
 				},
 				{
-					"command": "github.copilot.chat.debug.hideElements",
-					"when": "!github.copilot.chat.debug.elementsHidden",
+					"command": "puku.chat.debug.hideElements",
+					"when": "!puku.chat.debug.elementsHidden",
 					"group": "commands@0"
 				},
 				{
-					"command": "github.copilot.chat.debug.showTools",
-					"when": "github.copilot.chat.debug.toolsHidden",
+					"command": "puku.chat.debug.showTools",
+					"when": "puku.chat.debug.toolsHidden",
 					"group": "commands@1"
 				},
 				{
-					"command": "github.copilot.chat.debug.hideTools",
-					"when": "!github.copilot.chat.debug.toolsHidden",
+					"command": "puku.chat.debug.hideTools",
+					"when": "!puku.chat.debug.toolsHidden",
 					"group": "commands@1"
 				},
 				{
-					"command": "github.copilot.chat.debug.showNesRequests",
-					"when": "github.copilot.chat.debug.nesRequestsHidden",
+					"command": "puku.chat.debug.showNesRequests",
+					"when": "puku.chat.debug.nesRequestsHidden",
 					"group": "commands@2"
 				},
 				{
-					"command": "github.copilot.chat.debug.hideNesRequests",
-					"when": "!github.copilot.chat.debug.nesRequestsHidden",
+					"command": "puku.chat.debug.hideNesRequests",
+					"when": "!puku.chat.debug.nesRequestsHidden",
 					"group": "commands@2"
 				}
 			],
 			"notebook/toolbar": [
 				{
-					"command": "github.copilot.chat.notebook.enableFollowCellExecution",
-					"when": "config.github.copilot.chat.notebook.followCellExecution.enabled && !github.copilot.notebookFollowInSessionEnabled && github.copilot.notebookAgentModeUsage && config.notebook.globalToolbar",
+					"command": "puku.chat.notebook.enableFollowCellExecution",
+					"when": "config.puku.chat.notebook.followCellExecution.enabled && !puku.notebookFollowInSessionEnabled && puku.notebookAgentModeUsage && config.notebook.globalToolbar",
 					"group": "navigation/execute@15"
 				},
 				{
-					"command": "github.copilot.chat.notebook.disableFollowCellExecution",
-					"when": "config.github.copilot.chat.notebook.followCellExecution.enabled && github.copilot.notebookFollowInSessionEnabled && github.copilot.notebookAgentModeUsage && config.notebook.globalToolbar",
+					"command": "puku.chat.notebook.disableFollowCellExecution",
+					"when": "config.puku.chat.notebook.followCellExecution.enabled && puku.notebookFollowInSessionEnabled && puku.notebookAgentModeUsage && config.notebook.globalToolbar",
 					"group": "navigation/execute@15"
 				}
 			],
 			"editor/content": [
 				{
-					"command": "github.copilot.git.resolveMergeConflicts",
+					"command": "puku.git.resolveMergeConflicts",
 					"group": "z_chat@1",
 					"when": "config.git.enabled && !git.missing && !isInDiffEditor && !isMergeEditor && resource in git.mergeChanges && git.activeResourceHasMergeConflicts"
 				}
 			],
 			"chat/chatSessions": [
 				{
-					"command": "github.copilot.cli.sessions.resumeInTerminal",
+					"command": "puku.cli.sessions.resumeInTerminal",
 					"when": "chatSessionType == copilotcli",
 					"group": "inline@1"
 				},
 				{
-					"command": "github.copilot.cli.sessions.delete",
+					"command": "puku.cli.sessions.delete",
 					"when": "chatSessionType == copilotcli",
 					"group": "inline@2"
 				},
 				{
-					"command": "github.copilot.cli.sessions.newTerminalSession",
+					"command": "puku.cli.sessions.newTerminalSession",
 					"when": "view == workbench.view.chat.sessions.copilotcli",
 					"group": "submenu"
 				},
 				{
-					"command": "github.copilot.cli.sessions.refresh",
+					"command": "puku.cli.sessions.refresh",
 					"when": "view == workbench.view.chat.sessions.copilotcli",
 					"group": "navigation@1"
 				},
 				{
-					"command": "github.copilot.cloud.sessions.openInBrowser",
+					"command": "puku.cloud.sessions.openInBrowser",
 					"when": "chatSessionType == copilot-cloud-agent",
 					"group": "navigation@10"
 				},
 				{
-					"command": "github.copilot.cloud.sessions.proxy.closeChatSessionPullRequest",
+					"command": "puku.cloud.sessions.proxy.closeChatSessionPullRequest",
 					"when": "chatSessionType == copilot-cloud-agent",
 					"group": "context"
 				},
 				{
-					"command": "github.copilot.cli.sessions.delete",
+					"command": "puku.cli.sessions.delete",
 					"when": "chatSessionType == copilotcli && config.chat.agentSessionsViewLocation == 'single-view'",
 					"group": "context"
 				}
@@ -4533,21 +4533,21 @@
 		},
 		"icons": {
 			"copilot-logo": {
-				"description": "%github.copilot.icon%",
+				"description": "%puku.icon%",
 				"default": {
 					"fontPath": "assets/copilot.woff",
 					"fontCharacter": "\\0041"
 				}
 			},
 			"copilot-warning": {
-				"description": "%github.copilot.icon%",
+				"description": "%puku.icon%",
 				"default": {
 					"fontPath": "assets/copilot.woff",
 					"fontCharacter": "\\0042"
 				}
 			},
 			"copilot-notconnected": {
-				"description": "%github.copilot.icon%",
+				"description": "%puku.icon%",
 				"default": {
 					"fontPath": "assets/copilot.woff",
 					"fontCharacter": "\\0043"
@@ -4636,7 +4636,7 @@
 					"id": "copilot-chat",
 					"name": "Chat Debug",
 					"icon": "assets/debug-icon.svg",
-					"when": "github.copilot.chat.showLogView"
+					"when": "puku.chat.showLogView"
 				}
 			],
 			"context-inspector": [
@@ -4644,14 +4644,14 @@
 					"id": "context-inspector",
 					"name": "Language Context Inspector",
 					"icon": "$(inspect)",
-					"when": "github.copilot.chat.showContextInspectorView"
+					"when": "puku.chat.showContextInspectorView"
 				}
 			],
 			"agentSessions": [
 				{
 					"id": "codex-placeholder",
 					"name": "OpenAI Codex",
-					"when": "github.copilot.chat.codex.showPlaceholder",
+					"when": "puku.chat.codex.showPlaceholder",
 					"icon": "$(file)"
 				},
 				{
@@ -4683,24 +4683,24 @@
 		},
 		"keybindings": [
 			{
-				"command": "github.copilot.chat.rerunWithCopilotDebug",
+				"command": "puku.chat.rerunWithCopilotDebug",
 				"key": "ctrl+alt+.",
 				"mac": "cmd+alt+.",
-				"when": "github.copilot-chat.activated && terminalShellIntegrationEnabled && terminalFocus && !terminalAltBufferActive"
+				"when": "puku-chat.activated && terminalShellIntegrationEnabled && terminalFocus && !terminalAltBufferActive"
 			}
 		],
 		"walkthroughs": [
 			{
 				"id": "copilotWelcome",
-				"title": "%github.copilot.walkthrough.title%",
-				"description": "%github.copilot.walkthrough.description%",
+				"title": "%puku.walkthrough.title%",
+				"description": "%puku.walkthrough.description%",
 				"when": "!isWeb",
 				"steps": [
 					{
 						"id": "copilot.setup.signIn",
-						"title": "%github.copilot.walkthrough.setup.signIn.title%",
-						"description": "%github.copilot.walkthrough.setup.signIn.description%",
-						"when": "chatEntitlementSignedOut && !view.workbench.panel.chat.view.copilot.visible && !github.copilot-chat.activated && !github.copilot.offline && !github.copilot.interactiveSession.individual.disabled && !github.copilot.interactiveSession.individual.expired && !github.copilot.interactiveSession.enterprise.disabled && !github.copilot.interactiveSession.contactSupport",
+						"title": "%puku.walkthrough.setup.signIn.title%",
+						"description": "%puku.walkthrough.setup.signIn.description%",
+						"when": "chatEntitlementSignedOut && !view.workbench.panel.chat.view.copilot.visible && !puku-chat.activated && !puku.offline && !puku.interactiveSession.individual.disabled && !puku.interactiveSession.individual.expired && !puku.interactiveSession.enterprise.disabled && !puku.interactiveSession.contactSupport",
 						"media": {
 							"video": {
 								"dark": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace.mp4",
@@ -4708,14 +4708,14 @@
 								"hc": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace-hc.mp4",
 								"hcLight": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace-hclight.mp4"
 							},
-							"altText": "%github.copilot.walkthrough.panelChat.media.altText%"
+							"altText": "%puku.walkthrough.panelChat.media.altText%"
 						}
 					},
 					{
 						"id": "copilot.setup.signInNoAction",
-						"title": "%github.copilot.walkthrough.setup.signIn.title%",
-						"description": "%github.copilot.walkthrough.setup.noAction.description%",
-						"when": "chatEntitlementSignedOut && view.workbench.panel.chat.view.copilot.visible && !github.copilot-chat.activated && !github.copilot.offline && !github.copilot.interactiveSession.individual.disabled && !github.copilot.interactiveSession.individual.expired && !github.copilot.interactiveSession.enterprise.disabled && !github.copilot.interactiveSession.contactSupport",
+						"title": "%puku.walkthrough.setup.signIn.title%",
+						"description": "%puku.walkthrough.setup.noAction.description%",
+						"when": "chatEntitlementSignedOut && view.workbench.panel.chat.view.copilot.visible && !puku-chat.activated && !puku.offline && !puku.interactiveSession.individual.disabled && !puku.interactiveSession.individual.expired && !puku.interactiveSession.enterprise.disabled && !puku.interactiveSession.contactSupport",
 						"media": {
 							"video": {
 								"dark": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace.mp4",
@@ -4723,14 +4723,14 @@
 								"hc": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace-hc.mp4",
 								"hcLight": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace-hclight.mp4"
 							},
-							"altText": "%github.copilot.walkthrough.panelChat.media.altText%"
+							"altText": "%puku.walkthrough.panelChat.media.altText%"
 						}
 					},
 					{
 						"id": "copilot.setup.signUp",
-						"title": "%github.copilot.walkthrough.setup.signUp.title%",
-						"description": "%github.copilot.walkthrough.setup.signUp.description%",
-						"when": "chatPlanCanSignUp && !view.workbench.panel.chat.view.copilot.visible && !github.copilot-chat.activated && !github.copilot.offline && (github.copilot.interactiveSession.individual.disabled || github.copilot.interactiveSession.individual.expired) && !github.copilot.interactiveSession.enterprise.disabled && !github.copilot.interactiveSession.contactSupport",
+						"title": "%puku.walkthrough.setup.signUp.title%",
+						"description": "%puku.walkthrough.setup.signUp.description%",
+						"when": "chatPlanCanSignUp && !view.workbench.panel.chat.view.copilot.visible && !puku-chat.activated && !puku.offline && (puku.interactiveSession.individual.disabled || puku.interactiveSession.individual.expired) && !puku.interactiveSession.enterprise.disabled && !puku.interactiveSession.contactSupport",
 						"media": {
 							"video": {
 								"dark": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace.mp4",
@@ -4738,14 +4738,14 @@
 								"hc": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace-hc.mp4",
 								"hcLight": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace-hclight.mp4"
 							},
-							"altText": "%github.copilot.walkthrough.panelChat.media.altText%"
+							"altText": "%puku.walkthrough.panelChat.media.altText%"
 						}
 					},
 					{
 						"id": "copilot.setup.signUpNoAction",
-						"title": "%github.copilot.walkthrough.setup.signUp.title%",
-						"description": "%github.copilot.walkthrough.setup.noAction.description%",
-						"when": "chatPlanCanSignUp && view.workbench.panel.chat.view.copilot.visible && !github.copilot-chat.activated && !github.copilot.offline && (github.copilot.interactiveSession.individual.disabled || github.copilot.interactiveSession.individual.expired) && !github.copilot.interactiveSession.enterprise.disabled && !github.copilot.interactiveSession.contactSupport",
+						"title": "%puku.walkthrough.setup.signUp.title%",
+						"description": "%puku.walkthrough.setup.noAction.description%",
+						"when": "chatPlanCanSignUp && view.workbench.panel.chat.view.copilot.visible && !puku-chat.activated && !puku.offline && (puku.interactiveSession.individual.disabled || puku.interactiveSession.individual.expired) && !puku.interactiveSession.enterprise.disabled && !puku.interactiveSession.contactSupport",
 						"media": {
 							"video": {
 								"dark": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace.mp4",
@@ -4753,13 +4753,13 @@
 								"hc": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace-hc.mp4",
 								"hcLight": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace-hclight.mp4"
 							},
-							"altText": "%github.copilot.walkthrough.panelChat.media.altText%"
+							"altText": "%puku.walkthrough.panelChat.media.altText%"
 						}
 					},
 					{
 						"id": "copilot.panelChat",
-						"title": "%github.copilot.walkthrough.panelChat.title%",
-						"description": "%github.copilot.walkthrough.panelChat.description%",
+						"title": "%puku.walkthrough.panelChat.title%",
+						"description": "%puku.walkthrough.panelChat.description%",
 						"when": "!chatEntitlementSignedOut || chatIsEnabled ",
 						"media": {
 							"video": {
@@ -4768,13 +4768,13 @@
 								"hc": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace-hc.mp4",
 								"hcLight": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/workspace-hclight.mp4"
 							},
-							"altText": "%github.copilot.walkthrough.panelChat.media.altText%"
+							"altText": "%puku.walkthrough.panelChat.media.altText%"
 						}
 					},
 					{
 						"id": "copilot.edits",
-						"title": "%github.copilot.walkthrough.edits.title%",
-						"description": "%github.copilot.walkthrough.edits.description%",
+						"title": "%puku.walkthrough.edits.title%",
+						"description": "%puku.walkthrough.edits.description%",
 						"when": "!chatEntitlementSignedOut || chatIsEnabled ",
 						"media": {
 							"video": {
@@ -4783,13 +4783,13 @@
 								"hc": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/edits-hc.mp4",
 								"hcLight": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/edits-hclight.mp4"
 							},
-							"altText": "%github.copilot.walkthrough.edits.media.altText%"
+							"altText": "%puku.walkthrough.edits.media.altText%"
 						}
 					},
 					{
 						"id": "copilot.firstSuggest",
-						"title": "%github.copilot.walkthrough.firstSuggest.title%",
-						"description": "%github.copilot.walkthrough.firstSuggest.description%",
+						"title": "%puku.walkthrough.firstSuggest.title%",
+						"description": "%puku.walkthrough.firstSuggest.description%",
 						"when": "!chatEntitlementSignedOut || chatIsEnabled ",
 						"media": {
 							"video": {
@@ -4798,13 +4798,13 @@
 								"hc": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/ghost-text-hc.mp4",
 								"hcLight": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/ghost-text-hclight.mp4"
 							},
-							"altText": "%github.copilot.walkthrough.firstSuggest.media.altText%"
+							"altText": "%puku.walkthrough.firstSuggest.media.altText%"
 						}
 					},
 					{
 						"id": "copilot.inlineChatNotMac",
-						"title": "%github.copilot.walkthrough.inlineChatNotMac.title%",
-						"description": "%github.copilot.walkthrough.inlineChatNotMac.description%",
+						"title": "%puku.walkthrough.inlineChatNotMac.title%",
+						"description": "%puku.walkthrough.inlineChatNotMac.description%",
 						"when": "!isMac && (!chatEntitlementSignedOut || chatIsEnabled )",
 						"media": {
 							"video": {
@@ -4813,13 +4813,13 @@
 								"hc": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/inline-hc.mp4",
 								"hcLight": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/inline-hclight.mp4"
 							},
-							"altText": "%github.copilot.walkthrough.inlineChatNotMac.media.altText%"
+							"altText": "%puku.walkthrough.inlineChatNotMac.media.altText%"
 						}
 					},
 					{
 						"id": "copilot.inlineChatMac",
-						"title": "%github.copilot.walkthrough.inlineChatMac.title%",
-						"description": "%github.copilot.walkthrough.inlineChatMac.description%",
+						"title": "%puku.walkthrough.inlineChatMac.title%",
+						"description": "%puku.walkthrough.inlineChatMac.description%",
 						"when": "isMac && (!chatEntitlementSignedOut || chatIsEnabled )",
 						"media": {
 							"video": {
@@ -4828,13 +4828,13 @@
 								"hc": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/inline-hc.mp4",
 								"hcLight": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/inline-hclight.mp4"
 							},
-							"altText": "%github.copilot.walkthrough.inlineChatMac.media.altText%"
+							"altText": "%puku.walkthrough.inlineChatMac.media.altText%"
 						}
 					},
 					{
 						"id": "copilot.sparkle",
-						"title": "%github.copilot.walkthrough.sparkle.title%",
-						"description": "%github.copilot.walkthrough.sparkle.description%",
+						"title": "%puku.walkthrough.sparkle.title%",
+						"description": "%puku.walkthrough.sparkle.description%",
 						"when": "!chatEntitlementSignedOut || chatIsEnabled",
 						"media": {
 							"video": {
@@ -4843,7 +4843,7 @@
 								"hc": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/git-commit-hc.mp4",
 								"hcLight": "https://vscodewalkthroughs.z1.web.core.windows.net/v0.26/git-commit-hclight.mp4"
 							},
-							"altText": "%github.copilot.walkthrough.sparkle.media.altText%"
+							"altText": "%puku.walkthrough.sparkle.media.altText%"
 						}
 					}
 				]
@@ -4872,7 +4872,7 @@
 				"inputPlaceholder": "Describe your task, type `#` for adding context",
 				"order": 3,
 				"description": "The Claude Code Agent works on your local machine",
-				"when": "config.github.copilot.chat.advanced.claudeCode.enabled",
+				"when": "config.puku.chat.advanced.claudeCode.enabled",
 				"capabilities": {
 					"supportsFileAttachments": true
 				},

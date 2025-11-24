@@ -50,7 +50,7 @@ export class PukuEmbeddingsCache {
 		let extVersion = '0.0.0';
 		try {
 			const ext = vscode.extensions?.getExtension('puku.puku-editor') ||
-				vscode.extensions?.getExtension('github.copilot-chat'); // fallback for dev
+				vscode.extensions?.getExtension('puku-chat'); // fallback for dev
 			extVersion = ext?.packageJSON?.version || '0.0.0';
 		} catch {
 			// In test environment, use default version

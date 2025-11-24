@@ -68,7 +68,7 @@ export class CopilotDebugCommandContribution extends Disposable implements vscod
 				this.registerSerializer = this.registerSerializer.then(() => this.registerEnvironment());
 			}
 		}));
-		this._register(vscode.commands.registerCommand('github.copilot.chat.startCopilotDebugCommand', async () => {
+		this._register(vscode.commands.registerCommand('puku.chat.startCopilotDebugCommand', async () => {
 			const term = vscode.window.createTerminal();
 			term.show(false);
 			term.sendText('copilot-debug <your command here>', false);

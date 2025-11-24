@@ -38,7 +38,7 @@ import { VSCodeWorkspace } from './parts/vscodeWorkspace';
 import { makeSettable } from './utils/observablesUtils';
 
 const TRIGGER_INLINE_EDIT_ON_ACTIVE_EDITOR_CHANGE = false; // otherwise, eg, NES would trigger just when going through search results
-const useEnhancedNotebookNESContextKey = 'github.copilot.chat.enableEnhancedNotebookNES';
+const useEnhancedNotebookNESContextKey = 'puku.chat.enableEnhancedNotebookNES';
 
 export class InlineEditProviderFeature extends Disposable implements IExtensionContribution {
 
@@ -157,14 +157,14 @@ export class InlineEditProviderFeature extends Disposable implements IExtensionC
 				if (!excludes.includes('completions')) {
 					excludes.push('completions');
 				}
-				if (!excludes.includes('github.copilot')) {
-					excludes.push('github.copilot');
+				if (!excludes.includes('puku')) {
+					excludes.push('puku');
 				}
 			}
 
 			reader.store.add(languages.registerInlineCompletionItemProvider('*', provider, {
 				displayName: provider.displayName,
-				yieldTo: this._yieldToCopilot.read(reader) ? ['github.copilot'] : undefined,
+				yieldTo: this._yieldToCopilot.read(reader) ? ['puku'] : undefined,
 				debounceDelayMs: 0, // set 0 debounce to ensure consistent delays/timings
 				groupId: 'nes',
 				excludes,
@@ -223,9 +223,9 @@ export class InlineEditProviderFeature extends Disposable implements IExtensionC
 	}
 }
 
-export const learnMoreCommandId = 'github.copilot.debug.inlineEdit.learnMore';
+export const learnMoreCommandId = 'puku.debug.inlineEdit.learnMore';
 
 export const learnMoreLink = 'https://aka.ms/vscode-nes';
 
-const clearCacheCommandId = 'github.copilot.debug.inlineEdit.clearCache';
-const reportNotebookNESIssueCommandId = 'github.copilot.debug.inlineEdit.reportNotebookNESIssue';
+const clearCacheCommandId = 'puku.debug.inlineEdit.clearCache';
+const reportNotebookNESIssueCommandId = 'puku.debug.inlineEdit.reportNotebookNESIssue';

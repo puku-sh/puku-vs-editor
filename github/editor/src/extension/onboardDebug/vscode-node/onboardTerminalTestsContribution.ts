@@ -30,7 +30,7 @@ export class OnboardTerminalTestsContribution extends Disposable implements vsco
 		this._register(vscode.window.onDidStartTerminalShellExecution(e => {
 			this.lastExecutionFor.set(e.terminal, e);
 		}));
-		this._register(vscode.commands.registerCommand('github.copilot.chat.rerunWithCopilotDebug', () => {
+		this._register(vscode.commands.registerCommand('puku.chat.rerunWithCopilotDebug', () => {
 			const terminal = vscode.window.activeTerminal;
 			const execution = terminal && this.lastExecutionFor.get(terminal);
 			if (!execution) {

@@ -23,7 +23,7 @@ import { AlternativeNotebookFormat } from '../../notebook/common/alternativeCont
 import { IExperimentationService } from '../../telemetry/common/nullExperimentationService';
 import { IValidator, vBoolean, vString } from './validator';
 
-export const CopilotConfigPrefix = 'github.copilot';
+export const CopilotConfigPrefix = 'puku';
 
 export const IConfigurationService = createServiceIdentifier<IConfigurationService>('IConfigurationService');
 
@@ -358,13 +358,13 @@ export namespace ConfigValueValidators {
 
 export interface BaseConfig<T> {
 	/**
-	 * Key as it appears in settings.json minus the "github.copilot." prefix.
+	 * Key as it appears in settings.json minus the "puku." prefix.
 	 * e.g. "advanced.debug.overrideProxyUrl"
 	 */
 	readonly id: string;
 
 	/**
-	 * The old key as it appears in settings.json minus the "github.copilot." prefix.
+	 * The old key as it appears in settings.json minus the "puku." prefix.
 	 */
 	readonly oldId?: string;
 
@@ -374,18 +374,18 @@ export interface BaseConfig<T> {
 	readonly isPublic: boolean;
 
 	/**
-	 * The fully qualified id, e.g. "github.copilot.advanced.debug.overrideProxyUrl".
+	 * The fully qualified id, e.g. "puku.advanced.debug.overrideProxyUrl".
 	 * Use this with `affectsConfiguration` from the ConfigurationChangeEvent
 	 */
 	readonly fullyQualifiedId: string;
 
 	/**
-	 * The fully qualified old id, e.g. "github.copilot.advanced.debug.overrideProxyUrl".
+	 * The fully qualified old id, e.g. "puku.advanced.debug.overrideProxyUrl".
 	 */
 	readonly fullyQualifiedOldId?: string | undefined;
 
 	/**
-	 * The `X` in `github.copilot.advanced.X` settings.
+	 * The `X` in `puku.advanced.X` settings.
 	 */
 	readonly advancedSubKey: string | undefined;
 
@@ -480,13 +480,13 @@ function toBaseConfig<T>(key: string, defaultValue: T | DefaultValueWithTeamValu
 			throw new BugIndicatingError(`The rollout ratio for setting ${key} is invalid`);
 		}
 	}
-	const advancedSubKey = fullyQualifiedId.startsWith('github.copilot.advanced.') ? fullyQualifiedId.substring('github.copilot.advanced.'.length) : undefined;
+	const advancedSubKey = fullyQualifiedId.startsWith('puku.advanced.') ? fullyQualifiedId.substring('puku.advanced.'.length) : undefined;
 	return { id: key, oldId: options?.oldKey, isPublic, fullyQualifiedId, fullyQualifiedOldId, advancedSubKey, defaultValue, options };
 }
 
 class ConfigRegistry {
 	/**
-	 * A map of all registered configs, keyed by their full id, eg `github.copilot.advanced.debug.overrideProxyUrl`.
+	 * A map of all registered configs, keyed by their full id, eg `puku.advanced.debug.overrideProxyUrl`.
 	 */
 	public readonly configs: Map<string, Config<any> | ExperimentBasedConfig<any>> = new Map();
 
@@ -536,16 +536,16 @@ function defineSetting<T>(key: string, defaultValue: T | DefaultValueWithTeamVal
 /**
  * Will define a setting which will be backed by an experiment. The experiment variable will be:
  * ```
- *     config.github.copilot.${key}
+ *     config.puku.${key}
  *
  * e.g.
- *     config.github.copilot.chat.advanced.inlineEdits.internalRollout
+ *     config.puku.chat.advanced.inlineEdits.internalRollout
  * ```
  */
 function defineExpSetting<T extends ExperimentBasedConfigType>(key: string, defaultValue: T | DefaultValueWithTeamValue<T> | DefaultValueWithTeamAndInternalValue<T>, options?: ConfigOptions, expOptions?: { experimentName?: string }): ExperimentBasedConfig<T> {
 	const value: ExperimentBasedConfig<T> = { ...toBaseConfig(key, defaultValue, options), configType: ConfigType.ExperimentBased, experimentName: expOptions?.experimentName };
 	if (value.advancedSubKey) {
-		// This is a `github.copilot.advanced.*` setting
+		// This is a `puku.advanced.*` setting
 		throw new BugIndicatingError('Shared settings cannot be experiment based');
 	}
 	globalConfigRegistry.registerConfig(value);
