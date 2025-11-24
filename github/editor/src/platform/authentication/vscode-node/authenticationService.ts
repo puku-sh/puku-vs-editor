@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { authentication, AuthenticationGetSessionOptions, AuthenticationSession } from 'vscode';
+import { authentication, AuthenticationGetSessionOptions, AuthenticationSession, commands } from 'vscode';
 import { TaskSingler } from '../../../util/common/taskSingler';
 import { AuthProviderId, IConfigurationService } from '../../configuration/common/configurationService';
 import { IDomainService } from '../../endpoint/common/domainService';
@@ -41,6 +41,17 @@ export class AuthenticationService extends BaseAuthenticationService {
 	}
 
 	async getAnyGitHubSession(options?: AuthenticationGetSessionOptions): Promise<AuthenticationSession | undefined> {
+		// Check if Puku is authenticated - if so, skip GitHub auth
+		try {
+			const pukuSessionToken = await commands.executeCommand('_puku.getSessionToken');
+			if (pukuSessionToken) {
+				this._logService.info('[AuthenticationService] Puku authenticated, skipping GitHub session request');
+				return undefined;
+			}
+		} catch (error) {
+			// Puku auth not available, continue with GitHub
+		}
+
 		const func = () => getAnyAuthSession(this._configurationService, options);
 		// If we are doing an interactive flow, don't use the singler so that we don't get hung up on the user's choice
 		const session = options?.createIfNone || options?.forceNewSession ? await func() : await this._taskSingler.getOrCreate('any', func);
@@ -49,6 +60,17 @@ export class AuthenticationService extends BaseAuthenticationService {
 	}
 
 	async getPermissiveGitHubSession(options: AuthenticationGetSessionOptions): Promise<AuthenticationSession | undefined> {
+		// Check if Puku is authenticated - if so, skip GitHub auth
+		try {
+			const pukuSessionToken = await commands.executeCommand('_puku.getSessionToken');
+			if (pukuSessionToken) {
+				this._logService.info('[AuthenticationService] Puku authenticated, skipping GitHub permissive session request');
+				return undefined;
+			}
+		} catch (error) {
+			// Puku auth not available, continue with GitHub
+		}
+
 		const func = () => getAlignedSession(this._configurationService, options);
 		// If we are doing an interactive flow, don't use the singler so that we don't get hung up on the user's choice
 		const session = options?.createIfNone || options?.forceNewSession ? await func() : await this._taskSingler.getOrCreate('permissive', func);
