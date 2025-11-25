@@ -16,4 +16,6 @@ l10n/
 *.log
 build/
 *.puku/
-nohup.out
+nohup.outgithub/proxy/
+github/vscode/
+reference-extensions/
