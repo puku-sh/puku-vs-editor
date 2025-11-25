@@ -28,6 +28,25 @@ export class VsCodePukuAuthService extends Disposable implements IPukuAuthServic
 
 	constructor() {
 		super();
+
+		// Listen for auth refresh command from workbench
+		this._register(vscode.commands.registerCommand('_puku.extensionRefreshAuth', async () => {
+			console.log('[VsCodePukuAuthService] Received refresh auth command from workbench');
+			await this.initialize();
+		}));
+
+		// Poll for auth changes every 2 seconds when unauthenticated
+		const pollInterval = setInterval(async () => {
+			if (this._status === PukuAuthStatus.Unauthenticated) {
+				const token = await this.getToken();
+				if (token) {
+					console.log('[VsCodePukuAuthService] Detected new auth session via polling');
+					clearInterval(pollInterval);
+				}
+			}
+		}, 2000);
+
+		this._register({ dispose: () => clearInterval(pollInterval) });
 	}
 
 	/**
@@ -93,12 +112,6 @@ export class VsCodePukuAuthService extends Disposable implements IPukuAuthServic
 	async getToken(): Promise<PukuToken | undefined> {
 		console.log('[VsCodePukuAuthService] getToken() called');
 
-		// Return cached token if still valid
-		if (this._token && this._token.expiresAt > Date.now() / 1000) {
-			console.log('[VsCodePukuAuthService] Returning cached token');
-			return this._token;
-		}
-
 		try {
 			// Get session token from VS Code workbench's Puku auth service via command
 			console.log('[VsCodePukuAuthService] Fetching session token from VS Code service...');
@@ -107,7 +120,15 @@ export class VsCodePukuAuthService extends Disposable implements IPukuAuthServic
 
 			if (!sessionToken) {
 				console.log('[VsCodePukuAuthService] No session token from VS Code service');
+				// Clear cached token if no valid session
+				this._token = undefined;
 				return undefined;
+			}
+
+			// Return cached token if it matches the session token and is still valid
+			if (this._token && this._token.token === sessionToken && this._token.expiresAt > Date.now() / 1000) {
+				console.log('[VsCodePukuAuthService] Returning cached token');
+				return this._token;
 			}
 
 			console.log('[VsCodePukuAuthService] Got session token from VS Code service');

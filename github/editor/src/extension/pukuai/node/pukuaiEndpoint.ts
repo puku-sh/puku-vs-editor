@@ -139,9 +139,14 @@ export class PukuAIEndpoint extends ChatEndpoint {
 		const headers: Record<string, string> = {
 			"Content-Type": "application/json"
 		};
+		console.log(`[PukuAIEndpoint] getExtraHeaders - apiKey: ${this._apiKey ? 'EXISTS (length: ' + this._apiKey.length + ')' : 'EMPTY/UNDEFINED'}`);
 		if (this._apiKey) {
+			console.log(`[PukuAIEndpoint] Adding Authorization header with Bearer token`);
 			headers['Authorization'] = `Bearer ${this._apiKey}`;
+		} else {
+			console.log(`[PukuAIEndpoint] No Authorization header - anonymous access`);
 		}
+		console.log(`[PukuAIEndpoint] Headers:`, JSON.stringify(headers, null, 2));
 		return headers;
 	}
 

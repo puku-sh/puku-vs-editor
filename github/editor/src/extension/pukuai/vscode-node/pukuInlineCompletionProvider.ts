@@ -211,19 +211,20 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		const url = `${this._endpoint}/v1/completions`;
 		console.log(`[PukuInlineCompletion] Trying native completion at ${url}`);
 
-		// Get auth token
+		// Get auth token (optional for worker API)
 		const authToken = await this._authService.getToken();
-		if (!authToken) {
-			console.log('[PukuInlineCompletion] No auth token available, skipping completion');
-			return null;
+		const headers: Record<string, string> = {
+			'Content-Type': 'application/json',
+		};
+
+		// Only add auth header if token exists
+		if (authToken) {
+			headers['Authorization'] = `Bearer ${authToken.token}`;
 		}
 
 		const response = await this._fetcherService.fetch(url, {
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${authToken.token}`,
-			},
+			headers,
 			body: JSON.stringify({
 				prompt: prefix,
 				suffix: suffix,
@@ -271,11 +272,15 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		// Build the FIM prompt
 		const prompt = buildFIMPrompt(prefix, suffix);
 
-		// Get auth token
+		// Get auth token (optional for worker API)
 		const authToken = await this._authService.getToken();
-		if (!authToken) {
-			console.log('[PukuInlineCompletion] No auth token available, skipping chat completion');
-			return null;
+		const headers: Record<string, string> = {
+			'Content-Type': 'application/json',
+		};
+
+		// Only add auth header if token exists
+		if (authToken) {
+			headers['Authorization'] = `Bearer ${authToken.token}`;
 		}
 
 		// Get configured model (worker will handle model mapping)
@@ -283,10 +288,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 
 		const response = await this._fetcherService.fetch(url, {
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${authToken.token}`,
-			},
+			headers,
 			body: JSON.stringify({
 				model: model,
 				messages: [
