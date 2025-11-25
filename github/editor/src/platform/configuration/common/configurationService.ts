@@ -881,8 +881,8 @@ export namespace ConfigKey {
 	export const VirtualToolThreshold = defineExpSetting<number>('chat.virtualTools.threshold', HARD_TOOL_LIMIT);
 	export const CurrentEditorAgentContext = defineSetting<boolean>('chat.agent.currentEditorContext.enabled', true);
 	/** Puku AI */
-	export const PukuAIEndpoint = defineSetting<string>('pukuai.endpoint', 'http://localhost:11434');
-	export const PukuAIModel = defineSetting<string>('pukuai.model', 'GLM-4.6');
+	export const PukuAIEndpoint = defineSetting<string>('pukuai.endpoint', 'https://api.puku.sh');
+	export const PukuAIModel = defineSetting<string>('pukuai.model', 'puku-ai');
 	/** BYOK  */
 	export const OllamaEndpoint = defineSetting<string>('chat.byok.ollamaEndpoint', 'http://localhost:11434');
 	export const AzureModels = defineSetting<Record<string, { name: string; url: string; toolCalling: boolean; vision: boolean; maxInputTokens: number; maxOutputTokens: number; requiresAPIKey?: boolean; thinking?: boolean }>>('chat.azureModels', {});

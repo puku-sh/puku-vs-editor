@@ -1,10 +1,9 @@
 import { ExtensionContext, ExtensionMode, env } from 'vscode';
 import { IAuthenticationService } from '../../../platform/authentication/common/authentication';
 import { ICopilotTokenManager } from '../../../platform/authentication/common/copilotTokenManager';
-import { StaticGitHubAuthenticationService } from '../../../platform/authentication/common/staticGitHubAuthenticationService';
-import { createStaticGitHubTokenProvider, getOrCreateTestingCopilotTokenManager } from '../../../platform/authentication/node/copilotTokenManager';
+import { getOrCreateTestingCopilotTokenManager } from '../../../platform/authentication/node/copilotTokenManager';
 import { AuthenticationService } from '../../../platform/authentication/vscode-node/authenticationService';
-import { VSCodeCopilotTokenManager } from '../../../platform/authentication/vscode-node/copilotTokenManager';
+import { PukuTokenManager } from '../../../platform/authentication/vscode-node/pukuTokenManager';
 import { IChatAgentService } from '../../../platform/chat/common/chatAgents';
 import { IChatMLFetcher } from '../../../platform/chat/common/chatMLFetcher';
 import { IChunkingEndpointClient } from '../../../platform/chunking/common/chunkingEndpointClient';
@@ -104,7 +103,8 @@ import { WorkspacListenerService } from '../../workspaceRecorder/vscode-node/wor
 import { registerServices as registerCommonServices } from '../vscode/services';
 import { IEmbeddingsComputer } from '../../../platform/embeddings/common/embeddingsComputer';
 import { ConditionalEmbeddingsComputer } from './conditionalEmbeddingsComputer';
-import { IPukuAuthService, PukuAuthService } from '../../pukuIndexing/common/pukuAuth';
+import { IPukuAuthService } from '../../pukuIndexing/common/pukuAuth';
+import { VsCodePukuAuthService } from '../../pukuIndexing/vscode-node/vscodePukuAuthService';
 import { IPukuIndexingService, PukuIndexingService } from '../../pukuIndexing/node/pukuIndexingService';
 import { IPukuChatService } from '../../pukuChat/common/pukuChatService';
 import { PukuChatService } from '../../pukuChat/node/pukuChatService';
@@ -149,11 +149,13 @@ export function registerServices(builder: IInstantiationServiceBuilder, extensio
 		builder.define(ICopilotTokenManager, getOrCreateTestingCopilotTokenManager(env.devDeviceId));
 	} else {
 		setupTelemetry(builder, extensionContext, internalAIKey, internalLargeEventAIKey, ariaKey);
-		builder.define(ICopilotTokenManager, new SyncDescriptor(VSCodeCopilotTokenManager));
+		// Puku Editor: Use PukuTokenManager instead of VSCodeCopilotTokenManager
+		builder.define(ICopilotTokenManager, new SyncDescriptor(PukuTokenManager));
 	}
 
 	if (isScenarioAutomation) {
-		builder.define(IAuthenticationService, new SyncDescriptor(StaticGitHubAuthenticationService, [createStaticGitHubTokenProvider()]));
+		// GitHub auth removed - use regular authentication service
+		builder.define(IAuthenticationService, new SyncDescriptor(AuthenticationService));
 		builder.define(IEndpointProvider, new SyncDescriptor(ScenarioAutomationEndpointProviderImpl, [collectFetcherTelemetry]));
 		builder.define(IIgnoreService, new SyncDescriptor(NullIgnoreService));
 	} else {
@@ -210,9 +212,8 @@ export function registerServices(builder: IInstantiationServiceBuilder, extensio
 	builder.define(IEmbeddingsComputer, new SyncDescriptor(ConditionalEmbeddingsComputer));
 
 	// Puku Indexing Services
-	// Note: Model selection is handled internally by the proxy - no user exposure
-	const pukuEndpoint = 'http://localhost:11434';
-	builder.define(IPukuAuthService, new PukuAuthService(pukuEndpoint));
+	// Note: Authentication is bridged from VS Code layer via internal commands
+	builder.define(IPukuAuthService, new SyncDescriptor(VsCodePukuAuthService));
 	builder.define(IPukuIndexingService, new SyncDescriptor(PukuIndexingService));
 
 	// Puku Chat Service

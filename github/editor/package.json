@@ -2,7 +2,7 @@
 	"name": "puku-editor",
 	"displayName": "Puku Editor",
 	"description": "AI-powered code editor with GLM model support via Z.AI",
-	"version": "0.35.2",
+	"version": "0.35.3",
 	"build": "1",
 	"internalAIKey": "1058ec22-3c95-4951-8443-f26c1f325911",
 	"completionsCoreVersion": "1.378.1799",
@@ -1649,55 +1649,6 @@
 			{
 				"vendor": "pukuai",
 				"displayName": "Puku AI"
-			},
-			{
-				"vendor": "puku",
-				"displayName": "Puku AI"
-			},
-			{
-				"vendor": "azure",
-				"displayName": "Azure",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "anthropic",
-				"displayName": "Anthropic",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "xai",
-				"displayName": "xAI",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "ollama",
-				"displayName": "Ollama"
-			},
-			{
-				"vendor": "openai",
-				"displayName": "OpenAI",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "gemini",
-				"displayName": "Google",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "groq",
-				"displayName": "Groq",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "openrouter",
-				"displayName": "OpenRouter",
-				"managementCommand": "puku.chat.manageBYOK"
-			},
-			{
-				"vendor": "customoai",
-				"when": "productQualityType != 'stable'",
-				"displayName": "OpenAI Compatible",
-				"managementCommand": "puku.chat.manageBYOK"
 			}
 		],
 		"interactiveSession": [
@@ -2592,13 +2543,13 @@
 					},
 					"puku.pukuai.endpoint": {
 						"type": "string",
-						"default": "http://localhost:11434",
-						"description": "The endpoint URL for Puku AI (e.g., http://localhost:11434 for Ollama/Proxy)."
+						"default": "https://api.puku.sh",
+						"description": "The endpoint URL for Puku AI (e.g., https://api.puku.sh for Puku cloud service)."
 					},
 					"puku.pukuai.model": {
 						"type": "string",
-						"default": "GLM-4.6",
-						"description": "The model name to use for Puku AI (e.g., GLM-4.6)."
+						"default": "puku-ai",
+						"description": "The model name to use for Puku AI (e.g., puku-ai, puku-ai-air)."
 					},
 					"puku.chat.byok.ollamaEndpoint": {
 						"type": "string",
@@ -3357,8 +3308,8 @@
 					},
 					"puku.embeddings.endpoint": {
 						"type": "string",
-						"default": "http://localhost:11434/v1/embeddings",
-						"description": "Endpoint URL for embeddings API (proxy server)",
+						"default": "https://api.puku.sh/v1/embeddings",
+						"description": "Endpoint URL for embeddings API (Puku cloud service)",
 						"tags": [
 							"experimental"
 						]

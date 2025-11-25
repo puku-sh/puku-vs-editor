@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as l10n from '@vscode/l10n';
+import { IAuthenticationChatUpgradeService } from '../../../platform/authentication/common/authenticationUpgrade';
 import type * as vscode from 'vscode';
 import { createFencedCodeBlock, getLanguageId } from '../../../util/common/markdown';
 import { Result } from '../../../util/common/result';
@@ -20,7 +21,6 @@ import { StopWatch } from '../../../util/vs/base/common/stopwatch';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
 import { ChatResponseProgressPart2 } from '../../../vscodeTypes';
 import { IAuthenticationService } from '../../authentication/common/authentication';
-import { IAuthenticationChatUpgradeService } from '../../authentication/common/authenticationUpgrade';
 import { FileChunk, FileChunkAndScore } from '../../chunking/common/chunk';
 import { MAX_CHUNK_SIZE_TOKENS } from '../../chunking/node/naiveChunker';
 import { distance, Embedding, EmbeddingDistance, Embeddings, EmbeddingType, IEmbeddingsComputer } from '../../embeddings/common/embeddingsComputer';

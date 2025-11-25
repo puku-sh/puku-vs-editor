@@ -11,6 +11,7 @@ import { IInstantiationService } from '../../../util/vs/platform/instantiation/c
 import { CopilotLanguageModelWrapper } from '../../conversation/vscode-node/languageModelAccess';
 import { BYOKModelProvider } from '../../byok/common/byokProvider';
 import { PukuAIEndpoint } from '../node/pukuaiEndpoint';
+import { IPukuAuthService } from '../../pukuIndexing/common/pukuAuth';
 
 interface PukuAIModelInfoAPIResponse {
 	template: string;
@@ -47,6 +48,7 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 		@IFetcherService protected readonly _fetcherService: IFetcherService,
 		@ILogService protected readonly _logService: ILogService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
+		@IPukuAuthService private readonly _pukuAuthService: IPukuAuthService,
 	) {
 		this._lmWrapper = this._instantiationService.createInstance(CopilotLanguageModelWrapper);
 		console.log(`Puku AI Provider: Initialized with endpoint ${_pukuBaseUrl}`);
@@ -79,21 +81,22 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 		progress: Progress<LanguageModelResponsePart2>,
 		token: CancellationToken
 	): Promise<void> {
-		this._logService.info(`Puku AI: provideLanguageModelChatResponse called for model ${model.id}`);
-		console.log(`Puku AI: provideLanguageModelChatResponse called for model ${model.id}`);
-		console.log(`Puku AI: Tools count: ${options.tools?.length ?? 0}`);
+		this._logService.info(`[PukuAIProvider] provideLanguageModelChatResponse called for model ${model.id}`);
+		console.log(`[PukuAIProvider] provideLanguageModelChatResponse called for model ${model.id}`);
+		console.log(`[PukuAIProvider] Message count: ${messages.length}`);
+		console.log(`[PukuAIProvider] Tools count: ${options.tools?.length ?? 0}`);
 		if (options.tools && options.tools.length > 0) {
-			console.log(`Puku AI: Tool names: ${options.tools.map(t => t.name).join(', ')}`);
+			console.log(`[PukuAIProvider] Tool names: ${options.tools.map(t => t.name).join(', ')}`);
 		}
 
 		try {
 			const pukuAIEndpoint = await this._getEndpoint(model);
-			this._logService.info(`Puku AI: Created endpoint for ${model.id}: ${pukuAIEndpoint.constructor.name}`);
-			console.log(`Puku AI: Created endpoint for ${model.id}: ${pukuAIEndpoint.constructor.name}, URL: ${pukuAIEndpoint.urlOrRequestMetadata}`);
+			this._logService.info(`[PukuAIProvider] Created endpoint for ${model.id}: ${pukuAIEndpoint.constructor.name}`);
+			console.log(`[PukuAIProvider] Created endpoint for ${model.id}: ${pukuAIEndpoint.constructor.name}, URL: ${pukuAIEndpoint.urlOrRequestMetadata}`);
 			return this._lmWrapper.provideLanguageModelResponse(pukuAIEndpoint, messages, options, options.requestInitiator, progress, token);
 		} catch (e) {
-			this._logService.error(`Puku AI: Error in provideLanguageModelChatResponse: ${e}`);
-			console.error(`Puku AI: Error in provideLanguageModelChatResponse:`, e);
+			this._logService.error(`[PukuAIProvider] Error in provideLanguageModelChatResponse: ${e}`);
+			console.error(`[PukuAIProvider] Error in provideLanguageModelChatResponse:`, e);
 			throw e;
 		}
 	}
@@ -112,12 +115,27 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 	}
 
 	private async _getEndpoint(model: LanguageModelChatInformation): Promise<PukuAIEndpoint> {
+		this._logService.info(`[PukuAIProvider] _getEndpoint called for model ${model.id}`);
 		const modelInfo = await this._getModelInfo(model.id);
 		const url = modelInfo.supported_endpoints?.includes(ModelSupportedEndpoint.Responses) ?
 			`${this._pukuBaseUrl}/v1/responses` :
 			`${this._pukuBaseUrl}/v1/chat/completions`;
-		// Puku AI: Pass dummy API key for authentication (proxy will accept any token)
-		return this._instantiationService.createInstance(PukuAIEndpoint, modelInfo, 'puku-ai-dummy-token', url);
+
+		// Puku AI: Get real Puku authentication token
+		this._logService.info('[PukuAIProvider] Calling _pukuAuthService.getToken()...');
+		const pukuToken = await this._pukuAuthService.getToken();
+		this._logService.info(`[PukuAIProvider] Got token result: ${pukuToken ? 'YES (length: ' + pukuToken.token.length + ')' : 'NO'}`);
+
+		if (!pukuToken) {
+			this._logService.warn('[PukuAIProvider] No Puku token available - triggering sign-in');
+			// Throw error to match GitHub Copilot pattern - this will trigger sign-in flow
+			const error = new Error('PukuLoginRequired');
+			error.name = 'PukuLoginRequired';
+			throw error;
+		}
+
+		this._logService.info(`[PukuAIProvider] Creating endpoint with token for URL: ${url}`);
+		return this._instantiationService.createInstance(PukuAIEndpoint, modelInfo, pukuToken.token, url);
 	}
 
 	private async _getAllModels(): Promise<Map<string, PukuAIKnownModel>> {
@@ -156,7 +174,7 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 		} catch (e) {
 			this._logService.error(`Puku AI: Failed to fetch models: ${e}`);
 			console.error(`Puku AI: Failed to fetch models: ${e}`);
-			throw new Error('Failed to fetch models from Puku AI proxy. Please ensure the proxy is running.');
+			throw new Error('Failed to fetch models from Puku AI. Please check your connection to api.puku.sh.');
 		}
 	}
 
@@ -173,15 +191,15 @@ export class PukuAILanguageModelProvider implements BYOKModelProvider<LanguageMo
 		let modelName = modelId;
 
 		if (modelApiInfo.model_info) {
-			const architecture = modelApiInfo.model_info['general.architecture'] || 'glm';
+			const architecture = modelApiInfo.model_info['general.architecture'] || 'puku';
 			contextWindow = modelApiInfo.model_info[`${architecture}.context_length`] ?? 128000;
 			modelName = modelApiInfo.model_info['general.basename'] || modelId;
 		}
 
 		const outputTokens = 8192;
-		const toolCalling = modelApiInfo.capabilities?.includes("tools") ?? false;
-		const vision = modelApiInfo.capabilities?.includes("vision") ?? false;
-		console.log(`Puku AI: ${modelId} capabilities array:`, modelApiInfo.capabilities);
+		const toolCalling = modelApiInfo.capabilities?.supports?.tools ?? false;
+		const vision = modelApiInfo.capabilities?.supports?.vision ?? false;
+		console.log(`Puku AI: ${modelId} capabilities:`, modelApiInfo.capabilities);
 		console.log(`Puku AI: ${modelId} parsed - toolCalling: ${toolCalling}, vision: ${vision}`);
 
 		const modelInfo: IChatModelInformation = {

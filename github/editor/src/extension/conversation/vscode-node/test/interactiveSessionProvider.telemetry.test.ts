@@ -6,7 +6,6 @@
 import assert from 'assert';
 import * as vscode from 'vscode';
 import { ICopilotTokenManager } from '../../../../platform/authentication/common/copilotTokenManager';
-import { SimulationTestCopilotTokenManager } from '../../../../platform/authentication/test/node/simulationTestCopilotTokenManager';
 import { allEvents, withTelemetryCapture } from '../../../../platform/test/node/telemetry';
 import { SpyChatResponseStream } from '../../../../util/common/test/mockChatResponseStream';
 import { Event } from '../../../../util/vs/base/common/event';

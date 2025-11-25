@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as l10n from '@vscode/l10n';
+import { IAuthenticationChatUpgradeService } from '../../../platform/authentication/common/authenticationUpgrade';
 import { shouldInclude } from '../../../util/common/glob';
 import { Result } from '../../../util/common/result';
 import { TelemetryCorrelationId } from '../../../util/common/telemetryCorrelationId';
@@ -20,7 +21,6 @@ import { StopWatch } from '../../../util/vs/base/common/stopwatch';
 import { URI } from '../../../util/vs/base/common/uri';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
 import { ChatResponseWarningPart } from '../../../vscodeTypes';
-import { IAuthenticationChatUpgradeService } from '../../authentication/common/authenticationUpgrade';
 import { FileChunkAndScore } from '../../chunking/common/chunk';
 import { ComputeBatchInfo } from '../../chunking/common/chunkingEndpointClient';
 import { ConfigKey, IConfigurationService } from '../../configuration/common/configurationService';

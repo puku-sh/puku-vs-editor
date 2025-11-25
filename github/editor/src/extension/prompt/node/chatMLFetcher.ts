@@ -362,11 +362,10 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 		this._logService.debug(`modelMaxResponseTokens ${request.max_tokens ?? 2048}`);
 		this._logService.debug(`chat model ${chatEndpointInfo.model}`);
 
-		// Puku AI: Check if this is a Puku AI endpoint (no authentication needed)
+		// Puku AI: Check if this is a Puku AI endpoint (uses Puku authentication, not Copilot token)
 		// Check URL pattern, family, model name, or endpoint name
 		const urlString = chatEndpointInfo.urlOrRequestMetadata?.toString() || '';
-		const isPukuAI = urlString.includes('localhost:11434') || 
-						urlString.includes('127.0.0.1:11434') ||
+		const isPukuAI = urlString.includes('api.puku.sh') ||
 						chatEndpointInfo.family === 'puku' ||
 						chatEndpointInfo.model?.startsWith('GLM-') ||
 						chatEndpointInfo.name === 'Puku AI';
@@ -376,12 +375,11 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 			try {
 				secretKey = (await this._authenticationService.getCopilotToken()).token;
 			} catch (error) {
-				// If GitHub login fails, check if this might be a Puku AI/BYOK endpoint
-				if (error instanceof Error && (error.message === 'GitHubLoginFailed' || error.message.includes('GitHubLoginFailed'))) {
+				// If GitHub/Puku login fails, check if this might be a Puku AI/BYOK endpoint
+				if (error instanceof Error && (error.message === 'GitHubLoginFailed' || error.message.includes('GitHubLoginFailed') || error.name === 'PukuLoginRequired')) {
 					// Re-check Puku AI detection in case URL wasn't available before
 					const urlStringRetry = chatEndpointInfo.urlOrRequestMetadata?.toString() || '';
-					const isPukuAIRetry = urlStringRetry.includes('localhost:11434') || 
-										urlStringRetry.includes('127.0.0.1:11434') ||
+					const isPukuAIRetry = urlStringRetry.includes('api.puku.sh') ||
 										chatEndpointInfo.family === 'puku' ||
 										chatEndpointInfo.model?.startsWith('GLM-') ||
 										chatEndpointInfo.name === 'Puku AI';

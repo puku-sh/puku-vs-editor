@@ -44,12 +44,23 @@ class AuthUpgradeAsk extends Disposable {
 	}
 
 	async run() {
-		await this.waitForChatEnabled();
-		this.registerListeners();
-		await this.showPrompt();
+		// Puku Editor: Always use Puku authentication, skip GitHub auth flow
+		this._logService.info('[AuthUpgradeAsk] Using Puku authentication - skipping GitHub permission upgrade');
+		return;
+	}
+
+	private async checkIfPukuAuthenticated(): Promise<boolean> {
+		// Puku Editor: Always return true since we only use Puku auth
+		return true;
 	}
 
 	private async waitForChatEnabled() {
+		// Skip for Puku authentication - chat is always available
+		if (await this.checkIfPukuAuthenticated()) {
+			this._logService.info('[AuthUpgradeAsk] Skipping waitForChatEnabled - using Puku authentication');
+			return;
+		}
+
 		try {
 			const copilotToken = await this._authenticationService.getCopilotToken();
 			// The best way to determine if we have chat access
@@ -57,6 +68,11 @@ class AuthUpgradeAsk extends Disposable {
 				return;
 			}
 		} catch (error) {
+			// Puku Editor: Silently handle PukuLoginRequired - sign-in flow will be triggered by chat system
+			if (error instanceof Error && error.name === 'PukuLoginRequired') {
+				this._logService.debug('PukuLoginRequired - sign-in will be triggered when user opens chat');
+				return; // Exit early, don't wait for auth change
+			}
 			// likely due to the user canceling the auth flow
 			this._logService.error(error, 'Failed to get copilot token');
 		}
@@ -71,6 +87,11 @@ class AuthUpgradeAsk extends Disposable {
 
 	private registerListeners() {
 		this._register(this._authenticationService.onDidAuthenticationChange(async () => {
+			// Skip if using Puku authentication
+			if (await this.checkIfPukuAuthenticated()) {
+				return;
+			}
+
 			if (this._authenticationService.permissiveGitHubSession) {
 				return;
 			}

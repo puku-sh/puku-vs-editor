@@ -4,9 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { t } from '@vscode/l10n';
+import { IAuthenticationChatUpgradeService } from '../../../platform/authentication/common/authenticationUpgrade';
 import * as vscode from 'vscode';
 import { IAuthenticationService } from '../../authentication/common/authentication';
-import { IAuthenticationChatUpgradeService } from '../../authentication/common/authenticationUpgrade';
 import { ICodeSearchAuthenticationService } from '../node/codeSearchRepoAuth';
 import { ResolvedRepoEntry } from '../node/codeSearchRepoTracker';
 

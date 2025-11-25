@@ -5,7 +5,9 @@
 import { commands, extensions, window } from 'vscode';
 import { IAuthenticationService, MinimalModeError } from '../../../platform/authentication/common/authentication';
 import { ChatDisabledError, ContactSupportError, EnterpriseManagedError, NotSignedUpError, SubscriptionExpiredError } from '../../../platform/authentication/vscode-node/copilotTokenManager';
-import { SESSION_LOGIN_MESSAGE } from '../../../platform/authentication/vscode-node/session';
+
+// GitHub authentication removed - using Puku authentication only
+const SESSION_LOGIN_MESSAGE = 'You are not signed in. Please sign in to use Puku AI.';
 import { ConfigKey, IConfigurationService } from '../../../platform/configuration/common/configurationService';
 import { IEnvService } from '../../../platform/env/common/envService';
 import { ILogService } from '../../../platform/log/common/logService';
