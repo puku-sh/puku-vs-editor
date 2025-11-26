@@ -1,0 +1,12 @@
+/Users/sahamed/Desktop/puku-editor/github/vscode/cli/target/debug/deps/os_info-90242ecf4381c830.d: /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/lib.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/macos/mod.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/architecture.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/bitness.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/info.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/matcher.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/os_type.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/version.rs
+
+/Users/sahamed/Desktop/puku-editor/github/vscode/cli/target/debug/deps/libos_info-90242ecf4381c830.rmeta: /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/lib.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/macos/mod.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/architecture.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/bitness.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/info.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/matcher.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/os_type.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/version.rs
+
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/lib.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/macos/mod.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/architecture.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/bitness.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/info.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/matcher.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/os_type.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/os_info-3.8.2/src/version.rs:
