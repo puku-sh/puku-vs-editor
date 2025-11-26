@@ -1,0 +1,36 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+/**
+ * Contains all MCP command IDs used in the workbench.
+ */
+export var McpCommandIds;
+(function (McpCommandIds) {
+    McpCommandIds["AddConfiguration"] = "workbench.mcp.addConfiguration";
+    McpCommandIds["Browse"] = "workbench.mcp.browseServers";
+    McpCommandIds["BrowsePage"] = "workbench.mcp.browseServersPage";
+    McpCommandIds["BrowseResources"] = "workbench.mcp.browseResources";
+    McpCommandIds["ConfigureSamplingModels"] = "workbench.mcp.configureSamplingModels";
+    McpCommandIds["EditStoredInput"] = "workbench.mcp.editStoredInput";
+    McpCommandIds["InstallFromActivation"] = "workbench.mcp.installFromActivation";
+    McpCommandIds["ListServer"] = "workbench.mcp.listServer";
+    McpCommandIds["OpenRemoteUserMcp"] = "workbench.mcp.openRemoteUserMcpJson";
+    McpCommandIds["OpenUserMcp"] = "workbench.mcp.openUserMcpJson";
+    McpCommandIds["OpenWorkspaceFolderMcp"] = "workbench.mcp.openWorkspaceFolderMcpJson";
+    McpCommandIds["OpenWorkspaceMcp"] = "workbench.mcp.openWorkspaceMcpJson";
+    McpCommandIds["RemoveStoredInput"] = "workbench.mcp.removeStoredInput";
+    McpCommandIds["ResetCachedTools"] = "workbench.mcp.resetCachedTools";
+    McpCommandIds["ResetTrust"] = "workbench.mcp.resetTrust";
+    McpCommandIds["RestartServer"] = "workbench.mcp.restartServer";
+    McpCommandIds["ServerOptions"] = "workbench.mcp.serverOptions";
+    McpCommandIds["ServerOptionsInConfirmation"] = "workbench.mcp.serverOptionsInConfirmation";
+    McpCommandIds["ShowConfiguration"] = "workbench.mcp.showConfiguration";
+    McpCommandIds["ShowInstalled"] = "workbench.mcp.showInstalledServers";
+    McpCommandIds["ShowOutput"] = "workbench.mcp.showOutput";
+    McpCommandIds["SkipCurrentAutostart"] = "workbench.mcp.skipAutostart";
+    McpCommandIds["StartPromptForServer"] = "workbench.mcp.startPromptForServer";
+    McpCommandIds["StartServer"] = "workbench.mcp.startServer";
+    McpCommandIds["StopServer"] = "workbench.mcp.stopServer";
+})(McpCommandIds || (McpCommandIds = {}));
+//# sourceMappingURL=mcpCommandIds.js.map

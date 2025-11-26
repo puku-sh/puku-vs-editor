@@ -1,0 +1,11 @@
+/Users/sahamed/Desktop/puku-editor/github/vscode/cli/target/debug/deps/console-bbdb2c07fc59fd39.d: /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/lib.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/common_term.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/kb.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/term.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/unix_term.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/utils.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/ansi.rs
+
+/Users/sahamed/Desktop/puku-editor/github/vscode/cli/target/debug/deps/libconsole-bbdb2c07fc59fd39.rmeta: /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/lib.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/common_term.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/kb.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/term.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/unix_term.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/utils.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/ansi.rs
+
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/lib.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/common_term.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/kb.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/term.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/unix_term.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/utils.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/console-0.15.8/src/ansi.rs:

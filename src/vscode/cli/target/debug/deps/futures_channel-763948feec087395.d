@@ -1,0 +1,10 @@
+/Users/sahamed/Desktop/puku-editor/github/vscode/cli/target/debug/deps/futures_channel-763948feec087395.d: /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/lib.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/lock.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/mpsc/mod.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/mpsc/queue.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/mpsc/sink_impl.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/oneshot.rs
+
+/Users/sahamed/Desktop/puku-editor/github/vscode/cli/target/debug/deps/libfutures_channel-763948feec087395.rmeta: /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/lib.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/lock.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/mpsc/mod.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/mpsc/queue.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/mpsc/sink_impl.rs /Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/oneshot.rs
+
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/lib.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/lock.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/mpsc/mod.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/mpsc/queue.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/mpsc/sink_impl.rs:
+/Users/sahamed/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/futures-channel-0.3.30/src/oneshot.rs:
