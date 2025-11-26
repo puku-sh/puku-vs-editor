@@ -1,6 +1,0 @@
-[ {
-    "question": "@workspace /fix",
-    "stateFile": "implements.state.json",
-    "contentInOutput": "name: string;"
-  }
-]
