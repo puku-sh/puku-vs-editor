@@ -372,11 +372,8 @@ registerSingleton(IPukuAuthService, PukuAuthService, InstantiationType.Eager);
 // Register commands for extensions to access Puku auth from the workbench layer
 // Command to get session token from workbench PukuAuthService
 CommandsRegistry.registerCommand('_puku.workbench.getSessionToken', (accessor) => {
-	const logService = accessor.get(ILogService);
-	logService.info('[PukuAuthService] _puku.workbench.getSessionToken called');
 	const pukuAuthService = accessor.get(IPukuAuthService);
 	const token = pukuAuthService.getSessionToken();
-	logService.info(`[PukuAuthService] Workbench token: ${token ? 'FOUND (length: ' + token.length + ')' : 'NOT FOUND'}`);
 	return token;
 });
 
