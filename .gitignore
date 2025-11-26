@@ -1,6 +1,8 @@
 .DS_Store
 node_modules/
 dist/
+out/
+out-*/
 .vscode-test/
 .vscode-test-web/
 .simulation
