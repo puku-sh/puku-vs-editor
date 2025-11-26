@@ -6,9 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This workspace contains multiple projects:
 
-- **`github/editor`** - **Puku Editor** - AI-powered code editor extension built on GitHub Copilot Chat architecture with support for Z.AI's GLM models. Provides chat interfaces, inline completions (FIM), agent mode, and tool calling.
-- **`github/proxy`** - TypeScript proxy server that bridges VS Code extensions with Z.AI's GLM models (GLM-4.6, GLM-4.5, GLM-4.5-Air). Ollama API compatible.
-- **`github/vscode`** - **Forked VS Code** (Code-OSS) from `poridhiAILab/vscode`. Custom VS Code build for UI modifications and extension debugging.
+- **`src/chat`** - **Puku Editor** - AI-powered code editor extension built on GitHub Copilot Chat architecture with support for Z.AI's GLM models. Provides chat interfaces, inline completions (FIM), agent mode, and tool calling.
+- **`src/vscode`** - **Forked VS Code** (Code-OSS) from `poridhiAILab/vscode`. Custom VS Code build for UI modifications and extension debugging.
 
 ## Requirements
 
@@ -39,23 +38,14 @@ bb67b33d81b74ae7a5882c94f222f2a8.ZNWzVkKE0V1rz0m9
 - Ollama API compatible endpoints (`/api/tags`, `/api/show`, etc.)
 - Supports GLM-4.6, GLM-4.5, GLM-4.5-Air models
 
-**To run the proxy:**
+**Using Puku Editor:**
 
-```bash
-cd github/proxy
-npm run dev
-```
-
-The proxy runs on `http://127.0.0.1:11434` and uses the Z.AI API key from environment or config.
-
-**Using the Proxy with Puku Editor:**
-
-Puku Editor (in `github/editor`) has built-in Puku AI support. To use GLM models:
+Puku Editor (in `src/chat`) has built-in Puku AI support. To use GLM models:
 
 1. **Build and run the extension:**
 
    ```bash
-   cd github/editor
+   cd src/chat
    npm install
    npm run compile
    ```
@@ -165,7 +155,7 @@ Use this for full development workflow with UI modifications and extension debug
 **Setup forked VS Code (first time only):**
 
 ```bash
-cd github/vscode
+cd src/vscode
 source ~/.nvm/nvm.sh && nvm use 22.20.0
 npm i                    # Install dependencies
 npm run compile          # Build VS Code (takes ~5-10 min first time)
@@ -175,21 +165,21 @@ npm run compile          # Build VS Code (takes ~5-10 min first time)
 
 ```bash
 # Terminal 1: Watch and build the extension
-cd github/editor
+cd src/chat
 npm run watch
 
 # Terminal 2: Run forked VS Code with extension loaded
-cd github/vscode
+cd src/vscode
 source ~/.nvm/nvm.sh && nvm use 22.20.0
-./scripts/code.sh --extensionDevelopmentPath=/path/to/puku-editor/github/editor
+./scripts/code.sh --extensionDevelopmentPath=/path/to/puku-editor/src/chat
 ```
 
 Or use the full path:
 ```bash
-./scripts/code.sh --extensionDevelopmentPath=/Users/sahamed/Desktop/puku-editor/github/editor
+./scripts/code.sh --extensionDevelopmentPath=/Users/sahamed/Desktop/puku-vs-editor/puku-editor/src/chat
 ```
 
-**Debug configurations (from `github/editor/.vscode/launch.json`):**
+**Debug configurations (from `src/chat/.vscode/launch.json`):**
 
 | Configuration | Description |
 |--------------|-------------|
@@ -198,7 +188,7 @@ Or use the full path:
 
 **To debug with breakpoints:**
 
-1. Open `github/editor` in your regular VS Code
+1. Open `src/chat` in your regular VS Code
 2. Run `npm run watch` in terminal (or use `cmd+shift+B`)
 3. Select **"Launch Puku Editor Extension - Watch Mode - Code OSS"** from debug panel
 4. Press F5 - forked VS Code launches with extension loaded
@@ -208,8 +198,8 @@ Or use the full path:
 
 ```bash
 # From puku-editor root
-cd github/vscode && source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
-./scripts/code.sh --extensionDevelopmentPath=$(pwd)/../editor
+cd src/vscode && source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
+./scripts/code.sh --extensionDevelopmentPath=$(pwd)/../chat
 ```
 
 #### Debugging Tips

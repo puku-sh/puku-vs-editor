@@ -23,7 +23,7 @@ help:
 	@echo "  make clean            - Clean build artifacts"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make launch FOLDER=github/editor"
+	@echo "  make launch FOLDER=src/chat"
 	@echo "  make run FOLDER=/Users/name/project"
 	@echo ""
 	@echo "Node Setup:"
@@ -33,7 +33,7 @@ help:
 # Compile extension (requires Node 23.5.0)
 compile-extension:
 	@echo "=== Compiling Puku Editor Extension ==="
-	@cd src/vscode/github/editor && \
+	@cd src/chat && \
 	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
 	npm run compile
 
@@ -86,8 +86,8 @@ all: compile
 # Clean build artifacts
 clean:
 	@echo "=== Cleaning build artifacts ==="
-	@rm -rf src/vscode/github/editor/dist
-	@rm -rf src/vscode/github/editor/out
+	@rm -rf src/chat/dist
+	@rm -rf src/chat/out
 	@rm -rf src/vscode/out
 	@echo "Clean complete"
 
@@ -104,13 +104,13 @@ node-vscode:
 # Watch mode for extension (Terminal 1)
 watch-extension:
 	@echo "=== Starting Extension Watch Mode ==="
-	@cd src/vscode/github/editor && \
+	@cd src/chat && \
 	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
 	npm run watch
 
 # Test target
 test:
 	@echo "=== Running Tests ==="
-	@cd src/vscode/github/editor && \
+	@cd src/chat && \
 	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
 	npm test
