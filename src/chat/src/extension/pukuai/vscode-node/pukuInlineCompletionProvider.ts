@@ -8,6 +8,7 @@ import { ILogService } from '../../../platform/log/common/logService';
 import { IFetcherService } from '../../../platform/networking/common/fetcherService';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IPukuAuthService } from '../../pukuIndexing/common/pukuAuth';
+import { IPukuIndexingService, PukuIndexingStatus } from '../../pukuIndexing/node/pukuIndexingService';
 
 /**
  * Supported languages for inline completions
@@ -22,9 +23,20 @@ const SUPPORTED_LANGUAGES = [
 /**
  * Build FIM prompt for chat-based completion
  */
-function buildFIMPrompt(prefix: string, suffix?: string): string {
+function buildFIMPrompt(prefix: string, suffix?: string, contextSnippets?: string[]): string {
+	// Build context section from semantic search results
+	let contextSection = '';
+	if (contextSnippets && contextSnippets.length > 0) {
+		contextSection = `RELEVANT CODE FROM CODEBASE:
+\`\`\`
+${contextSnippets.join('\n\n---\n\n')}
+\`\`\`
+
+`;
+	}
+
 	if (suffix && suffix.trim()) {
-		return `Complete the missing code. You are given code before and after the cursor position.
+		return `${contextSection}Complete the missing code. You are given code before and after the cursor position.
 
 CODE BEFORE CURSOR:
 \`\`\`
@@ -38,7 +50,7 @@ ${suffix}
 
 Write ONLY the code that belongs between these two sections. Do not repeat the before/after code. Do not add explanations. Output only the completion code.`;
 	} else {
-		return `Continue this code naturally. Complete the next logical lines.
+		return `${contextSection}Continue this code naturally. Complete the next logical lines.
 
 EXISTING CODE:
 \`\`\`
@@ -86,7 +98,7 @@ interface CompletionResponse {
  */
 export class PukuInlineCompletionProvider extends Disposable implements vscode.InlineCompletionItemProvider {
 	private _lastRequestTime = 0;
-	private _debounceMs = 0; // Disabled for testing - was 150
+	private _debounceMs = 150;
 	private _enabled = true;
 	private _requestId = 0;
 
@@ -96,9 +108,9 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		@ILogService private readonly _logService: ILogService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
 		@IPukuAuthService private readonly _authService: IPukuAuthService,
+		@IPukuIndexingService private readonly _indexingService: IPukuIndexingService,
 	) {
 		super();
-		console.log(`[PukuInlineCompletion] Provider created with endpoint: ${_endpoint}`);
 		this._logService.info(`[PukuInlineCompletion] Provider created with endpoint: ${_endpoint}`);
 	}
 
@@ -109,11 +121,11 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		token: vscode.CancellationToken
 	): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
 		const reqId = ++this._requestId;
-		console.log(`[PukuInlineCompletion][${reqId}] provideInlineCompletionItems called for ${document.languageId} at line ${position.line}, col ${position.character}`);
+		console.log(`[PukuInlineCompletion][${reqId}] provideInlineCompletionItems called for ${document.languageId}`);
 
 		// Check if enabled
 		if (!this._enabled) {
-			console.log(`[PukuInlineCompletion][${reqId}] Provider is disabled`);
+			console.log(`[PukuInlineCompletion][${reqId}] Provider disabled`);
 			return null;
 		}
 
@@ -123,58 +135,163 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			return null;
 		}
 
-		// Debounce - don't fire too quickly
+		// Debounce
 		const now = Date.now();
 		if (now - this._lastRequestTime < this._debounceMs) {
-			console.log(`[PukuInlineCompletion][${reqId}] Debounced - too soon since last request`);
+			console.log(`[PukuInlineCompletion][${reqId}] Debounced`);
 			return null;
 		}
 		this._lastRequestTime = now;
 
-		// Extract prefix (text before cursor)
+		// Extract prefix and suffix
 		const prefix = document.getText(new vscode.Range(
 			new vscode.Position(0, 0),
 			position
 		));
 
-		// Extract suffix (text after cursor)
 		const suffix = document.getText(new vscode.Range(
 			position,
 			document.lineAt(document.lineCount - 1).range.end
 		));
 
+		console.log(`[PukuInlineCompletion][${reqId}] Prefix length: ${prefix.length}, suffix length: ${suffix.length}`);
+
 		// Don't complete if prefix is too short
 		if (prefix.trim().length < 5) {
-			console.log(`[PukuInlineCompletion][${reqId}] Prefix too short (${prefix.trim().length} chars), skipping`);
+			console.log(`[PukuInlineCompletion][${reqId}] Prefix too short: ${prefix.trim().length}`);
 			return null;
 		}
 
-		console.log(`[PukuInlineCompletion][${reqId}] Fetching completion, prefix length: ${prefix.length}, suffix length: ${suffix.length}`);
-		this._logService.debug(`[PukuInlineCompletion][${reqId}] Requesting completion for ${document.fileName} at line ${position.line}`);
+		console.log(`[PukuInlineCompletion][${reqId}] Fetching completion...`);
+		this._logService.debug(`[PukuInlineCompletion][${reqId}] Requesting completion at ${document.fileName}:${position.line}`);
 
 		try {
-			const completion = await this._fetchCompletion(prefix, suffix, document.languageId, token);
+			const completion = await this._fetchCompletion(prefix, suffix, document.languageId, token, document, position);
 
 			if (!completion || token.isCancellationRequested) {
-				console.log(`[PukuInlineCompletion][${reqId}] No completion returned or cancelled`);
 				return null;
 			}
 
-			console.log(`[PukuInlineCompletion][${reqId}] Got completion: "${completion.substring(0, 50)}..."`);
-
-			// Create inline completion item
-			const item = new vscode.InlineCompletionItem(
-				completion,
-				new vscode.Range(position, position)
-			);
-
-			console.log(`[PukuInlineCompletion][${reqId}] Returning inline completion item`);
-			return [item];
+			return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))];
 		} catch (error) {
-			console.error(`[PukuInlineCompletion][${reqId}] Error fetching completion: ${error}`);
 			this._logService.error(`[PukuInlineCompletion][${reqId}] Error: ${error}`);
 			return null;
 		}
+	}
+
+	/**
+	 * Extract signature from a tree-sitter code chunk
+	 * Takes the first meaningful line(s) before the opening brace
+	 * Works for all languages since tree-sitter chunks are already structured
+	 */
+	private _extractSignature(content: string): string {
+		const lines = content.split('\n');
+		const signatureLines: string[] = [];
+
+		for (const line of lines) {
+			const trimmed = line.trim();
+
+			// Skip empty lines and comments at the start
+			if (!signatureLines.length && (trimmed === '' || trimmed.startsWith('//') || trimmed.startsWith('/*') || trimmed.startsWith('*') || trimmed.startsWith('#'))) {
+				continue;
+			}
+
+			signatureLines.push(line);
+
+			// Stop at opening brace (function/class body starts)
+			if (trimmed.includes('{')) {
+				const lastLine = signatureLines[signatureLines.length - 1];
+				const braceIndex = lastLine.indexOf('{');
+				if (braceIndex !== -1) {
+					signatureLines[signatureLines.length - 1] = lastLine.substring(0, braceIndex).trim() + ' { ... }';
+				}
+				break;
+			}
+
+			// Stop at colon for Python
+			if (trimmed.endsWith(':') && (trimmed.includes('def ') || trimmed.includes('class '))) {
+				break;
+			}
+
+			// For interfaces/types without braces, take first 3 lines
+			if (signatureLines.length >= 3) {
+				signatureLines.push('  // ...');
+				break;
+			}
+		}
+
+		return signatureLines.length > 0 ? signatureLines.join('\n') : content.substring(0, 200);
+	}
+
+	/**
+	 * Gather code context from workspace
+	 */
+	private async _gatherCodeContext(document: vscode.TextDocument, position: vscode.Position): Promise<{
+		recentEdits: Array<{ filepath: string; content: string }>;
+		openFiles: Array<{ filepath: string; content: string }>;
+		semanticResults: Array<{ filepath: string; content: string }>;
+	}> {
+		const context = {
+			recentEdits: [] as Array<{ filepath: string; content: string }>,
+			openFiles: [] as Array<{ filepath: string; content: string }>,
+			semanticResults: [] as Array<{ filepath: string; content: string }>
+		};
+
+		// 1. Get semantic context from indexing service (highest priority)
+		if (this._indexingService.status === PukuIndexingStatus.Ready) {
+			try {
+				const startLine = Math.max(0, position.line - 5);
+				const queryRange = new vscode.Range(new vscode.Position(startLine, 0), position);
+				const query = document.getText(queryRange).trim();
+
+				if (query.length >= 20) {
+					const results = await this._indexingService.search(query, 3);
+
+					if (results.length > 0) {
+						// Filter out results from current document to avoid duplication
+						const filteredResults = results.filter(r => r.uri.toString() !== document.uri.toString());
+
+						if (filteredResults.length > 0) {
+							// Extract signatures from semantic search results to avoid duplication
+							context.semanticResults = filteredResults.map(r => {
+								const signature = this._extractSignature(r.content);
+								return {
+									filepath: vscode.workspace.asRelativePath(r.uri),
+									content: signature
+								};
+							});
+							// Also add to openFiles for /v1/fim/context endpoint
+							context.openFiles.push(...context.semanticResults);
+						}
+					}
+				}
+			} catch (error) {
+				this._logService.warn(`[PukuInlineCompletion] Semantic search failed: ${error}`);
+			}
+		}
+
+		// 2. Add visible open editors (if we still have space)
+		const remainingSlots = 3 - context.openFiles.length;
+		if (remainingSlots > 0) {
+			const visibleEditors = vscode.window.visibleTextEditors;
+			for (const editor of visibleEditors) {
+				if (editor.document.uri.toString() === document.uri.toString()) {
+					continue;
+				}
+
+				const text = editor.document.getText();
+				context.openFiles.push({
+					filepath: vscode.workspace.asRelativePath(editor.document.uri),
+					content: text.substring(0, 500)
+				});
+
+				if (context.openFiles.length >= 3) {
+					break;
+				}
+			}
+		}
+
+		return context;
 	}
 
 	/**
@@ -184,40 +301,71 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		prefix: string,
 		suffix: string,
 		languageId: string,
-		token: vscode.CancellationToken
+		token: vscode.CancellationToken,
+		document: vscode.TextDocument,
+		position: vscode.Position
 	): Promise<string | null> {
-		// First try the /v1/completions endpoint (native FIM)
+		console.log(`[PukuInlineCompletion] Gathering code context...`);
+		const context = await this._gatherCodeContext(document, position);
+		console.log(`[PukuInlineCompletion] Context gathered: ${context.openFiles.length} files, ${context.semanticResults.length} semantic results`);
+
+		// Try the enhanced /v1/fim/context endpoint first
 		try {
-			const completionResult = await this._fetchNativeCompletion(prefix, suffix, token);
+			console.log(`[PukuInlineCompletion] Trying contextual FIM...`);
+			const contextCompletion = await this._fetchContextualCompletion(prefix, suffix, languageId, document, context, token);
+			console.log(`[PukuInlineCompletion] Contextual FIM result: ${contextCompletion ? `"${contextCompletion.substring(0, 50)}..."` : 'null'}`);
+			if (contextCompletion) {
+				return contextCompletion;
+			}
+		} catch (error) {
+			console.error(`[PukuInlineCompletion] Contextual FIM error:`, error);
+			this._logService.debug(`[PukuInlineCompletion] Contextual FIM failed: ${error}`);
+		}
+
+		// Fallback to native completion with semantic context only
+		const contextSnippets = context.semanticResults.map(r => `// From: ${r.filepath}\n${r.content}`);
+
+		try {
+			console.log(`[PukuInlineCompletion] Trying native FIM...`);
+			const completionResult = await this._fetchNativeCompletion(prefix, suffix, token, contextSnippets);
+			console.log(`[PukuInlineCompletion] Native FIM result: ${completionResult ? `"${completionResult.substring(0, 50)}..."` : 'null'}`);
 			if (completionResult) {
 				return completionResult;
 			}
 		} catch (error) {
-			this._logService.debug(`[PukuInlineCompletion] Native completion failed, falling back to chat: ${error}`);
+			console.error(`[PukuInlineCompletion] Native FIM error:`, error);
+			this._logService.debug(`[PukuInlineCompletion] Native completion failed: ${error}`);
 		}
 
-		// Fallback to chat completions
-		return this._fetchChatCompletion(prefix, suffix, languageId, token);
+		// Final fallback to chat completions
+		console.log(`[PukuInlineCompletion] Trying chat completion...`);
+		const chatResult = await this._fetchChatCompletion(prefix, suffix, languageId, token, contextSnippets);
+		console.log(`[PukuInlineCompletion] Chat completion result: ${chatResult ? `"${chatResult.substring(0, 50)}..."` : 'null'}`);
+		return chatResult;
 	}
 
 	/**
-	 * Try native /v1/completions endpoint
+	 * Fetch completion using the enhanced /v1/fim/context endpoint
 	 */
-	private async _fetchNativeCompletion(
+	private async _fetchContextualCompletion(
 		prefix: string,
 		suffix: string,
+		languageId: string,
+		document: vscode.TextDocument,
+		context: {
+			recentEdits: Array<{ filepath: string; content: string }>;
+			openFiles: Array<{ filepath: string; content: string }>;
+			semanticResults: Array<{ filepath: string; content: string }>;
+		},
 		token: vscode.CancellationToken
 	): Promise<string | null> {
-		const url = `${this._endpoint}/v1/completions`;
-		console.log(`[PukuInlineCompletion] Trying native completion at ${url}`);
+		const url = `${this._endpoint}/v1/fim/context`;
 
-		// Get auth token (optional for worker API)
 		const authToken = await this._authService.getToken();
 		const headers: Record<string, string> = {
 			'Content-Type': 'application/json',
 		};
 
-		// Only add auth header if token exists
 		if (authToken) {
 			headers['Authorization'] = `Bearer ${authToken.token}`;
 		}
@@ -228,30 +376,85 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			body: JSON.stringify({
 				prompt: prefix,
 				suffix: suffix,
+				language: languageId,
+				filepath: vscode.workspace.asRelativePath(document.uri),
+				openFiles: context.openFiles,
+				recentEdits: context.recentEdits,
+				max_tokens: 50,
+				temperature: 0.2,
+				stream: false,
+			}),
+		});
+
+		if (!response.ok) {
+			throw new Error(`Contextual FIM failed: ${response.status}`);
+		}
+
+		if (token.isCancellationRequested) {
+			return null;
+		}
+
+		const data = await response.json() as CompletionResponse;
+
+		if (data.choices && data.choices.length > 0) {
+			const text = data.choices[0].text || '';
+			return text.trim() || null;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Try native /v1/completions endpoint (fallback)
+	 */
+	private async _fetchNativeCompletion(
+		prefix: string,
+		suffix: string,
+		token: vscode.CancellationToken,
+		contextSnippets?: string[]
+	): Promise<string | null> {
+		const url = `${this._endpoint}/v1/completions`;
+
+		const authToken = await this._authService.getToken();
+		const headers: Record<string, string> = {
+			'Content-Type': 'application/json',
+		};
+
+		if (authToken) {
+			headers['Authorization'] = `Bearer ${authToken.token}`;
+		}
+
+		// Prepend context to prompt if available
+		let enhancedPrompt = prefix;
+		if (contextSnippets && contextSnippets.length > 0) {
+			const contextBlock = contextSnippets.join('\n\n---\n\n');
+			enhancedPrompt = `// RELEVANT CONTEXT FROM CODEBASE:\n${contextBlock}\n\n// CURRENT FILE:\n${prefix}`;
+		}
+
+		const response = await this._fetcherService.fetch(url, {
+			method: 'POST',
+			headers,
+			body: JSON.stringify({
+				prompt: enhancedPrompt,
+				suffix: suffix,
 				max_tokens: 150,
 				temperature: 0.2,
 				stream: false,
 			}),
 		});
 
-		console.log(`[PukuInlineCompletion] Native completion response status: ${response.status}`);
-
 		if (!response.ok) {
 			throw new Error(`Native completion failed: ${response.status}`);
 		}
 
 		if (token.isCancellationRequested) {
-			console.log('[PukuInlineCompletion] Request cancelled');
 			return null;
 		}
 
 		const data = await response.json() as CompletionResponse;
-		console.log(`[PukuInlineCompletion] Native completion response:`, JSON.stringify(data).substring(0, 200));
 
 		if (data.choices && data.choices.length > 0) {
-			const choice = data.choices[0];
-			const text = choice.text || '';
-			console.log(`[PukuInlineCompletion] Native completion text: "${text.substring(0, 100)}"`);
+			const text = data.choices[0].text || '';
 			return text.trim() || null;
 		}
 
@@ -265,12 +468,13 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		prefix: string,
 		suffix: string,
 		languageId: string,
-		token: vscode.CancellationToken
+		token: vscode.CancellationToken,
+		contextSnippets?: string[]
 	): Promise<string | null> {
 		const url = `${this._endpoint}/v1/chat/completions`;
 
-		// Build the FIM prompt
-		const prompt = buildFIMPrompt(prefix, suffix);
+		// Build the FIM prompt (with optional context)
+		const prompt = buildFIMPrompt(prefix, suffix, contextSnippets);
 
 		// Get auth token (optional for worker API)
 		const authToken = await this._authService.getToken();

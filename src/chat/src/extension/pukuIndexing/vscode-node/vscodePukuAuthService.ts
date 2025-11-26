@@ -110,16 +110,11 @@ export class VsCodePukuAuthService extends Disposable implements IPukuAuthServic
 	}
 
 	async getToken(): Promise<PukuToken | undefined> {
-		console.log('[VsCodePukuAuthService] getToken() called');
-
 		try {
 			// Get session token from VS Code workbench's Puku auth service via command
-			console.log('[VsCodePukuAuthService] Fetching session token from VS Code service...');
 			const sessionToken = await this._getSessionTokenFromVSCode();
-			console.log(`[VsCodePukuAuthService] Session token result: ${sessionToken ? 'FOUND (length: ' + sessionToken.length + ')' : 'NOT FOUND'}`);
 
 			if (!sessionToken) {
-				console.log('[VsCodePukuAuthService] No session token from VS Code service');
 				// Clear cached token if no valid session
 				this._token = undefined;
 				return undefined;
@@ -127,11 +122,10 @@ export class VsCodePukuAuthService extends Disposable implements IPukuAuthServic
 
 			// Return cached token if it matches the session token and is still valid
 			if (this._token && this._token.token === sessionToken && this._token.expiresAt > Date.now() / 1000) {
-				console.log('[VsCodePukuAuthService] Returning cached token');
 				return this._token;
 			}
 
-			console.log('[VsCodePukuAuthService] Got session token from VS Code service');
+			console.log('[VsCodePukuAuthService] New session token detected, creating PukuToken');
 
 			// Get user info from VS Code service
 			const userInfo = await this._getUserInfoFromVSCode();
