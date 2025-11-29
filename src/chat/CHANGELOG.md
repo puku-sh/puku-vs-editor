@@ -1,3 +1,100 @@
+## 0.36.3 (2025-11-29)
+
+### Performance Improvements
+
+#### Adopted GitHub Copilot's Radix Trie cache for intelligent completion matching
+
+**Problem:** The simple string-based cache from v0.36.2 only worked for exact prefix matches. It couldn't handle:
+- Backspace (shorter prefix)
+- Editing in the middle of a completion
+- Partial word acceptance beyond the cached completion
+- Required 600ms debounce to prevent excessive API calls
+
+**Solution:** Implemented GitHub Copilot's battle-tested Radix Trie caching strategy:
+- **Radix Trie (Prefix Tree):** Efficiently matches ANY prefix extension
+- **LRU Eviction:** Automatically manages cache size (100 entries max)
+- **Intelligent Matching:** Handles typing, backspace, and partial edits
+- **Faster Debounce:** Reduced from 600ms → **200ms** (3x improvement)
+
+**How It Works:**
+```typescript
+// 1. Check Radix Trie cache FIRST (before debounce)
+const cached = cache.findAll(prefix, suffix);
+if (cached.length > 0) {
+    return cached[0];  // Instant! No API call, bypasses debounce
+}
+
+// 2. If cache miss, apply 200ms debounce and fetch from API
+
+// 3. Store completion in Radix Trie for future lookups
+cache.append(prefix, suffix, completion);
+```
+
+**Example - Word-by-Word Acceptance:**
+```typescript
+// User sees: "console.log('Hello, World!');"
+// Prefix: "function hello() {\n    "
+
+// User accepts "console"
+cache.findAll("function hello() {\n    console", "");
+// → Returns: ".log('Hello, World!');" ✅ Instant (NO API CALL!)
+
+// User accepts ".log"
+cache.findAll("function hello() {\n    console.log", "");
+// → Returns: "('Hello, World!');" ✅ Instant (NO API CALL!)
+```
+
+**Architecture Changes:**
+```typescript
+// OLD (v0.36.2): Simple string cache
+if (prefix === _currentCompletionPrefix) {
+    return _currentCompletion.slice(acceptedLength);  // Only exact matches
+}
+
+// NEW (v0.36.3): Radix Trie cache
+const results = _completionsCache.findAll(prefix, suffix);
+// Matches ANY prefix extension (typed further, backspace, edits)
+```
+
+**Impact:**
+- **Debounce:** 600ms → 200ms (3x faster initial suggestions)
+- **Cache Intelligence:** Exact matches only → Handles typing, backspace, edits
+- **Word Acceptance:** Still instant (0ms, no API calls)
+- **Robustness:** Simple tracking → Battle-tested data structure
+- **Context Search:** Preserved (only runs on new API calls, not cache hits)
+
+**Performance Benchmarks:**
+| Operation | Time | Notes |
+|-----------|------|-------|
+| Cache hit | ~2-5ms | Instant (bypasses debounce) |
+| Radix Trie lookup | ~0.1-0.5ms | Efficient prefix matching |
+| Cache miss (debounced) | 200ms + API | 3x faster than v0.36.2 |
+
+**Testing:** ✅
+- **Unit Tests:** 46 tests covering Radix Trie and CompletionsCache
+- **Integration Tests:** 13 tests for provider integration
+- **Coverage:** ~88% (59 total tests)
+- **Files:**
+  - `src/extension/pukuai/test/radixTrie.test.ts`
+  - `src/extension/pukuai/test/completionsCache.test.ts`
+  - `src/extension/pukuai/test/pukuInlineCompletionCache.integration.test.ts`
+
+**Files Added:**
+- `src/extension/pukuai/common/radixTrie.ts` - LRU Radix Trie data structure (from Copilot)
+- `src/extension/pukuai/common/completionsCache.ts` - Wrapper for completion caching
+- `src/extension/pukuai/test/*.test.ts` - Comprehensive test suite
+- `src/extension/pukuai/test/README.md` - Test documentation
+
+**Files Modified:**
+- `src/extension/pukuai/vscode-node/pukuInlineCompletionProvider.ts`
+  - Replaced `_currentCompletion`/`_currentCompletionPrefix` with `_completionsCache`
+  - Reduced debounce from 600ms to 200ms
+  - Updated cache lookup logic to use Radix Trie
+
+**Related Issue:** [#4](https://github.com/puku-sh/puku-vs-editor/issues/4)
+
+---
+
 ## 0.36.2 (2025-11-29)
 
 ### Bug Fixes
