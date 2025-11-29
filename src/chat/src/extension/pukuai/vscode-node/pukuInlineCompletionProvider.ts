@@ -9,6 +9,7 @@ import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IPukuAuthService } from '../../pukuIndexing/common/pukuAuth';
 import { IPukuIndexingService } from '../../pukuIndexing/node/pukuIndexingService';
 import { pukuImportExtractor } from '../../pukuIndexing/node/pukuImportExtractor';
+import { CompletionsCache } from '../common/completionsCache';
 
 interface CompletionResponse {
 	id: string;
@@ -131,7 +132,7 @@ class SpeculativeRequestCache {
  */
 export class PukuInlineCompletionProvider extends Disposable implements vscode.InlineCompletionItemProvider {
 	private _lastRequestTime = 0;
-	private _debounceMs = 600; // Higher debounce for "accept word" which triggers multiple rapid requests
+	private _debounceMs = 200; // Reduced from 600ms - Radix Trie allows faster debounce
 	private _enabled = true;
 	private _requestId = 0;
 	private _completionId = 0;
@@ -139,9 +140,8 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 	private _lastCompletionId: string | null = null;
 	private _lastPrefix = '';
 	private _requestInFlight = false; // Prevent concurrent requests
-	// Track current completion being displayed (for word-by-word acceptance)
-	private _currentCompletion: string | null = null;
-	private _currentCompletionPrefix: string = '';
+	// Radix Trie cache for intelligent completion matching (handles typing, backspace, partial edits)
+	private _completionsCache = new CompletionsCache();
 
 	constructor(
 		private readonly _endpoint: string,
@@ -183,28 +183,14 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			return null;
 		}
 
-		// Check if user is accepting the current completion word-by-word
-		// This prevents unnecessary API calls when user uses Cmd+Right Arrow
+		// Check Radix Trie cache FIRST (handles typing, backspace, partial edits)
+		// This prevents unnecessary API calls during word-by-word acceptance and other edits
 		const prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
-		if (this._currentCompletion && this._currentCompletionPrefix && prefix.startsWith(this._currentCompletionPrefix)) {
-			const acceptedLength = prefix.length - this._currentCompletionPrefix.length;
-
-			if (acceptedLength < this._currentCompletion.length) {
-				// User is still accepting the same completion - return remaining part
-				const remaining = this._currentCompletion.slice(acceptedLength);
-				console.log(`[PukuInlineCompletion][${reqId}] Reusing current completion - ${acceptedLength}/${this._currentCompletion.length} chars accepted, ${remaining.length} remaining (NO API CALL!)`);
-				return [new vscode.InlineCompletionItem(remaining, new vscode.Range(position, position))];
-			} else {
-				// User has fully accepted the completion or gone beyond it
-				console.log(`[PukuInlineCompletion][${reqId}] Current completion exhausted - need new completion`);
-				this._currentCompletion = null;
-				this._currentCompletionPrefix = '';
-			}
-		} else if (this._currentCompletionPrefix && !prefix.startsWith(this._currentCompletionPrefix)) {
-			// User typed something different - invalidate current completion
-			console.log(`[PukuInlineCompletion][${reqId}] Prefix changed - invalidating current completion`);
-			this._currentCompletion = null;
-			this._currentCompletionPrefix = '';
+		const suffix = document.getText(new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end));
+		const cached = this._completionsCache.findAll(prefix, suffix);
+		if (cached.length > 0) {
+			console.log(`[PukuInlineCompletion][${reqId}] Trie cache HIT - returning ${cached[0].length} chars (NO API CALL!)`);
+			return [new vscode.InlineCompletionItem(cached[0], new vscode.Range(position, position))];
 		}
 
 		// Generate completion ID early (needed for cache and storing next request)
@@ -265,9 +251,8 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 				this._lastCompletionId = completionId;
 				console.log(`[PukuInlineCompletion][${reqId}] Cache HIT - Stored next speculative request for completion ${completionId}`);
 
-				// Store current completion for word-by-word acceptance
-				this._currentCompletion = completion;
-				this._currentCompletionPrefix = prefix;
+				// Store completion in Radix Trie cache for future lookups
+				this._completionsCache.append(prefix, suffix, completion);
 
 				return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))];
 			}
@@ -292,11 +277,6 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 
 		this._lastRequestTime = now;
 		this._lastPrefix = prefix;
-
-		const suffix = document.getText(new vscode.Range(
-			position,
-			document.lineAt(document.lineCount - 1).range.end
-		));
 
 		console.log(`[PukuInlineCompletion][${reqId}] Prefix length: ${prefix.length}, suffix length: ${suffix.length}`);
 
@@ -418,9 +398,8 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		this._lastCompletionId = completionId;
 		console.log(`[PukuInlineCompletion][${reqId}] Stored speculative request for completion ${completionId}`);
 
-		// Store current completion for word-by-word acceptance
-		this._currentCompletion = completion;
-		this._currentCompletionPrefix = prefix;
+		// Store completion in Radix Trie cache for future lookups
+		this._completionsCache.append(prefix, suffix, completion);
 
 		return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))];
 	}
