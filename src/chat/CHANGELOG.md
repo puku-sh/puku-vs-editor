@@ -1,3 +1,113 @@
+## 0.36.4 (2025-11-29)
+
+### Features
+
+#### Context-Aware Minimum Prefix for Inline Completions
+
+**Problem:** The hard 2-character minimum prefix was too conservative and missed opportunities to provide helpful suggestions when strong context signals were available.
+
+**User Impact:**
+```go
+// BEFORE v0.36.4
+package main
+import "fmt"
+
+func main() {
+    f  // ❌ NO SUGGESTION (prefix too short: 1)
+}
+
+// AFTER v0.36.4
+package main
+import "fmt"
+
+func main() {
+    f  // ✅ SUGGESTS: fmt.Println() (strong context: imports + language + structure)
+}
+```
+
+**Solution:** Implemented intelligent minimum prefix based on context strength scoring:
+
+```typescript
+// Context signals evaluation
+const contextStrength = {
+    hasImports: importedFiles.length > 0,           // Weight: 3
+    hasSemanticMatches: semanticFiles.length > 0,   // Weight: 2
+    isKnownLanguage: document.languageId !== 'plaintext',  // Weight: 1
+    hasFileStructure: document.lineCount > 10       // Weight: 1
+};
+
+// Context score calculation
+const contextScore = (
+    (hasImports ? 3 : 0) +
+    (hasSemanticMatches ? 2 : 0) +
+    (isKnownLanguage ? 1 : 0) +
+    (hasFileStructure ? 1 : 0)
+);
+
+// Dynamic minimum prefix
+const minPrefix = contextScore >= 2 ? 0 : 2;  // Strong context → allow 0-1 char
+```
+
+**Context Signal Priority:**
+| Signal | Weight | Example |
+|--------|--------|---------|
+| **Import-based context** | HIGH (3) | Go file with `fmt` import → suggest `fmt.*` |
+| **Semantic search results** | MEDIUM (2) | Similar code found → suggest patterns |
+| **Known language** | LOW (1) | `.go` file → suggest Go idioms |
+| **File structure** | LOW (1) | Has functions/classes → suggest in context |
+
+**Behavior:**
+- **Strong context** (score ≥ 2): Allow 0-1 character prefix
+- **Weak context** (score < 2): Require 2+ characters
+- **No context** (plaintext, empty file): Require 2+ characters
+
+**Examples:**
+
+1. **Go file with imports** (score: 5)
+   - Imports (3) + Language (1) + Structure (1) = **5 ≥ 2** ✅
+   - Allows suggestions at `f` → `fmt.Println()`
+
+2. **JavaScript with semantic matches** (score: 4)
+   - Semantic (2) + Language (1) + Structure (1) = **4 ≥ 2** ✅
+   - Allows suggestions at `c` → `console.log()`
+
+3. **Empty new file** (score: 1)
+   - Language (1) only = **1 < 2** ❌
+   - Requires 2+ characters
+
+4. **Plaintext file** (score: 0)
+   - No context = **0 < 2** ❌
+   - Requires 2+ characters
+
+**Performance:**
+- Context gathering moved before prefix check (imports + semantic search)
+- No performance impact (context already gathered for API calls)
+- Cache hit bypasses all checks (instant, 0ms)
+
+**Testing:** ✅
+- **Integration Tests:** 6 new tests for context-aware prefix logic
+- **Coverage:** Tests for imports, semantic, language, structure, and edge cases
+- **Files:**
+  - `src/extension/pukuai/test/pukuInlineCompletionCache.integration.test.ts`
+
+**Files Modified:**
+- `src/extension/pukuai/vscode-node/pukuInlineCompletionProvider.ts`
+  - Moved context gathering before prefix check
+  - Added context strength evaluation with weighted scoring
+  - Implemented dynamic minimum prefix (score ≥ 2 → min 0, otherwise min 2)
+  - Added logging with 🎯 emoji for context-driven suggestions
+
+**Impact:**
+- **Earlier Suggestions:** 0-1 character prefix when context is strong
+- **Better UX:** Matches GitHub Copilot/Cursor behavior
+- **Smarter Filtering:** Uses available context signals
+- **Reduced Typing:** Fewer keystrokes needed
+- **Context-Aware:** Adapts to file structure and language
+
+**Related Issue:** [#5](https://github.com/puku-sh/puku-vs-editor/issues/5)
+
+---
+
 ## 0.36.3 (2025-11-29)
 
 ### Performance Improvements
