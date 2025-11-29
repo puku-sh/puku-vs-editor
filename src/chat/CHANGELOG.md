@@ -1,3 +1,116 @@
+## 0.36.2 (2025-11-29)
+
+### Bug Fixes
+
+#### Fixed excessive API calls during word-by-word completion acceptance
+
+**Problem:** When using "Accept Word" (Cmd+Right Arrow) to incrementally accept inline completions, each word acceptance triggered a new API call, even though the backend had already returned the full completion text. This resulted in ~4 API calls per completion instead of just 1.
+
+**Fix:**
+- Added completion reuse tracking (`_currentCompletion`, `_currentCompletionPrefix`)
+- Before making API calls, check if user is accepting the current completion
+- Return remaining text immediately without API call (0ms response time)
+- Invalidate completion only when user types something new or exhausts current completion
+
+**Impact:**
+- **Before:** ~4 API calls per completion (1 per word acceptance)
+- **After:** 1 API call per completion
+- **Reduction:** 75% fewer API calls
+- **UX:** Instant word acceptance (0ms, no API lag)
+
+**Files Changed:**
+- `src/extension/pukuai/vscode-node/pukuInlineCompletionProvider.ts`
+
+**Related Issue:** [#3](https://github.com/puku-sh/puku-vs-editor/issues/3)
+
+---
+
+## 0.38 (2025-11-28)
+
+### Inline Completions (Puku AI)
+
+#### Language-aware completions, speculative caching, and rate limiting
+
+**Language-Aware Completions** ✅
+- Fixed wrong-language hallucinations (Kotlin/Chinese code in Go files)
+- Client now sends `language` parameter to backend (`document.languageId`)
+- Backend prepends language hint to prompt: `// Language: Go`
+- Eliminates cross-language syntax errors
+
+**Speculative Caching (Copilot-style)** ✅
+- Stores REQUEST FUNCTIONS for lazy prefetching (not results)
+- Cache check happens BEFORE debounce (instant cache hits!)
+- Cache hit → ~0ms (bypasses 800ms debounce)
+- Cache miss → Apply debounce + fetch from API
+- Automatically prefetches next completion after user accepts
+
+**Rate Limiting & Performance** ✅
+- Increased debounce from 200ms to 800ms (4x reduction in API calls)
+- Smart prefix detection: skip single-character changes
+- Two-layer rate limiting: debounce + change detection
+- Estimated 70-80% reduction in API calls
+
+**Context Filtering Improvements** ✅
+- Fixed "Context files: 0" issue
+- Switched from distance-based to overlap-based filtering
+- Excludes chunks ONLY if cursor is inside chunk boundaries
+- Includes relevant same-file context when appropriate
+- Filters both import-based and semantic search results
+
+**Testing** ✅
+- Added 11 comprehensive tests for speculative caching
+- Tests cover cache behavior, debounce logic, and request flow
+- Location: `src/extension/pukuai/test/pukuInlineCompletionCache.spec.ts`
+
+**Architecture Changes:**
+```
+Before: Auth → Debounce (blocks all) → Cache → API
+After:  Auth → Cache (instant!) → Debounce (only for misses) → API
+```
+
+**Expected Impact:**
+- Eliminate language hallucinations (Kotlin in Go, etc.)
+- Instant follow-up completions after accepting suggestions
+- 70-80% fewer API calls (lower costs)
+- Better context relevance with overlap filtering
+- Maintains responsive UX despite higher debounce
+
+**Files Modified:**
+- `pukuInlineCompletionProvider.ts`: Cache-first flow, debounce, context filtering
+- `puku-worker/src/routes/completions.ts`: Language hint prepending
+- Backend deployed to production: `https://api.puku.sh`
+
+See `FIM_IMPROVEMENTS_2025-11-28.md` for detailed documentation.
+
+---
+
+## 0.37 (2025-11-27)
+
+### Inline Completions (Puku AI)
+
+#### Cursor-style duplicate detection and performance optimizations
+
+**Performance Improvements:**
+- Reduced debounce delay from 150ms to 50ms (3x faster trigger)
+- Lowered minimum prefix requirement from 5 to 2 characters (earlier suggestions)
+- Smart endpoint selection: new files use fast native FIM, files with context use chat-based completions
+
+**Duplicate Detection:**
+- Implemented Cursor-style local context checking (±20 lines around cursor)
+- Avoids false positives from checking entire file
+- Checks first 2 non-empty lines of suggestions against local context
+- Both native FIM and chat-based completions use unified duplicate detection
+
+**Expected Impact:**
+- Faster completions especially for new files
+- Fewer incorrectly blocked suggestions
+- Better duplicate detection near cursor
+- More Cursor-like user experience
+
+See `FIM_CONTEXT_DEDUPLICATION_STRATEGY.md` for implementation details.
+
+---
+
 ## 0.32 (2025-10-08)
 
 GitHub Copilot updates from [September 2025](https://code.visualstudio.com/updates/v1_105):
