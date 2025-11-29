@@ -280,13 +280,78 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 
 		console.log(`[PukuInlineCompletion][${reqId}] Prefix length: ${prefix.length}, suffix length: ${suffix.length}`);
 
-		// Don't complete if prefix is too short
-		if (prefix.trim().length < 2) {
-			console.log(`[PukuInlineCompletion][${reqId}] Prefix too short: ${prefix.trim().length}`);
+		// Gather context FIRST (before prefix check) - needed for context-aware minimum
+		// 1. Get import-based context
+		const importedFiles = await this._getImportedFilesContent(document, 3, 500);
+		console.log(`[PukuInlineCompletion][${reqId}] Import context: ${importedFiles.length} files`);
+
+		// 2. Get semantic search context
+		let semanticFiles: Array<{ filepath: string; content: string }> = [];
+
+		if (this._indexingService.isAvailable()) {
+			// Get current line as search query
+			const currentLine = document.lineAt(position.line).text.trim();
+			if (currentLine.length > 3) {
+				try {
+					const searchResults = await this._indexingService.search(currentLine, 2, document.languageId);
+					console.log(`[PukuInlineCompletion][${reqId}] Found ${searchResults.length} similar code snippets for ${document.languageId}`);
+
+					// Convert search results to openFiles format
+					// Allow same-file results if they don't overlap with cursor position
+					semanticFiles = searchResults
+						.filter(result => {
+							// Different file - always include
+							if (result.uri.fsPath !== document.uri.fsPath) {
+								return true;
+							}
+							// Same file - exclude if chunk contains cursor (would duplicate what user is typing)
+							const cursorInChunk = position.line >= result.lineStart && position.line <= result.lineEnd;
+							return !cursorInChunk;
+						})
+						.map(result => ({
+							filepath: result.uri.fsPath,
+							content: result.content
+						}));
+				} catch (searchError) {
+					console.log(`[PukuInlineCompletion][${reqId}] Semantic search failed: ${searchError}`);
+				}
+			}
+		}
+
+		// 3. Evaluate context strength for dynamic minimum prefix
+		const contextStrength = {
+			hasImports: importedFiles.length > 0,
+			hasSemanticMatches: semanticFiles.length > 0,
+			isKnownLanguage: document.languageId !== 'plaintext',
+			hasFileStructure: document.lineCount > 10
+		};
+
+		// Context score: imports (3) + semantic (2) + language (1) + structure (1)
+		const contextScore = (
+			(contextStrength.hasImports ? 3 : 0) +
+			(contextStrength.hasSemanticMatches ? 2 : 0) +
+			(contextStrength.isKnownLanguage ? 1 : 0) +
+			(contextStrength.hasFileStructure ? 1 : 0)
+		);
+
+		// Dynamic minimum prefix based on context strength
+		// Strong context (score >= 2) = allow 0-1 char
+		// Weak context (score < 2) = require 2+ chars
+		const hasStrongContext = contextScore >= 2;
+		const minPrefix = hasStrongContext ? 0 : 2;
+
+		// Apply context-aware minimum prefix check
+		if (prefix.trim().length < minPrefix) {
+			console.log(`[PukuInlineCompletion][${reqId}] Prefix too short: ${prefix.trim().length} (min: ${minPrefix}, score: ${contextScore}, context: ${JSON.stringify(contextStrength)})`);
 			return null;
 		}
 
-		// Fetch completion from API
+		// Log context-driven suggestions (prefix < 2 but allowed due to context)
+		if (prefix.trim().length < 2 && hasStrongContext) {
+			console.log(`[PukuInlineCompletion][${reqId}] 🎯 Context-driven suggestion! (prefix=${prefix.trim().length}, score=${contextScore})`);
+		}
+
+		// 4. Fetch completion from API
 		console.log(`[PukuInlineCompletion][${reqId}] Fetching completion from API...`);
 		this._logService.debug(`[PukuInlineCompletion][${reqId}] Requesting completion at ${document.fileName}:${position.line}`);
 
@@ -295,48 +360,11 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 
 		let completion: string | null = null;
 		try {
-			// 1. Get import-based context (NEW!)
-			const importedFiles = await this._getImportedFilesContent(document, 3, 500);
-			console.log(`[PukuInlineCompletion][${reqId}] Import context: ${importedFiles.length} files`);
-
-			// 2. Get semantic search context (existing)
-			let semanticFiles: Array<{ filepath: string; content: string }> = [];
-
-			if (this._indexingService.isAvailable()) {
-				// Get current line as search query
-				const currentLine = document.lineAt(position.line).text.trim();
-				if (currentLine.length > 3) {
-					try {
-						const searchResults = await this._indexingService.search(currentLine, 2, document.languageId);
-						console.log(`[PukuInlineCompletion][${reqId}] Found ${searchResults.length} similar code snippets for ${document.languageId}`);
-
-						// Convert search results to openFiles format
-						// Allow same-file results if they don't overlap with cursor position
-						semanticFiles = searchResults
-							.filter(result => {
-								// Different file - always include
-								if (result.uri.fsPath !== document.uri.fsPath) {
-									return true;
-								}
-								// Same file - exclude if chunk contains cursor (would duplicate what user is typing)
-								const cursorInChunk = position.line >= result.lineStart && position.line <= result.lineEnd;
-								return !cursorInChunk;
-							})
-							.map(result => ({
-								filepath: result.uri.fsPath,
-								content: result.content
-							}));
-					} catch (searchError) {
-						console.log(`[PukuInlineCompletion][${reqId}] Semantic search failed: ${searchError}`);
-					}
-				}
-			}
-
-			// 3. Combine: imports FIRST, then semantic search
+			// 5. Combine context: imports FIRST, then semantic search
 			const openFiles = [...importedFiles, ...semanticFiles];
 			console.log(`[PukuInlineCompletion][${reqId}] Total context: ${openFiles.length} files (${importedFiles.length} imports, ${semanticFiles.length} semantic)`);
 
-			// 4. Call FIM with combined context
+			// 6. Call FIM with combined context
 			completion = await this._fetchContextAwareCompletion(prefix, suffix, openFiles, document.languageId, token);
 
 			if (!completion || token.isCancellationRequested) {

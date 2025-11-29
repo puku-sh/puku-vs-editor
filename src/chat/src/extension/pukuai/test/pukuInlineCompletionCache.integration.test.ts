@@ -513,4 +513,219 @@ suite('PukuInlineCompletionProvider - Cache Integration', function () {
 			assert.strictEqual(results.length, 10);
 		});
 	});
+
+	suite('Context-Aware Minimum Prefix', function () {
+		test('suggests with 1-char prefix when imports present (Go)', async function () {
+			this.timeout(5000);
+
+			// Mock Go file with imports
+			const goDoc = {
+				getText: (range?: vscode.Range) => {
+					if (!range) return 'package main\nimport "fmt"\n\nfunc main() {\n\tf';
+					if (range.start.line === 0 && range.start.character === 0) {
+						return 'package main\nimport "fmt"\n\nfunc main() {\n\tf'; // 1 char prefix
+					}
+					return '\n}';
+				},
+				lineAt: (lineOrPosition: number | vscode.Position) => {
+					const line = typeof lineOrPosition === 'number' ? lineOrPosition : lineOrPosition.line;
+					return {
+						text: line === 0 ? 'package main' : line === 1 ? 'import "fmt"' : line === 4 ? '\tf' : '',
+						range: new vscode.Range(line, 0, line, 100)
+					} as vscode.TextLine;
+				},
+				lineCount: 15, // File has structure
+				languageId: 'go', // Known language
+				uri: vscode.Uri.file('/test.go'),
+				fileName: '/test.go'
+			} as any;
+
+			// Should NOT block despite 1-char prefix (has imports + known language + file structure)
+			// Context score: imports(3) + language(1) + structure(1) = 5 >= 2
+			const result = await provider.provideInlineCompletionItems(
+				goDoc,
+				new vscode.Position(4, 2), // After 'f'
+				mockContext,
+				mockToken
+			);
+
+			// Should get result (not blocked by prefix check)
+			// May be null due to debounce, but should not be blocked by prefix length
+			assert.ok(result !== undefined, 'Should not block 1-char prefix with strong context');
+		});
+
+		test('suggests with 1-char prefix when semantic matches present', async function () {
+			this.timeout(5000);
+
+			const mockIndexingWithResults = {
+				isAvailable: () => true,
+				search: async () => [
+					{ filepath: '/similar.js', content: 'console.log("example");', score: 0.9 }
+				]
+			};
+
+			const providerWithSemanticContext = new PukuInlineCompletionProvider(
+				'http://localhost:11434',
+				mockFetcherService as any,
+				mockLogService as any,
+				mockAuthService as any,
+				mockIndexingWithResults as any
+			);
+
+			const jsDoc = {
+				getText: (range?: vscode.Range) => {
+					if (!range) return 'c'; // 1 char
+					if (range.start.line === 0 && range.start.character === 0) return 'c';
+					return '';
+				},
+				lineAt: (lineOrPosition: number | vscode.Position) => ({
+					text: 'c',
+					range: new vscode.Range(0, 0, 0, 1)
+				} as vscode.TextLine),
+				lineCount: 12, // Has structure
+				languageId: 'javascript', // Known language
+				uri: vscode.Uri.file('/test.js'),
+				fileName: '/test.js'
+			} as any;
+
+			// Context score: semantic(2) + language(1) + structure(1) = 4 >= 2
+			const result = await providerWithSemanticContext.provideInlineCompletionItems(
+				jsDoc,
+				new vscode.Position(0, 1),
+				mockContext,
+				mockToken
+			);
+
+			assert.ok(result !== undefined, 'Should not block 1-char prefix with semantic context');
+		});
+
+		test('blocks 1-char prefix with no context (plaintext)', async function () {
+			this.timeout(5000);
+
+			const plaintextDoc = {
+				getText: (range?: vscode.Range) => {
+					if (!range) return 'f';
+					if (range.start.line === 0 && range.start.character === 0) return 'f';
+					return '';
+				},
+				lineAt: (lineOrPosition: number | vscode.Position) => ({
+					text: 'f',
+					range: new vscode.Range(0, 0, 0, 1)
+				} as vscode.TextLine),
+				lineCount: 1, // No structure
+				languageId: 'plaintext', // Not a known language
+				uri: vscode.Uri.file('/test.txt'),
+				fileName: '/test.txt'
+			} as any;
+
+			// Context score: 0 (no imports, no semantic, no language, no structure)
+			const result = await provider.provideInlineCompletionItems(
+				plaintextDoc,
+				new vscode.Position(0, 1),
+				mockContext,
+				mockToken
+			);
+
+			// Should be blocked due to insufficient context
+			assert.strictEqual(result, null, 'Should block 1-char prefix without context');
+		});
+
+		test('blocks 1-char prefix in empty new file', async function () {
+			this.timeout(5000);
+
+			const emptyNewFile = {
+				getText: (range?: vscode.Range) => {
+					if (!range) return 'x';
+					if (range.start.line === 0 && range.start.character === 0) return 'x';
+					return '';
+				},
+				lineAt: (lineOrPosition: number | vscode.Position) => ({
+					text: 'x',
+					range: new vscode.Range(0, 0, 0, 1)
+				} as vscode.TextLine),
+				lineCount: 1, // No structure
+				languageId: 'javascript', // Known language
+				uri: vscode.Uri.file('/new.js'),
+				fileName: '/new.js'
+			} as any;
+
+			// Context score: language(1) only = 1 < 2
+			const result = await provider.provideInlineCompletionItems(
+				emptyNewFile,
+				new vscode.Position(0, 1),
+				mockContext,
+				mockToken
+			);
+
+			// Should be blocked - weak context (only language, no imports/semantic/structure)
+			assert.strictEqual(result, null, 'Should block 1-char prefix in empty new file');
+		});
+
+		test('allows 2-char prefix in any context', async function () {
+			this.timeout(5000);
+
+			const plaintextDoc = {
+				getText: (range?: vscode.Range) => {
+					if (!range) return 'ab';
+					if (range.start.line === 0 && range.start.character === 0) return 'ab';
+					return '';
+				},
+				lineAt: (lineOrPosition: number | vscode.Position) => ({
+					text: 'ab',
+					range: new vscode.Range(0, 0, 0, 2)
+				} as vscode.TextLine),
+				lineCount: 1,
+				languageId: 'plaintext',
+				uri: vscode.Uri.file('/test.txt'),
+				fileName: '/test.txt'
+			} as any;
+
+			// Even with NO context, 2-char prefix should pass
+			const result = await provider.provideInlineCompletionItems(
+				plaintextDoc,
+				new vscode.Position(0, 2),
+				mockContext,
+				mockToken
+			);
+
+			// Should not be blocked (may be debounced, but not blocked by prefix check)
+			assert.ok(result !== undefined, 'Should allow 2-char prefix even without context');
+		});
+
+		test('allows 0-char prefix with strong context (imports + language)', async function () {
+			this.timeout(5000);
+
+			const pythonDoc = {
+				getText: (range?: vscode.Range) => {
+					if (!range) return 'import os\nimport sys\n\n'; // 0 char after newline
+					if (range.start.line === 0 && range.start.character === 0) {
+						return 'import os\nimport sys\n\n';
+					}
+					return '';
+				},
+				lineAt: (lineOrPosition: number | vscode.Position) => {
+					const line = typeof lineOrPosition === 'number' ? lineOrPosition : lineOrPosition.line;
+					return {
+						text: line === 0 ? 'import os' : line === 1 ? 'import sys' : '',
+						range: new vscode.Range(line, 0, line, 100)
+					} as vscode.TextLine;
+				},
+				lineCount: 20, // Has structure
+				languageId: 'python', // Known language
+				uri: vscode.Uri.file('/test.py'),
+				fileName: '/test.py'
+			} as any;
+
+			// Context score: imports(3) + language(1) + structure(1) = 5 >= 2
+			const result = await provider.provideInlineCompletionItems(
+				pythonDoc,
+				new vscode.Position(3, 0), // Empty line after imports
+				mockContext,
+				mockToken
+			);
+
+			// Should not be blocked despite 0-char prefix
+			assert.ok(result !== undefined, 'Should allow 0-char prefix with strong context');
+		});
+	});
 });
