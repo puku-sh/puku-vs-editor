@@ -11,6 +11,7 @@ import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IPukuAuthService, PukuAuthStatus } from '../common/pukuAuth';
 import { PukuEmbeddingsCache, PukuChunkWithEmbedding } from './pukuEmbeddingsCache';
 import { pukuASTChunker, ChunkType } from './pukuASTChunker';
+import { PukuSummaryGenerator } from './pukuSummaryGenerator';
 
 /**
  * Compute cosine similarity between two vectors
@@ -120,7 +121,7 @@ export interface IPukuIndexingService {
 	/**
 	 * Search indexed content
 	 */
-	search(query: string, limit?: number): Promise<SearchResult[]>;
+	search(query: string, limit?: number, languageId?: string): Promise<SearchResult[]>;
 }
 
 /**
@@ -132,6 +133,8 @@ export interface SearchResult {
 	readonly score: number;
 	readonly lineStart: number;
 	readonly lineEnd: number;
+	readonly chunkType?: ChunkType; // AST-based chunk type (function, class, etc.)
+	readonly symbolName?: string;    // Function/class name extracted by tree-sitter
 }
 
 /**
@@ -156,6 +159,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 	};
 
 	private _cache: PukuEmbeddingsCache | undefined;
+	private _summaryGenerator: PukuSummaryGenerator | undefined;
 	private _indexedFiles: Map<string, PukuIndexedFile> = new Map();
 
 	private _isIndexing = false;
@@ -336,6 +340,9 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 			this._cache = new PukuEmbeddingsCache(storageUri);
 			await this._cache.initialize();
 
+			// Initialize summary generator
+			this._summaryGenerator = new PukuSummaryGenerator(this._authService);
+
 			// Log cache stats
 			const stats = this._cache.getStats();
 			console.log(`[PukuIndexing] Initialized - SQLite cache: ${stats.fileCount} files, ${stats.chunkCount} chunks`);
@@ -475,13 +482,22 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 		return Array.from(this._indexedFiles.values());
 	}
 
-	async search(query: string, limit: number = 10): Promise<SearchResult[]> {
+	async search(query: string, limit: number = 10, languageId?: string): Promise<SearchResult[]> {
 		if (!this._cache) {
 			return [];
 		}
 
 		const allChunks = this._cache.getAllChunks();
 		if (allChunks.length === 0) {
+			return [];
+		}
+
+		// Filter by languageId if specified
+		const filteredChunks = languageId
+			? allChunks.filter(chunk => chunk.languageId === languageId)
+			: allChunks;
+
+		if (filteredChunks.length === 0) {
 			return [];
 		}
 
@@ -495,7 +511,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 			// Score all chunks
 			const scores: Array<{ chunk: PukuChunkWithEmbedding; score: number }> = [];
 
-			for (const chunk of allChunks) {
+			for (const chunk of filteredChunks) {
 				const score = this._cosineSimilarity(queryEmbedding, chunk.embedding);
 				scores.push({ chunk, score });
 			}
@@ -511,6 +527,8 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 				score,
 				lineStart: chunk.lineStart,
 				lineEnd: chunk.lineEnd,
+				chunkType: chunk.chunkType,
+				symbolName: chunk.symbolName,
 			}));
 		} catch (error) {
 			console.error('[PukuIndexing] Search failed:', error);
@@ -578,15 +596,35 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 			console.log(`[PukuIndexing] _indexFile: ${semanticChunks.length} chunks from AST - ${uri.fsPath}`);
 
-			// Compute embeddings for all chunks in a single batch request
-			const chunkTexts = semanticChunks.map(c => c.text);
-			const embeddings = await this._computeEmbeddingsBatch(chunkTexts);
+			// Generate natural language summaries for each chunk using LLM
+			let summaries: string[] = [];
+			if (this._summaryGenerator) {
+				try {
+					summaries = await this._summaryGenerator.generateSummariesBatch(semanticChunks, languageId);
+					console.log(`[PukuIndexing] _indexFile: ${summaries.length}/${semanticChunks.length} summaries generated - ${uri.fsPath}`);
+				} catch (error) {
+					console.error(`[PukuIndexing] _indexFile: summary generation failed, using fallback - ${uri.fsPath}:`, error);
+					// Fallback to empty summaries if LLM fails
+					summaries = semanticChunks.map(() => '');
+				}
+			} else {
+				// No summary generator available
+				summaries = semanticChunks.map(() => '');
+			}
+
+			// Compute embeddings for summaries (not raw code) to improve semantic search
+			// When user writes "// send email notification", it will match summary "function that sends email..."
+			const textsToEmbed = summaries.map((summary, i) =>
+				summary || semanticChunks[i].text // Fallback to raw code if no summary
+			);
+			const embeddings = await this._computeEmbeddingsBatch(textsToEmbed);
 
 			const validEmbeddings = embeddings.filter(e => e && e.length > 0).length;
 			console.log(`[PukuIndexing] _indexFile: ${validEmbeddings}/${embeddings.length} valid embeddings - ${uri.fsPath}`);
 
 			const chunksWithEmbeddings: Array<{
 				text: string;
+				summary?: string;
 				lineStart: number;
 				lineEnd: number;
 				embedding: number[];
@@ -600,6 +638,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 				if (embedding && embedding.length > 0) {
 					chunksWithEmbeddings.push({
 						text: chunk.text,
+						summary: summaries[i] || undefined,
 						lineStart: chunk.lineStart,
 						lineEnd: chunk.lineEnd,
 						embedding,
@@ -611,7 +650,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 			if (chunksWithEmbeddings.length > 0) {
 				// Store in SQLite cache
-				this._cache.storeFile(uri.toString(), contentHash, chunksWithEmbeddings);
+				this._cache.storeFile(uri.toString(), contentHash, languageId, chunksWithEmbeddings);
 
 				this._indexedFiles.set(uri.toString(), {
 					uri,
