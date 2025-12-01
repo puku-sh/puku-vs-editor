@@ -3,8 +3,10 @@
  *  LLM-based code summarization for semantic search
  *--------------------------------------------------------------------------------------------*/
 
+import sql from 'node:sqlite';
 import { SemanticChunk } from './pukuASTChunker';
 import { IPukuAuthService } from '../common/pukuAuth';
+import { PukuSummaryJobManager } from './pukuSummaryJobManager';
 
 /**
  * Puku Summary Generator - generates natural language summaries of code chunks
@@ -12,24 +14,157 @@ import { IPukuAuthService } from '../common/pukuAuth';
  *
  * Summaries describe what code does (functionality), inputs, and outputs in
  * natural language, enabling better matching between comments and code.
+ *
+ * Supports job-based parallel processing for faster indexing.
  */
 export class PukuSummaryGenerator {
 	private static readonly BATCH_SIZE = 10; // Process 10 chunks per API call
+	private static readonly CHUNKS_PER_JOB = 20; // Chunks per parallel job
+	private static readonly MAX_PARALLEL_JOBS = 5; // Max concurrent jobs
 	private static readonly API_ENDPOINT = 'https://api.puku.sh/v1/summarize/batch';
 
+	private _jobManager: PukuSummaryJobManager | undefined;
+
 	constructor(
-		private readonly _authService: IPukuAuthService
-	) { }
+		private readonly _authService: IPukuAuthService,
+		private readonly _db?: sql.DatabaseSync
+	) {
+		if (this._db) {
+			this._jobManager = new PukuSummaryJobManager(this._db);
+		}
+	}
 
 	/**
-	 * Generate summaries for multiple chunks in batched API calls
+	 * Generate summaries for multiple chunks using parallel job-based processing
 	 *
 	 * @param chunks Code chunks to summarize
 	 * @param languageId Programming language (e.g., 'go', 'typescript')
+	 * @param fileId Database file ID (required for job tracking)
 	 * @param progressCallback Optional callback for progress updates
 	 * @returns Array of summaries (one per chunk)
 	 */
 	async generateSummariesBatch(
+		chunks: SemanticChunk[],
+		languageId: string,
+		fileId?: number,
+		progressCallback?: (current: number, total: number) => void
+	): Promise<string[]> {
+		// Use job-based parallel processing if fileId provided and job manager available
+		if (fileId !== undefined && this._jobManager) {
+			return this._generateSummariesWithJobs(chunks, languageId, fileId, progressCallback);
+		}
+
+		// Fallback to sequential processing (for backward compatibility)
+		return this._generateSummariesSequential(chunks, languageId, progressCallback);
+	}
+
+	/**
+	 * Generate summaries using parallel jobs (5 concurrent jobs)
+	 */
+	private async _generateSummariesWithJobs(
+		chunks: SemanticChunk[],
+		languageId: string,
+		fileId: number,
+		progressCallback?: (current: number, total: number) => void
+	): Promise<string[]> {
+		if (!this._jobManager) {
+			throw new Error('Job manager not initialized');
+		}
+
+		console.log(`[SummaryGenerator] Starting parallel job processing for ${chunks.length} chunks`);
+
+		// Create jobs (shards of 20 chunks each)
+		const jobIds = this._jobManager.createJobs(fileId, chunks.length, PukuSummaryGenerator.CHUNKS_PER_JOB);
+
+		// Process jobs in parallel (limit to MAX_PARALLEL_JOBS at a time)
+		const jobPromises: Promise<void>[] = [];
+
+		for (const jobId of jobIds) {
+			const jobPromise = this._processJob(jobId, chunks, languageId);
+			jobPromises.push(jobPromise);
+
+			// Limit parallelism
+			if (jobPromises.length >= PukuSummaryGenerator.MAX_PARALLEL_JOBS) {
+				await Promise.race(jobPromises);
+				// Remove completed promises
+				const stillPending = jobPromises.filter(p => {
+					let isPending = true;
+					p.then(() => { isPending = false; }).catch(() => { isPending = false; });
+					return isPending;
+				});
+				jobPromises.length = 0;
+				jobPromises.push(...stillPending);
+			}
+		}
+
+		// Wait for all jobs to complete
+		await Promise.allSettled(jobPromises);
+
+		// Collect summaries from completed jobs
+		const summaries = this._jobManager.collectSummaries(fileId);
+
+		// Apply fallback for empty summaries
+		const finalSummaries = summaries.map((summary, i) =>
+			summary || this._fallbackSummary(chunks[i])
+		);
+
+		// Clean up jobs
+		this._jobManager.cleanupJobs(fileId);
+
+		// Report final progress
+		if (progressCallback) {
+			progressCallback(chunks.length, chunks.length);
+		}
+
+		console.log(`[SummaryGenerator] Completed parallel processing: ${finalSummaries.length}/${chunks.length} summaries`);
+		return finalSummaries;
+	}
+
+	/**
+	 * Process a single job (shard of chunks)
+	 */
+	private async _processJob(
+		jobId: number,
+		allChunks: SemanticChunk[],
+		languageId: string
+	): Promise<void> {
+		if (!this._jobManager) {
+			return;
+		}
+
+		const job = this._jobManager.getJob(jobId);
+		if (!job) {
+			console.error(`[SummaryGenerator] Job ${jobId} not found`);
+			return;
+		}
+
+		try {
+			// Update status to running
+			this._jobManager.updateJobStatus(jobId, 'running');
+
+			const jobChunks = allChunks.slice(job.chunkStartIndex, job.chunkEndIndex);
+			const summaries: string[] = [];
+
+			// Process job chunks in batches of 10
+			for (let i = 0; i < jobChunks.length; i += PukuSummaryGenerator.BATCH_SIZE) {
+				const batch = jobChunks.slice(i, i + PukuSummaryGenerator.BATCH_SIZE);
+				const batchSummaries = await this._generateBatch(batch, languageId);
+				summaries.push(...batchSummaries);
+			}
+
+			// Update job as completed
+			this._jobManager.updateJobStatus(jobId, 'completed', summaries);
+			console.log(`[SummaryGenerator] Job ${jobId} completed: ${summaries.length} summaries`);
+		} catch (error) {
+			console.error(`[SummaryGenerator] Job ${jobId} failed:`, error);
+			this._jobManager.updateJobStatus(jobId, 'failed', undefined, String(error));
+		}
+	}
+
+	/**
+	 * Generate summaries sequentially (fallback for backward compatibility)
+	 */
+	private async _generateSummariesSequential(
 		chunks: SemanticChunk[],
 		languageId: string,
 		progressCallback?: (current: number, total: number) => void

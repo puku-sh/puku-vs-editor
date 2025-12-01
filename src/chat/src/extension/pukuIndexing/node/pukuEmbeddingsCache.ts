@@ -62,7 +62,7 @@ export class PukuEmbeddingsCache {
 	 * independent of extension version (e.g., for schema-only changes).
 	 * Combined with extension version for full cache key.
 	 */
-	private static readonly SCHEMA_VERSION = '5'; // Bumped for summary column
+	private static readonly SCHEMA_VERSION = '6'; // Bumped for SummaryJobs table
 	private static readonly MODEL_ID = 'puku-embeddings-1024';
 	private static readonly EMBEDDING_DIMENSIONS = 1024;
 
@@ -96,6 +96,35 @@ export class PukuEmbeddingsCache {
 	 */
 	get vecEnabled(): boolean {
 		return this._vecEnabled;
+	}
+
+	/**
+	 * Get database instance (for job manager access)
+	 */
+	get db(): sql.DatabaseSync | undefined {
+		return this._db;
+	}
+
+	/**
+	 * Create a temporary file record to get a file ID (for job tracking before final storage)
+	 * Returns the file ID that will be used when storeFile is called
+	 */
+	getOrCreateTemporaryFileId(uri: string, contentHash: string, languageId: string): number | undefined {
+		if (!this._db) {
+			return undefined;
+		}
+
+		// Check if file already exists
+		const existing = this._db.prepare('SELECT id FROM Files WHERE uri = ?').get(uri) as { id: number } | undefined;
+		if (existing) {
+			return existing.id;
+		}
+
+		// Create temporary file record (will be overwritten by storeFile)
+		const result = this._db.prepare('INSERT INTO Files (uri, contentHash, languageId, lastIndexed) VALUES (?, ?, ?, ?)')
+			.run(uri, contentHash, languageId, Date.now());
+
+		return result.lastInsertRowid as number;
 	}
 
 	/**
@@ -186,7 +215,7 @@ export class PukuEmbeddingsCache {
 
 		if (needsRebuild) {
 			// Drop all tables to handle schema changes
-			this._db.exec('DROP TABLE IF EXISTS VecMapping; DROP TABLE IF EXISTS vec_chunks; DROP TABLE IF EXISTS Chunks; DROP TABLE IF EXISTS Files; DROP TABLE IF EXISTS CacheMeta;');
+			this._db.exec('DROP TABLE IF EXISTS VecMapping; DROP TABLE IF EXISTS vec_chunks; DROP TABLE IF EXISTS Chunks; DROP TABLE IF EXISTS SummaryJobs; DROP TABLE IF EXISTS Files; DROP TABLE IF EXISTS CacheMeta;');
 		}
 
 		// Create schema (either fresh or after rebuild)
@@ -217,9 +246,24 @@ export class PukuEmbeddingsCache {
 				FOREIGN KEY (fileId) REFERENCES Files(id) ON DELETE CASCADE
 			);
 
+			CREATE TABLE IF NOT EXISTS SummaryJobs (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				fileId INTEGER NOT NULL,
+				status TEXT NOT NULL,
+				chunkStartIndex INTEGER NOT NULL,
+				chunkEndIndex INTEGER NOT NULL,
+				summaries TEXT,
+				error TEXT,
+				createdAt INTEGER NOT NULL,
+				completedAt INTEGER,
+				FOREIGN KEY (fileId) REFERENCES Files(id) ON DELETE CASCADE
+			);
+
 			CREATE INDEX IF NOT EXISTS idx_files_uri ON Files(uri);
 			CREATE INDEX IF NOT EXISTS idx_files_languageId ON Files(languageId);
 			CREATE INDEX IF NOT EXISTS idx_chunks_fileId ON Chunks(fileId);
+			CREATE INDEX IF NOT EXISTS idx_summary_jobs_fileId ON SummaryJobs(fileId);
+			CREATE INDEX IF NOT EXISTS idx_summary_jobs_status ON SummaryJobs(status);
 		`);
 
 		// Create vec_chunks virtual table and mapping for KNN search (if sqlite-vec is available)

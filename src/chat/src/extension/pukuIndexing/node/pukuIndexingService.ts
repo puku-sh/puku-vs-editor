@@ -340,8 +340,8 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 			this._cache = new PukuEmbeddingsCache(storageUri);
 			await this._cache.initialize();
 
-			// Initialize summary generator
-			this._summaryGenerator = new PukuSummaryGenerator(this._authService);
+			// Initialize summary generator with database access for job tracking
+			this._summaryGenerator = new PukuSummaryGenerator(this._authService, this._cache.db);
 
 			// Log cache stats
 			const stats = this._cache.getStats();
@@ -596,11 +596,20 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 			console.log(`[PukuIndexing] _indexFile: ${semanticChunks.length} chunks from AST - ${uri.fsPath}`);
 
-			// Generate natural language summaries for each chunk using LLM
+			// Generate natural language summaries for each chunk using LLM with parallel job processing
 			let summaries: string[] = [];
-			if (this._summaryGenerator) {
+			let fileId: number | undefined;
+			if (this._summaryGenerator && this._cache) {
 				try {
-					summaries = await this._summaryGenerator.generateSummariesBatch(semanticChunks, languageId);
+					// Get or create temporary file ID for job tracking
+					fileId = this._cache.getOrCreateTemporaryFileId(uri.toString(), contentHash, languageId);
+
+					// Generate summaries with parallel jobs (if fileId available)
+					summaries = await this._summaryGenerator.generateSummariesBatch(
+						semanticChunks,
+						languageId,
+						fileId
+					);
 					console.log(`[PukuIndexing] _indexFile: ${summaries.length}/${semanticChunks.length} summaries generated - ${uri.fsPath}`);
 				} catch (error) {
 					console.error(`[PukuIndexing] _indexFile: summary generation failed, using fallback - ${uri.fsPath}:`, error);
