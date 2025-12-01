@@ -41,10 +41,12 @@ function getSqliteVecPath(): string {
 export interface PukuChunkWithEmbedding {
 	readonly uri: string;
 	readonly text: string;
+	readonly summary?: string;
 	readonly lineStart: number;
 	readonly lineEnd: number;
 	readonly embedding: number[];
 	readonly contentHash: string;
+	readonly languageId: string;
 	readonly chunkType?: ChunkType;
 	readonly symbolName?: string;
 }
@@ -60,7 +62,7 @@ export class PukuEmbeddingsCache {
 	 * independent of extension version (e.g., for schema-only changes).
 	 * Combined with extension version for full cache key.
 	 */
-	private static readonly SCHEMA_VERSION = '3'; // Bumped for sqlite-vec mapping table
+	private static readonly SCHEMA_VERSION = '5'; // Bumped for summary column
 	private static readonly MODEL_ID = 'puku-embeddings-1024';
 	private static readonly EMBEDDING_DIMENSIONS = 1024;
 
@@ -167,7 +169,27 @@ export class PukuEmbeddingsCache {
 			PRAGMA temp_store = MEMORY;
 		`);
 
-		// Create schema
+		// Check version and model compatibility FIRST - before creating any tables
+		const cacheVersion = PukuEmbeddingsCache.getCacheVersion();
+		let needsRebuild = false;
+		try {
+			// Try to check existing cache version
+			const metaResult = this._db.prepare('SELECT version, model FROM CacheMeta LIMIT 1').get();
+			if (!metaResult || metaResult.version !== cacheVersion || metaResult.model !== PukuEmbeddingsCache.MODEL_ID) {
+				needsRebuild = true;
+				console.log(`[PukuEmbeddingsCache] Cache version/model mismatch (have: ${metaResult?.version}/${metaResult?.model}, need: ${cacheVersion}/${PukuEmbeddingsCache.MODEL_ID}), dropping tables`);
+			}
+		} catch {
+			// CacheMeta table doesn't exist yet - this is a new database
+			needsRebuild = false;
+		}
+
+		if (needsRebuild) {
+			// Drop all tables to handle schema changes
+			this._db.exec('DROP TABLE IF EXISTS VecMapping; DROP TABLE IF EXISTS vec_chunks; DROP TABLE IF EXISTS Chunks; DROP TABLE IF EXISTS Files; DROP TABLE IF EXISTS CacheMeta;');
+		}
+
+		// Create schema (either fresh or after rebuild)
 		this._db.exec(`
 			CREATE TABLE IF NOT EXISTS CacheMeta (
 				version TEXT NOT NULL,
@@ -178,6 +200,7 @@ export class PukuEmbeddingsCache {
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
 				uri TEXT NOT NULL UNIQUE,
 				contentHash TEXT NOT NULL,
+				languageId TEXT NOT NULL,
 				lastIndexed INTEGER NOT NULL
 			);
 
@@ -185,6 +208,7 @@ export class PukuEmbeddingsCache {
 				id INTEGER PRIMARY KEY AUTOINCREMENT,
 				fileId INTEGER NOT NULL,
 				text TEXT NOT NULL,
+				summary TEXT,
 				lineStart INTEGER NOT NULL,
 				lineEnd INTEGER NOT NULL,
 				embedding BLOB NOT NULL,
@@ -194,6 +218,7 @@ export class PukuEmbeddingsCache {
 			);
 
 			CREATE INDEX IF NOT EXISTS idx_files_uri ON Files(uri);
+			CREATE INDEX IF NOT EXISTS idx_files_languageId ON Files(languageId);
 			CREATE INDEX IF NOT EXISTS idx_chunks_fileId ON Chunks(fileId);
 		`);
 
@@ -217,76 +242,6 @@ export class PukuEmbeddingsCache {
 			} catch (e) {
 				console.warn('[PukuEmbeddingsCache] Failed to create vec_chunks table:', e);
 				this._vecEnabled = false;
-			}
-		}
-
-		// Check version and model compatibility - check BEFORE creating tables
-		const cacheVersion = PukuEmbeddingsCache.getCacheVersion();
-		let needsRebuild = false;
-		try {
-			const metaResult = this._db.prepare('SELECT version, model FROM CacheMeta LIMIT 1').get();
-			if (!metaResult || metaResult.version !== cacheVersion || metaResult.model !== PukuEmbeddingsCache.MODEL_ID) {
-				needsRebuild = true;
-				console.log(`[PukuEmbeddingsCache] Cache version/model mismatch (have: ${metaResult?.version}/${metaResult?.model}, need: ${cacheVersion}/${PukuEmbeddingsCache.MODEL_ID}), dropping tables`);
-			}
-		} catch {
-			// Table doesn't exist yet - that's fine
-			needsRebuild = false;
-		}
-
-		if (needsRebuild) {
-			// Drop and recreate tables to handle schema changes
-			this._db.exec('DROP TABLE IF EXISTS VecMapping; DROP TABLE IF EXISTS vec_chunks; DROP TABLE IF EXISTS Chunks; DROP TABLE IF EXISTS Files; DROP TABLE IF EXISTS CacheMeta;');
-			// Now recreate with new schema
-			this._db.exec(`
-				CREATE TABLE IF NOT EXISTS CacheMeta (
-					version TEXT NOT NULL,
-					model TEXT NOT NULL
-				);
-
-				CREATE TABLE IF NOT EXISTS Files (
-					id INTEGER PRIMARY KEY AUTOINCREMENT,
-					uri TEXT NOT NULL UNIQUE,
-					contentHash TEXT NOT NULL,
-					lastIndexed INTEGER NOT NULL
-				);
-
-				CREATE TABLE IF NOT EXISTS Chunks (
-					id INTEGER PRIMARY KEY AUTOINCREMENT,
-					fileId INTEGER NOT NULL,
-					text TEXT NOT NULL,
-					lineStart INTEGER NOT NULL,
-					lineEnd INTEGER NOT NULL,
-					embedding BLOB NOT NULL,
-					chunkType TEXT,
-					symbolName TEXT,
-					FOREIGN KEY (fileId) REFERENCES Files(id) ON DELETE CASCADE
-				);
-
-				CREATE INDEX IF NOT EXISTS idx_files_uri ON Files(uri);
-				CREATE INDEX IF NOT EXISTS idx_chunks_fileId ON Chunks(fileId);
-			`);
-
-			// Recreate vec_chunks virtual table and mapping if sqlite-vec is available
-			if (this._vecEnabled) {
-				try {
-					this._db.exec(`
-						CREATE VIRTUAL TABLE IF NOT EXISTS vec_chunks USING vec0(
-							embedding float[${PukuEmbeddingsCache.EMBEDDING_DIMENSIONS}]
-						);
-
-						CREATE TABLE IF NOT EXISTS VecMapping (
-							vec_rowid INTEGER PRIMARY KEY,
-							chunk_id INTEGER NOT NULL,
-							FOREIGN KEY (chunk_id) REFERENCES Chunks(id) ON DELETE CASCADE
-						);
-
-						CREATE INDEX IF NOT EXISTS idx_vecmapping_chunk_id ON VecMapping(chunk_id);
-					`);
-				} catch (e) {
-					console.warn('[PukuEmbeddingsCache] Failed to recreate vec_chunks table:', e);
-					this._vecEnabled = false;
-				}
 			}
 		}
 
@@ -318,13 +273,13 @@ export class PukuEmbeddingsCache {
 			return [];
 		}
 
-		const fileResult = this._db.prepare('SELECT id, contentHash FROM Files WHERE uri = ?').get(uri);
+		const fileResult = this._db.prepare('SELECT id, contentHash, languageId FROM Files WHERE uri = ?').get(uri);
 		if (!fileResult) {
 			return [];
 		}
 
 		const chunks = this._db.prepare(`
-			SELECT text, lineStart, lineEnd, embedding
+			SELECT text, summary, lineStart, lineEnd, embedding, chunkType, symbolName
 			FROM Chunks
 			WHERE fileId = ?
 		`).all(fileResult.id as number);
@@ -332,10 +287,14 @@ export class PukuEmbeddingsCache {
 		return chunks.map(row => ({
 			uri,
 			text: row.text as string,
+			summary: row.summary as string | undefined,
 			lineStart: row.lineStart as number,
 			lineEnd: row.lineEnd as number,
 			embedding: this._unpackEmbedding(row.embedding as Uint8Array),
 			contentHash: fileResult.contentHash as string,
+			languageId: fileResult.languageId as string,
+			chunkType: row.chunkType as ChunkType | undefined,
+			symbolName: row.symbolName as string | undefined,
 		}));
 	}
 
@@ -348,7 +307,7 @@ export class PukuEmbeddingsCache {
 		}
 
 		const results = this._db.prepare(`
-			SELECT f.uri, f.contentHash, c.text, c.lineStart, c.lineEnd, c.embedding, c.chunkType, c.symbolName
+			SELECT f.uri, f.contentHash, f.languageId, c.text, c.summary, c.lineStart, c.lineEnd, c.embedding, c.chunkType, c.symbolName
 			FROM Files f
 			JOIN Chunks c ON f.id = c.fileId
 		`).all();
@@ -356,10 +315,12 @@ export class PukuEmbeddingsCache {
 		return results.map(row => ({
 			uri: row.uri as string,
 			text: row.text as string,
+			summary: row.summary as string | undefined,
 			lineStart: row.lineStart as number,
 			lineEnd: row.lineEnd as number,
 			embedding: this._unpackEmbedding(row.embedding as Uint8Array),
 			contentHash: row.contentHash as string,
+			languageId: row.languageId as string,
 			chunkType: (row.chunkType as ChunkType) || undefined,
 			symbolName: (row.symbolName as string) || undefined,
 		}));
@@ -368,8 +329,9 @@ export class PukuEmbeddingsCache {
 	/**
 	 * Store chunks and embeddings for a file
 	 */
-	storeFile(uri: string, contentHash: string, chunks: Array<{
+	storeFile(uri: string, contentHash: string, languageId: string, chunks: Array<{
 		text: string;
+		summary?: string;
 		lineStart: number;
 		lineEnd: number;
 		embedding: number[];
@@ -387,15 +349,15 @@ export class PukuEmbeddingsCache {
 			this._db.prepare('DELETE FROM Files WHERE uri = ?').run(uri);
 
 			// Insert file
-			const fileResult = this._db.prepare('INSERT INTO Files (uri, contentHash, lastIndexed) VALUES (?, ?, ?)')
-				.run(uri, contentHash, Date.now());
+			const fileResult = this._db.prepare('INSERT INTO Files (uri, contentHash, languageId, lastIndexed) VALUES (?, ?, ?, ?)')
+				.run(uri, contentHash, languageId, Date.now());
 
 			const fileId = fileResult.lastInsertRowid as number;
 
-			// Insert chunks with AST metadata
+			// Insert chunks with AST metadata and summaries
 			const insertStmt = this._db.prepare(`
-				INSERT INTO Chunks (fileId, text, lineStart, lineEnd, embedding, chunkType, symbolName)
-				VALUES (?, ?, ?, ?, ?, ?, ?)
+				INSERT INTO Chunks (fileId, text, summary, lineStart, lineEnd, embedding, chunkType, symbolName)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 			`);
 
 			// Prepare vec_chunks insert and mapping if sqlite-vec is enabled
@@ -410,6 +372,7 @@ export class PukuEmbeddingsCache {
 				const chunkResult = insertStmt.run(
 					fileId,
 					chunk.text,
+					chunk.summary || null,
 					chunk.lineStart,
 					chunk.lineEnd,
 					this._packEmbedding(chunk.embedding),
