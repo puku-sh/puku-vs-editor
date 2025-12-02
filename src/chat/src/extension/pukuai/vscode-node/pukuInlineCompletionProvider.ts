@@ -7,9 +7,14 @@ import { ILogService } from '../../../platform/log/common/logService';
 import { IFetcherService } from '../../../platform/networking/common/fetcherService';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IPukuAuthService } from '../../pukuIndexing/common/pukuAuth';
+import { IPukuConfigService } from '../../pukuIndexing/common/pukuConfig';
 import { IPukuIndexingService } from '../../pukuIndexing/node/pukuIndexingService';
-import { pukuImportExtractor } from '../../pukuIndexing/node/pukuImportExtractor';
 import { CompletionsCache } from '../common/completionsCache';
+import { CommentCompletionFlow } from './flows/commentCompletion';
+import { RefactoringDetectionFlow } from './flows/refactoringDetection';
+import { ImportContextFlow } from './flows/importContext';
+import { SemanticSearchFlow } from './flows/semanticSearch';
+import { isInsideComment } from './helpers/commentDetection';
 
 interface CompletionResponse {
 	id: string;
@@ -137,11 +142,21 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 	private _requestId = 0;
 	private _completionId = 0;
 	private _speculativeCache = new SpeculativeRequestCache();
-	private _lastCompletionId: string | null = null;
+	private _lastCompletionIdByFile = new Map<string, string>(); // File URI -> completion ID
 	private _lastPrefix = '';
+	private _lastFileUri = ''; // Track last file to skip debounce on file switch
 	private _requestInFlight = false; // Prevent concurrent requests
 	// Radix Trie cache for intelligent completion matching (handles typing, backspace, partial edits)
-	private _completionsCache = new CompletionsCache();
+	// File-aware: separate cache per file
+	private _completionsCacheByFile = new Map<string, CompletionsCache>();
+	// Comment completion flow handler
+	private _commentFlow: CommentCompletionFlow;
+	// Refactoring detection flow handler
+	private _refactoringFlow: RefactoringDetectionFlow;
+	// Import context flow handler
+	private _importFlow: ImportContextFlow;
+	// Semantic search flow handler
+	private _semanticSearchFlow: SemanticSearchFlow;
 
 	constructor(
 		private readonly _endpoint: string,
@@ -149,9 +164,14 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		@ILogService private readonly _logService: ILogService,
 		@IPukuAuthService private readonly _authService: IPukuAuthService,
 		@IPukuIndexingService private readonly _indexingService: IPukuIndexingService,
+		@IPukuConfigService private readonly _configService: IPukuConfigService,
 	) {
 		super();
 		this._logService.info(`[PukuInlineCompletion] Provider created with endpoint: ${_endpoint}`);
+		this._commentFlow = new CommentCompletionFlow(_indexingService);
+		this._refactoringFlow = new RefactoringDetectionFlow(_logService, _fetcherService, _authService);
+		this._importFlow = new ImportContextFlow();
+		this._semanticSearchFlow = new SemanticSearchFlow(_indexingService, _configService);
 	}
 
 	/**
@@ -159,6 +179,18 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 	 */
 	private _generateCompletionId(): string {
 		return `puku-completion-${++this._completionId}`;
+	}
+
+	/**
+	 * Get or create CompletionsCache for a file
+	 */
+	private _getCompletionsCache(fileUri: string): CompletionsCache {
+		let cache = this._completionsCacheByFile.get(fileUri);
+		if (!cache) {
+			cache = new CompletionsCache();
+			this._completionsCacheByFile.set(fileUri, cache);
+		}
+		return cache;
 	}
 
 	async provideInlineCompletionItems(
@@ -185,11 +217,13 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 
 		// Check Radix Trie cache FIRST (handles typing, backspace, partial edits)
 		// This prevents unnecessary API calls during word-by-word acceptance and other edits
+		const fileUri = document.uri.toString();
+		const completionsCache = this._getCompletionsCache(fileUri);
 		const prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
 		const suffix = document.getText(new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end));
-		const cached = this._completionsCache.findAll(prefix, suffix);
+		const cached = completionsCache.findAll(prefix, suffix);
 		if (cached.length > 0) {
-			console.log(`[PukuInlineCompletion][${reqId}] Trie cache HIT - returning ${cached[0].length} chars (NO API CALL!)`);
+			console.log(`[PukuInlineCompletion][${reqId}] Trie cache HIT for ${fileUri} - returning ${cached[0].length} chars (NO API CALL!)`);
 			return [new vscode.InlineCompletionItem(cached[0], new vscode.Range(position, position))];
 		}
 
@@ -198,14 +232,15 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 
 		// Check speculative cache FIRST (before debounce) - Copilot-style prefetching
 		// This happens when user accepted the previous completion
-		console.log(`[PukuInlineCompletion][${reqId}] Cache check: _lastCompletionId=${this._lastCompletionId}, has=${this._lastCompletionId ? this._speculativeCache.has(this._lastCompletionId) : false}`);
-		if (this._lastCompletionId && this._speculativeCache.has(this._lastCompletionId)) {
-			console.log(`[PukuInlineCompletion][${reqId}] Speculative cache HIT for ${this._lastCompletionId}! Bypassing debounce...`);
+		const lastCompletionId = this._lastCompletionIdByFile.get(fileUri);
+		console.log(`[PukuInlineCompletion][${reqId}] Cache check for ${fileUri}: lastCompletionId=${lastCompletionId}, has=${lastCompletionId ? this._speculativeCache.has(lastCompletionId) : false}`);
+		if (lastCompletionId && this._speculativeCache.has(lastCompletionId)) {
+			console.log(`[PukuInlineCompletion][${reqId}] Speculative cache HIT for ${lastCompletionId}! Bypassing debounce...`);
 
 			// Set lock to prevent concurrent requests while cache executes
 			this._requestInFlight = true;
 
-			const cachedCompletionId = this._lastCompletionId;
+			const cachedCompletionId = lastCompletionId;
 			const completion = await this._speculativeCache.request(cachedCompletionId);
 
 			// Release lock
@@ -215,6 +250,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 				// Update tracking for cache hits
 				const prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
 				this._lastRequestTime = Date.now();
+				this._lastFileUri = fileUri;
 				this._lastPrefix = prefix;
 
 				// Store next speculative request for when user types after accepting this one
@@ -224,7 +260,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 
 				const speculativeRequestFn = async (): Promise<string | null> => {
 					console.log(`[PukuInlineCompletion][${reqId}] Executing speculative prefetch for completion ${completionId}...`);
-					const importedFiles = await this._getImportedFilesContent(document, 3, 500);
+					const importedFiles = await this._importFlow.getImportedFilesContent(document, 3, 500);
 					let semanticFiles: Array<{ filepath: string; content: string }> = [];
 					if (this._indexingService.isAvailable()) {
 						try {
@@ -248,11 +284,11 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 				};
 
 				this._speculativeCache.set(completionId, speculativeRequestFn);
-				this._lastCompletionId = completionId;
+				this._lastCompletionIdByFile.set(fileUri, completionId);
 				console.log(`[PukuInlineCompletion][${reqId}] Cache HIT - Stored next speculative request for completion ${completionId}`);
 
 				// Store completion in Radix Trie cache for future lookups
-				this._completionsCache.append(prefix, suffix, completion);
+				completionsCache.append(prefix, suffix, completion);
 
 				return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))];
 			}
@@ -262,11 +298,15 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		console.log(`[PukuInlineCompletion][${reqId}] Speculative cache MISS - Checking debounce...`);
 
 		// Debounce - wait between requests (only for cache misses)
-		// Single-char skip removed - conflicts with speculative caching
+		// Skip debounce when switching files (instant completions on file switch)
 		const now = Date.now();
-		if (now - this._lastRequestTime < this._debounceMs) {
+		const fileChanged = this._lastFileUri !== fileUri;
+		if (!fileChanged && now - this._lastRequestTime < this._debounceMs) {
 			console.log(`[PukuInlineCompletion][${reqId}] Debounced`);
 			return null;
+		}
+		if (fileChanged) {
+			console.log(`[PukuInlineCompletion][${reqId}] File changed from ${this._lastFileUri} to ${fileUri} - skipping debounce`);
 		}
 
 		// Block concurrent requests - only one API call at a time
@@ -276,42 +316,53 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		}
 
 		this._lastRequestTime = now;
+		this._lastFileUri = fileUri;
 		this._lastPrefix = prefix;
 
 		console.log(`[PukuInlineCompletion][${reqId}] Prefix length: ${prefix.length}, suffix length: ${suffix.length}`);
 
+		// Skip completions if typing inside a comment (don't autocomplete comments)
+		// Use Tree-sitter for accurate comment detection (not regex)
+		if (await isInsideComment(document, position)) {
+			console.log(`[PukuInlineCompletion][${reqId}] Cursor inside comment - skipping completion`);
+			return null;
+		}
+
+		// Check for comment-based completion FIRST (Copilot-style)
+		const isCommentCompletion = this._commentFlow.isCommentBasedCompletion(document, position);
+		let commentIntent: string | null = null;
+
+		if (isCommentCompletion) {
+			commentIntent = this._commentFlow.extractCommentIntent(document, position);
+			if (commentIntent) {
+				console.log(`[PukuInlineCompletion][${reqId}] 💬 Comment-based completion detected: "${commentIntent}"`);
+			}
+		}
+
 		// Gather context FIRST (before prefix check) - needed for context-aware minimum
 		// 1. Get import-based context
-		const importedFiles = await this._getImportedFilesContent(document, 3, 500);
+		const importedFiles = await this._importFlow.getImportedFilesContent(document, 3, 500);
 		console.log(`[PukuInlineCompletion][${reqId}] Import context: ${importedFiles.length} files`);
 
 		// 2. Get semantic search context
 		let semanticFiles: Array<{ filepath: string; content: string }> = [];
 
 		if (this._indexingService.isAvailable()) {
-			// Get current line as search query
-			const currentLine = document.lineAt(position.line).text.trim();
-			if (currentLine.length > 3) {
-				try {
-					const searchResults = await this._indexingService.search(currentLine, 2, document.languageId);
-					console.log(`[PukuInlineCompletion][${reqId}] Found ${searchResults.length} similar code snippets for ${document.languageId}`);
+			// For comment-based completions, use comment text for semantic search
+			// For code completions, use current line
+			const searchQuery = commentIntent || document.lineAt(position.line).text.trim();
 
-					// Convert search results to openFiles format
-					// Allow same-file results if they don't overlap with cursor position
-					semanticFiles = searchResults
-						.filter(result => {
-							// Different file - always include
-							if (result.uri.fsPath !== document.uri.fsPath) {
-								return true;
-							}
-							// Same file - exclude if chunk contains cursor (would duplicate what user is typing)
-							const cursorInChunk = position.line >= result.lineStart && position.line <= result.lineEnd;
-							return !cursorInChunk;
-						})
-						.map(result => ({
-							filepath: result.uri.fsPath,
-							content: result.content
-						}));
+			if (searchQuery.length > 3) {
+				try {
+					if (commentIntent) {
+						// Comment-based: search for similar functionality (return full implementations)
+						semanticFiles = await this._commentFlow.getCommentContext(commentIntent, document, 3);
+						console.log(`[PukuInlineCompletion][${reqId}] 💬 Comment context: ${semanticFiles.length} examples`);
+					} else {
+						// Code-based: search for similar code with adaptive scaling (signatures only)
+						semanticFiles = await this._semanticSearchFlow.searchSimilarCode(searchQuery, document.languageId, document.uri);
+						console.log(`[PukuInlineCompletion][${reqId}] Found ${semanticFiles.length} similar code snippets for ${document.languageId} (adaptive scaling)`);
+					}
 				} catch (searchError) {
 					console.log(`[PukuInlineCompletion][${reqId}] Semantic search failed: ${searchError}`);
 				}
@@ -323,13 +374,15 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			hasImports: importedFiles.length > 0,
 			hasSemanticMatches: semanticFiles.length > 0,
 			isKnownLanguage: document.languageId !== 'plaintext',
-			hasFileStructure: document.lineCount > 10
+			hasFileStructure: document.lineCount > 10,
+			isFileSwitched: fileChanged // File switch = user exploring codebase, provide suggestions
 		};
 
-		// Context score: imports (3) + semantic (2) + language (1) + structure (1)
+		// Context score: imports (3) + semantic (2) + file switch (2) + language (1) + structure (1)
 		const contextScore = (
 			(contextStrength.hasImports ? 3 : 0) +
 			(contextStrength.hasSemanticMatches ? 2 : 0) +
+			(contextStrength.isFileSwitched ? 2 : 0) +
 			(contextStrength.isKnownLanguage ? 1 : 0) +
 			(contextStrength.hasFileStructure ? 1 : 0)
 		);
@@ -351,7 +404,43 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			console.log(`[PukuInlineCompletion][${reqId}] 🎯 Context-driven suggestion! (prefix=${prefix.trim().length}, score=${contextScore})`);
 		}
 
-		// 4. Fetch completion from API
+		// 4. Check for range-based replacements (two-stage flow)
+		console.log(`[PukuInlineCompletion][${reqId}] Checking Tree-sitter heuristic for refactoring patterns...`);
+		const shouldCheckRange = await this._refactoringFlow.shouldCheckForRefactoring(document, position);
+		let replaceRange: vscode.Range | undefined;
+		let completionPrefix = prefix;
+		let completionSuffix = suffix;
+
+		if (shouldCheckRange) {
+			console.log(`[PukuInlineCompletion][${reqId}] Tree-sitter pattern detected - calling range detection API...`);
+
+			// Stage 1: Call Qwen for range detection (only if pattern detected)
+			const openFiles = [...importedFiles, ...semanticFiles];
+			const detection = await this._refactoringFlow.detectEditRange(prefix, suffix, document.languageId, openFiles);
+
+			if (detection?.shouldReplace && detection.confidence > 0.75) {
+				console.log(`[PukuInlineCompletion][${reqId}] Range replacement detected: ${detection.reason} (confidence: ${detection.confidence})`);
+				this._logService.info(`[RangeDetection] Replacement suggested: ${detection.reason} (confidence: ${detection.confidence})`);
+
+				// Calculate replacement range in document
+				const startLine = position.line - (detection.replaceRange!.startLine - 1);
+				const endLine = position.line + (detection.replaceRange!.endLine - detection.replaceRange!.startLine);
+
+				replaceRange = new vscode.Range(
+					new vscode.Position(Math.max(0, startLine), 0),
+					new vscode.Position(endLine, document.lineAt(Math.min(endLine, document.lineCount - 1)).text.length)
+				);
+
+				// Adjust prefix/suffix to remove code being replaced
+				const lines = prefix.split('\n');
+				completionPrefix = lines.slice(0, -detection.replaceRange!.startLine + 1).join('\n');
+				// Keep suffix as is (code after cursor)
+
+				console.log(`[PukuInlineCompletion][${reqId}] Adjusted prefix length: ${completionPrefix.length}, replace range: lines ${startLine}-${endLine}`);
+			}
+		}
+
+		// 5. Fetch completion from API
 		console.log(`[PukuInlineCompletion][${reqId}] Fetching completion from API...`);
 		this._logService.debug(`[PukuInlineCompletion][${reqId}] Requesting completion at ${document.fileName}:${position.line}`);
 
@@ -360,12 +449,12 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 
 		let completion: string | null = null;
 		try {
-			// 5. Combine context: imports FIRST, then semantic search
+			// 6. Combine context: imports FIRST, then semantic search
 			const openFiles = [...importedFiles, ...semanticFiles];
 			console.log(`[PukuInlineCompletion][${reqId}] Total context: ${openFiles.length} files (${importedFiles.length} imports, ${semanticFiles.length} semantic)`);
 
-			// 6. Call FIM with combined context
-			completion = await this._fetchContextAwareCompletion(prefix, suffix, openFiles, document.languageId, token);
+			// 7. Call FIM with potentially adjusted context
+			completion = await this._fetchContextAwareCompletion(completionPrefix, completionSuffix, openFiles, document.languageId, token);
 
 			if (!completion || token.isCancellationRequested) {
 				return null;
@@ -389,7 +478,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			console.log(`[PukuInlineCompletion][${reqId}] Executing speculative prefetch for completion ${completionId}...`);
 
 			// Get import context
-			const importedFiles = await this._getImportedFilesContent(document, 3, 500);
+			const importedFiles = await this._importFlow.getImportedFilesContent(document, 3, 500);
 
 			// Re-run semantic search for the new context
 			let semanticFiles: Array<{ filepath: string; content: string }> = [];
@@ -423,13 +512,19 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		};
 
 		this._speculativeCache.set(completionId, speculativeRequestFn);
-		this._lastCompletionId = completionId;
+		this._lastCompletionIdByFile.set(fileUri, completionId);
 		console.log(`[PukuInlineCompletion][${reqId}] Stored speculative request for completion ${completionId}`);
 
 		// Store completion in Radix Trie cache for future lookups
-		this._completionsCache.append(prefix, suffix, completion);
+		completionsCache.append(prefix, suffix, completion);
 
-		return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))];
+		// Return completion with range if applicable (range-based replacement)
+		if (replaceRange) {
+			console.log(`[PukuInlineCompletion][${reqId}] Returning range-based replacement`);
+			return [new vscode.InlineCompletionItem(completion, replaceRange)];
+		} else {
+			return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))];
+		}
 	}
 
 	/**
@@ -516,7 +611,21 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			temperature: 0.1,
 			stream: false,
 		};
-		console.log(`[PukuInlineCompletion] Request body:`, JSON.stringify(requestBody, null, 2));
+
+		// Log detailed request with context file previews
+		console.log(`[PukuInlineCompletion] Full Request Details:`, JSON.stringify({
+			endpoint: url,
+			language: languageId,
+			promptLength: prefix.length,
+			suffixLength: suffix.length,
+			contextFiles: openFiles.map(f => ({
+				filepath: f.filepath,
+				contentLength: f.content.length,
+				contentPreview: f.content.substring(0, 150) + '...'
+			})),
+			maxTokens: 100,
+			temperature: 0.1
+		}, null, 2));
 
 		const response = await this._fetcherService.fetch(url, {
 			method: 'POST',
@@ -546,6 +655,17 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 				return null;
 			}
 
+			// Check for duplicates: if completion starts with code that's already in prefix
+			// Extract last 5 lines of prefix to check for duplication
+			const prefixLines = prefix.split('\n');
+			const lastLines = prefixLines.slice(-5).join('\n');
+			const completionStart = trimmed.split('\n')[0]; // First line of completion
+
+			if (lastLines.includes(completionStart) && completionStart.length > 5) {
+				console.log(`[PukuInlineCompletion] Duplicate detected: "${completionStart}" already in prefix - returning null`);
+				return null;
+			}
+
 			return trimmed;
 		}
 
@@ -561,133 +681,4 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		this._logService.info(`[PukuInlineCompletion] Provider ${enabled ? 'enabled' : 'disabled'}`);
 	}
 
-	/**
-	 * Get file extensions to try for a language
-	 */
-	private _getExtensionsForLanguage(languageId: string): string[] {
-		const extensionMap: Record<string, string[]> = {
-			'typescript': ['.ts', '.tsx', '.js', '.jsx'],
-			'javascript': ['.js', '.jsx', '.ts', '.tsx'],
-			'typescriptreact': ['.tsx', '.ts', '.jsx', '.js'],
-			'javascriptreact': ['.jsx', '.js', '.tsx', '.ts'],
-			'python': ['.py'],
-			'go': ['.go'],
-			'java': ['.java'],
-			'rust': ['.rs'],
-			'cpp': ['.cpp', '.cc', '.cxx', '.hpp', '.h'],
-			'c': ['.c', '.h'],
-			'csharp': ['.cs'],
-			'ruby': ['.rb'],
-			'php': ['.php'],
-		};
-
-		return extensionMap[languageId] || [''];
-	}
-
-	/**
-	 * Resolve import paths to actual file URIs
-	 */
-	private _resolveImportPaths(
-		imports: string[],
-		currentFile: vscode.Uri,
-		languageId: string
-	): vscode.Uri[] {
-		const resolvedFiles: vscode.Uri[] = [];
-		const currentDir = vscode.Uri.joinPath(currentFile, '..');
-
-		for (const importPath of imports) {
-			try {
-				let uri: vscode.Uri | undefined;
-
-				if (importPath.startsWith('.')) {
-					// Relative import: ./utils or ../helpers
-					const extensions = this._getExtensionsForLanguage(languageId);
-
-					for (const ext of extensions) {
-						const candidatePath = importPath + ext;
-						const candidateUri = vscode.Uri.joinPath(currentDir, candidatePath);
-
-						// Check if file exists
-						try {
-							vscode.workspace.fs.stat(candidateUri);
-							uri = candidateUri;
-							break;
-						} catch {
-							// Try next extension
-						}
-					}
-				} else if (importPath.startsWith('/')) {
-					// Absolute import from workspace root
-					const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri;
-					if (workspaceRoot) {
-						const extensions = this._getExtensionsForLanguage(languageId);
-						for (const ext of extensions) {
-							const candidatePath = importPath + ext;
-							const candidateUri = vscode.Uri.joinPath(workspaceRoot, candidatePath);
-
-							try {
-								vscode.workspace.fs.stat(candidateUri);
-								uri = candidateUri;
-								break;
-							} catch {
-								// Try next extension
-							}
-						}
-					}
-				}
-
-				if (uri) {
-					resolvedFiles.push(uri);
-				}
-			} catch (error) {
-				// Skip failed imports
-				console.log(`[PukuInlineCompletion] Failed to resolve import: ${importPath}`);
-			}
-		}
-
-		return resolvedFiles;
-	}
-
-	/**
-	 * Read content from imported files using AST-based extraction
-	 */
-	private async _getImportedFilesContent(
-		document: vscode.TextDocument,
-		limit: number = 3,
-		maxCharsPerFile: number = 500
-	): Promise<Array<{ filepath: string; content: string }>> {
-		// Use AST-based import extractor with caching
-		const imports = await pukuImportExtractor.extractImportsWithCache(
-			document.getText(),
-			document.languageId,
-			document.uri.toString()
-		);
-
-		if (imports.length === 0) {
-			return [];
-		}
-
-		const resolvedUris = this._resolveImportPaths(imports, document.uri, document.languageId);
-		const importedFiles: Array<{ filepath: string; content: string }> = [];
-
-		// Take top N imports
-		for (const uri of resolvedUris.slice(0, limit)) {
-			try {
-				const importedDoc = await vscode.workspace.openTextDocument(uri);
-				const content = importedDoc.getText();
-
-				// Take first N chars (truncate to avoid huge context)
-				const truncated = content.substring(0, maxCharsPerFile);
-
-				importedFiles.push({
-					filepath: uri.fsPath,
-					content: truncated,
-				});
-			} catch (error) {
-				console.log(`[PukuInlineCompletion] Failed to read import: ${uri.fsPath}`);
-			}
-		}
-
-		return importedFiles;
-	}
 }

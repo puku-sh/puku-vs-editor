@@ -5,8 +5,29 @@ Request models for API endpoints.
 from pydantic import BaseModel, Field, validator, EmailStr
 from typing import Optional, List
 from datetime import datetime
-import re
 
+class BaseRequest(BaseModel):
+    """Base request model with common fields."""
+    request_id: Optional[str] = Field(None, description="Unique request identifier")
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Request timestamp")
+    
+    class Config:
+        allow_population_by_field_name = True
+
+    @validator('request_id')
+    def validate_request_id(cls, v):
+        """Validate request ID format if provided."""
+        if v and not re.match(r'^[a-zA-Z0-9\-_]+$', v):
+            raise ValueError('Request ID can only contain letters, numbers, hyphens, and underscores')
+        return v.lower() if v else v
+    
+    @validator('timestamp')
+    def validate_timestamp(cls, v):
+        """Ensure timestamp is in UTC."""
+        if v.tzinfo is not None:
+            v = v.astimezone(timezone.utc).replace(tzinfo=None)
+        return v
+    
 
 class HelloRequest(BaseModel):
     """Request model for hello endpoint with extended features."""

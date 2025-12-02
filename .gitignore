@@ -18,4 +18,5 @@ l10n/
 *.log
 build/
 *.puku/
-nohup.out
+nohup.outreference/aide
+reference/aide
