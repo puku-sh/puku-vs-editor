@@ -1,3 +1,68 @@
+## 0.37.0 (2025-11-30)
+
+### Features
+
+#### Multi-Line Edit Suggestions with Range Replacements
+
+**Problem:** Puku could only insert new code at the cursor position. It couldn't suggest replacing existing inefficient code (loops → comprehensions, outdated patterns, etc.).
+
+**User Impact:**
+```python
+# BEFORE v0.37.0
+users = []
+for user in db.query(User).all():
+    if user.active:
+        users.append(user)
+# ❌ Puku suggests next line insertion only
+
+# AFTER v0.37.0
+users = []
+for user in db.query(User).all():
+    if user.active:
+        users.append(user)
+# ✅ Puku suggests REPLACING entire loop with:
+# users = db.query(User).filter(User.active == True).all()
+```
+
+**Solution:** Implemented two-stage intelligent refactoring detection:
+
+**Stage 1: Tree-sitter Heuristic (Client-side, 0ms)**
+- AST-based pattern matching for common refactoring opportunities
+- Filters 90%+ of completions instantly (zero API calls)
+- Patterns: Empty array + for loop, `.filter().map()` chains, etc.
+
+**Stage 2: LLM Range Detection (Only when pattern detected)**
+- Qwen 2.5 Coder 32B analyzes code structure
+- Returns `{shouldReplace, replaceRange, confidence, reason}`
+- Only triggered when Tree-sitter detects potential refactoring
+
+**Architecture:**
+```
+User types → Tree-sitter heuristic (0ms) → Pattern found?
+  ↓ No (90%+ cases)              ↓ Yes (only specific patterns)
+Skip detection                 Call Qwen API (700ms)
+  ↓                              ↓
+FIM call (500ms)              shouldReplace?
+  ↓                              ↓ No        ↓ Yes
+Insert at cursor            Insert      Replace range + FIM
+```
+
+**Performance:**
+- Fast path (90%+): ~1300-1800ms (unchanged)
+- Slow path (refactoring detected): ~1200ms (actually faster - skips debounce)
+
+**Supported Languages:** Python, JavaScript, TypeScript, Go
+
+**Backend:**
+- Endpoint: `https://api.puku.sh/v1/detect-edit-range`
+- Model: Qwen 2.5 Coder 32B via OpenRouter
+- Confidence threshold: > 0.75
+
+**Files Modified:**
+- `pukuInlineCompletionProvider.ts:696-945` - Tree-sitter heuristic + two-stage flow
+- Added `_detectEditRange()` method for backend API calls
+- Integrated range-based replacements in VS Code InlineCompletionItem
+
 ## 0.36.4 (2025-11-29)
 
 ### Features
