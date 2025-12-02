@@ -118,17 +118,10 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 			endpoint
 		);
 
-		// Register for supported languages with specific selectors
-		// Using specific language selectors like typescriptContext does
+		// Register for all file types - let Codestral Mamba handle any language
 		const selector: vscode.DocumentSelector = [
-			{ scheme: 'file', language: 'python' },
-			{ scheme: 'file', language: 'typescript' },
-			{ scheme: 'file', language: 'typescriptreact' },
-			{ scheme: 'file', language: 'javascript' },
-			{ scheme: 'file', language: 'javascriptreact' },
-			{ scheme: 'untitled', language: 'python' },
-			{ scheme: 'untitled', language: 'typescript' },
-			{ scheme: 'untitled', language: 'javascript' },
+			{ scheme: 'file' },
+			{ scheme: 'untitled' }
 		];
 
 		// Use vscode.languages directly to ensure correct API

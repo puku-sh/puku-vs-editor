@@ -17,6 +17,7 @@ export enum WASMLanguage {
 	Cpp = 'cpp',
 	Java = 'java',
 	Rust = 'rust',
+	Php = 'php',
 }
 
 export class TreeSitterUnknownLanguageError extends Error {
@@ -37,8 +38,10 @@ const languageIdToWasmLanguageMapping: { [language: string]: WASMLanguage } = {
 	ruby: WASMLanguage.Ruby,
 	csharp: WASMLanguage.Csharp,
 	cpp: WASMLanguage.Cpp,
+	c: WASMLanguage.Cpp, // C uses C++ parser
 	java: WASMLanguage.Java,
 	rust: WASMLanguage.Rust,
+	php: WASMLanguage.Php,
 };
 
 /**

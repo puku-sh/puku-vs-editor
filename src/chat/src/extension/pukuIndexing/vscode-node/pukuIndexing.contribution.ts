@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
 import { IPukuIndexingService, PukuIndexingStatus } from '../node/pukuIndexingService';
+import { IPukuConfigService } from '../common/pukuConfig';
 
 /**
  * Puku Indexing Contribution - auto-triggers workspace indexing on startup
@@ -133,6 +134,13 @@ export class PukuIndexingContribution extends Disposable {
 
 	private async _initializeIndexing(): Promise<void> {
 		try {
+			// Initialize config service first
+			const configService = this._instantiationService.invokeFunction((accessor) => {
+				return accessor.get(IPukuConfigService);
+			});
+			await configService.initialize();
+			console.log('[PukuIndexing.contribution] Config service initialized');
+
 			this._indexingService = this._instantiationService.invokeFunction((accessor) => {
 				return accessor.get(IPukuIndexingService);
 			});
