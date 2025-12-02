@@ -106,6 +106,8 @@ import { ConditionalEmbeddingsComputer } from './conditionalEmbeddingsComputer';
 import { IPukuAuthService } from '../../pukuIndexing/common/pukuAuth';
 import { VsCodePukuAuthService } from '../../pukuIndexing/vscode-node/vscodePukuAuthService';
 import { IPukuIndexingService, PukuIndexingService } from '../../pukuIndexing/node/pukuIndexingService';
+import { IPukuConfigService } from '../../pukuIndexing/common/pukuConfig';
+import { VsCodePukuConfigService } from '../../pukuIndexing/vscode-node/vscodePukuConfigService';
 import { IPukuChatService } from '../../pukuChat/common/pukuChatService';
 import { PukuChatService } from '../../pukuChat/node/pukuChatService';
 
@@ -214,6 +216,7 @@ export function registerServices(builder: IInstantiationServiceBuilder, extensio
 	// Puku Indexing Services
 	// Note: Authentication is bridged from VS Code layer via internal commands
 	builder.define(IPukuAuthService, new SyncDescriptor(VsCodePukuAuthService));
+	builder.define(IPukuConfigService, new SyncDescriptor(VsCodePukuConfigService));
 	builder.define(IPukuIndexingService, new SyncDescriptor(PukuIndexingService));
 
 	// Puku Chat Service

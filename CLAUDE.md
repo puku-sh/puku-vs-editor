@@ -84,27 +84,110 @@ The extension's `OllamaLMProvider` (in `src/extension/byok/vscode-node/ollamaPro
 - Send chat requests to `/v1/chat/completions` for Chat panel
 - Send completion requests to `/v1/completions` for inline suggestions
 
-**FIM Implementation Details:**
+**FIM Implementation (Enhanced Copilot Approach with Context):**
 
-The proxy converts GitHub Copilot's FIM (Fill-In-Middle) completion requests to chat format:
+Puku uses an enhanced approach inspired by Copilot and Cursor with smart context gathering:
 
-- **Without suffix**: Simple code continuation prompt
-- **With suffix**: Uses `<CODE_BEFORE>` and `<CODE_AFTER>` markers to clearly delineate context
-- Tested and verified working for both simple and complex completions
+- **Model**: Codestral Mamba (`mistralai/codestral-2501`) with 256k context window
+- **Client**: Prefix/suffix extraction + import-based context + semantic search
+- **Backend**: `/v1/fim/context` endpoint with language hints and context support
+- **Rate Limiting**: 800ms debounce + single-char change skip + speculative caching
+- **Intelligence**: Combines model's 256k context with relevant code snippets
 
-Example test:
+**Architecture:**
+```typescript
+// Client (pukuInlineCompletionProvider.ts):
+// 1. Check speculative cache FIRST (bypass debounce if hit)
+if (cache.has(lastCompletionId)) {
+    return await cache.request(lastCompletionId); // Instant!
+}
 
-```bash
-# Simple completion
-curl -X POST http://localhost:11434/v1/completions \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "def hello():", "suffix": "", "max_tokens": 50, "stream": false}'
+// 2. Debounce check (only for cache misses)
+if (now - lastRequestTime < 800ms) return null;
 
-# FIM with suffix
-curl -X POST http://localhost:11434/v1/completions \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "def fibonacci(n):", "suffix": "\n    return result", "max_tokens": 200, "stream": false}'
+// 3. Gather context
+const importedFiles = await getImportedFilesContent(document, 3, 500);
+const semanticFiles = await semanticSearch(currentLine, 2, languageId);
+
+// 4. Call FIM with context + language hint
+await fetch('/v1/fim/context', {
+    prompt: prefix,
+    suffix: suffix,
+    openFiles: [...importedFiles, ...semanticFiles],
+    language: document.languageId, // NEW: Language hint for model
+    max_tokens: 100,
+    temperature: 0.1
+});
+
+// Backend (puku-worker):
+// Prepends language comment: "// Language: Go"
+// Includes context from openFiles
+// Calls Codestral Mamba with enhanced prompt
 ```
+
+**Example:**
+```bash
+# With language hint and context
+curl -X POST https://api.puku.sh/v1/fim/context \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer pk_xxx" \
+  -d '{
+    "prompt": "func main() {\n\t",
+    "suffix": "",
+    "language": "go",
+    "openFiles": [
+      {"filepath": "user.go", "content": "type User struct {...}"}
+    ],
+    "max_tokens": 100,
+    "temperature": 0.1
+  }'
+```
+
+**Key Features (2025-11-28 Updates):**
+
+1. **Language-Aware Completions** ✅
+   - Client sends `language: "go"` to backend
+   - Backend prepends `// Language: Go` to prompt
+   - Fixes wrong-language hallucinations (Kotlin in Go files)
+
+2. **Smart Context Filtering** ✅
+   - **Import-based**: Extracts and includes imported files (up to 3 files, 500 chars each)
+   - **Semantic search**: Finds similar code chunks using embeddings (2 chunks max)
+   - **Overlap detection**: Excludes chunks containing cursor position
+   - Filters out duplicates to avoid confusing model
+
+3. **Speculative Caching (Copilot-style)** ✅
+   - Stores REQUEST FUNCTIONS, not results
+   - Cache check happens BEFORE debounce
+   - Cache hit → Instant completion (bypasses 800ms debounce)
+   - Cache miss → Apply debounce + fetch from API
+   - Automatically prefetches next completion after user accepts
+
+4. **Aggressive Rate Limiting** ✅
+   - 800ms debounce between requests (up from 200ms)
+   - Skip single-character changes (user still typing)
+   - Reduces API calls while maintaining responsiveness
+
+**Performance Characteristics:**
+- **Cache hit**: ~0ms (instant, bypasses debounce)
+- **Cache miss**: 800ms debounce + 500-1000ms API call
+- **Context gathering**: <50ms (import extraction + semantic search)
+- **Overall UX**: Competitive with Copilot (783-1883ms average)
+
+**Why this approach:**
+- ✅ Language hints eliminate hallucinations
+- ✅ Import context improves relevance
+- ✅ Semantic search finds similar patterns
+- ✅ Speculative caching enables instant follow-up completions
+- ✅ Smart debounce reduces API costs without hurting UX
+- ✅ Overlap filtering avoids duplicate suggestions
+- ✅ Proven architecture (Copilot + Cursor hybrid)
+
+**Tests:**
+- Speculative caching flow: `src/chat/src/extension/pukuai/test/pukuInlineCompletionCache.spec.ts`
+- 11 tests covering cache behavior, debounce, and request flow
+
+See `test-supermaven/FINDINGS.md` for research and rationale.
 
 ### Build & Development
 
