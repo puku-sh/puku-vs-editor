@@ -9,6 +9,7 @@ import { createServiceIdentifier } from '../../../util/common/services';
 import { Emitter, Event } from '../../../util/vs/base/common/event';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IPukuAuthService, PukuAuthStatus } from '../common/pukuAuth';
+import { IPukuConfigService } from '../common/pukuConfig';
 import { PukuEmbeddingsCache, PukuChunkWithEmbedding } from './pukuEmbeddingsCache';
 import { pukuASTChunker, ChunkType } from './pukuASTChunker';
 import { PukuSummaryGenerator } from './pukuSummaryGenerator';
@@ -170,6 +171,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 	constructor(
 		@IPukuAuthService private readonly _authService: IPukuAuthService,
+		@IPukuConfigService private readonly _configService: IPukuConfigService,
 	) {
 		super();
 
@@ -341,7 +343,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 			await this._cache.initialize();
 
 			// Initialize summary generator with database access for job tracking
-			this._summaryGenerator = new PukuSummaryGenerator(this._authService, this._cache.db);
+			this._summaryGenerator = new PukuSummaryGenerator(this._authService, this._configService, this._cache.db);
 
 			// Log cache stats
 			const stats = this._cache.getStats();
