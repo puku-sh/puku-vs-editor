@@ -1,46 +1,47 @@
-package main
-
-// add user gorm model
+// add user model with gorm 
 type User struct {
-	gorm.Model
-	Name string
-	Email string
+	ID    uint   `gorm:"primaryKey"`
+	Name  string `gorm:"not null"`
+	Email string `gorm:"unique;not null"`
 }
 
-func connectDB(){
-	dsn := "host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=Asia/Shanghai"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
-	db.AutoMigrate(&User{})
-	return db
+// add user repository with gorm
+type UserRepository struct {
+	db *gorm.DB
 }
 
-//add user using gorm
-func addUser(db *gorm.DB, name string, email string) {
-	user := User{Name: name, Email: email}
-	db.Create(&user)
+func (r *UserRepository) Create(user *User) error {
+	return r.db.Create(user).Error
 }
-//get all users using gorm
-func getUsers(db *gorm.DB) []User {
-	var users []User
-	db.Find(&users)
-	return users
-}
-//update user by id using gorm
-func updateUser(db *gorm.DB, id uint, name string, email string) {
+
+func (r *UserRepository) Get(id uint) (User, error) {
 	var user User
-	db.First(&user, id)
+	return user, r.db.First(&user, id).Error
+}
+
+
+func (r *UserRepository) GetAll() ([]User, error) {
+	var users []User
+	return users, r.db.Find(&users).Error
+}
+
+// delete user based on gorm db
+func deleteUser(db *gorm.DB, id int) {
+	var user User
+	db.Where("id = ?", id).Delete(&user)
+}
+
+// update user based on gorm db 
+func updateUser(db *gorm.DB, id int, name string, email string) {
+	var user User
+	db.Where("id = ?", id).First(&user)
 	user.Name = name
 	user.Email = email
 	db.Save(&user)
 }
-
-//delete user by id using gorm
-func deleteUser(db *gorm.DB, id uint) {
+// get user based on gorm db
+func getUser(db *gorm.DB, id int) User {
 	var user User
-	db.First(&user, id)
-	db.Delete(&user)
+	db.Where("id = ?", id).First(&user)
+	return user
 }
-

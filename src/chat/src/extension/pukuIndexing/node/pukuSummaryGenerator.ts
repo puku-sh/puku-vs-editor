@@ -6,6 +6,7 @@
 import sql from 'node:sqlite';
 import { SemanticChunk } from './pukuASTChunker';
 import { IPukuAuthService } from '../common/pukuAuth';
+import { IPukuConfigService } from '../common/pukuConfig';
 import { PukuSummaryJobManager } from './pukuSummaryJobManager';
 
 /**
@@ -18,20 +19,18 @@ import { PukuSummaryJobManager } from './pukuSummaryJobManager';
  * Supports job-based parallel processing for faster indexing.
  */
 export class PukuSummaryGenerator {
-	private static readonly BATCH_SIZE = 10; // Process 10 chunks per API call
-	private static readonly CHUNKS_PER_JOB = 20; // Chunks per parallel job
-	private static readonly MAX_PARALLEL_JOBS = 5; // Max concurrent jobs
-	private static readonly API_ENDPOINT = 'https://api.puku.sh/v1/summarize/batch';
-
 	private _jobManager: PukuSummaryJobManager | undefined;
 
 	constructor(
 		private readonly _authService: IPukuAuthService,
+		private readonly _configService: IPukuConfigService,
 		private readonly _db?: sql.DatabaseSync
 	) {
 		if (this._db) {
 			this._jobManager = new PukuSummaryJobManager(this._db);
 		}
+		const config = this._configService.getConfig();
+		console.log(`[SummaryGenerator] Config loaded: endpoint=${config.endpoints.summarize}, chunksPerJob=${config.performance.chunksPerJob}, maxJobs=${config.performance.maxConcurrentJobs}`);
 	}
 
 	/**
@@ -73,18 +72,19 @@ export class PukuSummaryGenerator {
 
 		console.log(`[SummaryGenerator] Starting parallel job processing for ${chunks.length} chunks`);
 
-		// Create jobs (shards of 20 chunks each)
-		const jobIds = this._jobManager.createJobs(fileId, chunks.length, PukuSummaryGenerator.CHUNKS_PER_JOB);
+		const config = this._configService.getConfig();
+		// Create jobs (shards configured by server)
+		const jobIds = this._jobManager.createJobs(fileId, chunks.length, config.performance.chunksPerJob);
 
-		// Process jobs in parallel (limit to MAX_PARALLEL_JOBS at a time)
+		// Process jobs in parallel (limit configured by server)
 		const jobPromises: Promise<void>[] = [];
 
 		for (const jobId of jobIds) {
 			const jobPromise = this._processJob(jobId, chunks, languageId);
 			jobPromises.push(jobPromise);
 
-			// Limit parallelism
-			if (jobPromises.length >= PukuSummaryGenerator.MAX_PARALLEL_JOBS) {
+			// Limit parallelism (configured by server)
+			if (jobPromises.length >= config.performance.maxConcurrentJobs) {
 				await Promise.race(jobPromises);
 				// Remove completed promises
 				const stillPending = jobPromises.filter(p => {
@@ -145,9 +145,10 @@ export class PukuSummaryGenerator {
 			const jobChunks = allChunks.slice(job.chunkStartIndex, job.chunkEndIndex);
 			const summaries: string[] = [];
 
-			// Process job chunks in batches of 10
-			for (let i = 0; i < jobChunks.length; i += PukuSummaryGenerator.BATCH_SIZE) {
-				const batch = jobChunks.slice(i, i + PukuSummaryGenerator.BATCH_SIZE);
+			const config = this._configService.getConfig();
+			// Process job chunks in batches (configured by server)
+			for (let i = 0; i < jobChunks.length; i += config.performance.batchSize) {
+				const batch = jobChunks.slice(i, i + config.performance.batchSize);
 				const batchSummaries = await this._generateBatch(batch, languageId);
 				summaries.push(...batchSummaries);
 			}
@@ -171,9 +172,10 @@ export class PukuSummaryGenerator {
 	): Promise<string[]> {
 		const summaries: string[] = [];
 
-		// Process chunks in batches of 10
-		for (let i = 0; i < chunks.length; i += PukuSummaryGenerator.BATCH_SIZE) {
-			const batch = chunks.slice(i, i + PukuSummaryGenerator.BATCH_SIZE);
+		const config = this._configService.getConfig();
+		// Process chunks in batches (configured by server)
+		for (let i = 0; i < chunks.length; i += config.performance.batchSize) {
+			const batch = chunks.slice(i, i + config.performance.batchSize);
 
 			// Report progress
 			if (progressCallback) {
@@ -209,10 +211,12 @@ export class PukuSummaryGenerator {
 			throw new Error('No auth token available for summary generation');
 		}
 
-		console.log(`[SummaryGenerator] Calling summary API for ${chunks.length} chunks`);
+		const config = this._configService.getConfig();
+		const url = config.endpoints.summarize;
+		console.log(`[SummaryGenerator] Calling summary API ${url} for ${chunks.length} chunks`);
 
 		// Call dedicated summary endpoint (uses server-side API key)
-		const response = await fetch(PukuSummaryGenerator.API_ENDPOINT, {
+		const response = await fetch(url, {
 			method: 'POST',
 			headers: {
 				'Authorization': `Bearer ${token.token}`,
@@ -340,10 +344,3 @@ Remember: Return EXACTLY ${chunks.length} summaries, one per line, in order.`;
 		return firstLine.substring(0, 100);
 	}
 }
-
-/**
- * Singleton instance
- */
-export const pukuSummaryGenerator = new PukuSummaryGenerator(
-	undefined as any // Will be injected by service
-);

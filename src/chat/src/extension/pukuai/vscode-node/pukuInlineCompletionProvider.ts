@@ -15,6 +15,7 @@ import { RefactoringDetectionFlow } from './flows/refactoringDetection';
 import { ImportContextFlow } from './flows/importContext';
 import { SemanticSearchFlow } from './flows/semanticSearch';
 import { isInsideComment } from './helpers/commentDetection';
+import { PositionValidator } from './helpers/positionValidation';
 
 interface CompletionResponse {
 	id: string;
@@ -137,7 +138,6 @@ class SpeculativeRequestCache {
  */
 export class PukuInlineCompletionProvider extends Disposable implements vscode.InlineCompletionItemProvider {
 	private _lastRequestTime = 0;
-	private _debounceMs = 200; // Reduced from 600ms - Radix Trie allows faster debounce
 	private _enabled = true;
 	private _requestId = 0;
 	private _completionId = 0;
@@ -157,6 +157,8 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 	private _importFlow: ImportContextFlow;
 	// Semantic search flow handler
 	private _semanticSearchFlow: SemanticSearchFlow;
+	// Position validation helper
+	private _positionValidator: PositionValidator;
 
 	constructor(
 		private readonly _endpoint: string,
@@ -167,11 +169,22 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		@IPukuConfigService private readonly _configService: IPukuConfigService,
 	) {
 		super();
+		const config = this._configService.getConfig();
 		this._logService.info(`[PukuInlineCompletion] Provider created with endpoint: ${_endpoint}`);
+		this._logService.info(`[PukuInlineCompletion] Config: FIM endpoint=${config.endpoints.fim}, model=${config.models.fim}, debounce=${config.performance.debounceMs}ms`);
+		console.log(`[PukuInlineCompletion] Config loaded: debounce=${config.performance.debounceMs}ms, model=${config.models.fim}`);
 		this._commentFlow = new CommentCompletionFlow(_indexingService);
 		this._refactoringFlow = new RefactoringDetectionFlow(_logService, _fetcherService, _authService);
 		this._importFlow = new ImportContextFlow();
 		this._semanticSearchFlow = new SemanticSearchFlow(_indexingService, _configService);
+		this._positionValidator = new PositionValidator();
+	}
+
+	/**
+	 * Get debounce delay from config service
+	 */
+	private get _debounceMs(): number {
+		return this._configService.getConfig().performance.debounceMs;
 	}
 
 	/**
@@ -215,15 +228,20 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			return null;
 		}
 
+		// POSITION VALIDATION: Clear stale position if cursor moved
+		const fileUri = document.uri.toString();
+		this._positionValidator.validate(fileUri, position, reqId);
+
 		// Check Radix Trie cache FIRST (handles typing, backspace, partial edits)
 		// This prevents unnecessary API calls during word-by-word acceptance and other edits
-		const fileUri = document.uri.toString();
 		const completionsCache = this._getCompletionsCache(fileUri);
 		const prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
 		const suffix = document.getText(new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end));
 		const cached = completionsCache.findAll(prefix, suffix);
 		if (cached.length > 0) {
 			console.log(`[PukuInlineCompletion][${reqId}] Trie cache HIT for ${fileUri} - returning ${cached[0].length} chars (NO API CALL!)`);
+			// Store position for validation
+			this._positionValidator.update(fileUri, position);
 			return [new vscode.InlineCompletionItem(cached[0], new vscode.Range(position, position))];
 		}
 
@@ -290,6 +308,9 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 				// Store completion in Radix Trie cache for future lookups
 				completionsCache.append(prefix, suffix, completion);
 
+				// Store position for validation
+				this._positionValidator.update(fileUri, position);
+
 				return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))];
 			}
 		}
@@ -307,6 +328,10 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		}
 		if (fileChanged) {
 			console.log(`[PukuInlineCompletion][${reqId}] File changed from ${this._lastFileUri} to ${fileUri} - skipping debounce`);
+			// POSITION VALIDATION: Clear state for old file to prevent memory leak
+			if (this._lastFileUri) {
+				this._positionValidator.clear(this._lastFileUri);
+			}
 		}
 
 		// Block concurrent requests - only one API call at a time
@@ -518,6 +543,9 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		// Store completion in Radix Trie cache for future lookups
 		completionsCache.append(prefix, suffix, completion);
 
+		// Store position for validation
+		this._positionValidator.update(fileUri, position);
+
 		// Return completion with range if applicable (range-based replacement)
 		if (replaceRange) {
 			console.log(`[PukuInlineCompletion][${reqId}] Returning range-based replacement`);
@@ -590,8 +618,10 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		languageId: string,
 		token: vscode.CancellationToken
 	): Promise<string | null> {
-		const url = `${this._endpoint}/v1/fim/context`;
-		console.log(`[PukuInlineCompletion] Calling ${url} with language=${languageId}`);
+		const config = this._configService.getConfig();
+		const url = config.endpoints.fim;
+		const model = config.models.fim;
+		console.log(`[PukuInlineCompletion] Calling ${url} with language=${languageId}, model=${model}`);
 
 		const authToken = await this._authService.getToken();
 		const headers: Record<string, string> = {
