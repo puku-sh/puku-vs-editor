@@ -23,6 +23,27 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+def get_db_session() -> Session:
+    """
+    Get database session.
+    """
+    return SessionLocal()
+
+def close_db_session(db: Session) -> None:
+    """
+    Close database session.
+    """
+    db.close()
+    return None
+
+def get_db_session_generator() -> Generator[Session, None, None]:
+    """
+    Get database session generator.
+    """
+    db = SessionLocal()
+
+    
+
 def get_db() -> Generator[Session, None, None]:
     """
     Get database session.

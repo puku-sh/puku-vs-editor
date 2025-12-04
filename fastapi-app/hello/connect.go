@@ -26,7 +26,20 @@ func updateUser(db *gorm.DB, id int, name string) {
 	db.Model(&user).Where("id = ?", id).Update("name", name)
 }
 
+// create user based on gorm db
+func createUser(db *gorm.DB, name string, email string) {
+	user := User{Name: name, Email: email}
+	db.Create(&user)
+}
+
 // delete user based on gorm db
+func deleteUser(db *gorm.DB, id int) {
+	var user User
+	db.Where("id = ?", id).Delete(&user)
+}
+
+// get user by id based on gorm db
+// delete user by id based on gorm db
 func deleteUser(db *gorm.DB, id int) {
 	var user User
 	db.Where("id = ?", id).Delete(&user)
