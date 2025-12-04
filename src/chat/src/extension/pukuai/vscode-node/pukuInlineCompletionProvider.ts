@@ -242,7 +242,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			console.log(`[PukuInlineCompletion][${reqId}] Trie cache HIT for ${fileUri} - returning ${cached[0].length} chars (NO API CALL!)`);
 			// Store position for validation
 			this._positionValidator.update(fileUri, position);
-			return [new vscode.InlineCompletionItem(cached[0], new vscode.Range(position, position))];
+			return [this._createCompletionItem(cached[0], new vscode.Range(position, position), position)];
 		}
 
 		// Generate completion ID early (needed for cache and storing next request)
@@ -311,7 +311,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 				// Store position for validation
 				this._positionValidator.update(fileUri, position);
 
-				return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))];
+				return [this._createCompletionItem(completion, new vscode.Range(position, position), position)];
 			}
 		}
 
@@ -346,13 +346,6 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 
 		console.log(`[PukuInlineCompletion][${reqId}] Prefix length: ${prefix.length}, suffix length: ${suffix.length}`);
 
-		// Skip completions if typing inside a comment (don't autocomplete comments)
-		// Use Tree-sitter for accurate comment detection (not regex)
-		if (await isInsideComment(document, position)) {
-			console.log(`[PukuInlineCompletion][${reqId}] Cursor inside comment - skipping completion`);
-			return null;
-		}
-
 		// Check for comment-based completion FIRST (Copilot-style)
 		const isCommentCompletion = this._commentFlow.isCommentBasedCompletion(document, position);
 		let commentIntent: string | null = null;
@@ -362,6 +355,17 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			if (commentIntent) {
 				console.log(`[PukuInlineCompletion][${reqId}] 💬 Comment-based completion detected: "${commentIntent}"`);
 			}
+		}
+
+		// Skip completions if typing INSIDE a comment (mid-comment)
+		// BUT allow if this is a comment-based completion (after comment ends)
+		// Use Tree-sitter for accurate comment detection (not regex)
+		if (await isInsideComment(document, position)) {
+			if (!isCommentCompletion) {
+				console.log(`[PukuInlineCompletion][${reqId}] Cursor inside comment - skipping completion`);
+				return null;
+			}
+			console.log(`[PukuInlineCompletion][${reqId}] Inside comment but allowing comment-based completion`);
 		}
 
 		// Gather context FIRST (before prefix check) - needed for context-aware minimum
@@ -419,7 +423,8 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		const minPrefix = hasStrongContext ? 0 : 2;
 
 		// Apply context-aware minimum prefix check
-		if (prefix.trim().length < minPrefix) {
+		// BUT skip for comment-based completions (intent from comment, not prefix)
+		if (!commentIntent && prefix.trim().length < minPrefix) {
 			console.log(`[PukuInlineCompletion][${reqId}] Prefix too short: ${prefix.trim().length} (min: ${minPrefix}, score: ${contextScore}, context: ${JSON.stringify(contextStrength)})`);
 			return null;
 		}
@@ -427,6 +432,11 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		// Log context-driven suggestions (prefix < 2 but allowed due to context)
 		if (prefix.trim().length < 2 && hasStrongContext) {
 			console.log(`[PukuInlineCompletion][${reqId}] 🎯 Context-driven suggestion! (prefix=${prefix.trim().length}, score=${contextScore})`);
+		}
+
+		// Log comment-based completions with empty prefix
+		if (commentIntent && prefix.trim().length < minPrefix) {
+			console.log(`[PukuInlineCompletion][${reqId}] 💬 Allowing comment-based completion with empty prefix (intent: "${commentIntent}")`);
 		}
 
 		// 4. Check for range-based replacements (two-stage flow)
@@ -549,9 +559,9 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		// Return completion with range if applicable (range-based replacement)
 		if (replaceRange) {
 			console.log(`[PukuInlineCompletion][${reqId}] Returning range-based replacement`);
-			return [new vscode.InlineCompletionItem(completion, replaceRange)];
+			return [this._createCompletionItem(completion, replaceRange, position)];
 		} else {
-			return [new vscode.InlineCompletionItem(completion, new vscode.Range(position, position))];
+			return [this._createCompletionItem(completion, new vscode.Range(position, position), position)];
 		}
 	}
 
@@ -701,6 +711,19 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 
 		console.log(`[PukuInlineCompletion] No choices in response - returning null`);
 		return null;
+	}
+
+	/**
+	 * Create completion item with optional displayLocation for multi-line completions
+	 */
+	private _createCompletionItem(
+		completion: string,
+		range: vscode.Range,
+		position: vscode.Position
+	): vscode.InlineCompletionItem {
+		// Simply return the completion as ghost text
+		// TAB to accept will automatically jump to end via modified commands in VS Code
+		return new vscode.InlineCompletionItem(completion, range);
 	}
 
 	/**

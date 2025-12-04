@@ -231,7 +231,7 @@ export class AcceptInlineCompletion extends EditorAction {
 	public async run(accessor: ServicesAccessor, editor: ICodeEditor): Promise<void> {
 		const controller = InlineCompletionsController.getInFocusedEditorOrParent(accessor);
 		if (controller) {
-			controller.model.get()?.accept(controller.editor);
+			await controller.model.get()?.accept(controller.editor);
 			controller.editor.focus();
 		}
 	}
@@ -273,6 +273,7 @@ export class JumpToNextInlineEdit extends EditorAction {
 	public async run(accessor: ServicesAccessor, editor: ICodeEditor): Promise<void> {
 		const controller = InlineCompletionsController.get(editor);
 		if (controller) {
+			// For inline edits, just jump
 			controller.jump();
 		}
 	}

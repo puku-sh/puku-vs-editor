@@ -15,10 +15,9 @@ export class CommentCompletionFlow {
 	) { }
 
 	/**
-	 * Check if current position is after a comment (Copilot-style: minimal heuristics, trust the model)
+	 * Check if current position is after a comment (Cursor-style: trigger at end of comment line or next line)
 	 */
 	isCommentBasedCompletion(document: vscode.TextDocument, position: vscode.Position): boolean {
-		// Copilot approach: Just check if we're near a comment, let the model handle the rest
 		const currentLine = document.lineAt(position.line);
 		const lineText = currentLine.text;
 
@@ -31,17 +30,18 @@ export class CommentCompletionFlow {
 		const trimmedLine = lineText.trim();
 		const textBeforeCursor = lineText.substring(0, position.character).trim();
 
-		// Only trigger if:
-		// 1. Previous line is a comment AND current line is empty/whitespace
-		// 2. Current line is empty and we're checking context
-		if (trimmedLine.length === 0 && position.line > 0) {
-			// Check if previous line is a comment
-			const prevLine = document.lineAt(position.line - 1).text.trim();
-			return commentPattern.test(prevLine);
-		}
+		// Trigger Case 1: At end of comment line (Cursor-style)
+		// Example: "// add function|" where | is cursor
+		const atEndOfComment = commentPattern.test(textBeforeCursor) &&
+			position.character >= lineText.trimEnd().length;
 
-		// Don't trigger while user is still typing the comment
-		return false;
+		// Trigger Case 2: On empty line after comment (existing behavior)
+		// Example: "// add function\n|" where | is cursor on next line
+		const afterCommentLine = trimmedLine.length === 0 &&
+			position.line > 0 &&
+			commentPattern.test(document.lineAt(position.line - 1).text.trim());
+
+		return atEndOfComment || afterCommentLine;
 	}
 
 	/**
