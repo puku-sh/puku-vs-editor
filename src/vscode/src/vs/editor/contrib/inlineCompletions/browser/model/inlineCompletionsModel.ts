@@ -930,8 +930,8 @@ export class InlineCompletionsModel extends Disposable {
 				editor.edit(edit, this._getMetadata(completion, this.textModel.getLanguageId()));
 
 				if (completion.hint === undefined) {
-					// do not move the cursor when the completion is displayed in a different location
-					editor.setSelections(state.kind === 'inlineEdit' ? selections.slice(-1) : selections, 'inlineCompletionAccept');
+					// Move cursor to end of completion (last selection only)
+					editor.setSelections(selections.slice(-1), 'inlineCompletionAccept');
 				}
 
 				if (state.kind === 'inlineEdit' && !this._accessibilityService.isMotionReduced()) {
