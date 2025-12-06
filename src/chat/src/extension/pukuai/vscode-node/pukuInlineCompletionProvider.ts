@@ -16,6 +16,7 @@ import { ImportContextFlow } from './flows/importContext';
 import { SemanticSearchFlow } from './flows/semanticSearch';
 import { isInsideComment } from './helpers/commentDetection';
 import { PositionValidator } from './helpers/positionValidation';
+import { IPukuFimProvider } from './pukuInlineEditModel';
 
 interface CompletionResponse {
 	id: string;
@@ -135,8 +136,9 @@ class SpeculativeRequestCache {
  * - Just prefix/suffix to FIM endpoint
  * - Relies entirely on model's 256k context intelligence
  * - Speculative request cache (stores FUNCTIONS, not results) like Copilot
+ * - Implements IPukuFimProvider for unified provider architecture
  */
-export class PukuInlineCompletionProvider extends Disposable implements vscode.InlineCompletionItemProvider {
+export class PukuInlineCompletionProvider extends Disposable implements vscode.InlineCompletionItemProvider, IPukuFimProvider {
 	private _lastRequestTime = 0;
 	private _enabled = true;
 	private _requestId = 0;
@@ -206,6 +208,30 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		return cache;
 	}
 
+	/**
+	 * Public API for unified provider - implements IPukuFimProvider
+	 * Returns a single completion item or null
+	 */
+	async getFimCompletion(
+		document: vscode.TextDocument,
+		position: vscode.Position,
+		context: vscode.InlineCompletionContext,
+		token: vscode.CancellationToken
+	): Promise<vscode.InlineCompletionItem | null> {
+		console.log('[PukuFIM] ⚡ getFimCompletion called');
+		const result = await this.provideInlineCompletionItems(document, position, context, token);
+		console.log('[PukuFIM] ⚡ provideInlineCompletionItems returned:', result ? (Array.isArray(result) ? `Array(${result.length})` : 'InlineCompletionList') : 'null');
+
+		if (!result) {
+			return null;
+		}
+		if (Array.isArray(result)) {
+			return result.length > 0 ? result[0] : null;
+		}
+		// InlineCompletionList
+		return result.items && result.items.length > 0 ? result.items[0] : null;
+	}
+
 	async provideInlineCompletionItems(
 		document: vscode.TextDocument,
 		position: vscode.Position,
@@ -213,20 +239,22 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		token: vscode.CancellationToken
 	): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
 		const reqId = ++this._requestId;
-		console.log(`[PukuInlineCompletion][${reqId}] provideInlineCompletionItems called for ${document.languageId}`);
+		console.log(`[PukuInlineCompletion][${reqId}] ⚡ provideInlineCompletionItems called at ${document.fileName}:${position.line}:${position.character}`);
 
 		// Check if enabled
 		if (!this._enabled) {
-			console.log(`[PukuInlineCompletion][${reqId}] Provider disabled`);
+			console.log(`[PukuInlineCompletion][${reqId}] ❌ Provider disabled`);
 			return null;
 		}
+		console.log(`[PukuInlineCompletion][${reqId}] ✓ Provider enabled`);
 
 		// Check authentication - don't call any API if not logged in
 		const authToken = await this._authService.getToken();
 		if (!authToken) {
-			console.log(`[PukuInlineCompletion][${reqId}] Not authenticated - skipping completion`);
+			console.log(`[PukuInlineCompletion][${reqId}] ❌ Not authenticated - skipping completion`);
 			return null;
 		}
+		console.log(`[PukuInlineCompletion][${reqId}] ✓ Authenticated`);
 
 		// POSITION VALIDATION: Clear stale position if cursor moved
 		const fileUri = document.uri.toString();
@@ -239,10 +267,9 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		const suffix = document.getText(new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end));
 		const cached = completionsCache.findAll(prefix, suffix);
 		if (cached.length > 0) {
-			console.log(`[PukuInlineCompletion][${reqId}] Trie cache HIT for ${fileUri} - returning ${cached[0].length} chars (NO API CALL!)`);
 			// Store position for validation
 			this._positionValidator.update(fileUri, position);
-			return [this._createCompletionItem(cached[0], new vscode.Range(position, position), position)];
+			return [this._createCompletionItem(cached[0], new vscode.Range(position, position), position, document.uri)];
 		}
 
 		// Generate completion ID early (needed for cache and storing next request)
@@ -251,9 +278,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		// Check speculative cache FIRST (before debounce) - Copilot-style prefetching
 		// This happens when user accepted the previous completion
 		const lastCompletionId = this._lastCompletionIdByFile.get(fileUri);
-		console.log(`[PukuInlineCompletion][${reqId}] Cache check for ${fileUri}: lastCompletionId=${lastCompletionId}, has=${lastCompletionId ? this._speculativeCache.has(lastCompletionId) : false}`);
 		if (lastCompletionId && this._speculativeCache.has(lastCompletionId)) {
-			console.log(`[PukuInlineCompletion][${reqId}] Speculative cache HIT for ${lastCompletionId}! Bypassing debounce...`);
 
 			// Set lock to prevent concurrent requests while cache executes
 			this._requestInFlight = true;
@@ -271,39 +296,51 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 				this._lastFileUri = fileUri;
 				this._lastPrefix = prefix;
 
-				// Store next speculative request for when user types after accepting this one
-				const suffix = document.getText(new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end));
-				const nextPrefix = prefix + completion;
-				const nextSuffix = suffix;
-
+				// Store speculative request - compute FRESH state at execution time (not prediction)
+				// This fixes stale document state causing empty responses (Issue #45)
 				const speculativeRequestFn = async (): Promise<string | null> => {
-					console.log(`[PukuInlineCompletion][${reqId}] Executing speculative prefetch for completion ${completionId}...`);
-					const importedFiles = await this._importFlow.getImportedFilesContent(document, 3, 500);
+					// Get FRESH document state at execution time
+					const editor = vscode.window.activeTextEditor;
+					if (!editor || editor.document.uri.toString() !== document.uri.toString()) {
+						return null;
+					}
+
+					const currentDoc = editor.document;
+					const currentPos = editor.selection.active;
+
+					// Extract FRESH prefix/suffix from current state
+					const freshPrefix = currentDoc.getText(new vscode.Range(new vscode.Position(0, 0), currentPos));
+					const freshSuffix = currentDoc.getText(new vscode.Range(currentPos, currentDoc.lineAt(currentDoc.lineCount - 1).range.end));
+
+					// Get FRESH import context
+					const importedFiles = await this._importFlow.getImportedFilesContent(currentDoc, 3, 500);
+
+					// Get FRESH semantic context
 					let semanticFiles: Array<{ filepath: string; content: string }> = [];
 					if (this._indexingService.isAvailable()) {
 						try {
-							const currentLine = document.lineAt(position.line).text.trim();
+							const currentLine = currentDoc.lineAt(currentPos.line).text.trim();
 							if (currentLine.length > 3) {
-								const searchResults = await this._indexingService.search(currentLine, 2, document.languageId);
+								const searchResults = await this._indexingService.search(currentLine, 2, currentDoc.languageId);
 								semanticFiles = searchResults
 									.filter(result => {
-										if (result.uri.fsPath !== document.uri.fsPath) return true;
-										const cursorInChunk = position.line >= result.lineStart && position.line <= result.lineEnd;
+										if (result.uri.fsPath !== currentDoc.uri.fsPath) return true;
+										const cursorInChunk = currentPos.line >= result.lineStart && currentPos.line <= result.lineEnd;
 										return !cursorInChunk;
 									})
 									.map(result => ({ filepath: result.uri.fsPath, content: result.content }));
 							}
 						} catch (err) {
-							console.log(`[PukuInlineCompletion] Speculative search failed: ${err}`);
+							// Semantic search failed silently
 						}
 					}
+
 					const openFiles = [...importedFiles, ...semanticFiles];
-					return await this._fetchContextAwareCompletion(nextPrefix, nextSuffix, openFiles, document.languageId, new vscode.CancellationTokenSource().token);
+					return await this._fetchContextAwareCompletion(freshPrefix, freshSuffix, openFiles, currentDoc.languageId, new vscode.CancellationTokenSource().token);
 				};
 
 				this._speculativeCache.set(completionId, speculativeRequestFn);
 				this._lastCompletionIdByFile.set(fileUri, completionId);
-				console.log(`[PukuInlineCompletion][${reqId}] Cache HIT - Stored next speculative request for completion ${completionId}`);
 
 				// Store completion in Radix Trie cache for future lookups
 				completionsCache.append(prefix, suffix, completion);
@@ -311,23 +348,21 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 				// Store position for validation
 				this._positionValidator.update(fileUri, position);
 
-				return [this._createCompletionItem(completion, new vscode.Range(position, position), position)];
+				return [this._createCompletionItem(completion, new vscode.Range(position, position), position, document.uri)];
 			}
 		}
 
 		// Cache MISS - Check debounce (prefix already extracted above)
-		console.log(`[PukuInlineCompletion][${reqId}] Speculative cache MISS - Checking debounce...`);
-
 		// Debounce - wait between requests (only for cache misses)
 		// Skip debounce when switching files (instant completions on file switch)
 		const now = Date.now();
 		const fileChanged = this._lastFileUri !== fileUri;
 		if (!fileChanged && now - this._lastRequestTime < this._debounceMs) {
-			console.log(`[PukuInlineCompletion][${reqId}] Debounced`);
+			console.log(`[PukuInlineCompletion][${reqId}] ❌ Debounce: ${now - this._lastRequestTime}ms < ${this._debounceMs}ms`);
 			return null;
 		}
+		console.log(`[PukuInlineCompletion][${reqId}] ✓ Passed debounce check (fileChanged=${fileChanged}, timeSinceLastRequest=${now - this._lastRequestTime}ms)`);
 		if (fileChanged) {
-			console.log(`[PukuInlineCompletion][${reqId}] File changed from ${this._lastFileUri} to ${fileUri} - skipping debounce`);
 			// POSITION VALIDATION: Clear state for old file to prevent memory leak
 			if (this._lastFileUri) {
 				this._positionValidator.clear(this._lastFileUri);
@@ -336,42 +371,43 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 
 		// Block concurrent requests - only one API call at a time
 		if (this._requestInFlight) {
-			console.log(`[PukuInlineCompletion][${reqId}] Request already in flight - skipping`);
+			console.log(`[PukuInlineCompletion][${reqId}] ❌ Request already in flight`);
 			return null;
 		}
+		console.log(`[PukuInlineCompletion][${reqId}] ✓ No request in flight`);
+
+		// Skip API calls on backspace (prefix getting shorter)
+		// Radix Trie cache will handle showing previous completions
+		if (this._lastPrefix && prefix.length < this._lastPrefix.length) {
+			console.log(`[PukuInlineCompletion][${reqId}] ❌ Backspace detected (${this._lastPrefix.length} -> ${prefix.length})`);
+			return null;
+		}
+		console.log(`[PukuInlineCompletion][${reqId}] ✓ Not backspacing`);
 
 		this._lastRequestTime = now;
 		this._lastFileUri = fileUri;
 		this._lastPrefix = prefix;
 
-		console.log(`[PukuInlineCompletion][${reqId}] Prefix length: ${prefix.length}, suffix length: ${suffix.length}`);
-
 		// Check for comment-based completion FIRST (Copilot-style)
-		const isCommentCompletion = this._commentFlow.isCommentBasedCompletion(document, position);
+		const isCommentCompletion = await this._commentFlow.isCommentBasedCompletion(document, position);
 		let commentIntent: string | null = null;
 
 		if (isCommentCompletion) {
-			commentIntent = this._commentFlow.extractCommentIntent(document, position);
-			if (commentIntent) {
-				console.log(`[PukuInlineCompletion][${reqId}] 💬 Comment-based completion detected: "${commentIntent}"`);
-			}
+			commentIntent = await this._commentFlow.extractCommentIntent(document, position);
 		}
 
 		// Skip completions if typing INSIDE a comment (mid-comment)
-		// BUT allow if this is a comment-based completion (after comment ends)
+		// UNLESS this is a comment-based completion (intent-driven code generation)
 		// Use Tree-sitter for accurate comment detection (not regex)
-		if (await isInsideComment(document, position)) {
-			if (!isCommentCompletion) {
-				console.log(`[PukuInlineCompletion][${reqId}] Cursor inside comment - skipping completion`);
-				return null;
-			}
-			console.log(`[PukuInlineCompletion][${reqId}] Inside comment but allowing comment-based completion`);
+		if (!isCommentCompletion && await isInsideComment(document, position)) {
+			console.log(`[PukuInlineCompletion][${reqId}] ❌ Inside comment (not comment-based completion)`);
+			return null;
 		}
+		console.log(`[PukuInlineCompletion][${reqId}] ✓ Not inside comment or is comment-based completion`);
 
 		// Gather context FIRST (before prefix check) - needed for context-aware minimum
 		// 1. Get import-based context
 		const importedFiles = await this._importFlow.getImportedFilesContent(document, 3, 500);
-		console.log(`[PukuInlineCompletion][${reqId}] Import context: ${importedFiles.length} files`);
 
 		// 2. Get semantic search context
 		let semanticFiles: Array<{ filepath: string; content: string }> = [];
@@ -386,14 +422,12 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 					if (commentIntent) {
 						// Comment-based: search for similar functionality (return full implementations)
 						semanticFiles = await this._commentFlow.getCommentContext(commentIntent, document, 3);
-						console.log(`[PukuInlineCompletion][${reqId}] 💬 Comment context: ${semanticFiles.length} examples`);
 					} else {
 						// Code-based: search for similar code with adaptive scaling (signatures only)
 						semanticFiles = await this._semanticSearchFlow.searchSimilarCode(searchQuery, document.languageId, document.uri);
-						console.log(`[PukuInlineCompletion][${reqId}] Found ${semanticFiles.length} similar code snippets for ${document.languageId} (adaptive scaling)`);
 					}
 				} catch (searchError) {
-					console.log(`[PukuInlineCompletion][${reqId}] Semantic search failed: ${searchError}`);
+					// Semantic search failed silently
 				}
 			}
 		}
@@ -425,36 +459,24 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		// Apply context-aware minimum prefix check
 		// BUT skip for comment-based completions (intent from comment, not prefix)
 		if (!commentIntent && prefix.trim().length < minPrefix) {
-			console.log(`[PukuInlineCompletion][${reqId}] Prefix too short: ${prefix.trim().length} (min: ${minPrefix}, score: ${contextScore}, context: ${JSON.stringify(contextStrength)})`);
+			console.log(`[PukuInlineCompletion][${reqId}] ❌ Prefix too short: ${prefix.trim().length} < ${minPrefix} (contextScore=${contextScore}, hasStrongContext=${hasStrongContext})`);
 			return null;
 		}
+		console.log(`[PukuInlineCompletion][${reqId}] ✓ Prefix length OK: ${prefix.trim().length} >= ${minPrefix} (contextScore=${contextScore})`);
 
-		// Log context-driven suggestions (prefix < 2 but allowed due to context)
-		if (prefix.trim().length < 2 && hasStrongContext) {
-			console.log(`[PukuInlineCompletion][${reqId}] 🎯 Context-driven suggestion! (prefix=${prefix.trim().length}, score=${contextScore})`);
-		}
-
-		// Log comment-based completions with empty prefix
-		if (commentIntent && prefix.trim().length < minPrefix) {
-			console.log(`[PukuInlineCompletion][${reqId}] 💬 Allowing comment-based completion with empty prefix (intent: "${commentIntent}")`);
-		}
 
 		// 4. Check for range-based replacements (two-stage flow)
-		console.log(`[PukuInlineCompletion][${reqId}] Checking Tree-sitter heuristic for refactoring patterns...`);
 		const shouldCheckRange = await this._refactoringFlow.shouldCheckForRefactoring(document, position);
 		let replaceRange: vscode.Range | undefined;
 		let completionPrefix = prefix;
 		let completionSuffix = suffix;
 
 		if (shouldCheckRange) {
-			console.log(`[PukuInlineCompletion][${reqId}] Tree-sitter pattern detected - calling range detection API...`);
-
 			// Stage 1: Call Qwen for range detection (only if pattern detected)
 			const openFiles = [...importedFiles, ...semanticFiles];
 			const detection = await this._refactoringFlow.detectEditRange(prefix, suffix, document.languageId, openFiles);
 
 			if (detection?.shouldReplace && detection.confidence > 0.75) {
-				console.log(`[PukuInlineCompletion][${reqId}] Range replacement detected: ${detection.reason} (confidence: ${detection.confidence})`);
 				this._logService.info(`[RangeDetection] Replacement suggested: ${detection.reason} (confidence: ${detection.confidence})`);
 
 				// Calculate replacement range in document
@@ -470,13 +492,11 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 				const lines = prefix.split('\n');
 				completionPrefix = lines.slice(0, -detection.replaceRange!.startLine + 1).join('\n');
 				// Keep suffix as is (code after cursor)
-
-				console.log(`[PukuInlineCompletion][${reqId}] Adjusted prefix length: ${completionPrefix.length}, replace range: lines ${startLine}-${endLine}`);
 			}
 		}
 
 		// 5. Fetch completion from API
-		console.log(`[PukuInlineCompletion][${reqId}] Fetching completion from API...`);
+		console.log(`[PukuInlineCompletion][${reqId}] 🌐 Requesting completion from API...`);
 		this._logService.debug(`[PukuInlineCompletion][${reqId}] Requesting completion at ${document.fileName}:${position.line}`);
 
 		// Mark request as in flight
@@ -486,15 +506,22 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		try {
 			// 6. Combine context: imports FIRST, then semantic search
 			const openFiles = [...importedFiles, ...semanticFiles];
-			console.log(`[PukuInlineCompletion][${reqId}] Total context: ${openFiles.length} files (${importedFiles.length} imports, ${semanticFiles.length} semantic)`);
+			console.log(`[PukuInlineCompletion][${reqId}] Context: ${importedFiles.length} imports + ${semanticFiles.length} semantic files`);
 
 			// 7. Call FIM with potentially adjusted context
 			completion = await this._fetchContextAwareCompletion(completionPrefix, completionSuffix, openFiles, document.languageId, token);
 
-			if (!completion || token.isCancellationRequested) {
+			if (!completion) {
+				console.log(`[PukuInlineCompletion][${reqId}] ❌ API returned null/empty completion`);
 				return null;
 			}
+			if (token.isCancellationRequested) {
+				console.log(`[PukuInlineCompletion][${reqId}] ❌ Cancelled after API call`);
+				return null;
+			}
+			console.log(`[PukuInlineCompletion][${reqId}] ✅ API returned completion: ${completion.substring(0, 50)}...`);
 		} catch (error) {
+			console.error(`[PukuInlineCompletion][${reqId}] ❌ API error: ${error}`);
 			this._logService.error(`[PukuInlineCompletion][${reqId}] Error: ${error}`);
 			return null;
 		} finally {
@@ -502,34 +529,36 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			this._requestInFlight = false;
 		}
 
-		// Store speculative request function (Copilot-style)
-		// This creates a closure that will fetch the NEXT completion
-		// when the user types after accepting this one
-		const nextPrefix = prefix + completion;
-		const nextSuffix = suffix;
-
-		// Capture context for the speculative request
+		// Store speculative request - compute FRESH state at execution time (not prediction)
+		// This fixes stale document state causing empty responses (Issue #45)
 		const speculativeRequestFn = async (): Promise<string | null> => {
-			console.log(`[PukuInlineCompletion][${reqId}] Executing speculative prefetch for completion ${completionId}...`);
+			// Get FRESH document state at execution time
+			const editor = vscode.window.activeTextEditor;
+			if (!editor || editor.document.uri.toString() !== document.uri.toString()) {
+				return null;
+			}
 
-			// Get import context
-			const importedFiles = await this._importFlow.getImportedFilesContent(document, 3, 500);
+			const currentDoc = editor.document;
+			const currentPos = editor.selection.active;
 
-			// Re-run semantic search for the new context
+			// Extract FRESH prefix/suffix from current state
+			const freshPrefix = currentDoc.getText(new vscode.Range(new vscode.Position(0, 0), currentPos));
+			const freshSuffix = currentDoc.getText(new vscode.Range(currentPos, currentDoc.lineAt(currentDoc.lineCount - 1).range.end));
+
+			// Get FRESH import context
+			const importedFiles = await this._importFlow.getImportedFilesContent(currentDoc, 3, 500);
+
+			// Get FRESH semantic context
 			let semanticFiles: Array<{ filepath: string; content: string }> = [];
 			if (this._indexingService.isAvailable()) {
 				try {
-					const currentLine = document.lineAt(position.line).text.trim();
+					const currentLine = currentDoc.lineAt(currentPos.line).text.trim();
 					if (currentLine.length > 3) {
-						const searchResults = await this._indexingService.search(currentLine, 2, document.languageId);
+						const searchResults = await this._indexingService.search(currentLine, 2, currentDoc.languageId);
 						semanticFiles = searchResults
 							.filter(result => {
-								// Different file - always include
-								if (result.uri.fsPath !== document.uri.fsPath) {
-									return true;
-								}
-								// Same file - exclude if chunk contains cursor
-								const cursorInChunk = position.line >= result.lineStart && position.line <= result.lineEnd;
+								if (result.uri.fsPath !== currentDoc.uri.fsPath) return true;
+								const cursorInChunk = currentPos.line >= result.lineStart && currentPos.line <= result.lineEnd;
 								return !cursorInChunk;
 							})
 							.map(result => ({
@@ -538,17 +567,16 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 							}));
 					}
 				} catch (err) {
-					console.log(`[PukuInlineCompletion] Speculative search failed: ${err}`);
+					// Semantic search failed silently
 				}
 			}
 
 			const openFiles = [...importedFiles, ...semanticFiles];
-			return await this._fetchContextAwareCompletion(nextPrefix, nextSuffix, openFiles, document.languageId, new vscode.CancellationTokenSource().token);
+			return await this._fetchContextAwareCompletion(freshPrefix, freshSuffix, openFiles, currentDoc.languageId, new vscode.CancellationTokenSource().token);
 		};
 
 		this._speculativeCache.set(completionId, speculativeRequestFn);
 		this._lastCompletionIdByFile.set(fileUri, completionId);
-		console.log(`[PukuInlineCompletion][${reqId}] Stored speculative request for completion ${completionId}`);
 
 		// Store completion in Radix Trie cache for future lookups
 		completionsCache.append(prefix, suffix, completion);
@@ -556,13 +584,25 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		// Store position for validation
 		this._positionValidator.update(fileUri, position);
 
-		// Return completion with range if applicable (range-based replacement)
+		// Calculate replacement range
+		// If there's a suffix (text after cursor), replace from cursor to end of line
+		// This prevents duplicate text when accepting completions
+		let finalRange: vscode.Range;
 		if (replaceRange) {
-			console.log(`[PukuInlineCompletion][${reqId}] Returning range-based replacement`);
-			return [this._createCompletionItem(completion, replaceRange, position)];
+			// Use explicit replace range (for refactoring patterns)
+			finalRange = replaceRange;
+		} else if (suffix && suffix.trim().length > 0) {
+			// Replace from cursor to end of line (avoid duplicates)
+			const lineEndPos = document.lineAt(position.line).range.end;
+			finalRange = new vscode.Range(position, lineEndPos);
 		} else {
-			return [this._createCompletionItem(completion, new vscode.Range(position, position), position)];
+			// Insert at cursor (no suffix)
+			finalRange = new vscode.Range(position, position);
 		}
+
+		const result = [this._createCompletionItem(completion, finalRange, position, document.uri)];
+		console.log(`[PukuInlineCompletion][${reqId}] ✅ Returning completion item`);
+		return result;
 	}
 
 	/**
@@ -631,8 +671,6 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		const config = this._configService.getConfig();
 		const url = config.endpoints.fim;
 		const model = config.models.fim;
-		console.log(`[PukuInlineCompletion] Calling ${url} with language=${languageId}, model=${model}`);
-
 		const authToken = await this._authService.getToken();
 		const headers: Record<string, string> = {
 			'Content-Type': 'application/json',
@@ -652,21 +690,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			stream: false,
 		};
 
-		// Log detailed request with context file previews
-		console.log(`[PukuInlineCompletion] Full Request Details:`, JSON.stringify({
-			endpoint: url,
-			language: languageId,
-			promptLength: prefix.length,
-			suffixLength: suffix.length,
-			contextFiles: openFiles.map(f => ({
-				filepath: f.filepath,
-				contentLength: f.content.length,
-				contentPreview: f.content.substring(0, 150) + '...'
-			})),
-			maxTokens: 100,
-			temperature: 0.1
-		}, null, 2));
-
+		console.log(`[FetchCompletion] 📤 Calling API: ${url} (language=${languageId})`);
 		const response = await this._fetcherService.fetch(url, {
 			method: 'POST',
 			headers,
@@ -674,42 +698,68 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		});
 
 		if (!response.ok) {
+			console.error(`[FetchCompletion] ❌ API error: ${response.status}`);
 			throw new Error(`Context-aware completion failed: ${response.status}`);
 		}
 
 		if (token.isCancellationRequested) {
+			console.log(`[FetchCompletion] ❌ Cancelled before parsing response`);
 			return null;
 		}
 
 		const data = await response.json() as CompletionResponse;
-		console.log(`[PukuInlineCompletion] Response data:`, JSON.stringify(data, null, 2));
+		console.log(`[FetchCompletion] 📥 API response: ${JSON.stringify(data).substring(0, 200)}...`);
 
 		if (data.choices && data.choices.length > 0) {
 			const text = data.choices[0].text || '';
-			console.log(`[PukuInlineCompletion] Raw completion text (length=${text.length}):`, JSON.stringify(text));
 			const trimmed = text.trim();
-			console.log(`[PukuInlineCompletion] Trimmed completion text (length=${trimmed.length}):`, JSON.stringify(trimmed));
+			console.log(`[FetchCompletion] Raw text length: ${text.length}, trimmed: ${trimmed.length}`);
 
 			if (!trimmed) {
-				console.log(`[PukuInlineCompletion] Completion is empty after trim - returning null`);
+				console.log(`[FetchCompletion] ❌ Empty completion after trim`);
 				return null;
 			}
 
 			// Check for duplicates: if completion starts with code that's already in prefix
-			// Extract last 5 lines of prefix to check for duplication
+			// Extract last 10 lines of prefix to check for duplication
 			const prefixLines = prefix.split('\n');
-			const lastLines = prefixLines.slice(-5).join('\n');
-			const completionStart = trimmed.split('\n')[0]; // First line of completion
+			const lastLines = prefixLines.slice(-10).join('\n');
+			const completionLines = trimmed.split('\n');
+			console.log(`[FetchCompletion] Duplicate check: ${completionLines.length} completion lines vs last ${prefixLines.slice(-10).length} prefix lines`);
 
-			if (lastLines.includes(completionStart) && completionStart.length > 5) {
-				console.log(`[PukuInlineCompletion] Duplicate detected: "${completionStart}" already in prefix - returning null`);
-				return null;
+			// Check if ANY line of completion (not just first) is duplicated in recent prefix
+			for (const line of completionLines) {
+				const cleanLine = line.trim();
+				if (cleanLine.length > 10 && lastLines.includes(cleanLine)) {
+					console.log(`[FetchCompletion] ❌ Duplicate detected: "${cleanLine.substring(0, 50)}..."`);
+					return null; // Duplicate detected
+				}
+			}
+			console.log(`[FetchCompletion] ✓ No duplicates found`);
+
+			// Check for internal repetition (same line repeated multiple times in completion)
+			const lineFrequency = new Map<string, number>();
+			for (const line of completionLines) {
+				const cleanLine = line.trim();
+				if (cleanLine.length > 10) {
+					lineFrequency.set(cleanLine, (lineFrequency.get(cleanLine) || 0) + 1);
+				}
 			}
 
+			// If any line appears 2+ times, reject (likely model hallucination)
+			for (const [line, count] of lineFrequency) {
+				if (count >= 2) {
+					console.log(`[FetchCompletion] ❌ Repetition detected: "${line.substring(0, 50)}..." appears ${count} times`);
+					return null; // Repetition detected
+				}
+			}
+			console.log(`[FetchCompletion] ✓ No internal repetition`);
+
+			console.log(`[FetchCompletion] ✅ Returning completion: "${trimmed.substring(0, 50)}..."`);
 			return trimmed;
 		}
 
-		console.log(`[PukuInlineCompletion] No choices in response - returning null`);
+		console.log(`[FetchCompletion] ❌ No choices in API response`);
 		return null;
 	}
 
@@ -719,10 +769,12 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 	private _createCompletionItem(
 		completion: string,
 		range: vscode.Range,
-		position: vscode.Position
+		position: vscode.Position,
+		documentUri: vscode.Uri
 	): vscode.InlineCompletionItem {
-		// Simply return the completion as ghost text
-		// TAB to accept will automatically jump to end via modified commands in VS Code
+		// Simply return ghost text completion
+		// TAB to accept will jump to end automatically (cursor movement handled by VS Code)
+		// Note: displayLocation labels only work with inline edits (isInlineEdit: true), not ghost text
 		return new vscode.InlineCompletionItem(completion, range);
 	}
 
