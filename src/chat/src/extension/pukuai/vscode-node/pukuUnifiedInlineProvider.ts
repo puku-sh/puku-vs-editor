@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------------------------
  *  Puku Editor - AI-powered code editor
  *  Copyright (c) Puku AI. All rights reserved.
- *  Unified inline completion provider - coordinates diagnostics and FIM
+ *  Unified inline completion provider - coordinates diagnostics and FIM (Racing Architecture)
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
@@ -9,33 +9,34 @@ import { ILogService } from '../../../platform/log/common/logService';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
 import { PukuInlineEditModel } from './pukuInlineEditModel';
-import { PukuInlineCompletionProvider } from './pukuInlineCompletionProvider';
-import { PukuDiagnosticsProvider } from './pukuDiagnosticsProvider';
+import { PukuFimProvider } from './providers/pukuFimProvider';
+import { PukuDiagnosticsNextEditProvider } from './providers/pukuDiagnosticsNextEditProvider';
 
 /**
  * Unified provider that coordinates between diagnostics and FIM providers
- * Similar to Copilot's InlineCompletionProviderImpl architecture
+ * Now uses Copilot-style racing architecture with IPukuNextEditProvider
  *
  * Architecture:
  * - Single provider registered with VS Code
- * - Internal model coordinates between diagnostics and FIM
- * - Priority: Diagnostics first, then FIM fallback
+ * - Internal model coordinates racing between FIM and diagnostics
+ * - FIM starts immediately, diagnostics with delay (Copilot pattern)
+ * - Priority: FIM > Diagnostics (first wins)
  */
 export class PukuUnifiedInlineProvider extends Disposable implements vscode.InlineCompletionItemProvider {
 	private readonly model: PukuInlineEditModel;
 
 	constructor(
-		private readonly fimProvider: PukuInlineCompletionProvider,
-		private readonly diagnosticsProvider: PukuDiagnosticsProvider | undefined,
+		private readonly fimProvider: PukuFimProvider,
+		private readonly diagnosticsProvider: PukuDiagnosticsNextEditProvider | undefined,
 		private readonly logService: ILogService,
 		private readonly instantiationService: IInstantiationService
 	) {
 		super();
 
-		console.log('[PukuUnifiedProvider] Constructor called');
-		this.logService.info('[PukuUnifiedProvider] Constructor called');
+		console.log('[PukuUnifiedProvider] Constructor called (racing architecture)');
+		this.logService.info('[PukuUnifiedProvider] Constructor called (racing architecture)');
 
-		// Create coordinating model
+		// Create coordinating model with racing providers
 		// Don't pass logService - it's injected by instantiationService
 		this.model = this._register(
 			this.instantiationService.createInstance(
@@ -45,10 +46,8 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 			)
 		);
 
-		// Note: puku.moveDiagnosticFix command removed - obsolete (import fixes now shown directly at line 0)
-
-		console.log('[PukuUnifiedProvider] Provider initialized');
-		this.logService.info('[PukuUnifiedProvider] Provider initialized');
+		console.log('[PukuUnifiedProvider] Provider initialized with racing model');
+		this.logService.info('[PukuUnifiedProvider] Provider initialized with racing model');
 	}
 
 	async provideInlineCompletionItems(
@@ -107,6 +106,11 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 				// So we can't show label at cursor while inserting at top.
 				// Instead, show the import preview at the top of the file (line 0)
 				console.log('[PukuUnifiedProvider] Import fix - showing at top of file');
+				console.log('[PukuUnifiedProvider] Creating import completion item:', {
+					insertText: fix.newText,
+					range: `[${fix.range.start.line},${fix.range.start.character} -> ${fix.range.end.line},${fix.range.end.character}]`,
+					cursorDistance: Math.abs(fix.range.start.line - position.line)
+				});
 
 				const item: vscode.InlineCompletionItem = {
 					insertText: fix.newText,
@@ -114,6 +118,7 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 					// Regular inline completion (not inline edit)
 					// Will show grey preview text at line 0
 				};
+				console.log('[PukuUnifiedProvider] ✅ Returning import completion item to VS Code');
 				return [item];
 			} else {
 				// For non-import fixes: Use isInlineEdit for proper diff view

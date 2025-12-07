@@ -60,7 +60,7 @@ export const DEFAULT_PUKU_CONFIG: PukuConfig = {
 		embeddings: 'nomic-ai/nomic-embed-text',
 	},
 	performance: {
-		debounceMs: 800,
+		debounceMs: 200,
 		cacheTTL: 300000, // 5 minutes
 		maxConcurrentJobs: 5,
 		chunksPerJob: 20,

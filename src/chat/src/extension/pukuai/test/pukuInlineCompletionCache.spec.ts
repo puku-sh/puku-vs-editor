@@ -193,7 +193,7 @@ describe('Speculative Caching Flow', () => {
 	it('cache HIT should bypass debounce', async () => {
 		const cache = new SpeculativeRequestCache();
 		let apiCallCount = 0;
-		const debounceMs = 800; // From server config (DEFAULT_PUKU_CONFIG.performance.debounceMs)
+		const debounceMs = 200; // From server config (DEFAULT_PUKU_CONFIG.performance.debounceMs)
 
 		// Simulate first request (cache MISS)
 		const completionId1 = 'puku-completion-1';
@@ -231,7 +231,7 @@ describe('Speculative Caching Flow', () => {
 	it('cache MISS should apply debounce', async () => {
 		const cache = new SpeculativeRequestCache();
 		let apiCallCount = 0;
-		const debounceMs = 800; // From server config (DEFAULT_PUKU_CONFIG.performance.debounceMs)
+		const debounceMs = 200; // From server config (DEFAULT_PUKU_CONFIG.performance.debounceMs)
 		const lastRequestTime = Date.now();
 
 		// Simulate first request
@@ -326,7 +326,7 @@ describe('Cache-First Request Flow', () => {
 		const executionOrder: string[] = [];
 		const cache = new SpeculativeRequestCache();
 		const lastRequestTime = Date.now() - 1000; // Old timestamp
-		const debounceMs = 800; // From server config (DEFAULT_PUKU_CONFIG.performance.debounceMs)
+		const debounceMs = 200; // From server config (DEFAULT_PUKU_CONFIG.performance.debounceMs)
 
 		// 1. Auth check
 		executionOrder.push('auth-check');
