@@ -1,3 +1,37 @@
+## 0.37.2 (2025-12-08)
+
+### Bug Fixes
+
+#### Fixed Radix Trie Cache Not Working Due to Backspace Detection
+
+**Problem:** The Radix Trie cache had a 0% hit rate despite successfully storing completions. Analysis revealed that backspace detection code was blocking cache lookups when the user pressed backspace, preventing the cache from being utilized.
+
+**Root Cause:** Early return on backspace (lines 319-324 in `pukuFimProvider.ts`) prevented the code flow from reaching the Radix Trie cache lookup logic.
+
+```typescript
+// BEFORE: Blocked backspace from using cache
+if (!fileChanged && this._lastPrefix && prefix.length < this._lastPrefix.length) {
+    return null; // ❌ Never reaches cache check
+}
+```
+
+**Solution:** Removed backspace detection code entirely to match Copilot's architecture:
+- Forward typing: Uses "typing as suggested" for instant completions
+- Backspace & other edits: Fall through to Radix Trie cache lookup
+- No explicit blocking on any edit pattern
+
+**Impact:**
+- **Before v0.37.2:** Backspace → No completion (blocked)
+- **After v0.37.2:** Backspace → Cache HIT (instant completion from cache)
+
+**Performance:**
+- Cache hit rate improved from 0% to working as expected
+- Reduced API calls for common backspace scenarios
+- Instant completions when cache contains matching prefix
+
+**Files Changed:**
+- `src/extension/pukuai/vscode-node/providers/pukuFimProvider.ts`
+
 ## 0.37.0 (2025-11-30)
 
 ### Features
