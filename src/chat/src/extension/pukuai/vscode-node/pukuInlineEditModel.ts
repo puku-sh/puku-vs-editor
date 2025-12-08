@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import { ILogService } from '../../../platform/log/common/logService';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IPukuNextEditProvider, PukuFimResult, PukuDiagnosticsResult, PukuNextEditResult, DocumentId } from '../common/nextEditProvider';
+import { IPukuConfigService } from '../../pukuIndexing/common/pukuConfig';
 
 /**
  * Result type discriminator (kept for backwards compatibility)
@@ -52,7 +53,8 @@ export class PukuInlineEditModel extends Disposable {
 	constructor(
 		private readonly fimProvider: IPukuNextEditProvider<PukuFimResult>,
 		private readonly diagnosticsProvider: IPukuNextEditProvider<PukuDiagnosticsResult> | undefined,
-		@ILogService private readonly logService: ILogService
+		@ILogService private readonly logService: ILogService,
+		@IPukuConfigService private readonly configService: IPukuConfigService
 	) {
 		super();
 		console.log('[PukuInlineEditModel] Model constructor called with racing providers');
@@ -92,9 +94,10 @@ export class PukuInlineEditModel extends Disposable {
 			const fimPromise = this.fimProvider.getNextEdit(docId, context, fimCts.token);
 
 			// Start diagnostics with delay (Copilot pattern - give FIM priority)
-			// Diagnostics uses runUntilNextEdit() with 200ms delay
+			// Use config value for delay (default 200ms)
+			const delayMs = this.configService.getConfig().diagnostics.delayBeforeFixMs;
 			const diagnosticsPromise = this.diagnosticsProvider
-				? this.diagnosticsProvider.runUntilNextEdit?.(docId, context, 200, diagnosticsCts.token) ||
+				? this.diagnosticsProvider.runUntilNextEdit?.(docId, context, delayMs, diagnosticsCts.token) ||
 				  this.diagnosticsProvider.getNextEdit(docId, context, diagnosticsCts.token)
 				: Promise.resolve(null);
 

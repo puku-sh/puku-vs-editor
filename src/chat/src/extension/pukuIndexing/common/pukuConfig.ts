@@ -35,6 +35,12 @@ export interface PukuConfig {
 		readonly maxConcurrentJobs: number;
 		readonly chunksPerJob: number;
 	};
+	readonly diagnostics: {
+		readonly maxDistanceForImport: number;
+		readonly maxDistanceForAsync: number;
+		readonly maxDistanceForAny: number;
+		readonly delayBeforeFixMs: number;
+	};
 }
 
 /**
@@ -64,6 +70,12 @@ export const DEFAULT_PUKU_CONFIG: PukuConfig = {
 		cacheTTL: 300000, // 5 minutes
 		maxConcurrentJobs: 5,
 		chunksPerJob: 20,
+	},
+	diagnostics: {
+		maxDistanceForImport: 12, // GitHub Copilot uses 12
+		maxDistanceForAsync: 3, // GitHub Copilot uses 3
+		maxDistanceForAny: 5, // GitHub Copilot uses 5
+		delayBeforeFixMs: 200,
 	},
 };
 
