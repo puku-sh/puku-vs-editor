@@ -10,6 +10,7 @@ import { IPukuAuthService } from '../../../pukuIndexing/common/pukuAuth';
 import { IPukuConfigService } from '../../../pukuIndexing/common/pukuConfig';
 import { IPukuIndexingService } from '../../../pukuIndexing/node/pukuIndexingService';
 import { CompletionsCache } from '../../common/completionsCache';
+import { CurrentGhostText } from '../../common/currentGhostText';
 import { IPukuNextEditProvider, PukuFimResult, DocumentId } from '../../common/nextEditProvider';
 import { CommentCompletionFlow } from '../flows/commentCompletion';
 import { RefactoringDetectionFlow } from '../flows/refactoringDetection';
@@ -146,7 +147,13 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 	private _lastPrefix = '';
 	private _lastFileUri = ''; // Track last file to skip debounce on file switch
 	private _requestsInFlightByFile = new Map<string, boolean>(); // Per-file locks for concurrent requests
-	// Radix Trie cache for intelligent completion matching (handles typing, backspace, partial edits)
+	// CurrentGhostText cache (Layer 1) - instant forward typing through current completion
+	// File-aware: separate cache per file
+	private _currentGhostTextByFile = new Map<string, CurrentGhostText>();
+	// Store last shown completion context for CurrentGhostText population
+	// Maps requestId -> {fileUri, prefix, suffix, completionText}
+	private _pendingShownContextByRequestId = new Map<string, { fileUri: string, prefix: string, suffix: string, completionText: string }>();
+	// Radix Trie cache (Layer 2) for intelligent completion matching (handles typing, backspace, partial edits)
 	// File-aware: separate cache per file
 	private _completionsCacheByFile = new Map<string, CompletionsCache>();
 	// Flow handlers
@@ -192,6 +199,31 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 	}
 
 	/**
+	 * Get or create CurrentGhostText for a file
+	 */
+	private _getCurrentGhostText(fileUri: string): CurrentGhostText {
+		let ghostText = this._currentGhostTextByFile.get(fileUri);
+		if (!ghostText) {
+			ghostText = new CurrentGhostText();
+			this._currentGhostTextByFile.set(fileUri, ghostText);
+		}
+		return ghostText;
+	}
+
+	/**
+	 * Store context for populating CurrentGhostText in handleShown
+	 * Call this before returning any FIM result
+	 */
+	private _storeShownContext(fileUri: string, prefix: string, suffix: string, completionText: string, requestId: number): void {
+		this._pendingShownContextByRequestId.set(String(requestId), {
+			fileUri,
+			prefix,
+			suffix,
+			completionText
+		});
+	}
+
+	/**
 	 * Get or create CompletionsCache for a file
 	 */
 	private _getCompletionsCache(fileUri: string): CompletionsCache {
@@ -228,10 +260,32 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		const fileUri = document.uri.toString();
 		this._positionValidator.validate(fileUri, position, reqId);
 
-		// Check Radix Trie cache FIRST (handles typing, backspace, partial edits)
-		const completionsCache = this._getCompletionsCache(fileUri);
+		// Extract prefix/suffix for all cache checks
 		const prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
 		const suffix = document.getText(new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end));
+
+		// Check CurrentGhostText FIRST (Layer 1) - instant forward typing through current completion
+		const currentGhostText = this._getCurrentGhostText(fileUri);
+		const typingAsSuggested = currentGhostText.getCompletionForTyping(prefix, suffix);
+		if (typingAsSuggested !== undefined) {
+			console.log(`[PukuFimProvider][${reqId}] ⚡ CurrentGhostText cache HIT! Instant forward typing (0ms)`);
+			console.log(`[PukuFimProvider][${reqId}] 📄 Remaining completion: "${typingAsSuggested.substring(0, 100)}${typingAsSuggested.length > 100 ? '...' : ''}"`);
+			// Store position for validation
+			this._positionValidator.update(fileUri, position);
+			// Store context for handleShown (so CurrentGhostText can be refreshed with new position)
+			this._storeShownContext(fileUri, prefix, suffix, typingAsSuggested, reqId);
+			// Return remaining completion instantly (no API call)
+			const completionItems = [this._createCompletionItem(typingAsSuggested, new vscode.Range(position, position), position, document.uri)];
+			return {
+				type: 'fim',
+				completion: completionItems,
+				requestId: reqId
+			};
+		}
+		console.log(`[PukuFimProvider][${reqId}] ❌ CurrentGhostText cache MISS`);
+
+		// Check Radix Trie cache (Layer 2) - handles typing, backspace, partial edits
+		const completionsCache = this._getCompletionsCache(fileUri);
 		const cached = completionsCache.findAll(prefix, suffix);
 		if (cached.length > 0 && cached[0].length > 0) {
 			const completions = cached[0]; // Get first array of completions
@@ -239,6 +293,8 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			console.log(`[PukuFimProvider][${reqId}] 📄 First cached completion preview: "${completions[0].substring(0, 100)}${completions[0].length > 100 ? '...' : ''}"`);
 			// Store position for validation
 			this._positionValidator.update(fileUri, position);
+			// Store context for handleShown (use first completion for CurrentGhostText)
+			this._storeShownContext(fileUri, prefix, suffix, completions[0], reqId);
 			// Create completion items for all cached completions (Feature #64)
 			const completionItems = completions.map(completion =>
 				this._createCompletionItem(completion, new vscode.Range(position, position), position, document.uri)
@@ -289,6 +345,9 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 
 				// Store position for validation
 				this._positionValidator.update(fileUri, position);
+
+				// Store context for handleShown (use first completion for CurrentGhostText)
+				this._storeShownContext(fileUri, prefix, suffix, completions[0], reqId);
 
 				// Create completion items for all completions (Feature #64)
 				const completionItems = completions.map(completion =>
@@ -482,6 +541,9 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			finalRange = new vscode.Range(position, position);
 			console.log(`[PukuFimProvider][${reqId}] 📐 Using cursor position range: ${position.line}:${position.character}`);
 		}
+
+		// Store context for handleShown (use first completion for CurrentGhostText)
+		this._storeShownContext(fileUri, prefix, suffix, completions[0], reqId);
 
 		// Feature #64: Create multiple completion items (one for each completion)
 		console.log(`[PukuFimProvider][${reqId}] 🎨 Creating ${completions.length} completion item(s)...`);
@@ -700,7 +762,18 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 
 	handleShown(result: PukuFimResult): void {
 		console.log(`[PukuFimProvider] 👁️ Completion shown: reqId=${result.requestId}`);
-		// Track shown completions for analytics
+
+		// Populate CurrentGhostText with the shown completion context
+		const context = this._pendingShownContextByRequestId.get(String(result.requestId));
+		if (context) {
+			const { fileUri, prefix, suffix, completionText } = context;
+			const currentGhostText = this._getCurrentGhostText(fileUri);
+			currentGhostText.setCompletion(prefix, suffix, completionText, String(result.requestId));
+			console.log(`[PukuFimProvider] 💾 CurrentGhostText populated for ${fileUri} (prefixLen=${prefix.length}, completionLen=${completionText.length})`);
+
+			// Clean up pending context
+			this._pendingShownContextByRequestId.delete(String(result.requestId));
+		}
 	}
 
 	handleAcceptance(docId: DocumentId, result: PukuFimResult): void {
@@ -710,7 +783,12 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 
 	handleRejection(docId: DocumentId, result: PukuFimResult): void {
 		console.log(`[PukuFimProvider] ❌ Completion rejected: reqId=${result.requestId}`);
-		// Track rejection for analytics
+
+		// Clear CurrentGhostText for this file (user rejected the completion)
+		const fileUri = docId.document.uri.toString();
+		const currentGhostText = this._getCurrentGhostText(fileUri);
+		currentGhostText.clear();
+		console.log(`[PukuFimProvider] 🧹 CurrentGhostText cleared for ${fileUri}`);
 	}
 
 	handleIgnored(docId: DocumentId, result: PukuFimResult, supersededBy?: PukuFimResult): void {
