@@ -316,7 +316,11 @@ export class InlineEditsGutterIndicator extends Disposable {
 
 		// The glyph margin area across all relevant lines
 		const verticalEditRange = s.lineOffsetRange.read(reader);
-		const gutterEditArea = Rect.fromRanges(OffsetRange.fromTo(gutterViewPortWithoutStickyScroll.left, gutterViewPortWithoutStickyScroll.right), verticalEditRange);
+		// Guard against invalid ranges where start > end
+		const safeVerticalRange = verticalEditRange.start <= verticalEditRange.endExclusive
+			? verticalEditRange
+			: OffsetRange.fromTo(verticalEditRange.endExclusive, verticalEditRange.start);
+		const gutterEditArea = Rect.fromRanges(OffsetRange.fromTo(gutterViewPortWithoutStickyScroll.left, gutterViewPortWithoutStickyScroll.right), safeVerticalRange);
 
 		// The gutter view container (pill)
 		const pillHeight = lineHeight;

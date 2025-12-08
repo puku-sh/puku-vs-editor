@@ -736,12 +736,20 @@ export class ViewModelLinesFromProjectedModel implements IViewModelLines {
 
 	public getViewLineMinColumn(viewLineNumber: number): number {
 		const info = this.getViewLineInfo(viewLineNumber);
-		return this.modelLineProjections[info.modelLineNumber - 1].getViewLineMinColumn(this.model, info.modelLineNumber, info.modelLineWrappedLineIdx);
+		const projection = this.modelLineProjections[info.modelLineNumber - 1];
+		if (!projection) {
+			return 1; // Default to column 1 if projection is undefined
+		}
+		return projection.getViewLineMinColumn(this.model, info.modelLineNumber, info.modelLineWrappedLineIdx);
 	}
 
 	public getViewLineMaxColumn(viewLineNumber: number): number {
 		const info = this.getViewLineInfo(viewLineNumber);
-		return this.modelLineProjections[info.modelLineNumber - 1].getViewLineMaxColumn(this.model, info.modelLineNumber, info.modelLineWrappedLineIdx);
+		const projection = this.modelLineProjections[info.modelLineNumber - 1];
+		if (!projection) {
+			return 1; // Default to column 1 if projection is undefined
+		}
+		return projection.getViewLineMaxColumn(this.model, info.modelLineNumber, info.modelLineWrappedLineIdx);
 	}
 
 	public getViewLineData(viewLineNumber: number): ViewLineData {
