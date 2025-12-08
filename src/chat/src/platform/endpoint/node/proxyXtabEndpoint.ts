@@ -15,16 +15,16 @@ export function createProxyXtabEndpoint(
 	overriddenModelName: string | undefined,
 ) {
 	const defaultInfo: IChatModelInformation = {
-		id: overriddenModelName ?? CHAT_MODEL.NES_XTAB,
+		id: overriddenModelName ?? 'puku-nes-codestral',
 		urlOrRequestMetadata: { type: RequestType.ProxyChatCompletions },
-		name: 'xtab-proxy',
+		name: 'puku-nes',
 		model_picker_enabled: false,
 		is_chat_default: false,
 		is_chat_fallback: false,
-		version: 'unknown',
+		version: '1.0',
 		capabilities: {
 			type: 'chat',
-			family: 'xtab-proxy',
+			family: 'puku-nes',
 			tokenizer: TokenizerType.O200K,
 			limits: {
 				max_prompt_tokens: 12285,

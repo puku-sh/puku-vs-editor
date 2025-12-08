@@ -20,19 +20,19 @@ import { IIgnoreService } from '../common/ignoreService';
 import { IgnoreFile } from './ignoreFile';
 import { RemoteContentExclusion } from './remoteContentExclusion';
 
-export const COPILOT_IGNORE_FILE_NAME = '.copilotignore';
+export const PUKU_IGNORE_FILE_NAME = '.pukuignore';
 
 export class BaseIgnoreService implements IIgnoreService {
 
 	declare readonly _serviceBrand: undefined;
 
-	private readonly _copilotIgnoreFiles = new IgnoreFile();
+	private readonly _pukuIgnoreFiles = new IgnoreFile();
 	private _remoteContentExclusions: RemoteContentExclusion | undefined;
-	private _copilotIgnoreEnabled = false;
-	private readonly _onDidChangeCopilotIgnoreEnablement = new Emitter<boolean>();
+	private _pukuIgnoreEnabled = false;
+	private readonly _onDidChangePukuIgnoreEnablement = new Emitter<boolean>();
 
 	protected _disposables: IDisposable[] = [];
-	protected onDidChangeCopilotIgnoreEnablement = this._onDidChangeCopilotIgnoreEnablement.event;
+	protected onDidChangePukuIgnoreEnablement = this._onDidChangePukuIgnoreEnablement.event;
 
 	constructor(
 
@@ -44,18 +44,18 @@ export class BaseIgnoreService implements IIgnoreService {
 		private readonly searchService: ISearchService,
 		private readonly fs: IFileSystemService,
 	) {
-		this._disposables.push(this._onDidChangeCopilotIgnoreEnablement);
+		this._disposables.push(this._onDidChangePukuIgnoreEnablement);
 		this._disposables.push(this._authService.onDidAuthenticationChange(() => {
-			const copilotIgnoreEnabled = this._authService.copilotToken?.isCopilotIgnoreEnabled() ?? false;
-			if (this._copilotIgnoreEnabled !== copilotIgnoreEnabled) {
-				this._onDidChangeCopilotIgnoreEnablement.fire(copilotIgnoreEnabled);
+			const pukuIgnoreEnabled = this._authService.copilotToken?.isPukuIgnoreEnabled() ?? false;
+			if (this._pukuIgnoreEnabled !== pukuIgnoreEnabled) {
+				this._onDidChangePukuIgnoreEnablement.fire(pukuIgnoreEnabled);
 			}
-			this._copilotIgnoreEnabled = copilotIgnoreEnabled;
-			if (this._copilotIgnoreEnabled === false && this._remoteContentExclusions) {
+			this._pukuIgnoreEnabled = pukuIgnoreEnabled;
+			if (this._pukuIgnoreEnabled === false && this._remoteContentExclusions) {
 				this._remoteContentExclusions.dispose();
 				this._remoteContentExclusions = undefined;
 			}
-			if (this._copilotIgnoreEnabled === true && !this._remoteContentExclusions) {
+			if (this._pukuIgnoreEnabled === true && !this._remoteContentExclusions) {
 				this._remoteContentExclusions = new RemoteContentExclusion(
 					this._gitService,
 					this._logService,
@@ -78,25 +78,25 @@ export class BaseIgnoreService implements IIgnoreService {
 	}
 
 	get isEnabled(): boolean {
-		return this._copilotIgnoreEnabled;
+		return this._pukuIgnoreEnabled;
 	}
 
 	get isRegexExclusionsEnabled(): boolean {
 		return this._remoteContentExclusions?.isRegexContextExclusionsEnabled ?? false;
 	}
 
-	public async isCopilotIgnored(file: URI, token?: CancellationToken): Promise<boolean> {
-		let copilotIgnored = false;
-		if (this._copilotIgnoreEnabled) {
-			const localCopilotIgnored = this._copilotIgnoreFiles.isIgnored(file);
-			copilotIgnored = localCopilotIgnored || await (this._remoteContentExclusions?.isIgnored(file, token) ?? false);
+	public async isPukuIgnored(file: URI, token?: CancellationToken): Promise<boolean> {
+		let pukuIgnored = false;
+		if (this._pukuIgnoreEnabled) {
+			const localPukuIgnored = this._pukuIgnoreFiles.isIgnored(file);
+			pukuIgnored = localPukuIgnored || await (this._remoteContentExclusions?.isIgnored(file, token) ?? false);
 		}
-		return copilotIgnored;
+		return pukuIgnored;
 	}
 
 
 	async asMinimatchPattern(): Promise<string | undefined> {
-		if (!this._copilotIgnoreEnabled) {
+		if (!this._pukuIgnoreEnabled) {
 			return;
 		}
 		const all: string[][] = [];
@@ -108,7 +108,7 @@ export class BaseIgnoreService implements IIgnoreService {
 		await this._remoteContentExclusions?.loadRepos(gitRepoRoots);
 
 		all.push(await this._remoteContentExclusions?.asMinimatchPatterns() ?? []);
-		all.push(this._copilotIgnoreFiles.asMinimatchPatterns());
+		all.push(this._pukuIgnoreFiles.asMinimatchPatterns());
 
 		const allall = all.flat();
 		if (allall.length === 0) {
@@ -132,28 +132,28 @@ export class BaseIgnoreService implements IIgnoreService {
 	}
 
 	protected trackIgnoreFile(workspaceRoot: URI | undefined, ignoreFile: URI, contents: string) {
-		// Check if the ignore file is a copilotignore file
-		if (ignoreFile.path.endsWith(COPILOT_IGNORE_FILE_NAME)) {
-			this._copilotIgnoreFiles.setIgnoreFile(workspaceRoot, ignoreFile, contents);
+		// Check if the ignore file is a pukuignore file
+		if (ignoreFile.path.endsWith(PUKU_IGNORE_FILE_NAME)) {
+			this._pukuIgnoreFiles.setIgnoreFile(workspaceRoot, ignoreFile, contents);
 		}
 		return;
 	}
 
 	protected removeIgnoreFile(ignoreFile: URI) {
-		// Check if the ignore file is a copilotignore file
-		if (ignoreFile.path.endsWith(COPILOT_IGNORE_FILE_NAME)) {
-			this._copilotIgnoreFiles.removeIgnoreFile(ignoreFile);
+		// Check if the ignore file is a pukuignore file
+		if (ignoreFile.path.endsWith(PUKU_IGNORE_FILE_NAME)) {
+			this._pukuIgnoreFiles.removeIgnoreFile(ignoreFile);
 		}
 		return;
 	}
 
 	protected removeWorkspace(workspace: URI) {
-		this._copilotIgnoreFiles.removeWorkspace(workspace);
+		this._pukuIgnoreFiles.removeWorkspace(workspace);
 	}
 
 	protected isIgnoreFile(fileUri: URI) {
-		// Check if the file is a copilotignore file
-		if (fileUri.path.endsWith(COPILOT_IGNORE_FILE_NAME)) {
+		// Check if the file is a pukuignore file
+		if (fileUri.path.endsWith(PUKU_IGNORE_FILE_NAME)) {
 			return true;
 		}
 		return false;
@@ -164,7 +164,7 @@ export class BaseIgnoreService implements IIgnoreService {
 			return;
 		}
 
-		const files: URI[] = await this.searchService.findFilesWithDefaultExcludes(new RelativePattern(workspaceUri, `${COPILOT_IGNORE_FILE_NAME}`), undefined, CancellationToken.None);
+		const files: URI[] = await this.searchService.findFilesWithDefaultExcludes(new RelativePattern(workspaceUri, `${PUKU_IGNORE_FILE_NAME}`), undefined, CancellationToken.None);
 		for (const file of files) {
 			const contents = (await this.fs.readFile(file)).toString();
 			this.trackIgnoreFile(workspaceUri, file, contents);

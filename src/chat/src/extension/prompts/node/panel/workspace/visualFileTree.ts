@@ -150,7 +150,7 @@ export async function workspaceVisualFileTree(accessor: ServicesAccessor, root: 
 		return Promise.all(
 			rootNodes.map(async x => {
 				const uri = URI.joinPath(root, x[0]);
-				return !(options.excludeDotFiles && x[0].startsWith('.')) && !shouldAlwaysIgnoreFile(uri) && !await ignoreService.isCopilotIgnored(uri) ? x : null;
+				return !(options.excludeDotFiles && x[0].startsWith('.')) && !shouldAlwaysIgnoreFile(uri) && !await ignoreService.isPukuIgnored(uri) ? x : null;
 			})
 		).then(entries =>
 			entries.filter((entry): entry is [string, FileType] => !!entry)

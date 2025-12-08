@@ -45,7 +45,7 @@ import './prompts/newWorkspace.stest';
 import './prompts/settingsEditorSearchResultsSelector.stest';
 import './simulation/debugCommandToConfig.stest';
 import './simulation/debugTools.stest';
-import './simulation/inlineEdit/inlineEdit.stest';
+// import './simulation/inlineEdit/inlineEdit.stest'; // Missing file
 import './simulation/notebookEdits.stest';
 import './simulation/notebooks.stest';
 import './simulation/prTitleAndDescription.stest';

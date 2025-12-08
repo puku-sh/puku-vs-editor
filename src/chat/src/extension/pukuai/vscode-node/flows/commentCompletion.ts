@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 import * as vscode from 'vscode';
 import { IPukuIndexingService } from '../../../pukuIndexing/node/pukuIndexingService';
+import { getCommentAtPosition } from '../helpers/commentDetection';
 
 /**
  * Detects and handles comment-based code generation
@@ -15,54 +16,59 @@ export class CommentCompletionFlow {
 	) { }
 
 	/**
-	 * Check if current position is after a comment (Cursor-style: trigger at end of comment line or next line)
+	 * Check if current position is after a comment using Tree-sitter AST
+	 * Cursor-style: trigger at end of comment line or next line
 	 */
-	isCommentBasedCompletion(document: vscode.TextDocument, position: vscode.Position): boolean {
-		const currentLine = document.lineAt(position.line);
-		const lineText = currentLine.text;
+	async isCommentBasedCompletion(document: vscode.TextDocument, position: vscode.Position): Promise<boolean> {
+		// Use Tree-sitter to detect comment
+		const commentInfo = await getCommentAtPosition(document, position);
 
-		// Check if current line or previous line is a comment
-		const commentPattern = this._getCommentPattern(document.languageId);
-		if (!commentPattern) {
+		if (!commentInfo) {
 			return false;
 		}
 
-		const trimmedLine = lineText.trim();
-		const textBeforeCursor = lineText.substring(0, position.character).trim();
+		// Case 1: Cursor at end of comment line
+		const currentLine = document.lineAt(position.line);
+		const atLineEnd = position.character >= currentLine.text.trimEnd().length;
+		const commentOnCurrentLine = commentInfo.node.startPosition.row === position.line;
 
-		// Trigger Case 1: At end of comment line (Cursor-style)
-		// Example: "// add function|" where | is cursor
-		const atEndOfComment = commentPattern.test(textBeforeCursor) &&
-			position.character >= lineText.trimEnd().length;
+		// Case 2: On empty line after comment
+		const currentLineEmpty = currentLine.text.trim().length === 0;
+		const commentOnPreviousLine = position.line > 0 && commentInfo.node.startPosition.row === position.line - 1;
 
-		// Trigger Case 2: On empty line after comment (existing behavior)
-		// Example: "// add function\n|" where | is cursor on next line
-		const afterCommentLine = trimmedLine.length === 0 &&
-			position.line > 0 &&
-			commentPattern.test(document.lineAt(position.line - 1).text.trim());
+		const result = (commentOnCurrentLine && atLineEnd) || (commentOnPreviousLine && currentLineEmpty);
 
-		return atEndOfComment || afterCommentLine;
+		console.log('[CommentCompletion] Tree-sitter Detection:', {
+			languageId: document.languageId,
+			commentType: commentInfo.type,
+			commentText: JSON.stringify(commentInfo.text),
+			cleanText: JSON.stringify(commentInfo.cleanText),
+			commentLine: commentInfo.node.startPosition.row,
+			cursorLine: position.line,
+			cursorPos: position.character,
+			lineEndPos: currentLine.text.trimEnd().length,
+			atLineEnd,
+			commentOnCurrentLine,
+			commentOnPreviousLine,
+			currentLineEmpty,
+			result
+		});
+
+		return result;
 	}
 
 	/**
-	 * Extract comment text for semantic search
+	 * Extract comment text for semantic search using Tree-sitter
 	 * Returns the natural language description from the comment
 	 */
-	extractCommentIntent(document: vscode.TextDocument, position: vscode.Position): string | null {
-		const currentLine = document.lineAt(position.line);
-		let commentText = currentLine.text.trim();
+	async extractCommentIntent(document: vscode.TextDocument, position: vscode.Position): Promise<string | null> {
+		const commentInfo = await getCommentAtPosition(document, position);
 
-		// If current line is empty, check previous line
-		if (!commentText && position.line > 0) {
-			commentText = document.lineAt(position.line - 1).text.trim();
-		}
-
-		if (!commentText) {
+		if (!commentInfo) {
 			return null;
 		}
 
-		// Strip comment markers
-		const cleaned = this._stripCommentMarkers(commentText, document.languageId);
+		const cleaned = commentInfo.cleanText;
 		return cleaned.length > 3 ? cleaned : null;
 	}
 
@@ -99,46 +105,5 @@ export class CommentCompletionFlow {
 			console.error(`[CommentCompletion] Semantic search failed: ${error}`);
 			return [];
 		}
-	}
-
-	/**
-	 * Get comment pattern for a language
-	 */
-	private _getCommentPattern(languageId: string): RegExp | null {
-		// Language-specific comment patterns
-		const patterns: Record<string, RegExp> = {
-			'typescript': /^\/\/.+|^\/\*.+\*\/$/,
-			'javascript': /^\/\/.+|^\/\*.+\*\/$/,
-			'python': /^#.+/,
-			'go': /^\/\/.+|^\/\*.+\*\/$/,
-			'rust': /^\/\/.+|^\/\*.+\*\/$/,
-			'java': /^\/\/.+|^\/\*.+\*\/$/,
-			'c': /^\/\/.+|^\/\*.+\*\/$/,
-			'cpp': /^\/\/.+|^\/\*.+\*\/$/,
-			'csharp': /^\/\/.+|^\/\*.+\*\/$/,
-			'php': /^\/\/.+|^\/\*.+\*\/|^#.+/,
-			'ruby': /^#.+/,
-			'shell': /^#.+/,
-			'bash': /^#.+/,
-			'yaml': /^#.+/,
-			'dockerfile': /^#.+/,
-		};
-
-		return patterns[languageId] || /^\/\/.+|^\/\*.+\*\/|^#.+/;
-	}
-
-	/**
-	 * Strip comment markers from text
-	 */
-	private _stripCommentMarkers(text: string, languageId: string): string {
-		let cleaned = text;
-
-		// Remove common comment markers
-		cleaned = cleaned.replace(/^\/\/\s*/, ''); // //
-		cleaned = cleaned.replace(/^\/\*\s*/, '').replace(/\s*\*\/$/, ''); // /* */
-		cleaned = cleaned.replace(/^#\s*/, ''); // #
-		cleaned = cleaned.replace(/^\*\s*/, ''); // * (multi-line comment continuation)
-
-		return cleaned.trim();
 	}
 }

@@ -125,7 +125,7 @@ class BasicPromptWorkspaceLabels implements IPromptWorkspaceLabelsStrategy {
 	private async addLabelIfApplicable(rootFolder: Uri, filename: string, labels: string[]) {
 		const uri = Uri.joinPath(rootFolder, filename);
 
-		if (await this._ignoreService.isCopilotIgnored(uri)) {
+		if (await this._ignoreService.isPukuIgnored(uri)) {
 			return;
 		}
 

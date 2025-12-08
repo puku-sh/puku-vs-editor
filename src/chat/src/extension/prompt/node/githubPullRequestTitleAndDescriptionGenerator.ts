@@ -60,11 +60,11 @@ export class GitHubPullRequestTitleAndDescriptionGenerator implements TitleAndDe
 	private async excludePatches(allPatches: { patch: string; fileUri?: string; previousFileUri?: string }[]): Promise<string[]> {
 		const patches: string[] = [];
 		for (const patch of allPatches) {
-			if (patch.fileUri && await this.ignoreService.isCopilotIgnored(URI.parse(patch.fileUri))) {
+			if (patch.fileUri && await this.ignoreService.isPukuIgnored(URI.parse(patch.fileUri))) {
 				continue;
 			}
 
-			if (patch.previousFileUri && patch.previousFileUri !== patch.fileUri && await this.ignoreService.isCopilotIgnored(URI.parse(patch.previousFileUri))) {
+			if (patch.previousFileUri && patch.previousFileUri !== patch.fileUri && await this.ignoreService.isPukuIgnored(URI.parse(patch.previousFileUri))) {
 				continue;
 			}
 

@@ -105,7 +105,7 @@ export function registerInlineChatCommands(accessor: ServicesAccessor): IDisposa
 				}
 			}
 		}
-		if (activeDocumentUri && selectedText && !await ignoreService.isCopilotIgnored(activeDocumentUri)) {
+		if (activeDocumentUri && selectedText && !await ignoreService.isPukuIgnored(activeDocumentUri)) {
 			message += selectedText;
 		}
 		vscode.commands.executeCommand('workbench.action.chat.open', { query: message });

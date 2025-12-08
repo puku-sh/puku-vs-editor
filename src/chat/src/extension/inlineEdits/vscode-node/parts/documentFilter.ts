@@ -29,7 +29,7 @@ export class DocumentFilter {
 		if (isTextDocument(document) && !this._isGhostTextEnabled(document.languageId)) {
 			return false;
 		}
-		if (await this._ignoreService.isCopilotIgnored(document.uri)) {
+		if (await this._ignoreService.isPukuIgnored(document.uri)) {
 			return false;
 		}
 		return true;

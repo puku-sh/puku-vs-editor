@@ -292,6 +292,48 @@ Tools are registered through VS Code's normal [Language Model Tool API](https://
 
 See the [tools.md](docs/tools.md) document for more important details on how to develop tools. Please read it before adding a new tool!
 
+## Inline Completions (FIM)
+
+Puku Editor provides Fill-In-Middle (FIM) code completions through a racing provider architecture.
+
+### Key Components
+
+| Component | Purpose | Location |
+|-----------|---------|----------|
+| `PukuInlineEditModel` | Races FIM + Diagnostics providers | `src/extension/pukuai/vscode-node/pukuInlineEditModel.ts` |
+| `PukuFimProvider` | Main FIM completion provider | `src/extension/pukuai/vscode-node/providers/pukuFimProvider.ts` |
+| `CompletionsCache` | Radix Trie prefix cache | `src/extension/pukuai/common/completionsCache.ts` |
+| `PositionValidator` | Prevents stale completions | `src/extension/pukuai/vscode-node/helpers/positionValidation.ts` |
+
+### Development Guidelines
+
+**Racing Architecture**: Puku uses Copilot's racing pattern:
+- FIM provider starts immediately (fast path)
+- Diagnostics provider starts with 200ms delay
+- First non-null result wins the race
+
+**Caching Strategy**:
+1. **Radix Trie** - Handles typing, backspace, partial edits
+2. **Speculative Cache** - Stores request functions for lazy execution
+3. **Position Validation** - Clears stale state when cursor moves
+
+**Adding Inline Completion Features**:
+1. Check if it affects racing logic → modify `pukuInlineEditModel.ts`
+2. Check if it's provider-specific → modify `pukuFimProvider.ts`
+3. Check if it's a cache optimization → modify `completionsCache.ts`
+
+**Quality Checklist**:
+- [ ] Set `enableForwardStability: true` on completion results
+- [ ] Check `isRejected()` before suggesting completions (when implemented)
+- [ ] Update position validator after successful completions
+- [ ] Handle cancellation tokens properly
+- [ ] Test with both FIM and diagnostics providers
+
+**Useful Resources**:
+- [FIM Documentation](docs/fim.md) - Architecture and best practices
+- [PRD: Forward Stability](docs/prd-forward-stability.md) - Detailed requirements for ghost text stability
+- [GitHub Issues #55-#66](https://github.com/puku-sh/puku-vs-editor/issues?q=is%3Aissue+is%3Aopen+label%3Aarea%3Ainline-completions) - Planned improvements vs Copilot
+
 ## Tree Sitter
 
 We have now moved to https://github.com/microsoft/vscode-tree-sitter-wasm for WASM prebuilds.

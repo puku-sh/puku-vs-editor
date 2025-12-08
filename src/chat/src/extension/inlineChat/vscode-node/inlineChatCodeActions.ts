@@ -64,7 +64,7 @@ export class QuickFixesProvider implements vscode.CodeActionProvider {
 			return;
 		}
 
-		if (await this.ignoreService.isCopilotIgnored(doc.uri)) {
+		if (await this.ignoreService.isPukuIgnored(doc.uri)) {
 			return;
 		}
 		if (cancellationToken.isCancellationRequested) {
@@ -221,7 +221,7 @@ export class RefactorsProvider implements vscode.CodeActionProvider {
 			return;
 		}
 
-		if (await this.ignoreService.isCopilotIgnored(doc.uri)) {
+		if (await this.ignoreService.isPukuIgnored(doc.uri)) {
 			return;
 		}
 

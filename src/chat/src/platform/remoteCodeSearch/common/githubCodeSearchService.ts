@@ -386,7 +386,7 @@ export async function parseGithubCodeSearchResponse(body: ResponseShape, repo: G
 		let fileUri: URI;
 		if (repo.localRepoRoot) {
 			fileUri = URI.joinPath(repo.localRepoRoot, result.location.path);
-			if (await ignoreService.isCopilotIgnored(fileUri)) {
+			if (await ignoreService.isPukuIgnored(fileUri)) {
 				return;
 			}
 		} else {

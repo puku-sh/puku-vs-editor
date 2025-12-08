@@ -150,7 +150,7 @@ export class GenerateTests {
 
 		let testFile = await finder.findTestFileForSourceFile(srcFile, CancellationToken.None);
 
-		if (testFile !== undefined && await this.ignoreService.isCopilotIgnored(testFile)) {
+		if (testFile !== undefined && await this.ignoreService.isPukuIgnored(testFile)) {
 			testFile = undefined;
 		}
 

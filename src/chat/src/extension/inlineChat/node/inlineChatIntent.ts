@@ -71,7 +71,7 @@ export class InlineChatIntent implements IIntent {
 		assertType(request.location2 instanceof ChatRequestEditorData);
 		assertType(documentContext);
 
-		if (await this._ignoreService.isCopilotIgnored(request.location2.document.uri, token)) {
+		if (await this._ignoreService.isPukuIgnored(request.location2.document.uri, token)) {
 			return {
 				errorDetails: {
 					message: l10n.t('inlineChat.ignored', "Puku AI is disabled for this file."),

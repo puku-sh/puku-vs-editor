@@ -112,12 +112,21 @@ export class VsCodePukuAuthService extends Disposable implements IPukuAuthServic
 	async getToken(): Promise<PukuToken | undefined> {
 		try {
 			// Get session token from VS Code workbench's Puku auth service via command
-			const sessionToken = await this._getSessionTokenFromVSCode();
+			let sessionToken = await this._getSessionTokenFromVSCode();
 
+			// Fallback: Try to get API key from VS Code settings if workbench command fails
 			if (!sessionToken) {
-				// Clear cached token if no valid session
-				this._token = undefined;
-				return undefined;
+				const config = vscode.workspace.getConfiguration('puku.embeddings');
+				sessionToken = config.get<string>('token');
+
+				if (sessionToken) {
+					console.log('[VsCodePukuAuthService] Using API key from settings (puku.embeddings.token)');
+				} else {
+					console.log('[VsCodePukuAuthService] No token from workbench or settings');
+					// Clear cached token if no valid session
+					this._token = undefined;
+					return undefined;
+				}
 			}
 
 			// Return cached token if it matches the session token and is still valid

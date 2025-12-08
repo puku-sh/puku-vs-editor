@@ -69,6 +69,14 @@ For detailed setup instructions, see [GLM-SETUP.md](GLM-SETUP.md).
 
 **Automatically receive inline suggestions in the editor** from [ghost text suggestions](https://aka.ms/vscode-completions) and [next edit suggestions](https://aka.ms/vscode-nes) to help you write code faster. Ghost text suggestions provide suggestions at the current location, tailored to your coding style and your existing code. Copilot next edit suggestions (Copilot NES) takes it a step further and predicts what and where your next logical code change will be. Use the Tab key to navigate and accept changes in quick succession.
 
+**Puku Editor enhancements:**
+- **Forward stability** - Ghost text stays anchored during typing (no position jumps)
+- **Smart caching** - Radix Trie + speculative prefetching for instant suggestions
+- **Context-aware** - Import analysis + semantic search for better completions
+- **Language hints** - Sends language info to prevent wrong-language hallucinations
+
+See [FIM Documentation](docs/fim.md) for technical details.
+
 ![Copilot next edit suggestions](https://code.visualstudio.com/assets/docs/copilot/inline-suggestions/nes-point.gif)
 
 ## Ask and learn about your code with chat

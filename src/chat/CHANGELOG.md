@@ -1,3 +1,88 @@
+## 0.37.4 (2025-12-08)
+
+### Features
+
+#### Enable Forward Stability for Inline Completions ([Issue #55](https://github.com/puku-sh/puku-vs-editor/issues/55))
+
+**Summary:** Implemented VS Code's `enableForwardStability` flag on all inline completion results to prevent ghost text from jumping position during edits.
+
+**Problem:** Ghost text completions visibly shifted or jumped during typing, creating visual noise and degrading UX compared to GitHub Copilot.
+
+**Solution:** Set `enableForwardStability: true` on `InlineCompletionList` returned by both FIM and diagnostics providers.
+
+**Changes:**
+- ✅ `pukuInlineCompletionProvider.ts` - Added forward stability to all cache paths:
+  - Radix Trie cache hits (line 274)
+  - Speculative cache hits (line 365)
+  - Fresh API completions (line 616)
+- ✅ `pukuUnifiedInlineProvider.ts` - Added forward stability to racing results:
+  - Diagnostics import fixes (line 119)
+  - Diagnostics inline edits (line 136)
+  - FIM completions (line 147)
+- ✅ Created comprehensive unit tests (`test/forwardStability.test.ts`)
+- ✅ PRD documentation (`docs/prd-forward-stability.md`)
+
+**Impact:**
+- Ghost text stays anchored at original position during forward typing
+- No visual flickering or position jumps
+- UX matches GitHub Copilot's stability
+- Zero performance impact (flag processed by VS Code)
+
+**Testing:**
+```bash
+npm run test:unit  # Includes new forward stability tests
+```
+
+**See Also:**
+- [PRD: Forward Stability](docs/prd-forward-stability.md)
+- [FIM Documentation](docs/fim.md#inline-completion-quality--stability)
+
+---
+
+## 0.37.3 (2025-12-08)
+
+### Documentation
+
+#### Feature Gap Analysis vs GitHub Copilot
+
+Conducted comprehensive analysis of Puku's inline completion system compared to GitHub Copilot, identifying 12 missing features organized by priority:
+
+**Created GitHub Issues:**
+- 🔴 **Critical**: [#55](https://github.com/puku-sh/puku-vs-editor/issues/55) Forward stability, [#56](https://github.com/puku-sh/puku-vs-editor/issues/56) Rejection tracking, [#57](https://github.com/puku-sh/puku-vs-editor/issues/57) Typing-as-suggested
+- 🟠 **High**: [#58](https://github.com/puku-sh/puku-vs-editor/issues/58) Edit rebasing, [#59](https://github.com/puku-sh/puku-vs-editor/issues/59) Diagnostics delay, [#60](https://github.com/puku-sh/puku-vs-editor/issues/60) Streaming
+- 🟡 **Medium**: [#61-#64](https://github.com/puku-sh/puku-vs-editor/issues?q=is%3Aissue+is%3Aopen+61..64) 3-provider racing, trimming, indentation, multiple completions
+- 🟢 **Low**: [#65-#66](https://github.com/puku-sh/puku-vs-editor/issues?q=is%3Aissue+is%3Aopen+65..66) Survival tracking, telemetry
+
+**Added PRD Documentation:**
+- `docs/prd-forward-stability.md` - Comprehensive PRD for enabling `enableForwardStability` flag ([Issue #55](https://github.com/puku-sh/puku-vs-editor/issues/55))
+  - Executive summary, problem statement, user stories
+  - Technical design with code examples
+  - Testing strategy and success metrics
+  - Rollout plan and risk analysis
+
+**Updated Documentation:**
+- `docs/README.md` - New documentation index with feature gap summary table
+- `docs/fim.md` - Added "Inline Completion Quality & Stability" section covering:
+  - Forward stability implementation
+  - Rejection tracking architecture
+  - "Typing as suggested" optimization
+  - Cache hierarchy explanation
+- `README.md` - Added "Puku Editor enhancements" highlighting:
+  - Forward stability
+  - Smart caching (Radix Trie + speculative)
+  - Context-aware completions
+  - Language hints
+- `CONTRIBUTING.md` - Added "Inline Completions (FIM)" development guide
+- `CLAUDE.md` - Added feature gap roadmap and GitHub issue links
+
+**Impact:**
+- Clear roadmap for achieving feature parity with Copilot
+- Comprehensive documentation for contributors
+- Prioritized backlog with effort estimates
+- PRD template for future feature development
+
+---
+
 ## 0.37.2 (2025-12-08)
 
 ### Bug Fixes

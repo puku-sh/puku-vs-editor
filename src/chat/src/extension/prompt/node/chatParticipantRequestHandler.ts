@@ -160,7 +160,7 @@ export class ChatParticipantRequestHandler {
 			let removeVariable;
 			try {
 				// Filter out variables which contain paths which are ignored
-				removeVariable = await this._ignoreService.isCopilotIgnored(uri);
+				removeVariable = await this._ignoreService.isPukuIgnored(uri);
 			} catch {
 				// Non-existent files will be handled elsewhere. This might be a virtual document so it's ok if the fs service can't find it.
 			}

@@ -4,7 +4,15 @@
  *--------------------------------------------------------------------------------------------*/
 import type * as vscode from 'vscode';
 
-
+/**
+ * LEGACY: This namespace is named "Copilot" for API compatibility with GitHub Copilot extensions.
+ *
+ * Puku Editor maintains this namespace to ensure third-party extensions using the Copilot Context Provider API
+ * continue to work without modification. The API contracts (ContextProvider, CodeSnippet, Trait, etc.) are
+ * identical to GitHub Copilot's, allowing seamless interoperability.
+ *
+ * This is intentional and should NOT be renamed - it's part of the public extension API surface.
+ */
 export namespace Copilot {
 
 	export type DocumentUri = string;

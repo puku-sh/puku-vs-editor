@@ -1,0 +1,63 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+require("./codeMapper/codeMapper.stest");
+require("./e2e/cli.stest");
+require("./e2e/edit.stest");
+require("./e2e/explain.stest");
+require("./e2e/fetchWebPageTool.stest");
+require("./e2e/findFilesTool.stest");
+require("./e2e/markdown.stest");
+require("./e2e/newWorkspace.stest");
+require("./e2e/notebookTools.stest");
+require("./e2e/pythonFix.stest");
+require("./e2e/search.stest");
+require("./e2e/semanticSearch.stest");
+require("./e2e/semanticSearchView.stest");
+require("./e2e/system.stest");
+require("./e2e/terminal.stest");
+require("./e2e/tools.stest");
+require("./e2e/typescriptFix.stest");
+require("./e2e/variables.stest");
+require("./e2e/vscode-metaprompt.stest");
+require("./e2e/vscode.stest");
+require("./e2e/workspace-e2e.stest");
+require("./e2e/workspace-metaprompt.stest");
+require("./inline/agent.stest");
+require("./inline/fixing.stest");
+require("./inline/inlineEditCode.stest");
+require("./inline/inlineExplain.stest");
+require("./inline/inlineGenerateCode.stest");
+require("./inline/multiFileEdit.stest");
+require("./inline/review.stest");
+require("./inline/slashDoc.cpp.stest");
+require("./inline/slashDoc.java.stest");
+require("./inline/slashDoc.rb.stest");
+require("./inline/slashDoc.ts.stest");
+require("./intent/inlineChatIntent.stest");
+require("./intent/panelChatIntent.stest");
+require("./prompts/customInstructions.stest");
+require("./prompts/devContainerConfigGenerator.stest");
+require("./prompts/gitCommitMessageGenerator.stest");
+require("./prompts/newNotebookCell.stest");
+require("./prompts/newWorkspace.stest");
+require("./prompts/settingsEditorSearchResultsSelector.stest");
+require("./simulation/debugCommandToConfig.stest");
+require("./simulation/debugTools.stest");
+require("./simulation/inlineEdit/inlineEdit.stest");
+require("./simulation/notebookEdits.stest");
+require("./simulation/notebooks.stest");
+require("./simulation/prTitleAndDescription.stest");
+require("./simulation/renameSuggestionsProvider.stest");
+require("./simulation/setupTests.stest");
+require("./simulation/slash-test/testGen.cpp.stest");
+require("./simulation/slash-test/testGen.csharp.stest");
+require("./simulation/slash-test/testGen.java.stest");
+require("./simulation/slash-test/testGen.js.stest");
+require("./simulation/slash-test/testGen.py.stest");
+require("./simulation/slash-test/testGen.ts.stest");
+require("./simulation/tools/toolcall.stest");
+//# sourceMappingURL=simulationTests.js.map

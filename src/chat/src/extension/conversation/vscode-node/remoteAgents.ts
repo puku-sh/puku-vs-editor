@@ -565,7 +565,7 @@ export class RemoteAgentContribution implements IDisposable {
 		const redactFileContents = async (document: TextDocument, range?: Range) => {
 			const filename = path.basename(document.uri.toString());
 			let content = document.getText(range);
-			if (await this.ignoreService.isCopilotIgnored(document.uri)) {
+			if (await this.ignoreService.isPukuIgnored(document.uri)) {
 				hasIgnoredFiles = true;
 				content = 'content-exclusion';
 			} else if (filename.startsWith('.')) {
