@@ -168,7 +168,8 @@ export class PukuInlineEditModel extends Disposable {
 				return {
 					type: 'fim',
 					completion: fimResult.completion,
-					requestId: fimResult.requestId
+					requestId: fimResult.requestId,
+					enableForwardStability: true // Prevent ghost text from jumping during edits
 				};
 			}
 
