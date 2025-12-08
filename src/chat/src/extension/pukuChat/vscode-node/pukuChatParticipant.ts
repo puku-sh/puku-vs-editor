@@ -31,7 +31,7 @@ export class PukuChatParticipant extends Disposable {
 	private _createStatusBar(): void {
 		this._statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
 		this._updateStatusBar();
-		this._statusBarItem.show();
+		// this._statusBarItem.show(); // Hidden - workbench layer handles status bar
 		this._register({ dispose: () => this._statusBarItem?.dispose() });
 
 		// Listen for indexing status changes

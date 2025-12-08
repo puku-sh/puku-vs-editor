@@ -50,7 +50,7 @@ export class PukuAuthProvider extends Disposable implements vscode.Authenticatio
 			// Open Puku login page
 			const loginUrl = `${PUKU_API_ENDPOINT}/auth/vscode`;
 			const callbackUri = await vscode.env.asExternalUri(
-				vscode.Uri.parse(`${vscode.env.uriScheme}://Puku.puku-editor/auth-callback`)
+				vscode.Uri.parse(`${vscode.env.uriScheme}://GitHub.puku-editor/auth-callback`)
 			);
 
 			const loginUriWithCallback = `${loginUrl}?callback=${encodeURIComponent(callbackUri.toString())}`;

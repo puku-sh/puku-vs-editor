@@ -70,8 +70,6 @@ export class PukuSummaryGenerator {
 			throw new Error('Job manager not initialized');
 		}
 
-		console.log(`[SummaryGenerator] Starting parallel job processing for ${chunks.length} chunks`);
-
 		const config = this._configService.getConfig();
 		// Create jobs (shards configured by server)
 		const jobIds = this._jobManager.createJobs(fileId, chunks.length, config.performance.chunksPerJob);
@@ -104,9 +102,10 @@ export class PukuSummaryGenerator {
 		const summaries = this._jobManager.collectSummaries(fileId);
 
 		// Apply fallback for empty summaries
-		const finalSummaries = summaries.map((summary, i) =>
-			summary || this._fallbackSummary(chunks[i])
-		);
+		// Iterate over chunks (not summaries) to ensure we don't go out of bounds
+		const finalSummaries = chunks.map((chunk, i) => {
+			return summaries[i] || this._fallbackSummary(chunk);
+		});
 
 		// Clean up jobs
 		this._jobManager.cleanupJobs(fileId);
@@ -116,7 +115,6 @@ export class PukuSummaryGenerator {
 			progressCallback(chunks.length, chunks.length);
 		}
 
-		console.log(`[SummaryGenerator] Completed parallel processing: ${finalSummaries.length}/${chunks.length} summaries`);
 		return finalSummaries;
 	}
 
@@ -155,7 +153,6 @@ export class PukuSummaryGenerator {
 
 			// Update job as completed
 			this._jobManager.updateJobStatus(jobId, 'completed', summaries);
-			console.log(`[SummaryGenerator] Job ${jobId} completed: ${summaries.length} summaries`);
 		} catch (error) {
 			console.error(`[SummaryGenerator] Job ${jobId} failed:`, error);
 			this._jobManager.updateJobStatus(jobId, 'failed', undefined, String(error));
@@ -185,8 +182,6 @@ export class PukuSummaryGenerator {
 			try {
 				const batchSummaries = await this._generateBatch(batch, languageId);
 				summaries.push(...batchSummaries);
-
-				console.log(`[SummaryGenerator] Generated ${summaries.length}/${chunks.length} summaries`);
 			} catch (error) {
 				console.error(`[SummaryGenerator] Batch ${i / PukuSummaryGenerator.BATCH_SIZE + 1} failed:`, error);
 
@@ -213,7 +208,6 @@ export class PukuSummaryGenerator {
 
 		const config = this._configService.getConfig();
 		const url = config.endpoints.summarize;
-		console.log(`[SummaryGenerator] Calling summary API ${url} for ${chunks.length} chunks`);
 
 		// Call dedicated summary endpoint (uses server-side API key)
 		const response = await fetch(url, {

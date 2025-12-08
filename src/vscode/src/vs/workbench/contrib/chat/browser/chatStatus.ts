@@ -124,11 +124,12 @@ export class ChatStatusBarEntry extends Disposable implements IWorkbenchContribu
 	constructor(
 		@IChatEntitlementService private readonly chatEntitlementService: ChatEntitlementService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@IStatusbarService private readonly statusbarService: IStatusbarService,
+		@IStatusbarService private readonly _statusbarService: IStatusbarService, // TODO: Re-enable when quota features implemented
 		@IEditorService private readonly editorService: IEditorService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IInlineCompletionsService private readonly completionsService: IInlineCompletionsService,
 		@IChatSessionsService private readonly chatSessionsService: IChatSessionsService,
+		@IPukuAuthService private readonly pukuAuthService: IPukuAuthService,
 	) {
 		super();
 
@@ -139,11 +140,11 @@ export class ChatStatusBarEntry extends Disposable implements IWorkbenchContribu
 	private update(): void {
 		const sentiment = this.chatEntitlementService.sentiment;
 		if (!sentiment.hidden) {
-			const props = this.getEntryProps();
+			const props = this._getEntryProps();
 			if (this.entry) {
 				this.entry.update(props);
 			} else {
-				this.entry = this.statusbarService.addEntry(props, 'chat.statusBarEntry', StatusbarAlignment.RIGHT, { location: { id: 'status.editor.mode', priority: 100.1 }, alignment: StatusbarAlignment.RIGHT });
+				this.entry = this._statusbarService.addEntry(props, 'chat.statusBarEntry', StatusbarAlignment.RIGHT, { location: { id: 'status.editor.mode', priority: 100.1 }, alignment: StatusbarAlignment.RIGHT });
 			}
 		} else {
 			this.entry?.dispose();
@@ -181,12 +182,15 @@ export class ChatStatusBarEntry extends Disposable implements IWorkbenchContribu
 		}
 	}
 
-	private getEntryProps(): IStatusbarEntry {
+	private _getEntryProps(): IStatusbarEntry { // TODO: Re-enable when quota features implemented
 		let text = '$(sparkle)';
 		let ariaLabel = localize('chatStatusAria', "Puku status");
 		let kind: StatusbarEntryKind | undefined;
 
-		if (isNewUser(this.chatEntitlementService)) {
+		// Puku Editor: Don't show "Finish Setup" if user is already authenticated with Puku
+		const pukuAuthenticated = this.pukuAuthService.isAuthenticated();
+
+		if (isNewUser(this.chatEntitlementService) && !pukuAuthenticated) {
 			const entitlement = this.chatEntitlementService.entitlement;
 
 			// Finish Setup
@@ -526,7 +530,9 @@ class ChatStatusDashboard extends Disposable {
 			const anonymousUser = this.chatEntitlementService.anonymous;
 			const disabled = this.chatEntitlementService.sentiment.disabled || this.chatEntitlementService.sentiment.untrusted;
 			const signedOut = this.chatEntitlementService.entitlement === ChatEntitlement.Unknown;
-			if (newUser || signedOut || disabled) {
+			// Puku Editor: Don't show sign-in prompt if user is already authenticated with Puku
+			const pukuAuthenticated = this.pukuAuthService.isAuthenticated();
+			if ((newUser || signedOut || disabled) && !pukuAuthenticated) {
 				addSeparator();
 
 				let descriptionText: string | MarkdownString;
@@ -570,17 +576,57 @@ class ChatStatusDashboard extends Disposable {
 			}
 		}
 
+		// Puku Editor: Show indexing status
+		{
+			addSeparator(localize('pukuIndexing', "Puku Indexing"));
+
+			const statusContainer = this.element.appendChild($('div.description.puku-indexing-status'));
+
+			// Get indexing status from extension layer via command
+			this.commandService.executeCommand<{ status: string; progress?: { totalFiles: number; indexedFiles: number }; indexedFiles?: number; chunks?: number }>('_puku.getIndexingStatus').then(indexingStatus => {
+				if (indexingStatus) {
+					let statusText = '';
+
+					if (indexingStatus.status === 'indexing' && indexingStatus.progress) {
+						const percent = indexingStatus.progress.totalFiles > 0
+							? Math.round((indexingStatus.progress.indexedFiles / indexingStatus.progress.totalFiles) * 100)
+							: 0;
+						statusText = `$(sync~spin) ${localize('indexingProgress', "Indexing workspace... {0}% ({1}/{2} files)", percent, indexingStatus.progress.indexedFiles, indexingStatus.progress.totalFiles)}`;
+					} else if (indexingStatus.status === 'ready') {
+						const files = indexingStatus.indexedFiles || 0;
+						const chunks = indexingStatus.chunks || 0;
+						statusText = `$(check) ${localize('indexingReady', "Ready - Indexed {0} files, {1} chunks", files, chunks)}`;
+					} else if (indexingStatus.status === 'error') {
+						statusText = `$(error) ${localize('indexingError', "Indexing failed")}`;
+					} else if (indexingStatus.status === 'disabled') {
+						statusText = `$(circle-slash) ${localize('indexingDisabled', "Indexing disabled - sign in to enable")}`;
+					} else {
+						statusText = `$(loading~spin) ${localize('indexingInitializing', "Initializing...")}`;
+					}
+
+					// Render with icon support
+					clearNode(statusContainer);
+					append(statusContainer, ...renderLabelWithIcons(statusText));
+				}
+			});
+
+			// Initial loading state
+			append(statusContainer, ...renderLabelWithIcons('$(loading~spin) Loading...'));
+		}
+
 		// Puku Editor: Show Puku account status or sign-in option
 		{
-			const { chat: chatQuota, completions: completionsQuota, premiumChat: premiumChatQuota } = this.chatEntitlementService.quotas;
-			const hasQuotaInfo = chatQuota || completionsQuota || premiumChatQuota;
-			const newUser = isNewUser(this.chatEntitlementService);
-			const signedOut = this.chatEntitlementService.entitlement === ChatEntitlement.Unknown;
-			const disabled = this.chatEntitlementService.sentiment.disabled || this.chatEntitlementService.sentiment.untrusted;
+			// TODO: Add quota info checks when implementing usage tracking
+			// const { chat: chatQuota, completions: completionsQuota, premiumChat: premiumChatQuota } = this.chatEntitlementService.quotas;
+			// const hasQuotaInfo = chatQuota || completionsQuota || premiumChatQuota;
+			// const newUser = isNewUser(this.chatEntitlementService);
+			// const signedOut = this.chatEntitlementService.entitlement === ChatEntitlement.Unknown;
+			// const disabled = this.chatEntitlementService.sentiment.disabled || this.chatEntitlementService.sentiment.untrusted;
+
 			const pukuAuthenticated = this.pukuAuthService.isAuthenticated();
 
-			// Show Puku sign-in when we have quota info but user is NOT authenticated with Puku
-			if (hasQuotaInfo && !newUser && !signedOut && !disabled && !pukuAuthenticated) {
+			// Show Puku sign-in when user is NOT authenticated with Puku
+			if (!pukuAuthenticated) {
 				addSeparator(localize('pukuAccount', "Puku Account"));
 
 				this.element.appendChild($('div.description', undefined, localize('pukuSignInDescription', "Sign in to enable semantic search and indexing.")));
@@ -590,7 +636,7 @@ class ChatStatusDashboard extends Disposable {
 				disposables.add(pukuButton.onDidClick(() => this.runCommandAndClose('puku.signIn')));
 			}
 			// Show authenticated status when user is signed in with Puku
-			else if (pukuAuthenticated && hasQuotaInfo && !newUser && !signedOut && !disabled) {
+			else if (pukuAuthenticated) {
 				addSeparator(localize('pukuAccount', "Puku Account"));
 
 				const session = this.pukuAuthService.session;

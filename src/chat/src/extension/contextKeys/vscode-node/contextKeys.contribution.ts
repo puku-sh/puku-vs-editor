@@ -114,7 +114,7 @@ export class ContextKeysContribution extends Disposable {
 	}
 
 	private async _inspectContext() {
-		this._logService.debug(`[context keys] Updating context keys.`);
+		this._logService.info(`[context keys] Updating context keys...`);
 		this._cancelPendingOfflineCheck();
 		const allKeys = Object.values(welcomeViewContextKeys);
 		let error: unknown | undefined = undefined;
@@ -124,21 +124,24 @@ export class ContextKeysContribution extends Disposable {
 		const ollamaEndpoint = this._configService.getConfig(ConfigKey.OllamaEndpoint);
 		if (ollamaEndpoint) {
 			// Skip authentication check when using Ollama
-			this._logService.debug(`[context keys] Ollama endpoint configured, activating without GitHub auth.`);
+			this._logService.info(`[context keys] Ollama endpoint configured, activating without GitHub auth.`);
 			key = welcomeViewContextKeys.Activated;
 		} else {
 			try {
-				await this._authenticationService.getCopilotToken();
+				this._logService.info(`[context keys] Getting Copilot token...`);
+				const token = await this._authenticationService.getCopilotToken();
+				this._logService.info(`[context keys] Successfully got Copilot token, setting Activated key`);
 				key = welcomeViewContextKeys.Activated;
 			} catch (e: any) {
 				error = e;
 				const reason = e.message || e;
+				this._logService.error(`[context keys] Failed to get Puku token: ${reason}`, e);
 				const data = TelemetryData.createAndMarkAsIssued({ reason });
 				this._telemetryService.sendGHTelemetryErrorEvent('activationFailed', data.properties, data.measurements);
 				const message =
-					reason === 'GitHubLoginFailed'
+					reason === 'PukuLoginRequired'
 						? SESSION_LOGIN_MESSAGE
-						: `GitHub Copilot could not connect to server. Extension activation failed: "${reason}"`;
+						: `Puku could not connect to server. Extension activation failed: "${reason}"`;
 				this._logService.error(message);
 			}
 		}
@@ -159,16 +162,21 @@ export class ContextKeysContribution extends Disposable {
 		}
 
 		if (key) {
+			this._logService.info(`[context keys] Setting context key: ${key} = true`);
 			commands.executeCommand('setContext', key, true);
+		} else {
+			this._logService.warn(`[context keys] No context key to set - user might need to authenticate`);
 		}
 
 		// Unset all other context keys
 		for (const contextKey of allKeys) {
 			if (contextKey !== key) {
+				this._logService.debug(`[context keys] Unsetting context key: ${contextKey} = false`);
 				commands.executeCommand('setContext', contextKey, false);
 			}
 		}
 
+		this._logService.info(`[context keys] Context keys updated. Active key: ${key || 'NONE'}`);
 		await this._updatePermissiveSessionContext();
 	}
 
@@ -237,19 +245,8 @@ export class ContextKeysContribution extends Disposable {
 	}
 
 	private async _updatePermissiveSessionContext() {
-		let hasPermissiveSession = false;
-		let missingPermissiveSession = false;
-		if (!this._authenticationService.isMinimalMode) {
-			try {
-				hasPermissiveSession = !!(await this._authenticationService.getPermissiveGitHubSession({ silent: true }));
-			} catch (error) {
-				if (!(error instanceof MinimalModeError)) {
-					this._logService.trace(`[context keys] Failed to resolve permissive session: ${error instanceof Error ? error.message : String(error)}`);
-					hasPermissiveSession = !!this._authenticationService.permissiveGitHubSession;
-				}
-			}
-			missingPermissiveSession = !hasPermissiveSession;
-		}
-		commands.executeCommand('setContext', missingPermissiveSessionContextKey, missingPermissiveSession);
+		// Puku Editor: Using Puku authentication only, no GitHub permissive session needed
+		// Always set to false since we don't use GitHub authentication
+		commands.executeCommand('setContext', missingPermissiveSessionContextKey, false);
 	}
 }
