@@ -89,6 +89,10 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 
 			if (this._session) {
 				this._logService.info(`PukuAuthContribution: Found existing session for ${this._session.account.label}`);
+
+				// Refresh context keys to update UI with existing session
+				this._logService.info('PukuAuthContribution: Refreshing context keys for existing session');
+				await vscode.commands.executeCommand('puku.refreshToken');
 			} else {
 				this._logService.info('PukuAuthContribution: No existing session found');
 			}
@@ -143,7 +147,23 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 				} as any;
 
 				this._logService.info(`PukuAuthContribution: Successfully signed in as ${this._session.account.label}`);
+				this._logService.info(`PukuAuthContribution: Session created with token length: ${token.length}`);
 				this._updateStatusBar();
+
+				// Also try to create session in the auth provider for persistence
+				try {
+					this._logService.info('PukuAuthContribution: Creating session in auth provider for persistence');
+					await vscode.authentication.getSession('puku', [], { createIfNone: true, silent: true });
+				} catch (e) {
+					this._logService.warn('PukuAuthContribution: Could not create session in auth provider (non-critical)', e);
+				}
+
+				// Refresh context keys to update UI after authentication
+				// Small delay to ensure session is fully set
+				await new Promise(resolve => setTimeout(resolve, 100));
+				this._logService.info('PukuAuthContribution: Refreshing context keys after sign-in');
+				await vscode.commands.executeCommand('puku.refreshToken');
+
 				vscode.window.showInformationMessage(`Signed in to Puku as ${this._session.account.label}`);
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error);
@@ -160,6 +180,11 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 				// The auth provider will handle the actual session removal
 				this._session = undefined;
 				this._updateStatusBar();
+
+				// Refresh context keys to update UI after sign-out
+				this._logService.info('PukuAuthContribution: Refreshing context keys after sign-out');
+				await vscode.commands.executeCommand('puku.refreshToken');
+
 				vscode.window.showInformationMessage('Signed out from Puku');
 			}
 		}));
@@ -194,14 +219,14 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 		// Internal command: Get session token
 		// This is called by other services to get the current auth token
 		this._register(vscode.commands.registerCommand('_puku.getSessionToken', async () => {
-			this._logService.info('PukuAuthContribution: _puku.getSessionToken called');
+			this._logService.info(`PukuAuthContribution: _puku.getSessionToken called. Has session: ${!!this._session}, Has accessToken: ${this._session && 'accessToken' in this._session}`);
 
 			// First try to get from local session (extension layer)
 			if (this._session && 'accessToken' in this._session) {
 				const PUKU_API_ENDPOINT = 'https://api.puku.sh';
 				const accessToken = (this._session as any).accessToken;
 
-				this._logService.info('PukuAuthContribution: Returning token from extension layer session');
+				this._logService.info(`PukuAuthContribution: Returning token from extension layer session (account: ${this._session.account.label})`);
 				return {
 					token: accessToken,
 					expiresAt: (Date.now() / 1000) + (7 * 24 * 3600), // 7 days
@@ -240,7 +265,7 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 				this._logService.error('PukuAuthContribution: Failed to get token from workbench layer:', error);
 			}
 
-			this._logService.info('PukuAuthContribution: No session token available');
+			this._logService.warn('PukuAuthContribution: No session token available - user needs to sign in');
 			return undefined;
 		}));
 
@@ -298,8 +323,8 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 	private async _getUserInfo(token: string): Promise<{ id: string; name?: string; email: string }> {
 		try {
 			const PUKU_API_ENDPOINT = 'https://api.puku.sh';
-			// Use the same endpoint as VS Code layer: /auth/session
-			const response = await fetch(`${PUKU_API_ENDPOINT}/auth/session`, {
+			// Use the same endpoint as PukuAuthProvider: /puku/v1/user
+			const response = await fetch(`${PUKU_API_ENDPOINT}/puku/v1/user`, {
 				headers: {
 					'Authorization': `Bearer ${token}`,
 					'Content-Type': 'application/json'
@@ -307,10 +332,12 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 			});
 
 			if (!response.ok) {
+				this._logService.error(`PukuAuthContribution: Failed to fetch user info: ${response.status} ${response.statusText}`);
 				throw new Error(`Failed to fetch user info: ${response.statusText}`);
 			}
 
 			const data = await response.json();
+			this._logService.info(`PukuAuthContribution: User info response: ${JSON.stringify(data)}`);
 			return {
 				id: data.id || data.user_id || 'unknown',
 				name: data.name || data.username,

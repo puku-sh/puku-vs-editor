@@ -130,6 +130,33 @@ export class PukuIndexingContribution extends Disposable {
 				vscode.window.showInformationMessage('No cache to clear or cache not found.');
 			}
 		}));
+
+		// Internal command: Get indexing status (for dashboard display)
+		this._register(vscode.commands.registerCommand('_puku.getIndexingStatus', () => {
+			if (!this._indexingService) {
+				return {
+					status: 'disabled',
+					indexedFiles: 0,
+					chunks: 0
+				};
+			}
+
+			const files = this._indexingService.getIndexedFiles();
+			const totalChunks = files.reduce((sum, f) => sum + f.chunks, 0);
+			const progress = this._indexingService.progress;
+
+			return {
+				status: this._indexingService.status,
+				indexedFiles: files.length,
+				chunks: totalChunks,
+				progress: this._indexingService.status === PukuIndexingStatus.Indexing
+					? {
+						totalFiles: progress.totalFiles,
+						indexedFiles: progress.indexedFiles
+					}
+					: undefined
+			};
+		}));
 	}
 
 	private async _initializeIndexing(): Promise<void> {
@@ -146,11 +173,11 @@ export class PukuIndexingContribution extends Disposable {
 			});
 			const indexingService = this._indexingService;
 
-			// Create status bar item
+			// Create status bar item (hidden - workbench layer handles status with dashboard)
 			this._statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 			this._statusBarItem.text = '$(sync~spin) Puku: Initializing...';
 			this._statusBarItem.tooltip = 'Puku Indexing Service';
-			this._statusBarItem.show();
+			// this._statusBarItem.show(); // Hidden - workbench shows status + dashboard with sign-in
 			this._register({ dispose: () => this._statusBarItem?.dispose() });
 
 			// Listen for status changes

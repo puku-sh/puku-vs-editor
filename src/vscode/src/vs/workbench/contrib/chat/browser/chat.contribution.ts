@@ -115,6 +115,7 @@ import { ChatSessionsView, ChatSessionsViewContrib } from './chatSessions/view/c
 import { ChatSetupContribution, ChatTeardownContribution } from './chatSetup.js';
 import { ChatStatusBarEntry } from './chatStatus.js';
 import { ChatVariablesService } from './chatVariables.js';
+import { IPukuAuthService } from '../../../services/chat/common/pukuAuthService.js';
 import { ChatWidget } from './chatWidget.js';
 import { ChatCodeBlockContextProviderService } from './codeBlockContextProviderService.js';
 import { ChatDynamicVariableModel } from './contrib/chatDynamicVariables.js';
@@ -974,6 +975,22 @@ class ToolReferenceNamesContribution extends Disposable implements IWorkbenchCon
 	}
 }
 
+/**
+ * Puku Auth Initialization Contribution
+ * Initializes the Puku authentication service to restore existing sessions
+ */
+class PukuAuthInitContribution extends Disposable implements IWorkbenchContribution {
+	static readonly ID = 'workbench.contrib.pukuAuthInit';
+
+	constructor(
+		@IPukuAuthService private readonly pukuAuthService: IPukuAuthService,
+	) {
+		super();
+		// Initialize Puku auth service to restore session from storage
+		this.pukuAuthService.initialize();
+	}
+}
+
 AccessibleViewRegistry.register(new ChatTerminalOutputAccessibleView());
 AccessibleViewRegistry.register(new ChatResponseAccessibleView());
 AccessibleViewRegistry.register(new PanelChatAccessibilityHelp());
@@ -1075,6 +1092,7 @@ registerWorkbenchContribution2(ChatViewsWelcomeHandler.ID, ChatViewsWelcomeHandl
 registerWorkbenchContribution2(ChatGettingStartedContribution.ID, ChatGettingStartedContribution, WorkbenchPhase.Eventually);
 registerWorkbenchContribution2(ChatSetupContribution.ID, ChatSetupContribution, WorkbenchPhase.BlockRestore);
 registerWorkbenchContribution2(ChatTeardownContribution.ID, ChatTeardownContribution, WorkbenchPhase.AfterRestored);
+registerWorkbenchContribution2(PukuAuthInitContribution.ID, PukuAuthInitContribution, WorkbenchPhase.BlockStartup);
 registerWorkbenchContribution2(ChatStatusBarEntry.ID, ChatStatusBarEntry, WorkbenchPhase.BlockRestore);
 registerWorkbenchContribution2(BuiltinToolsContribution.ID, BuiltinToolsContribution, WorkbenchPhase.Eventually);
 registerWorkbenchContribution2(ChatAgentSettingContribution.ID, ChatAgentSettingContribution, WorkbenchPhase.AfterRestored);

@@ -245,16 +245,13 @@ export abstract class BaseAuthenticationService extends Disposable implements IA
 	//#endregion
 
 	protected async _handleAuthChangeEvent(): Promise<void> {
-		const anyGitHubSessionBefore = this._anyGitHubSession;
-		const permissiveGitHubSessionBefore = this._permissiveGitHubSession;
+		// Puku Editor: Using Puku authentication only, no GitHub sessions
 		const anyAdoSessionBefore = this._anyAdoSession;
 		const copilotTokenBefore = this._tokenStore.copilotToken;
 		const copilotTokenErrorBefore = this._copilotTokenError;
 
-		// Update caches
+		// Update ADO cache only (GitHub sessions removed)
 		const resolved = await Promise.allSettled([
-			this.getAnyGitHubSession({ silent: true }),
-			this.getPermissiveGitHubSession({ silent: true }),
 			this.getAnyAdoSession({ silent: true }),
 		]);
 		for (const res of resolved) {
@@ -263,28 +260,12 @@ export abstract class BaseAuthenticationService extends Disposable implements IA
 			}
 		}
 
-		if (
-			anyGitHubSessionBefore?.accessToken !== this._anyGitHubSession?.accessToken ||
-			permissiveGitHubSessionBefore?.accessToken !== this._permissiveGitHubSession?.accessToken
-		) {
-			this._onDidAccessTokenChange.fire();
-			this._logService.debug('Auth state changed, minting a new CopilotToken...');
-			// The auth state has changed, so mint a new Copilot token
-			try {
-				await this.getCopilotToken(true);
-			} catch (e) {
-				// Ignore errors
-			}
-			this._logService.debug('Minted a new CopilotToken.');
-			return;
-		}
-
 		if (anyAdoSessionBefore?.accessToken !== this._anyAdoSession?.accessToken) {
 			this._logService.debug(`Ado auth state changed, firing event. Had token before: ${!!anyAdoSessionBefore?.accessToken}. Has token now: ${!!this._anyAdoSession?.accessToken}.`);
 			this._onDidAdoAuthenticationChange.fire();
 		}
 
-		// Auth state hasn't changed, but the Copilot token might have
+		// Check if Puku token state changed
 		try {
 			await this.getCopilotToken();
 		} catch (e) {
@@ -292,10 +273,10 @@ export abstract class BaseAuthenticationService extends Disposable implements IA
 		}
 
 		if (copilotTokenBefore?.token !== this._tokenStore.copilotToken?.token ||
-			// React to errors changing too (i.e. I go from zero session to a session that doesn't have Copilot access)
+			// React to errors changing too (i.e. I go from zero session to a session that doesn't have Puku access)
 			copilotTokenErrorBefore?.message !== this._copilotTokenError?.message
 		) {
-			this._logService.debug('CopilotToken state changed, firing event.');
+			this._logService.debug('Puku token state changed, firing event.');
 			this._onDidAuthenticationChange.fire();
 		}
 		this._logService.debug('Finished handling auth change event.');
