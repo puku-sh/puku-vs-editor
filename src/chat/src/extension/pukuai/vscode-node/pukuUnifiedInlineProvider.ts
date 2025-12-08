@@ -56,12 +56,16 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 		context: vscode.InlineCompletionContext,
 		token: vscode.CancellationToken
 	): Promise<vscode.InlineCompletionItem[] | vscode.InlineCompletionList | null> {
+		// Detect cycling: user pressed Alt+] or Alt+[ to see more completions
+		const isCycling = context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke;
+
 		console.log('[PukuUnifiedProvider] provideInlineCompletionItems called', {
 			file: document.fileName,
 			line: position.line,
-			char: position.character
+			char: position.character,
+			isCycling // Log cycling state
 		});
-		this.logService.info('[PukuUnifiedProvider] provideInlineCompletionItems called');
+		this.logService.info(`[PukuUnifiedProvider] provideInlineCompletionItems called (cycling: ${isCycling})`);
 
 		if (token.isCancellationRequested) {
 			return null;
@@ -71,7 +75,7 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 		console.log('[PukuUnifiedProvider] ⚡ Calling model.getCompletion()...');
 		this.logService.info('[PukuUnifiedProvider] Calling model.getCompletion()');
 
-		const result = await this.model.getCompletion(document, position, context, token);
+		const result = await this.model.getCompletion(document, position, context, token, isCycling);
 
 		console.log('[PukuUnifiedProvider] ⚡ Model returned:', result?.type ?? 'null');
 		this.logService.info('[PukuUnifiedProvider] Model returned:', result?.type ?? 'null');
@@ -101,10 +105,8 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 			const isImportFix = fix.range.start.line === 0 && position.line > 0;
 
 			if (isImportFix) {
-				// For import fixes: Show suggestion at top of file where it will be inserted
-				// IMPORTANT: isInlineEdit: true does NOT support additionalTextEdits (see VS Code InlineEditItem source)
-				// So we can't show label at cursor while inserting at top.
-				// Instead, show the import preview at the top of the file (line 0)
+				// For import fixes: Show at top of file (line 0)
+				// Even though cursor is elsewhere, VS Code can still show this
 				console.log('[PukuUnifiedProvider] Import fix - showing at top of file');
 				console.log('[PukuUnifiedProvider] Creating import completion item:', {
 					insertText: fix.newText,
@@ -115,11 +117,13 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 				const item: vscode.InlineCompletionItem = {
 					insertText: fix.newText,
 					range: fix.range, // Line 0 - top of file
-					// Regular inline completion (not inline edit)
-					// Will show grey preview text at line 0
 				};
-				console.log('[PukuUnifiedProvider] ✅ Returning import completion item to VS Code');
-				return [item];
+				console.log('[PukuUnifiedProvider] ✅ Returning import completion item to VS Code with forward stability');
+				// Return InlineCompletionList with enableForwardStability (Issue #55)
+				return {
+					items: [item],
+					enableForwardStability: true
+				};
 			} else {
 				// For non-import fixes: Use isInlineEdit for proper diff view
 				const item: vscode.InlineCompletionItem = {
@@ -132,14 +136,24 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 						kind: vscode.InlineCompletionDisplayLocationKind.Code
 					}
 				};
-				return [item];
+				// Return InlineCompletionList with enableForwardStability (Issue #55)
+				return {
+					items: [item],
+					enableForwardStability: true
+				};
 			}
 		}
 
 		// Handle FIM result
 		if (result.type === 'fim') {
-			this.logService.info('[PukuUnifiedProvider] Returning FIM completion');
-			return [result.completion];
+			// Support multiple completions (Feature #64)
+			const items = Array.isArray(result.completion) ? result.completion : [result.completion];
+			this.logService.info(`[PukuUnifiedProvider] Returning ${items.length} FIM completion(s) with forward stability`);
+			// Return InlineCompletionList with enableForwardStability (Issue #55)
+			return {
+				items,
+				enableForwardStability: true
+			};
 		}
 
 		return null;

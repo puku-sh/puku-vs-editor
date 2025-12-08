@@ -134,7 +134,7 @@ export class CAPIClient {
 
 			case RequestType.ProxyChatCompletions:
 			case RequestType.ProxyCompletions:
-				return `${proxyUrl}/v1/engines/copilot-codex/completions`;
+				return `https://api.puku.sh/v1/nes/edits`;
 
 			case RequestType.Models:
 			case RequestType.AutoModels:

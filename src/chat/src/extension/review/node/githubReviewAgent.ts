@@ -131,7 +131,7 @@ export async function githubReview(
 		return { type: 'success', comments: [] };
 	}
 
-	const ignored = await Promise.all(changes.map(i => ignoreService.isCopilotIgnored(i.document.uri)));
+	const ignored = await Promise.all(changes.map(i => ignoreService.isPukuIgnored(i.document.uri)));
 	const filteredChanges = changes.filter((_, i) => !ignored[i]);
 	if (filteredChanges.length === 0) {
 		logService.info('All input documents are ignored. Skipping feedback generation.');

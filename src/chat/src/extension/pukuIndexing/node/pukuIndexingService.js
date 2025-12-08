@@ -1,0 +1,609 @@
+"use strict";
+/*---------------------------------------------------------------------------------------------
+ *  Puku Editor - AI-powered code editor
+ *  Copyright (c) Puku AI. All rights reserved.
+ *--------------------------------------------------------------------------------------------*/
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.PukuIndexingService = exports.IPukuIndexingService = exports.PukuIndexingStatus = void 0;
+exports.cosineSimilarity = cosineSimilarity;
+const crypto = __importStar(require("crypto"));
+const vscode = __importStar(require("vscode"));
+const services_1 = require("../../../util/common/services");
+const event_1 = require("../../../util/vs/base/common/event");
+const lifecycle_1 = require("../../../util/vs/base/common/lifecycle");
+const pukuAuth_1 = require("../common/pukuAuth");
+const pukuConfig_1 = require("../common/pukuConfig");
+const pukuEmbeddingsCache_1 = require("./pukuEmbeddingsCache");
+const pukuASTChunker_1 = require("./pukuASTChunker");
+const pukuSummaryGenerator_1 = require("./pukuSummaryGenerator");
+/**
+ * Compute cosine similarity between two vectors
+ * Exported for testing purposes
+ */
+function cosineSimilarity(a, b) {
+    if (a.length !== b.length) {
+        return 0;
+    }
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+    for (let i = 0; i < a.length; i++) {
+        dotProduct += a[i] * b[i];
+        normA += a[i] * a[i];
+        normB += b[i] * b[i];
+    }
+    const magnitude = Math.sqrt(normA) * Math.sqrt(normB);
+    return magnitude === 0 ? 0 : dotProduct / magnitude;
+}
+/**
+ * Indexing status
+ */
+var PukuIndexingStatus;
+(function (PukuIndexingStatus) {
+    PukuIndexingStatus["Idle"] = "idle";
+    PukuIndexingStatus["Initializing"] = "initializing";
+    PukuIndexingStatus["Indexing"] = "indexing";
+    PukuIndexingStatus["Ready"] = "ready";
+    PukuIndexingStatus["Error"] = "error";
+    PukuIndexingStatus["Disabled"] = "disabled";
+})(PukuIndexingStatus || (exports.PukuIndexingStatus = PukuIndexingStatus = {}));
+exports.IPukuIndexingService = (0, services_1.createServiceIdentifier)('IPukuIndexingService');
+/**
+ * Puku Indexing Service - handles workspace file indexing using Puku embeddings
+ *
+ * Uses SQLite for persistent storage of embeddings (like Copilot's workspaceChunkAndEmbeddingCache)
+ */
+let PukuIndexingService = class PukuIndexingService extends lifecycle_1.Disposable {
+    constructor(_authService, _configService) {
+        super();
+        this._authService = _authService;
+        this._configService = _configService;
+        this._onDidChangeStatus = this._register(new event_1.Emitter());
+        this.onDidChangeStatus = this._onDidChangeStatus.event;
+        this._onDidCompleteIndexing = this._register(new event_1.Emitter());
+        this.onDidCompleteIndexing = this._onDidCompleteIndexing.event;
+        this._status = PukuIndexingStatus.Idle;
+        this._progress = {
+            status: PukuIndexingStatus.Idle,
+            totalFiles: 0,
+            indexedFiles: 0,
+        };
+        this._indexedFiles = new Map();
+        this._isIndexing = false;
+        this._cancelIndexing = false;
+        this._pendingReindex = new Set();
+        // Listen for auth status changes
+        this._register(this._authService.onDidChangeAuthStatus((status) => {
+            if (status === pukuAuth_1.PukuAuthStatus.Authenticated) {
+                console.log('[PukuIndexing] Auth ready, starting indexing initialization');
+                this.initialize().catch(err => {
+                    console.error('[PukuIndexing] Failed to initialize after auth ready:', err);
+                });
+            }
+            else if (status === pukuAuth_1.PukuAuthStatus.Unauthenticated) {
+                this._setStatus(PukuIndexingStatus.Disabled);
+            }
+        }));
+        // Set up file watcher for automatic re-indexing
+        this._setupFileWatcher();
+    }
+    /**
+     * Set up file watcher to detect changes and trigger re-indexing
+     */
+    _setupFileWatcher() {
+        // Watch for changes in supported file types
+        const pattern = '**/*.{ts,tsx,js,jsx,py,java,c,cpp,h,hpp,cs,go,rs,rb,php,swift,kt,scala,vue,svelte,md,json,yaml,yml,toml}';
+        this._fileWatcher = vscode.workspace.createFileSystemWatcher(pattern);
+        console.log('[PukuIndexing] File watcher initialized');
+        // On file change - queue for re-indexing (only log if not excluded)
+        this._register(this._fileWatcher.onDidChange((uri) => {
+            this._queueFileForReindex(uri);
+        }));
+        // On file create - queue for indexing
+        this._register(this._fileWatcher.onDidCreate((uri) => {
+            this._queueFileForReindex(uri);
+        }));
+        // On file delete - remove from cache
+        this._register(this._fileWatcher.onDidDelete((uri) => {
+            this._removeFileFromIndex(uri);
+        }));
+        this._register(this._fileWatcher);
+    }
+    /**
+     * Check if a path should be excluded from indexing
+     */
+    _isExcludedPath(path) {
+        return path.includes('node_modules') || path.includes('.git') || path.includes('dist') ||
+            path.includes('build') || path.includes('.next') || path.includes('.puku') ||
+            path.includes('out') || path.includes('.vscode-test');
+    }
+    /**
+     * Queue a file for re-indexing with debouncing
+     */
+    _queueFileForReindex(uri) {
+        // Skip if not available or currently doing full indexing
+        if (!this.isAvailable()) {
+            return; // Silent skip - too noisy otherwise
+        }
+        if (this._isIndexing) {
+            return; // Silent skip during full indexing
+        }
+        // Skip files in excluded directories
+        if (this._isExcludedPath(uri.fsPath)) {
+            return; // Silent skip for excluded paths
+        }
+        this._pendingReindex.add(uri.toString());
+        // Debounce: wait 2 seconds after last change before re-indexing
+        if (this._reindexDebounceTimer) {
+            clearTimeout(this._reindexDebounceTimer);
+        }
+        this._reindexDebounceTimer = setTimeout(() => {
+            this._processReindexQueue();
+        }, 2000);
+    }
+    /**
+     * Process the queue of files pending re-indexing
+     */
+    async _processReindexQueue() {
+        if (this._pendingReindex.size === 0 || !this._cache || !this.isAvailable()) {
+            return;
+        }
+        const files = Array.from(this._pendingReindex);
+        this._pendingReindex.clear();
+        for (const uriString of files) {
+            try {
+                const uri = vscode.Uri.parse(uriString);
+                await this._indexFile(uri);
+            }
+            catch (error) {
+                console.error(`[PukuIndexing] Error re-indexing ${uriString}:`, error);
+            }
+        }
+    }
+    /**
+     * Remove a file from the index (when deleted)
+     */
+    _removeFileFromIndex(uri) {
+        if (!this._cache) {
+            return;
+        }
+        const uriString = uri.toString();
+        if (this._indexedFiles.has(uriString)) {
+            this._cache.removeFile(uriString);
+            this._indexedFiles.delete(uriString);
+        }
+    }
+    get status() {
+        return this._status;
+    }
+    get progress() {
+        return this._progress;
+    }
+    isAvailable() {
+        return this._authService.isReady();
+    }
+    async initialize() {
+        this._setStatus(PukuIndexingStatus.Initializing);
+        try {
+            // Initialize auth
+            await this._authService.initialize();
+            if (!this._authService.isReady()) {
+                console.log('[PukuIndexing] Auth not ready, indexing disabled');
+                this._setStatus(PukuIndexingStatus.Disabled);
+                return;
+            }
+            // Initialize SQLite cache
+            const storageUri = vscode.workspace.workspaceFolders?.[0]
+                ? vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, '.puku')
+                : undefined;
+            this._cache = new pukuEmbeddingsCache_1.PukuEmbeddingsCache(storageUri);
+            await this._cache.initialize();
+            // Initialize summary generator with database access for job tracking
+            this._summaryGenerator = new pukuSummaryGenerator_1.PukuSummaryGenerator(this._authService, this._configService, this._cache.db);
+            // Log cache stats
+            const stats = this._cache.getStats();
+            console.log(`[PukuIndexing] Initialized - SQLite cache: ${stats.fileCount} files, ${stats.chunkCount} chunks`);
+            // If we have cached data, load it
+            if (stats.fileCount > 0) {
+                this._loadFromCache();
+                this._setStatus(PukuIndexingStatus.Ready);
+            }
+            else {
+                this._setStatus(PukuIndexingStatus.Idle);
+                // Auto-start indexing for fresh cache
+                this.startIndexing().catch(err => {
+                    console.error('[PukuIndexing] Auto-indexing failed:', err);
+                });
+            }
+        }
+        catch (error) {
+            console.error('[PukuIndexing] Initialization failed:', error);
+            this._setStatus(PukuIndexingStatus.Error, String(error));
+        }
+    }
+    _loadFromCache() {
+        if (!this._cache) {
+            return;
+        }
+        // Group chunks by file to build indexed files list
+        const chunks = this._cache.getAllChunks();
+        const fileChunkCounts = new Map();
+        for (const chunk of chunks) {
+            const count = fileChunkCounts.get(chunk.uri) || 0;
+            fileChunkCounts.set(chunk.uri, count + 1);
+        }
+        for (const [uri, count] of fileChunkCounts) {
+            this._indexedFiles.set(uri, {
+                uri: vscode.Uri.parse(uri),
+                chunks: count,
+                lastIndexed: Date.now(),
+            });
+        }
+    }
+    async startIndexing() {
+        if (this._isIndexing) {
+            return;
+        }
+        if (!this.isAvailable()) {
+            return;
+        }
+        if (!this._cache) {
+            return;
+        }
+        this._isIndexing = true;
+        this._cancelIndexing = false;
+        this._setStatus(PukuIndexingStatus.Indexing);
+        try {
+            // Get workspace files
+            const files = await this._getWorkspaceFiles();
+            this._updateProgress({
+                status: PukuIndexingStatus.Indexing,
+                totalFiles: files.length,
+                indexedFiles: 0,
+            });
+            let newFilesIndexed = 0;
+            let cachedFiles = 0;
+            for (let i = 0; i < files.length; i++) {
+                if (this._cancelIndexing) {
+                    console.log('[PukuIndexing] Indexing cancelled');
+                    break;
+                }
+                const file = files[i];
+                try {
+                    const wasIndexed = await this._indexFile(file);
+                    if (wasIndexed === 'cached') {
+                        cachedFiles++;
+                    }
+                    else if (wasIndexed === 'indexed') {
+                        newFilesIndexed++;
+                    }
+                    this._updateProgress({
+                        status: PukuIndexingStatus.Indexing,
+                        totalFiles: files.length,
+                        indexedFiles: i + 1,
+                        currentFile: file.fsPath,
+                    });
+                }
+                catch (error) {
+                    console.error(`[PukuIndexing] Error indexing ${file.fsPath}:`, error);
+                }
+            }
+            if (!this._cancelIndexing) {
+                this._setStatus(PukuIndexingStatus.Ready);
+                this._onDidCompleteIndexing.fire();
+                const stats = this._cache.getStats();
+                console.log(`[PukuIndexing] Indexing complete. ${stats.fileCount} files (${newFilesIndexed} new, ${cachedFiles} cached), ${stats.chunkCount} chunks`);
+            }
+        }
+        catch (error) {
+            console.error('[PukuIndexing] Indexing failed:', error);
+            this._setStatus(PukuIndexingStatus.Error, String(error));
+        }
+        finally {
+            this._isIndexing = false;
+        }
+    }
+    stopIndexing() {
+        if (this._isIndexing) {
+            this._cancelIndexing = true;
+            console.log('[PukuIndexing] Stopping indexing...');
+        }
+    }
+    getIndexedFiles() {
+        return Array.from(this._indexedFiles.values());
+    }
+    async search(query, limit = 10, languageId) {
+        if (!this._cache) {
+            return [];
+        }
+        const allChunks = this._cache.getAllChunks();
+        if (allChunks.length === 0) {
+            return [];
+        }
+        // Filter by languageId if specified
+        const filteredChunks = languageId
+            ? allChunks.filter(chunk => chunk.languageId === languageId)
+            : allChunks;
+        if (filteredChunks.length === 0) {
+            return [];
+        }
+        try {
+            // Get query embedding
+            const queryEmbedding = await this.computeEmbedding(query);
+            if (!queryEmbedding || queryEmbedding.length === 0) {
+                return [];
+            }
+            // Score all chunks
+            const scores = [];
+            for (const chunk of filteredChunks) {
+                const score = this._cosineSimilarity(queryEmbedding, chunk.embedding);
+                scores.push({ chunk, score });
+            }
+            // Sort by score and take top results
+            scores.sort((a, b) => b.score - a.score);
+            const topScores = scores.slice(0, limit);
+            // Build results
+            return topScores.map(({ chunk, score }) => ({
+                uri: vscode.Uri.parse(chunk.uri),
+                content: chunk.text,
+                score,
+                lineStart: chunk.lineStart,
+                lineEnd: chunk.lineEnd,
+                chunkType: chunk.chunkType,
+                symbolName: chunk.symbolName,
+            }));
+        }
+        catch (error) {
+            console.error('[PukuIndexing] Search failed:', error);
+            return [];
+        }
+    }
+    async _getWorkspaceFiles() {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            return [];
+        }
+        // Find relevant files (code files, not too large)
+        const pattern = '**/*.{ts,tsx,js,jsx,py,java,c,cpp,h,hpp,cs,go,rs,rb,php,swift,kt,scala,vue,svelte,md,json,yaml,yml,toml}';
+        const excludePattern = '**/node_modules/**,**/.git/**,**/dist/**,**/build/**,**/.next/**,**/target/**,**/vendor/**,**/.puku/**';
+        const files = await vscode.workspace.findFiles(pattern, excludePattern, 1000);
+        return files;
+    }
+    async _indexFile(uri) {
+        if (!this._cache) {
+            return 'skipped';
+        }
+        try {
+            const document = await vscode.workspace.openTextDocument(uri);
+            const content = document.getText();
+            const languageId = document.languageId;
+            // Skip empty or very large files
+            if (!content || content.length === 0) {
+                return 'skipped';
+            }
+            if (content.length > 100000) {
+                return 'skipped';
+            }
+            // Compute content hash
+            const contentHash = crypto.createHash('md5').update(content).digest('hex');
+            // Check if already indexed with same content
+            if (this._cache.isIndexed(uri.toString(), contentHash)) {
+                // Already indexed and up-to-date
+                const chunks = this._cache.getChunksForFile(uri.toString());
+                this._indexedFiles.set(uri.toString(), {
+                    uri,
+                    chunks: chunks.length,
+                    lastIndexed: Date.now(),
+                });
+                return 'cached';
+            }
+            // Chunk the content using AST-based chunking (Cursor-like approach)
+            const semanticChunks = await pukuASTChunker_1.pukuASTChunker.chunkContent(content, languageId);
+            if (semanticChunks.length === 0) {
+                return 'skipped';
+            }
+            // Generate natural language summaries for each chunk using LLM with parallel job processing
+            let summaries = [];
+            let fileId;
+            if (this._summaryGenerator && this._cache) {
+                try {
+                    // Get or create temporary file ID for job tracking
+                    fileId = this._cache.getOrCreateTemporaryFileId(uri.toString(), contentHash, languageId);
+                    // Generate summaries with parallel jobs (if fileId available)
+                    summaries = await this._summaryGenerator.generateSummariesBatch(semanticChunks, languageId, fileId);
+                }
+                catch (error) {
+                    console.error(`[PukuIndexing] _indexFile: summary generation failed, using fallback - ${uri.fsPath}:`, error);
+                    // Fallback to empty summaries if LLM fails
+                    summaries = semanticChunks.map(() => '');
+                }
+            }
+            else {
+                // No summary generator available
+                summaries = semanticChunks.map(() => '');
+            }
+            // Compute embeddings for summaries (not raw code) to improve semantic search
+            // When user writes "// send email notification", it will match summary "function that sends email..."
+            // Ensure we don't access out of bounds if summaries.length > chunks.length
+            const textsToEmbed = summaries
+                .slice(0, semanticChunks.length) // Limit to chunks length
+                .map((summary, i) => summary || semanticChunks[i].text // Fallback to raw code if no summary
+            );
+            const embeddings = await this._computeEmbeddingsBatch(textsToEmbed);
+            const chunksWithEmbeddings = [];
+            for (let i = 0; i < semanticChunks.length; i++) {
+                const chunk = semanticChunks[i];
+                const embedding = embeddings[i];
+                if (embedding && embedding.length > 0) {
+                    chunksWithEmbeddings.push({
+                        text: chunk.text,
+                        summary: summaries[i] || undefined,
+                        lineStart: chunk.lineStart,
+                        lineEnd: chunk.lineEnd,
+                        embedding,
+                        chunkType: chunk.chunkType,
+                        symbolName: chunk.symbolName,
+                    });
+                }
+            }
+            if (chunksWithEmbeddings.length > 0) {
+                // Store in SQLite cache
+                this._cache.storeFile(uri.toString(), contentHash, languageId, chunksWithEmbeddings);
+                this._indexedFiles.set(uri.toString(), {
+                    uri,
+                    chunks: chunksWithEmbeddings.length,
+                    lastIndexed: Date.now(),
+                });
+                return 'indexed';
+            }
+            return 'skipped';
+        }
+        catch (error) {
+            // File might be binary or inaccessible
+            console.error(`[PukuIndexing] _indexFile: error - ${uri.fsPath}:`, error);
+            return 'skipped';
+        }
+    }
+    _chunkContent(content) {
+        const chunks = [];
+        const lines = content.split('\n');
+        const chunkSize = 50; // lines per chunk
+        const overlap = 10; // overlapping lines
+        for (let i = 0; i < lines.length; i += (chunkSize - overlap)) {
+            const lineStart = i;
+            const lineEnd = Math.min(i + chunkSize, lines.length);
+            const chunkLines = lines.slice(lineStart, lineEnd);
+            const text = chunkLines.join('\n').trim();
+            if (text.length > 50) { // Skip very small chunks
+                chunks.push({
+                    text,
+                    lineStart: lineStart + 1, // 1-indexed
+                    lineEnd,
+                });
+            }
+        }
+        return chunks;
+    }
+    /**
+     * Compute embeddings for multiple texts in a single batch API call
+     * Much more efficient than computing one at a time
+     */
+    async _computeEmbeddingsBatch(texts) {
+        if (texts.length === 0) {
+            return [];
+        }
+        const token = await this._authService.getToken();
+        if (!token) {
+            return texts.map(() => null);
+        }
+        try {
+            // Send all texts in a single API call
+            const response = await fetch(token.endpoints.embeddings, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token.token}`,
+                },
+                body: JSON.stringify({
+                    input: texts, // Batch all texts in one request
+                }),
+            });
+            if (!response.ok) {
+                console.error('[PukuIndexing] Batch embedding request failed:', response.status);
+                const errorText = await response.text();
+                console.error('[PukuIndexing] Error response:', errorText);
+                return texts.map(() => null);
+            }
+            const data = await response.json();
+            if (data.data && Array.isArray(data.data)) {
+                // Sort by index to ensure correct order
+                const sorted = [...data.data].sort((a, b) => a.index - b.index);
+                return sorted.map((item) => item.embedding || null);
+            }
+            return texts.map(() => null);
+        }
+        catch (error) {
+            console.error('[PukuIndexing] Batch embedding computation failed:', error);
+            return texts.map(() => null);
+        }
+    }
+    /**
+     * Compute embedding for a single text (used for search queries and diagnostics)
+     * Public API for other services to use
+     */
+    async computeEmbedding(text) {
+        const results = await this._computeEmbeddingsBatch([text]);
+        return results[0] || null;
+    }
+    _cosineSimilarity(a, b) {
+        return cosineSimilarity(a, b);
+    }
+    _setStatus(status, errorMessage) {
+        this._status = status;
+        this._updateProgress({
+            ...this._progress,
+            status,
+            errorMessage,
+        });
+    }
+    _updateProgress(progress) {
+        this._progress = progress;
+        this._onDidChangeStatus.fire(progress);
+    }
+    dispose() {
+        this.stopIndexing();
+        if (this._reindexDebounceTimer) {
+            clearTimeout(this._reindexDebounceTimer);
+        }
+        this._cache?.dispose();
+        super.dispose();
+    }
+};
+exports.PukuIndexingService = PukuIndexingService;
+exports.PukuIndexingService = PukuIndexingService = __decorate([
+    __param(0, pukuAuth_1.IPukuAuthService),
+    __param(1, pukuConfig_1.IPukuConfigService)
+], PukuIndexingService);
+//# sourceMappingURL=pukuIndexingService.js.map

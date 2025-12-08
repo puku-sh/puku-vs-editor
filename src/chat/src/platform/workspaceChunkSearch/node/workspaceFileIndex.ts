@@ -766,7 +766,7 @@ export class WorkspaceFileIndex extends Disposable implements IWorkspaceFileInde
 		}
 
 		return this._fileReadLimiter.queue(async () => {
-			return !await this._ignoreService.isCopilotIgnored(resource, token);
+			return !await this._ignoreService.isPukuIgnored(resource, token);
 		});
 	}
 

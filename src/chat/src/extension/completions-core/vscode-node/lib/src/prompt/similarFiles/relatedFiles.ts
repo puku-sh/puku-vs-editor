@@ -235,7 +235,7 @@ export abstract class RelatedFilesProvider implements ICompletionsRelatedFilesPr
 
 	private async isContentExcluded(uri: string, content: string): Promise<boolean> {
 		try {
-			return this.ignoreService.isCopilotIgnored(URI.parse(uri));
+			return this.ignoreService.isPukuIgnored(URI.parse(uri));
 		} catch (e) {
 			this.instantiationService.invokeFunction(acc => relatedFilesLogger.exception(acc, e, 'isContentExcluded'));
 		}

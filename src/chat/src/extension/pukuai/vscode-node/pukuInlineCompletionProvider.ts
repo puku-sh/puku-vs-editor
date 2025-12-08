@@ -106,7 +106,7 @@ class LRUCacheMap<K, T> implements Map<K, T> {
 type RequestFunction = () => Promise<string | null>;
 
 class SpeculativeRequestCache {
-	private cache = new LRUCacheMap<string, RequestFunction>(100);
+	private cache = new LRUCacheMap<string, RequestFunction>(1000);
 
 	set(completionId: string, requestFunction: RequestFunction): void {
 		this.cache.set(completionId, requestFunction);
@@ -147,7 +147,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 	private _lastCompletionIdByFile = new Map<string, string>(); // File URI -> completion ID
 	private _lastPrefix = '';
 	private _lastFileUri = ''; // Track last file to skip debounce on file switch
-	private _requestInFlight = false; // Prevent concurrent requests
+	private _requestsInFlightByFile = new Map<string, boolean>(); // Per-file locks for concurrent requests
 	// Radix Trie cache for intelligent completion matching (handles typing, backspace, partial edits)
 	// File-aware: separate cache per file
 	private _completionsCacheByFile = new Map<string, CompletionsCache>();
@@ -269,7 +269,12 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		if (cached.length > 0) {
 			// Store position for validation
 			this._positionValidator.update(fileUri, position);
-			return [this._createCompletionItem(cached[0], new vscode.Range(position, position), position, document.uri)];
+			const completionItem = this._createCompletionItem(cached[0], new vscode.Range(position, position), position, document.uri);
+			// Return InlineCompletionList with enableForwardStability (Issue #55)
+			return {
+				items: [completionItem],
+				enableForwardStability: true
+			};
 		}
 
 		// Generate completion ID early (needed for cache and storing next request)
@@ -280,14 +285,21 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		const lastCompletionId = this._lastCompletionIdByFile.get(fileUri);
 		if (lastCompletionId && this._speculativeCache.has(lastCompletionId)) {
 
-			// Set lock to prevent concurrent requests while cache executes
-			this._requestInFlight = true;
+			// Set per-file lock to prevent concurrent requests for this file while cache executes
+			if (this._requestsInFlightByFile.get(fileUri)) {
+				return null;
+			}
+			this._requestsInFlightByFile.set(fileUri, true);
 
 			const cachedCompletionId = lastCompletionId;
-			const completion = await this._speculativeCache.request(cachedCompletionId);
+			let completion: string | null = null;
 
-			// Release lock
-			this._requestInFlight = false;
+			try {
+				completion = await this._speculativeCache.request(cachedCompletionId);
+			} finally {
+				// Always release lock
+				this._requestsInFlightByFile.delete(fileUri);
+			}
 
 			if (completion && !token.isCancellationRequested) {
 				// Update tracking for cache hits
@@ -348,7 +360,12 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 				// Store position for validation
 				this._positionValidator.update(fileUri, position);
 
-				return [this._createCompletionItem(completion, new vscode.Range(position, position), position, document.uri)];
+				const completionItem = this._createCompletionItem(completion, new vscode.Range(position, position), position, document.uri);
+				// Return InlineCompletionList with enableForwardStability (Issue #55)
+				return {
+					items: [completionItem],
+					enableForwardStability: true
+				};
 			}
 		}
 
@@ -369,20 +386,21 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			}
 		}
 
-		// Block concurrent requests - only one API call at a time
-		if (this._requestInFlight) {
-			console.log(`[PukuInlineCompletion][${reqId}] ❌ Request already in flight`);
+		// Block concurrent requests for this file - only one API call at a time per file
+		if (this._requestsInFlightByFile.get(fileUri)) {
+			console.log(`[PukuInlineCompletion][${reqId}] ❌ Request already in flight for this file`);
 			return null;
 		}
-		console.log(`[PukuInlineCompletion][${reqId}] ✓ No request in flight`);
+		console.log(`[PukuInlineCompletion][${reqId}] ✓ No request in flight for this file`);
 
 		// Skip API calls on backspace (prefix getting shorter)
+		// BUT allow when switching files (different context)
 		// Radix Trie cache will handle showing previous completions
-		if (this._lastPrefix && prefix.length < this._lastPrefix.length) {
+		if (!fileChanged && this._lastPrefix && prefix.length < this._lastPrefix.length) {
 			console.log(`[PukuInlineCompletion][${reqId}] ❌ Backspace detected (${this._lastPrefix.length} -> ${prefix.length})`);
 			return null;
 		}
-		console.log(`[PukuInlineCompletion][${reqId}] ✓ Not backspacing`);
+		console.log(`[PukuInlineCompletion][${reqId}] ✓ Not backspacing or file changed`);
 
 		this._lastRequestTime = now;
 		this._lastFileUri = fileUri;
@@ -499,8 +517,8 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		console.log(`[PukuInlineCompletion][${reqId}] 🌐 Requesting completion from API...`);
 		this._logService.debug(`[PukuInlineCompletion][${reqId}] Requesting completion at ${document.fileName}:${position.line}`);
 
-		// Mark request as in flight
-		this._requestInFlight = true;
+		// Mark request as in flight for this file
+		this._requestsInFlightByFile.set(fileUri, true);
 
 		let completion: string | null = null;
 		try {
@@ -525,8 +543,8 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			this._logService.error(`[PukuInlineCompletion][${reqId}] Error: ${error}`);
 			return null;
 		} finally {
-			// Always release the lock
-			this._requestInFlight = false;
+			// Always release the lock for this file
+			this._requestsInFlightByFile.delete(fileUri);
 		}
 
 		// Store speculative request - compute FRESH state at execution time (not prediction)
@@ -600,9 +618,15 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 			finalRange = new vscode.Range(position, position);
 		}
 
-		const result = [this._createCompletionItem(completion, finalRange, position, document.uri)];
-		console.log(`[PukuInlineCompletion][${reqId}] ✅ Returning completion item`);
-		return result;
+		const completionItem = this._createCompletionItem(completion, finalRange, position, document.uri);
+		console.log(`[PukuInlineCompletion][${reqId}] ✅ Returning completion item with forward stability`);
+
+		// Return InlineCompletionList with enableForwardStability
+		// This prevents ghost text from jumping position during edits (Issue #55)
+		return {
+			items: [completionItem],
+			enableForwardStability: true
+		};
 	}
 
 	/**

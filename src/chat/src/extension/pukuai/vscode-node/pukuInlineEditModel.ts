@@ -2,44 +2,27 @@
  *  Puku Editor - AI-powered code editor
  *  Copyright (c) Puku AI. All rights reserved.
  *  Unified inline edit model - coordinates between diagnostics and FIM providers
+ *  Now uses IPukuNextEditProvider racing architecture (Copilot-style)
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
 import { ILogService } from '../../../platform/log/common/logService';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
+import { IPukuNextEditProvider, PukuFimResult, PukuDiagnosticsResult, PukuNextEditResult, DocumentId } from '../common/nextEditProvider';
 
 /**
- * Result type discriminator
+ * Result type discriminator (kept for backwards compatibility)
  */
 export type PukuCompletionResultType = 'diagnostics' | 'fim';
 
 /**
- * Diagnostics-based fix result
- */
-export interface PukuDiagnosticsResult {
-	type: 'diagnostics';
-	fix: {
-		range: vscode.Range;
-		newText: string;
-		label: string; // e.g., "TAB to add import"
-	};
-}
-
-/**
- * FIM completion result
- */
-export interface PukuFimResult {
-	type: 'fim';
-	completion: vscode.InlineCompletionItem;
-}
-
-/**
- * Union type for all completion results
+ * Union type for all completion results (kept for backwards compatibility)
  */
 export type PukuCompletionResult = PukuDiagnosticsResult | PukuFimResult | null;
 
 /**
- * Provider interfaces that the model will coordinate
+ * Legacy provider interfaces (kept for backwards compatibility)
+ * New code should use IPukuNextEditProvider instead
  */
 export interface IPukuFimProvider {
 	getFimCompletion(
@@ -60,23 +43,25 @@ export interface IPukuDiagnosticsProvider {
 }
 
 /**
- * Model that coordinates between diagnostics and FIM providers
- * Similar to Copilot's InlineEditModel architecture
+ * Model that coordinates between FIM and diagnostics providers
+ * Uses Copilot's racing architecture with IPukuNextEditProvider
  */
 export class PukuInlineEditModel extends Disposable {
+	private _lastShownResult: PukuNextEditResult = null;
+
 	constructor(
-		private readonly fimProvider: IPukuFimProvider,
-		private readonly diagnosticsProvider: IPukuDiagnosticsProvider | undefined,
+		private readonly fimProvider: IPukuNextEditProvider<PukuFimResult>,
+		private readonly diagnosticsProvider: IPukuNextEditProvider<PukuDiagnosticsResult> | undefined,
 		@ILogService private readonly logService: ILogService
 	) {
 		super();
-		console.log('[PukuInlineEditModel] Model constructor called');
-		this.logService.info('[PukuInlineEditModel] Model initialized');
+		console.log('[PukuInlineEditModel] Model constructor called with racing providers');
+		this.logService.info('[PukuInlineEditModel] Model initialized with racing providers');
 	}
 
 	/**
-	 * Get completion by racing diagnostics and FIM providers
-	 * Uses Copilot's racing strategy with timeout
+	 * Get completion by racing FIM and diagnostics providers
+	 * Uses Copilot's racing strategy: FIM starts immediately, diagnostics with delay
 	 *
 	 * Based on Copilot's approach in inlineCompletionProvider.ts:181-224
 	 */
@@ -84,27 +69,33 @@ export class PukuInlineEditModel extends Disposable {
 		document: vscode.TextDocument,
 		position: vscode.Position,
 		context: vscode.InlineCompletionContext,
-		token: vscode.CancellationToken
+		token: vscode.CancellationToken,
+		isCycling: boolean = false // Feature #64: Multiple completions
 	): Promise<PukuCompletionResult> {
-		console.log('[PukuInlineEditModel] ⚡ getCompletion called');
-		this.logService.info('[PukuInlineEditModel] getCompletion called');
+		console.log(`[PukuInlineEditModel] ⚡ getCompletion called (racing mode, cycling: ${isCycling})`);
+		this.logService.info(`[PukuInlineEditModel] getCompletion called (racing mode, cycling: ${isCycling})`);
 
 		if (token.isCancellationRequested) {
 			console.log('[PukuInlineEditModel] Token already cancelled');
 			return null;
 		}
 
+		// Create DocumentId for provider interface
+		const docId: DocumentId = { document, position, isCycling }; // Pass cycling state
+
 		// Create cancellation tokens for coordination
-		// IMPORTANT: Don't link FIM token to parent - let FIM requests complete even if VS Code cancels
-		// The FIM provider's _requestInFlight lock prevents concurrent requests
 		const diagnosticsCts = new vscode.CancellationTokenSource(token);
-		const fimCts = new vscode.CancellationTokenSource(); // Independent token - no parent
+		const fimCts = new vscode.CancellationTokenSource(); // Independent token - FIM continues even if cancelled
 
 		try {
-			// Start both providers racing (no delay - FIM is slow anyway at 800ms+)
-			const fimPromise = this.fimProvider.getFimCompletion(document, position, context, fimCts.token);
+			// Start FIM immediately (fast path with speculative cache)
+			const fimPromise = this.fimProvider.getNextEdit(docId, context, fimCts.token);
+
+			// Start diagnostics with delay (Copilot pattern - give FIM priority)
+			// Diagnostics uses runUntilNextEdit() with 200ms delay
 			const diagnosticsPromise = this.diagnosticsProvider
-				? this.diagnosticsProvider.getDiagnosticsFix(document, position, context, diagnosticsCts.token)
+				? this.diagnosticsProvider.runUntilNextEdit?.(docId, context, 200, diagnosticsCts.token) ||
+				  this.diagnosticsProvider.getNextEdit(docId, context, diagnosticsCts.token)
 				: Promise.resolve(null);
 
 			// Use raceAndAll pattern from Copilot
@@ -134,17 +125,54 @@ export class PukuInlineEditModel extends Disposable {
 			// Don't cancel FIM - let it complete and cache the result
 			// fimCts.cancel();
 
+			// Track lifecycle events
+			let winningResult: PukuNextEditResult = null;
+			let losingResult: PukuNextEditResult = null;
+
 			// Priority logic: FIM > Diagnostics (Copilot's approach)
 			if (fimResult) {
-				this.logService.info('[PukuInlineEditModel] Using FIM result');
+				this.logService.info('[PukuInlineEditModel] ✅ Using FIM result (won race)');
+				winningResult = fimResult;
+				losingResult = diagnosticsResult;
+			} else if (diagnosticsResult) {
+				this.logService.info('[PukuInlineEditModel] ✅ Using diagnostics result (FIM returned null)');
+				winningResult = diagnosticsResult;
+				losingResult = fimResult; // Should be null
+			}
+
+			// Handle ignored results (losing provider)
+			if (losingResult) {
+				console.log('[PukuInlineEditModel] Handling ignored result from losing provider');
+				if (losingResult.type === 'fim') {
+					this.fimProvider.handleIgnored(docId, losingResult, winningResult || undefined);
+				} else if (losingResult.type === 'diagnostics' && this.diagnosticsProvider) {
+					this.diagnosticsProvider.handleIgnored(docId, losingResult, winningResult || undefined);
+				}
+			}
+
+			// Track shown result for acceptance/rejection handling
+			this._lastShownResult = winningResult;
+
+			// Call handleShown for winning provider
+			if (winningResult) {
+				console.log(`[PukuInlineEditModel] Calling handleShown for ${winningResult.type} provider`);
+				if (winningResult.type === 'fim') {
+					this.fimProvider.handleShown(winningResult);
+				} else if (winningResult.type === 'diagnostics' && this.diagnosticsProvider) {
+					this.diagnosticsProvider.handleShown(winningResult);
+				}
+			}
+
+			// Convert to backwards-compatible format
+			if (fimResult) {
 				return {
 					type: 'fim',
-					completion: fimResult
+					completion: fimResult.completion,
+					requestId: fimResult.requestId
 				};
 			}
 
 			if (diagnosticsResult) {
-				this.logService.info('[PukuInlineEditModel] Using diagnostics result');
 				return diagnosticsResult;
 			}
 
@@ -158,6 +186,46 @@ export class PukuInlineEditModel extends Disposable {
 			diagnosticsCts.dispose();
 			fimCts.dispose();
 		}
+	}
+
+	/**
+	 * Handle when user accepts a completion (TAB)
+	 */
+	handleAcceptance(document: vscode.TextDocument, position: vscode.Position): void {
+		if (!this._lastShownResult) {
+			return;
+		}
+
+		const docId: DocumentId = { document, position };
+		console.log(`[PukuInlineEditModel] ✅ Handling acceptance for ${this._lastShownResult.type} provider`);
+
+		if (this._lastShownResult.type === 'fim') {
+			this.fimProvider.handleAcceptance(docId, this._lastShownResult);
+		} else if (this._lastShownResult.type === 'diagnostics' && this.diagnosticsProvider) {
+			this.diagnosticsProvider.handleAcceptance(docId, this._lastShownResult);
+		}
+
+		this._lastShownResult = null;
+	}
+
+	/**
+	 * Handle when user rejects a completion (ESC or typing)
+	 */
+	handleRejection(document: vscode.TextDocument, position: vscode.Position): void {
+		if (!this._lastShownResult) {
+			return;
+		}
+
+		const docId: DocumentId = { document, position };
+		console.log(`[PukuInlineEditModel] ❌ Handling rejection for ${this._lastShownResult.type} provider`);
+
+		if (this._lastShownResult.type === 'fim') {
+			this.fimProvider.handleRejection(docId, this._lastShownResult);
+		} else if (this._lastShownResult.type === 'diagnostics' && this.diagnosticsProvider) {
+			this.diagnosticsProvider.handleRejection(docId, this._lastShownResult);
+		}
+
+		this._lastShownResult = null;
 	}
 
 	/**

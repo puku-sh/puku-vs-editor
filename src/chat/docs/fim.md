@@ -519,6 +519,72 @@ The provider uses the endpoint configured in:
 
 ---
 
+## Inline Completion Quality & Stability
+
+### Forward Stability
+
+VS Code's `enableForwardStability` flag prevents ghost text from jumping position during edits:
+
+```typescript
+const result: vscode.InlineCompletionList = {
+    items: [...],
+    enableForwardStability: true  // Keeps ghost text anchored
+};
+```
+
+**Benefits**:
+- Ghost text stays at original position during forward typing
+- No visual flickering or position jumps
+- Better UX when typing through suggestions
+
+**Implementation**: `src/extension/pukuai/vscode-node/pukuInlineEditModel.ts:166`
+
+See [PRD: Forward Stability](./prd-forward-stability.md) for detailed requirements.
+
+### Rejection Tracking
+
+To prevent re-suggesting rejected completions, implement a `RejectionCollector`:
+
+```typescript
+export class RejectionCollector {
+    // Track up to 20 rejected edits per document (LRU)
+    reject(docId: DocumentId, edit: StringReplacement): void;
+    isRejected(docId: DocumentId, edit: StringReplacement): boolean;
+}
+```
+
+**Why needed**:
+- Users reject completions for a reason (wrong, irrelevant, etc.)
+- Re-suggesting same completion is annoying and wastes keystrokes
+- Copilot tracks rejected edits and rebases them on document changes
+
+### "Typing as Suggested" Optimization
+
+Fast-path for when user types forward through current completion:
+
+```typescript
+// Check if user is typing suggested text
+if (currentGhostText.matches(newPrefix, suffix)) {
+    return cachedCompletion;  // Instant, no API call!
+}
+```
+
+**Performance impact**:
+- 0ms latency for typing through suggestions
+- No API calls or debounce delays
+- Snappy UX similar to Copilot
+
+### Cache Hierarchy
+
+Puku uses multiple cache layers for optimal performance:
+
+1. **CurrentGhostText** (planned) - Forward typing through current suggestion (~0ms)
+2. **Radix Trie** - Prefix matching for typing/backspace (~1-5ms)
+3. **Speculative Cache** - Prefetched request functions (~100-500ms)
+4. **API Call** - Full round-trip with debounce (~800-1500ms)
+
+---
+
 ## References
 
 - [Fill-in-the-Middle Research Paper](https://arxiv.org/abs/2207.14255)

@@ -1,28 +1,51 @@
-package main
-
-// add user gorm model
-
-import (
-	"gorm.io/gorm"
-)
-
+// add user model with gorm 
 type User struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID    uint   `gorm:"primaryKey"`
+	Name  string `gorm:"not null"`
+	Email string `gorm:"unique;not null"`
 }
 
+// add user repository with gorm
+type UserRepository struct {
+	db *gorm.DB
+}
 
+func (r *UserRepository) Create(user *User) error {
+	return r.db.Create(user).Error
+}
 
+func (r *UserRepository) Get(id uint) (User, error) {
+	var user User
+	return user, r.db.First(&user, id).Error
+}
 
-// ge all users
-func getUsers(db *gorm.DB) []User {
+func (r *UserRepository) Update(id uint, user *User) error {
+	return r.db.Model(&User{}).Where("id = ?", id).Updates(user).Error
+}
+
+func (r *UserRepository) GetAll() []User {
 	var users []User
-	db.Find(&users)
+	r.db.Find(&users)
 	return users
 }
-// update user
-func updateUser(db *gorm.DB, id int, name string) {
-	user := User{ID: id, Name: name}
-	db.Save(&user)
+
+// delete user based on gorm db
+func deleteUser(db *gorm.DB, id int) {
+	var user User
+	db.Where("id = ?", id).Delete(&user)
 }
 
+// update user based on gorm db 
+func updateUser(db *gorm.DB, id int, name string, email string) {
+	var user User
+	db.Where("id = ?", id).First(&user)
+	user.Name = name
+	user.Email = email
+	db.Save(&user)
+}
+// get user based on gorm db
+func getUser(db *gorm.DB, id int) User {
+	var user User
+	db.Where("id = ?", id).First(&user)
+	return user
+}

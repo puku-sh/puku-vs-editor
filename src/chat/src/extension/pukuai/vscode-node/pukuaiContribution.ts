@@ -11,7 +11,10 @@ import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
 import { IExtensionContribution } from '../../common/contributions';
 import { PukuAILanguageModelProvider } from './pukuaiProvider';
-import { PukuInlineCompletionProvider } from './pukuInlineCompletionProvider';
+import { PukuDiagnosticsProvider } from './pukuDiagnosticsProvider';
+import { PukuDiagnosticsNextEditProvider } from './providers/pukuDiagnosticsNextEditProvider';
+import { PukuFimProvider } from './providers/pukuFimProvider';
+import { PukuUnifiedInlineProvider } from './pukuUnifiedInlineProvider';
 
 export class PukuAIContribution extends Disposable implements IExtensionContribution {
 	public readonly id: string = 'pukuai-contribution';
@@ -102,7 +105,8 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 	}
 
 	/**
-	 * Register standalone inline completion provider for FIM
+	 * Register unified inline completion provider (FIM + Diagnostics)
+	 * Following Copilot's architecture with single provider + internal coordination
 	 */
 	private _registerInlineCompletionProvider(endpoint: string) {
 		if (this._inlineProviderRegistered) {
@@ -110,12 +114,28 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 			return;
 		}
 
-		console.log('Puku AI: Registering inline completion provider');
-		this._logService.info('Puku AI: Registering inline completion provider');
+		console.log('Puku AI: Registering unified inline completion provider');
+		this._logService.info('Puku AI: Registering unified inline completion provider');
 
-		const inlineProvider = this._instantiationService.createInstance(
-			PukuInlineCompletionProvider,
+		// Create FIM provider (racing provider)
+		const fimProvider = this._instantiationService.createInstance(
+			PukuFimProvider,
 			endpoint
+		);
+
+		// Create diagnostics next edit provider (racing provider)
+		const diagnosticsNextEditProvider = this._instantiationService.createInstance(PukuDiagnosticsNextEditProvider);
+
+		// Create diagnostics provider (CodeActionProvider) - delegates to next edit provider
+		const diagnosticsProvider = this._instantiationService.createInstance(PukuDiagnosticsProvider, diagnosticsNextEditProvider);
+
+		// Create unified provider that coordinates between them
+		const unifiedProvider = this._instantiationService.createInstance(
+			PukuUnifiedInlineProvider,
+			fimProvider,
+			diagnosticsNextEditProvider,
+			this._logService,
+			this._instantiationService
 		);
 
 		// Register for all file types - let Codestral Mamba handle any language
@@ -127,8 +147,8 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 		// Use vscode.languages directly to ensure correct API
 		// Try both proposed and standard API
 		try {
-			console.log('Puku AI: About to register inline completion provider with vscode.languages');
-			const disposable = vscode.languages.registerInlineCompletionItemProvider(selector, inlineProvider, {
+			console.log('Puku AI: About to register unified provider with vscode.languages');
+			const disposable = vscode.languages.registerInlineCompletionItemProvider(selector, unifiedProvider, {
 				debounceDelayMs: 0,
 				groupId: 'puku' // Must match the exclude in completionsCoreContribution to disable Copilot FIM
 			});
@@ -138,16 +158,67 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 			// Fallback to standard API without metadata
 			console.log('Puku AI: Proposed API failed, trying standard API:', e);
 			try {
-				const disposable = vscode.languages.registerInlineCompletionItemProvider(selector, inlineProvider);
+				const disposable = vscode.languages.registerInlineCompletionItemProvider(selector, unifiedProvider);
 				this._register(disposable);
 				console.log('Puku AI: Registered with standard API');
 			} catch (e2) {
-				console.error('Puku AI: Failed to register inline completion provider:', e2);
+				console.error('Puku AI: Failed to register unified inline completion provider:', e2);
 			}
 		}
 
+		// Register diagnostics provider as CodeActionProvider (lightbulb menu 💡)
+		// This provides import fixes and other refactorings like Copilot/TypeScript
+		console.log('Puku AI: Registering diagnostics provider as CodeActionProvider');
+		this._logService.info('Puku AI: Registering diagnostics provider as CodeActionProvider');
+
+		const codeActionDisposable = vscode.languages.registerCodeActionsProvider(
+			selector,
+			diagnosticsProvider,
+			{
+				providedCodeActionKinds: [vscode.CodeActionKind.QuickFix]
+			}
+		);
+		this._register(codeActionDisposable);
+		console.log('Puku AI: CodeActionProvider registered successfully');
+
 		this._inlineProviderRegistered = true;
-		console.log('Puku AI: Inline completion provider registered successfully');
-		this._logService.info('Puku AI: Inline completion provider registered successfully');
+		console.log('Puku AI: Unified inline completion provider registered successfully');
+		this._logService.info('Puku AI: Unified inline completion provider registered successfully');
+
+		// Register command to apply import fixes
+		this._register(
+			vscode.commands.registerCommand('puku.applyImportFix', async (fix: { range: vscode.Range; newText: string; label: string }) => {
+				const editor = vscode.window.activeTextEditor;
+				if (!editor) {
+					return;
+				}
+
+				console.log('[PukuAI] Applying import fix:', fix.label);
+
+				// Apply the import at the top of the file
+				const success = await editor.edit(editBuilder => {
+					editBuilder.replace(fix.range, fix.newText);
+				});
+
+				if (success) {
+					console.log('[PukuAI] ✅ Import fix applied successfully');
+				} else {
+					console.log('[PukuAI] ❌ Failed to apply import fix');
+				}
+			})
+		);
+
+		// Register toggle command for diagnostics
+		this._register(
+			vscode.commands.registerCommand('puku.toggleDiagnostics', () => {
+				const config = vscode.workspace.getConfiguration('puku.diagnostics');
+				const enabled = config.get<boolean>('autoFix', true);
+				config.update('autoFix', !enabled, true);
+				diagnosticsProvider.setEnabled(!enabled);
+				vscode.window.showInformationMessage(
+					`Puku diagnostics ${!enabled ? 'enabled' : 'disabled'}`
+				);
+			})
+		);
 	}
 }

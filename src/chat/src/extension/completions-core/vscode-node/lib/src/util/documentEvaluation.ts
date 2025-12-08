@@ -16,7 +16,7 @@ export async function isDocumentValid(
 	document: TextDocumentIdentifier,
 ): Promise<{ status: 'valid' } | { status: 'invalid'; reason: string }> {
 	const ignoreService = accessor.get(IIgnoreService);
-	if (await ignoreService.isCopilotIgnored(URI.parse(document.uri))) {
+	if (await ignoreService.isPukuIgnored(URI.parse(document.uri))) {
 		return {
 			status: 'invalid',
 			reason: 'Document is blocked by repository policy',

@@ -342,7 +342,7 @@ export class AdoCodeSearchService extends Disposable implements IAdoCodeSearchSe
 			let fileUri: URI;
 			if (repo.localRepoRoot) {
 				fileUri = URI.joinPath(repo.localRepoRoot, result.location.path.replace('%repo%/', ''));
-				if (await this._ignoreService.isCopilotIgnored(fileUri)) {
+				if (await this._ignoreService.isPukuIgnored(fileUri)) {
 					return;
 				}
 			} else {

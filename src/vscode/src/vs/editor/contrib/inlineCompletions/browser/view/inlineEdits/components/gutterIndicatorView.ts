@@ -168,8 +168,14 @@ export class InlineEditsGutterIndicator extends Disposable {
 			return new Animation(null, null).finished;
 		}
 
+		// Check if ref is set before animating (prevents initialization order errors)
+		const iconElement = (this._iconRef as any).value;
+		if (!iconElement) {
+			return new Animation(null, null).finished;
+		}
+
 		// PULSE ANIMATION:
-		const animation = this._iconRef.element.animate([
+		const animation = iconElement.animate([
 			{
 				outline: `2px solid ${this._gutterIndicatorStyles.map(v => v.border).get()}`,
 				outlineOffset: '-1px',

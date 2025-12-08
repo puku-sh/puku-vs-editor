@@ -1,0 +1,1 @@
+{"version":3,"file":"ignoreInfoFileContentProvider.js","sourceRoot":"","sources":["ignoreInfoFileContentProvider.ts"],"names":[],"mappings":";AAAA;;;gGAGgG;;;AAIhG,MAAa,oCAAoC;IAChD,YAA6B,eAAsC;QAAtC,oBAAe,GAAf,eAAe,CAAuB;IAAI,CAAC;IAExE,KAAK,CAAC,0BAA0B,CAAC,GAAQ,EAAE,KAAwB;QAClE,OAAO,IAAI,CAAC,eAAe,EAAE,CAAC;IAC/B,CAAC;CAED;AAPD,oFAOC"}

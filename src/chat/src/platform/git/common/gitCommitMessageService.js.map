@@ -1,0 +1,1 @@
+{"version":3,"file":"gitCommitMessageService.js","sourceRoot":"","sources":["gitCommitMessageService.ts"],"names":[],"mappings":";AAAA;;;gGAGgG;;;AAGhG,4DAAwE;AAG3D,QAAA,wBAAwB,GAAG,IAAA,kCAAuB,EAA2B,0BAA0B,CAAC,CAAC;AAQtH;;GAEG;AACH,MAAa,2BAA2B;IAGvC,qBAAqB;QACpB,OAAO,OAAO,CAAC,OAAO,CAAC,SAAS,CAAC,CAAC;IACnC,CAAC;IAED,aAAa;QACZ,OAAO,IAAI,CAAC;IACb,CAAC;CACD;AAVD,kEAUC"}

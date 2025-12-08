@@ -178,8 +178,13 @@ export class CopilotToken {
 		return this._info.chat_enabled ?? false;
 	}
 
-	isCopilotIgnoreEnabled(): boolean {
+	isPukuIgnoreEnabled(): boolean {
 		return this._info.copilotignore_enabled ?? false;
+	}
+
+	/** @deprecated Use isPukuIgnoreEnabled() instead */
+	isCopilotIgnoreEnabled(): boolean {
+		return this.isPukuIgnoreEnabled();
 	}
 
 	get isCopilotCodeReviewEnabled(): boolean {

@@ -188,7 +188,7 @@ export class VSCodeWorkspace extends ObservableWorkspace implements IDisposable 
 	private readonly _textDocsWithShouldTrackFlag = mapObservableArrayCached(this, this._vscodeTextDocuments, (doc, store) => {
 		const shouldTrack = observableValue<boolean>(this, false);
 		const updateShouldTrack = () => {
-			// @ulugbekna: not sure if invoking `isCopilotIgnored` on every textDocument-edit event is a good idea
+			// @ulugbekna: not sure if invoking `isPukuIgnored` on every textDocument-edit event is a good idea
 			// 	also not sure if we should be enforcing local copilot-ignore rules (vs only remote-exclusion rules)
 			this._filter.isTrackingEnabled(doc).then(v => {
 				shouldTrack.set(v, undefined);
@@ -242,7 +242,7 @@ export class VSCodeWorkspace extends ObservableWorkspace implements IDisposable 
 	private readonly _notebookDocsWithShouldTrackFlag = mapObservableArrayCached(this, this._vscodeNotebookDocuments, (doc, store) => {
 		const shouldTrack = observableValue<boolean>(this, false);
 		const updateShouldTrack = () => {
-			// @ulugbekna: not sure if invoking `isCopilotIgnored` on every textDocument-edit event is a good idea
+			// @ulugbekna: not sure if invoking `isPukuIgnored` on every textDocument-edit event is a good idea
 			// 	also not sure if we should be enforcing local copilot-ignore rules (vs only remote-exclusion rules)
 			this._filter.isTrackingEnabled(doc).then(v => {
 				shouldTrack.set(v, undefined);

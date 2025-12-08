@@ -32,9 +32,13 @@ export class ObservableGit extends Disposable {
 			return;
 		}
 
-		const repos = observableFromEvent(this, (e) => gitApi.onDidOpenRepository(e), () => gitApi.repositories);
+		const repos = observableFromEvent(this, (e) => gitApi.onDidOpenRepository(e), () => {
+			const repositories = gitApi.repositories;
+			// Ensure we always return an array, even if repositories is undefined, null, or not an array
+			return Array.isArray(repositories) ? repositories : [];
+		});
 
-		await waitForState(repos, (repos) => repos.length > 0, undefined);
+		await waitForState(repos, (repos) => repos && repos.length > 0, undefined);
 		if (this._store.isDisposed) {
 			return;
 		}

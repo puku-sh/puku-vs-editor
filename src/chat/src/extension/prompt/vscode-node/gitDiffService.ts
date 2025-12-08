@@ -42,7 +42,7 @@ export class GitDiffService implements IGitDiffService {
 
 		const diffs: Diff[] = [];
 		for (const change of changes) {
-			if (await this._ignoreService.isCopilotIgnored(change.uri)) {
+			if (await this._ignoreService.isPukuIgnored(change.uri)) {
 				this._logService.debug(`[GitDiffService] Ignoring change due to content exclusion rule based on uri: ${change.uri.toString()}`);
 				continue;
 			}
@@ -81,7 +81,7 @@ export class GitDiffService implements IGitDiffService {
 
 		const diffs: Diff[] = [];
 		for (const change of changes) {
-			if (await this._ignoreService.isCopilotIgnored(change.uri)) {
+			if (await this._ignoreService.isPukuIgnored(change.uri)) {
 				this._logService.debug(`[GitDiffService] Ignoring change due to content exclusion rule based on uri: ${change.uri.toString()}`);
 				continue;
 			}

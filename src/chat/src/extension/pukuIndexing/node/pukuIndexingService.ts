@@ -123,6 +123,11 @@ export interface IPukuIndexingService {
 	 * Search indexed content
 	 */
 	search(query: string, limit?: number, languageId?: string): Promise<SearchResult[]>;
+
+	/**
+	 * Compute embedding for a single text (used for search queries and diagnostics)
+	 */
+	computeEmbedding(text: string): Promise<number[] | null>;
 }
 
 /**
@@ -203,25 +208,16 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 		// On file change - queue for re-indexing (only log if not excluded)
 		this._register(this._fileWatcher.onDidChange((uri) => {
-			if (!this._isExcludedPath(uri.fsPath)) {
-				console.log('[PukuIndexing] File change detected:', uri.fsPath);
-			}
 			this._queueFileForReindex(uri);
 		}));
 
 		// On file create - queue for indexing
 		this._register(this._fileWatcher.onDidCreate((uri) => {
-			if (!this._isExcludedPath(uri.fsPath)) {
-				console.log('[PukuIndexing] File create detected:', uri.fsPath);
-			}
 			this._queueFileForReindex(uri);
 		}));
 
 		// On file delete - remove from cache
 		this._register(this._fileWatcher.onDidDelete((uri) => {
-			if (!this._isExcludedPath(uri.fsPath)) {
-				console.log('[PukuIndexing] File delete detected:', uri.fsPath);
-			}
 			this._removeFileFromIndex(uri);
 		}));
 
@@ -255,7 +251,6 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 		}
 
 		this._pendingReindex.add(uri.toString());
-		console.log(`[PukuIndexing] File queued for re-index: ${uri.fsPath}`);
 
 		// Debounce: wait 2 seconds after last change before re-indexing
 		if (this._reindexDebounceTimer) {
@@ -278,15 +273,10 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 		const files = Array.from(this._pendingReindex);
 		this._pendingReindex.clear();
 
-		console.log(`[PukuIndexing] Re-indexing ${files.length} changed files`);
-
 		for (const uriString of files) {
 			try {
 				const uri = vscode.Uri.parse(uriString);
-				const result = await this._indexFile(uri);
-				if (result === 'indexed') {
-					console.log(`[PukuIndexing] Re-indexed: ${uri.fsPath}`);
-				}
+				await this._indexFile(uri);
 			} catch (error) {
 				console.error(`[PukuIndexing] Error re-indexing ${uriString}:`, error);
 			}
@@ -305,7 +295,6 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 		if (this._indexedFiles.has(uriString)) {
 			this._cache.removeFile(uriString);
 			this._indexedFiles.delete(uriString);
-			console.log(`[PukuIndexing] Removed from index: ${uri.fsPath}`);
 		}
 	}
 
@@ -352,12 +341,10 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 			// If we have cached data, load it
 			if (stats.fileCount > 0) {
 				this._loadFromCache();
-				console.log(`[PukuIndexing] Loaded ${this._indexedFiles.size} files from cache`);
 				this._setStatus(PukuIndexingStatus.Ready);
 			} else {
 				this._setStatus(PukuIndexingStatus.Idle);
 				// Auto-start indexing for fresh cache
-				console.log('[PukuIndexing] Fresh cache detected, starting automatic indexing');
 				this.startIndexing().catch(err => {
 					console.error('[PukuIndexing] Auto-indexing failed:', err);
 				});
@@ -393,17 +380,14 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 	async startIndexing(): Promise<void> {
 		if (this._isIndexing) {
-			console.log('[PukuIndexing] Already indexing');
 			return;
 		}
 
 		if (!this.isAvailable()) {
-			console.log('[PukuIndexing] Not available, skipping indexing. Auth ready:', this._authService.isReady());
 			return;
 		}
 
 		if (!this._cache) {
-			console.log('[PukuIndexing] Cache not initialized');
 			return;
 		}
 
@@ -413,21 +397,13 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 		try {
 			// Get workspace files
-			console.log('[PukuIndexing] Getting workspace files...');
 			const files = await this._getWorkspaceFiles();
-			console.log(`[PukuIndexing] Found ${files.length} files to index`);
-
-			if (files.length > 0) {
-				console.log('[PukuIndexing] First few files:', files.slice(0, 3).map(f => f.fsPath));
-			}
 
 			this._updateProgress({
 				status: PukuIndexingStatus.Indexing,
 				totalFiles: files.length,
 				indexedFiles: 0,
 			});
-
-			console.log(`[PukuIndexing] Starting to index ${files.length} files`);
 
 			let newFilesIndexed = 0;
 			let cachedFiles = 0;
@@ -505,7 +481,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 		try {
 			// Get query embedding
-			const queryEmbedding = await this._computeEmbedding(query);
+			const queryEmbedding = await this.computeEmbedding(query);
 			if (!queryEmbedding || queryEmbedding.length === 0) {
 				return [];
 			}
@@ -554,7 +530,6 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 	private async _indexFile(uri: vscode.Uri): Promise<'cached' | 'indexed' | 'skipped'> {
 		if (!this._cache) {
-			console.log(`[PukuIndexing] _indexFile: skipped (no cache) - ${uri.fsPath}`);
 			return 'skipped';
 		}
 
@@ -565,11 +540,9 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 			// Skip empty or very large files
 			if (!content || content.length === 0) {
-				console.log(`[PukuIndexing] _indexFile: skipped (empty) - ${uri.fsPath}`);
 				return 'skipped';
 			}
 			if (content.length > 100000) {
-				console.log(`[PukuIndexing] _indexFile: skipped (too large: ${content.length}) - ${uri.fsPath}`);
 				return 'skipped';
 			}
 
@@ -585,18 +558,14 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 					chunks: chunks.length,
 					lastIndexed: Date.now(),
 				});
-				console.log(`[PukuIndexing] _indexFile: cached (${chunks.length} chunks) - ${uri.fsPath}`);
 				return 'cached';
 			}
 
 			// Chunk the content using AST-based chunking (Cursor-like approach)
 			const semanticChunks = await pukuASTChunker.chunkContent(content, languageId);
 			if (semanticChunks.length === 0) {
-				console.log(`[PukuIndexing] _indexFile: skipped (no chunks from AST) - ${uri.fsPath}`);
 				return 'skipped';
 			}
-
-			console.log(`[PukuIndexing] _indexFile: ${semanticChunks.length} chunks from AST - ${uri.fsPath}`);
 
 			// Generate natural language summaries for each chunk using LLM with parallel job processing
 			let summaries: string[] = [];
@@ -612,7 +581,6 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 						languageId,
 						fileId
 					);
-					console.log(`[PukuIndexing] _indexFile: ${summaries.length}/${semanticChunks.length} summaries generated - ${uri.fsPath}`);
 				} catch (error) {
 					console.error(`[PukuIndexing] _indexFile: summary generation failed, using fallback - ${uri.fsPath}:`, error);
 					// Fallback to empty summaries if LLM fails
@@ -625,13 +593,14 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 			// Compute embeddings for summaries (not raw code) to improve semantic search
 			// When user writes "// send email notification", it will match summary "function that sends email..."
-			const textsToEmbed = summaries.map((summary, i) =>
-				summary || semanticChunks[i].text // Fallback to raw code if no summary
-			);
+			// Ensure we don't access out of bounds if summaries.length > chunks.length
+			const textsToEmbed = summaries
+				.slice(0, semanticChunks.length) // Limit to chunks length
+				.map((summary, i) =>
+					summary || semanticChunks[i].text // Fallback to raw code if no summary
+				);
 			const embeddings = await this._computeEmbeddingsBatch(textsToEmbed);
 
-			const validEmbeddings = embeddings.filter(e => e && e.length > 0).length;
-			console.log(`[PukuIndexing] _indexFile: ${validEmbeddings}/${embeddings.length} valid embeddings - ${uri.fsPath}`);
 
 			const chunksWithEmbeddings: Array<{
 				text: string;
@@ -669,11 +638,9 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 					lastIndexed: Date.now(),
 				});
 
-				console.log(`[PukuIndexing] _indexFile: indexed (${chunksWithEmbeddings.length} chunks stored) - ${uri.fsPath}`);
 				return 'indexed';
 			}
 
-			console.log(`[PukuIndexing] _indexFile: skipped (no valid embeddings) - ${uri.fsPath}`);
 			return 'skipped';
 		} catch (error) {
 			// File might be binary or inaccessible
@@ -717,14 +684,10 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 		const token = await this._authService.getToken();
 		if (!token) {
-			console.log('[PukuIndexing] _computeEmbeddingsBatch: no auth token available');
 			return texts.map(() => null);
 		}
-		console.log(`[PukuIndexing] _computeEmbeddingsBatch: using endpoint ${token.endpoints.embeddings}`)
 
 		try {
-			console.log(`[PukuIndexing] Computing embeddings for ${texts.length} chunks in batch`);
-			console.log(`[PukuIndexing] Using token: ${token.token?.substring(0, 10)}... (length: ${token.token?.length})`);
 
 			// Send all texts in a single API call
 			const response = await fetch(token.endpoints.embeddings, {
@@ -760,9 +723,10 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 	}
 
 	/**
-	 * Compute embedding for a single text (used for search queries)
+	 * Compute embedding for a single text (used for search queries and diagnostics)
+	 * Public API for other services to use
 	 */
-	private async _computeEmbedding(text: string): Promise<number[] | null> {
+	async computeEmbedding(text: string): Promise<number[] | null> {
 		const results = await this._computeEmbeddingsBatch([text]);
 		return results[0] || null;
 	}

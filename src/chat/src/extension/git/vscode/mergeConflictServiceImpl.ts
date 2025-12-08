@@ -37,7 +37,7 @@ export class MergeConflictServiceImpl extends Disposable implements IMergeConfli
 
 		for (const resource of resources) {
 			// Copilot ignored
-			if (await this.ignoreService.isCopilotIgnored(resource, cancellationToken)) {
+			if (await this.ignoreService.isPukuIgnored(resource, cancellationToken)) {
 				continue;
 			}
 

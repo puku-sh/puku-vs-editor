@@ -43,7 +43,7 @@ export class FeedbackGenerator {
 		const startTime = Date.now();
 
 		const ignoreService = this.ignoreService;
-		const ignored = await Promise.all(input.map(i => ignoreService.isCopilotIgnored(i.document.uri)));
+		const ignored = await Promise.all(input.map(i => ignoreService.isPukuIgnored(i.document.uri)));
 		const filteredInput = input.filter((_, i) => !ignored[i]);
 		if (filteredInput.length === 0) {
 			this.logService.info('All input documents are ignored. Skipping feedback generation.');

@@ -8,6 +8,7 @@ This workspace contains multiple projects:
 
 - **`src/chat`** - **Puku Editor** - AI-powered code editor extension built on GitHub Copilot Chat architecture with support for Z.AI's GLM models. Provides chat interfaces, inline completions (FIM), agent mode, and tool calling.
 - **`src/vscode`** - **Forked VS Code** (Code-OSS) from `poridhiAILab/vscode`. Custom VS Code build for UI modifications and extension debugging.
+- **`../puku-worker`** - **Puku Backend API** - Cloudflare Worker that provides API endpoints for completions, FIM, embeddings, and authentication. Located at `/Users/sahamed/Desktop/puku-vs-editor/puku-worker`.
 
 ## Requirements
 
@@ -125,6 +126,32 @@ await fetch('/v1/fim/context', {
 // Calls Codestral Mamba with enhanced prompt
 ```
 
+**Backend API (puku-worker):**
+
+The backend is a Cloudflare Worker located at `../puku-worker`. Key endpoints:
+
+- `/v1/fim/context` - FIM with context support (used by Puku Editor)
+  - **Location**: `src/routes/completions.ts:222-392`
+  - **Accepts**: `{ prompt, suffix, language, openFiles, max_tokens, temperature, n }`
+  - **Returns**: `{ choices: [{ text, index, finish_reason }] }`
+  - **Model**: Mistral Codestral via `env.CODESTRAL_FIM_URL`
+
+- `/v1/completions` - Standard FIM endpoint
+  - **Location**: `src/routes/completions.ts:119-219`
+
+- `/v1/chat/completions` - Chat completions (for Chat panel)
+  - **Location**: `src/routes/completions.ts:9-116`
+
+- `/v1/summarize/batch` - Code summarization for semantic search
+  - **Location**: `src/routes/completions.ts:536-642`
+
+**To modify backend code:**
+```bash
+cd ../puku-worker
+# Edit src/routes/completions.ts
+npm run deploy  # Deploy to Cloudflare Workers
+```
+
 **Example:**
 ```bash
 # With language hint and context
@@ -188,6 +215,18 @@ curl -X POST https://api.puku.sh/v1/fim/context \
 - 11 tests covering cache behavior, debounce, and request flow
 
 See `test-supermaven/FINDINGS.md` for research and rationale.
+
+**Feature Gaps vs GitHub Copilot:**
+
+We've analyzed Puku's inline completion system against Copilot and identified 12 missing features. See:
+- **GitHub Issues**: [#55-#66](https://github.com/puku-sh/puku-vs-editor/issues?q=is%3Aissue+is%3Aopen+label%3Aarea%3Ainline-completions)
+- **PRD Example**: `src/chat/docs/prd-forward-stability.md` (enableForwardStability flag)
+
+**Priority Roadmap:**
+1. 🔴 **Critical**: Forward stability (#55), Rejection tracking (#56), Typing-as-suggested (#57)
+2. 🟠 **High**: Edit rebasing cache (#58), Reduce diagnostics delay (#59), Streaming responses (#60)
+3. 🟡 **Medium**: 3-provider racing (#61), Server-side trimming (#62), Indentation hints (#63), Multiple completions (#64)
+4. 🟢 **Low**: Edit survival tracking (#65), Advanced telemetry (#66)
 
 ### Build & Development
 

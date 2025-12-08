@@ -95,7 +95,7 @@ export class RenameSuggestionsProvider implements vscode.NewSymbolNamesProvider 
 			throw new Error('CopilotFeatureUnavailableOrDisabled');
 		}
 
-		if (await this._ignoreService.isCopilotIgnored(document.uri)) {
+		if (await this._ignoreService.isPukuIgnored(document.uri)) {
 			throw new Error('CopilotIgnoredDocument');
 		}
 

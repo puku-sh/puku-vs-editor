@@ -19,9 +19,10 @@ import { ChunkType } from './pukuASTChunker';
  */
 function getSqliteVecPath(): string {
 	// Package naming: sqlite-vec-{platform}-{arch}
-	// platform: darwin, linux, win32
+	// platform: darwin, linux, windows
 	// arch: arm64, x64
-	const packageName = `sqlite-vec-${platform}-${arch}`;
+	const platformName = platform === 'win32' ? 'windows' : platform;
+	const packageName = `sqlite-vec-${platformName}-${arch}`;
 
 	// Try to resolve from node_modules - return WITHOUT extension
 	// SQLite loadExtension will append the appropriate extension
@@ -75,8 +76,9 @@ export class PukuEmbeddingsCache {
 		// Handle test environment where vscode.extensions may not be available
 		let extVersion = '0.0.0';
 		try {
-			const ext = vscode.extensions?.getExtension('puku.puku-editor') ||
-				vscode.extensions?.getExtension('puku-chat'); // fallback for dev
+			const ext = vscode.extensions?.getExtension('GitHub.puku-editor') ||
+				vscode.extensions?.getExtension('puku.puku-editor') || // legacy fallback
+				vscode.extensions?.getExtension('puku-chat'); // dev fallback
 			extVersion = ext?.packageJSON?.version || '0.0.0';
 		} catch {
 			// In test environment, use default version

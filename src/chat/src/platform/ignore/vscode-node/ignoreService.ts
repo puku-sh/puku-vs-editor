@@ -47,7 +47,7 @@ export class VsCodeIgnoreService extends BaseIgnoreService {
 			}
 		}));
 
-		// Lets watch for changed .copilotignore files
+		// Lets watch for changed .pukuignore files
 		this._disposables.push(
 			workspace.onDidSaveTextDocument(async doc => {
 				if (this.isIgnoreFile(doc.uri)) {

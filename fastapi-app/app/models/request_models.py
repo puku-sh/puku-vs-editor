@@ -8,20 +8,25 @@ from datetime import datetime
 
 import re
 
+
+
 class BaseRequest(BaseModel):
     """Base request model with common fields."""
     request_id: Optional[str] = Field(None, description="Unique request identifier")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Request timestamp")
     
     class Config:
-        json_schema_extra = {
-            "example": {
-                "request_id": "req_1234567890",
-                "timestamp": "2023-01-15T12:00:00Z"
-            }
+        allow_population_by_field_name = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
         }
-    
 
+    @validator('request_id')
+    def validate_request_id(cls, v):
+        """Validate request ID format if provided."""
+        if v and not re.match(r'^[a-zA-Z0-9\-_]+$', v):
+            raise ValueError('Request ID can only contain letters, numbers, hyphens, and underscores')
+        return v.lower() if v else v
 
 class HelloRequest(BaseModel):
     """Request model for hello endpoint with extended features."""

@@ -102,8 +102,9 @@ class LRUCacheMap<K, T> implements Map<K, T> {
 /**
  * Speculative Request Cache (Copilot-style)
  * Stores REQUEST FUNCTIONS, not results - for lazy prefetching
+ * Feature #64: Returns arrays of completions for cycling support
  */
-type RequestFunction = () => Promise<string | null>;
+type RequestFunction = () => Promise<string[]>;
 
 class SpeculativeRequestCache {
 	private cache = new LRUCacheMap<string, RequestFunction>(1000);
@@ -112,10 +113,10 @@ class SpeculativeRequestCache {
 		this.cache.set(completionId, requestFunction);
 	}
 
-	async request(completionId: string): Promise<string | null> {
+	async request(completionId: string): Promise<string[]> {
 		const fn = this.cache.get(completionId);
 		if (fn === undefined) {
-			return null;
+			return [];
 		}
 		this.cache.delete(completionId);
 		return await fn();
@@ -232,15 +233,19 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		const prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
 		const suffix = document.getText(new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end));
 		const cached = completionsCache.findAll(prefix, suffix);
-		if (cached.length > 0) {
-			console.log(`[PukuFimProvider][${reqId}] 🎯 Radix Trie cache HIT! Found ${cached.length} cached completion(s)`);
-			console.log(`[PukuFimProvider][${reqId}] 📄 Cached completion preview: "${cached[0].substring(0, 100)}${cached[0].length > 100 ? '...' : ''}"`);
+		if (cached.length > 0 && cached[0].length > 0) {
+			const completions = cached[0]; // Get first array of completions
+			console.log(`[PukuFimProvider][${reqId}] 🎯 Radix Trie cache HIT! Found ${completions.length} cached completion(s)`);
+			console.log(`[PukuFimProvider][${reqId}] 📄 First cached completion preview: "${completions[0].substring(0, 100)}${completions[0].length > 100 ? '...' : ''}"`);
 			// Store position for validation
 			this._positionValidator.update(fileUri, position);
-			const completionItem = this._createCompletionItem(cached[0], new vscode.Range(position, position), position, document.uri);
+			// Create completion items for all cached completions (Feature #64)
+			const completionItems = completions.map(completion =>
+				this._createCompletionItem(completion, new vscode.Range(position, position), position, document.uri)
+			);
 			return {
 				type: 'fim',
-				completion: completionItem,
+				completion: completionItems,
 				requestId: reqId
 			};
 		}
@@ -260,16 +265,16 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			this._requestsInFlightByFile.set(fileUri, true);
 
 			const cachedCompletionId = lastCompletionId;
-			let completion: string | null = null;
+			let completions: string[] = [];
 
 			try {
-				completion = await this._speculativeCache.request(cachedCompletionId);
+				completions = await this._speculativeCache.request(cachedCompletionId);
 			} finally {
 				// Always release lock
 				this._requestsInFlightByFile.delete(fileUri);
 			}
 
-			if (completion && !token.isCancellationRequested) {
+			if (completions && completions.length > 0 && !token.isCancellationRequested) {
 				// Update tracking for cache hits
 				this._lastRequestTime = Date.now();
 				this._lastFileUri = fileUri;
@@ -278,17 +283,20 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 				// Store speculative request for next completion
 				this._storeSpeculativeRequest(completionId, document);
 
-				// Store completion in Radix Trie cache for future lookups
-				console.log(`[PukuFimProvider] 💾 Storing in Radix Trie cache (prefixLen=${prefix.length}, completionLen=${completion.length})`);
-				completionsCache.append(prefix, suffix, completion);
+				// Store ALL completions in Radix Trie cache for future lookups (Feature #64)
+				console.log(`[PukuFimProvider] 💾 Storing ${completions.length} completion(s) in Radix Trie cache (prefixLen=${prefix.length})`);
+				completionsCache.append(prefix, suffix, completions);
 
 				// Store position for validation
 				this._positionValidator.update(fileUri, position);
 
-				const completionItem = this._createCompletionItem(completion, new vscode.Range(position, position), position, document.uri);
+				// Create completion items for all completions (Feature #64)
+				const completionItems = completions.map(completion =>
+					this._createCompletionItem(completion, new vscode.Range(position, position), position, document.uri)
+				);
 				return {
 					type: 'fim',
-					completion: completionItem,
+					completion: completionItems,
 					requestId: reqId
 				};
 			}
@@ -411,32 +419,35 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		}
 
 		// Fetch completion from API
-		console.log(`[PukuFimProvider][${reqId}] 🌐 Requesting completion from API...`);
-		this._logService.debug(`[PukuFimProvider][${reqId}] Requesting completion at ${document.fileName}:${position.line}`);
+		// Feature #64: Request multiple completions if cycling
+		const isCycling = docId.isCycling || false;
+		const n = isCycling ? 3 : 1;
+		console.log(`[PukuFimProvider][${reqId}] 🌐 Requesting ${n} completion(s) from API (cycling: ${isCycling})...`);
+		this._logService.debug(`[PukuFimProvider][${reqId}] Requesting completion at ${document.fileName}:${position.line} (n=${n})`);
 
 		// Mark request as in flight for this file
 		this._requestsInFlightByFile.set(fileUri, true);
 
-		let completion: string | null = null;
+		let completions: string[] | null = null;
 		try {
 			const openFiles = [...importedFiles, ...semanticFiles];
 			console.log(`[PukuFimProvider][${reqId}] Context: ${importedFiles.length} imports + ${semanticFiles.length} semantic files`);
 
-			completion = await this._fetchContextAwareCompletion(completionPrefix, completionSuffix, openFiles, document.languageId, token);
-			console.log(`[PukuFimProvider][${reqId}] 📊 Fetch returned, completion=${completion ? `"${completion.substring(0, 30)}..."` : 'null'}, length=${completion?.length || 0}`);
+			completions = await this._fetchContextAwareCompletion(completionPrefix, completionSuffix, openFiles, document.languageId, token, n);
+			console.log(`[PukuFimProvider][${reqId}] 📊 Fetch returned ${completions?.length || 0} completion(s)`);
 
-			if (!completion) {
-				console.log(`[PukuFimProvider][${reqId}] ❌ API returned null/empty completion`);
+			if (!completions || completions.length === 0) {
+				console.log(`[PukuFimProvider][${reqId}] ❌ API returned null/empty completions`);
 				return null;
 			}
-			console.log(`[PukuFimProvider][${reqId}] ✓ Completion is non-null`);
+			console.log(`[PukuFimProvider][${reqId}] ✓ Got ${completions.length} completion(s)`);
 
 			if (token.isCancellationRequested) {
 				console.log(`[PukuFimProvider][${reqId}] ❌ Cancelled after API call`);
 				return null;
 			}
 			console.log(`[PukuFimProvider][${reqId}] ✓ Not cancelled`);
-			console.log(`[PukuFimProvider][${reqId}] ✅ API returned completion: ${completion.substring(0, 50)}...`);
+			console.log(`[PukuFimProvider][${reqId}] ✅ API returned ${completions.length} completion(s), first: "${completions[0].substring(0, 50)}..."`);
 		} catch (error) {
 			console.error(`[PukuFimProvider][${reqId}] ❌ API error: ${error}`);
 			this._logService.error(`[PukuFimProvider][${reqId}] Error: ${error}`);
@@ -450,9 +461,9 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		console.log(`[PukuFimProvider][${reqId}] 💾 Storing speculative request...`);
 		this._storeSpeculativeRequest(completionId, document);
 
-		// Store completion in Radix Trie cache for future lookups
-		console.log(`[PukuFimProvider][${reqId}] 💾 Storing in Radix Trie cache (prefixLen=${prefix.length}, completionLen=${completion.length})`);
-		completionsCache.append(prefix, suffix, completion);
+		// Store ALL completions in Radix Trie cache for future lookups (Feature #64)
+		console.log(`[PukuFimProvider][${reqId}] 💾 Storing ${completions.length} completion(s) in Radix Trie cache (prefixLen=${prefix.length})`);
+		completionsCache.append(prefix, suffix, completions);
 
 		// Store position for validation
 		console.log(`[PukuFimProvider][${reqId}] 💾 Updating position validator...`);
@@ -472,25 +483,30 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			console.log(`[PukuFimProvider][${reqId}] 📐 Using cursor position range: ${position.line}:${position.character}`);
 		}
 
-		console.log(`[PukuFimProvider][${reqId}] 🎨 Creating completion item...`);
-		const completionItem = this._createCompletionItem(completion, finalRange, position, document.uri);
-		console.log(`[PukuFimProvider][${reqId}] ✅ Returning completion item to racing model`);
+		// Feature #64: Create multiple completion items (one for each completion)
+		console.log(`[PukuFimProvider][${reqId}] 🎨 Creating ${completions.length} completion item(s)...`);
+		const completionItems = completions.map(completion =>
+			this._createCompletionItem(completion, finalRange, position, document.uri)
+		);
+
+		console.log(`[PukuFimProvider][${reqId}] ✅ Returning ${completionItems.length} completion item(s) to racing model`);
 		return {
 			type: 'fim',
-			completion: completionItem,
+			completion: completionItems, // Always return array (Feature #64)
 			requestId: reqId
 		};
 	}
 
 	/**
 	 * Store speculative request for next completion (Copilot-style)
+	 * Feature #64: Returns array of completions for cycling support
 	 */
 	private _storeSpeculativeRequest(completionId: string, document: vscode.TextDocument): void {
-		const speculativeRequestFn = async (): Promise<string | null> => {
+		const speculativeRequestFn = async (): Promise<string[]> => {
 			// Get FRESH document state at execution time
 			const editor = vscode.window.activeTextEditor;
 			if (!editor || editor.document.uri.toString() !== document.uri.toString()) {
-				return null;
+				return [];
 			}
 
 			const currentDoc = editor.document;
@@ -533,14 +549,16 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 
 	/**
 	 * Fetch completion using context-aware /v1/fim/context endpoint
+	 * Feature #64: Supports multiple completions via `n` parameter
 	 */
 	private async _fetchContextAwareCompletion(
 		prefix: string,
 		suffix: string,
 		openFiles: Array<{ filepath: string; content: string }>,
 		languageId: string,
-		token: vscode.CancellationToken
-	): Promise<string | null> {
+		token: vscode.CancellationToken,
+		n: number = 1 // Number of completions to generate (1 for automatic, 3 for cycling)
+	): Promise<string[] | null> {
 		const config = this._configService.getConfig();
 		const url = config.endpoints.fim;
 		const authToken = await this._authService.getToken();
@@ -560,6 +578,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			max_tokens: 100,
 			temperature: 0.1,
 			stream: false,
+			n, // Feature #64: Multiple completions
 		};
 
 		console.log(`[FetchCompletion] 📤 Calling API: ${url} (language=${languageId})`);
@@ -587,32 +606,46 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		}
 
 		const data = await response.json() as CompletionResponse;
-		console.log(`[FetchCompletion] 📥 API response: ${JSON.stringify(data).substring(0, 200)}...`);
+		console.log(`[FetchCompletion] 📥 API response: ${data.choices?.length || 0} choice(s)`);
 
-		if (data.choices && data.choices.length > 0) {
-			const text = data.choices[0].text || '';
+		if (!data.choices || data.choices.length === 0) {
+			console.log(`[FetchCompletion] ❌ No choices in API response`);
+			return null;
+		}
+
+		// Feature #64: Process ALL choices (not just the first one)
+		const validCompletions: string[] = [];
+		const prefixLines = prefix.split('\n');
+		const lastLines = prefixLines.slice(-10).join('\n');
+
+		for (let i = 0; i < data.choices.length; i++) {
+			const choice = data.choices[i];
+			const text = choice.text || '';
 			const trimmed = text.trim();
-			console.log(`[FetchCompletion] Raw text length: ${text.length}, trimmed: ${trimmed.length}`);
+
+			console.log(`[FetchCompletion] Processing choice ${i + 1}/${data.choices.length}: length=${trimmed.length}`);
 
 			if (!trimmed) {
-				console.log(`[FetchCompletion] ❌ Empty completion after trim`);
-				return null;
+				console.log(`[FetchCompletion] ⚠️ Choice ${i + 1} is empty, skipping`);
+				continue;
 			}
 
-			// Check for duplicates
-			const prefixLines = prefix.split('\n');
-			const lastLines = prefixLines.slice(-10).join('\n');
+			// Check for duplicates with prefix
 			const completionLines = trimmed.split('\n');
-			console.log(`[FetchCompletion] Duplicate check: ${completionLines.length} completion lines vs last ${prefixLines.slice(-10).length} prefix lines`);
+			let hasDuplicates = false;
 
 			for (const line of completionLines) {
 				const cleanLine = line.trim();
 				if (cleanLine.length > 10 && lastLines.includes(cleanLine)) {
-					console.log(`[FetchCompletion] ❌ Duplicate detected: "${cleanLine.substring(0, 50)}..."`);
-					return null;
+					console.log(`[FetchCompletion] ⚠️ Choice ${i + 1} has duplicate: "${cleanLine.substring(0, 50)}..."`);
+					hasDuplicates = true;
+					break;
 				}
 			}
-			console.log(`[FetchCompletion] ✓ No duplicates found`);
+
+			if (hasDuplicates) {
+				continue;
+			}
 
 			// Check for internal repetition
 			const lineFrequency = new Map<string, number>();
@@ -623,20 +656,30 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 				}
 			}
 
+			let hasRepetition = false;
 			for (const [line, count] of lineFrequency) {
 				if (count >= 2) {
-					console.log(`[FetchCompletion] ❌ Repetition detected: "${line.substring(0, 50)}..." appears ${count} times`);
-					return null;
+					console.log(`[FetchCompletion] ⚠️ Choice ${i + 1} has repetition: "${line.substring(0, 50)}..."`);
+					hasRepetition = true;
+					break;
 				}
 			}
-			console.log(`[FetchCompletion] ✓ No internal repetition`);
 
-			console.log(`[FetchCompletion] ✅ Returning completion: "${trimmed.substring(0, 50)}..."`);
-			return trimmed;
+			if (hasRepetition) {
+				continue;
+			}
+
+			console.log(`[FetchCompletion] ✅ Choice ${i + 1} is valid: "${trimmed.substring(0, 50)}..."`);
+			validCompletions.push(trimmed);
 		}
 
-		console.log(`[FetchCompletion] ❌ No choices in API response`);
-		return null;
+		if (validCompletions.length === 0) {
+			console.log(`[FetchCompletion] ❌ No valid completions after filtering`);
+			return null;
+		}
+
+		console.log(`[FetchCompletion] ✅ Returning ${validCompletions.length} valid completion(s)`);
+		return validCompletions;
 	}
 
 	/**

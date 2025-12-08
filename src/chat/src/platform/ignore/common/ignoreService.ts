@@ -8,7 +8,7 @@ import { createServiceIdentifier } from '../../../util/common/services';
 import { CancellationToken } from '../../../util/vs/base/common/cancellation';
 import { URI } from '../../../util/vs/base/common/uri';
 
-export const HAS_IGNORED_FILES_MESSAGE = l10n.t('\n\n**Note:** Some files were excluded from the context due to content exclusion rules. Click [here](https://docs.github.com/en/copilot/managing-github-copilot-in-your-organization/configuring-content-exclusions-for-github-copilot) to learn more.');
+export const HAS_IGNORED_FILES_MESSAGE = l10n.t('\n\n**Note:** Some files were excluded from the context due to content exclusion rules (.pukuignore).');
 
 export const IIgnoreService = createServiceIdentifier<IIgnoreService>('IIgnoreService');
 
@@ -29,7 +29,7 @@ export interface IIgnoreService {
 
 	init(): Promise<void>;
 
-	isCopilotIgnored(file: URI, token?: CancellationToken): Promise<boolean>;
+	isPukuIgnored(file: URI, token?: CancellationToken): Promise<boolean>;
 
 	asMinimatchPattern(): Promise<string | undefined>;
 }
@@ -52,7 +52,7 @@ export class NullIgnoreService implements IIgnoreService {
 
 	async init(): Promise<void> { }
 
-	async isCopilotIgnored(file: URI): Promise<boolean> {
+	async isPukuIgnored(file: URI): Promise<boolean> {
 		return false;
 	}
 
@@ -64,7 +64,7 @@ export class NullIgnoreService implements IIgnoreService {
 export async function filterIngoredResources(ignoreService: IIgnoreService, resources: URI[]): Promise<URI[]> {
 	const result: URI[] = [];
 	for (const resource of resources) {
-		if (!await ignoreService.isCopilotIgnored(resource)) {
+		if (!await ignoreService.isPukuIgnored(resource)) {
 			result.push(resource);
 		}
 	}

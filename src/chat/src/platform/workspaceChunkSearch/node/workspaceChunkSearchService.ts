@@ -679,7 +679,7 @@ class WorkspaceChunkSearchServiceImpl extends Disposable implements IWorkspaceCh
 
 	private async filterIgnoredChunks(chunks: readonly FileChunkAndScore[]): Promise<FileChunkAndScore[]> {
 		return coalesce(await Promise.all(chunks.map(async (entry) => {
-			const isIgnored = await this._ignoreService.isCopilotIgnored(entry.chunk.file);
+			const isIgnored = await this._ignoreService.isPukuIgnored(entry.chunk.file);
 			return isIgnored ? null : entry;
 		})));
 	}

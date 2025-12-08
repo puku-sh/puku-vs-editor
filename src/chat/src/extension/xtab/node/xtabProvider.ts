@@ -510,7 +510,7 @@ export class XtabProvider implements IStatelessNextEditProvider {
 
 			const isSnippetIgnored = async (item: SnippetContext): Promise<boolean> => {
 				const uris = [item.uri, ...(item.additionalUris ?? [])];
-				const isIgnored = await raceFilter(uris.map(uri => this.ignoreService.isCopilotIgnored(uri)), r => r);
+				const isIgnored = await raceFilter(uris.map(uri => this.ignoreService.isPukuIgnored(uri)), r => r);
 				return !!isIgnored;
 			};
 
@@ -1279,15 +1279,13 @@ export class XtabProvider implements IStatelessNextEditProvider {
 	}
 
 	private getEndpoint(configuredModelName: string | undefined): ChatEndpoint {
-		const url = this.configService.getConfig(ConfigKey.Internal.InlineEditsXtabProviderUrl);
-		const apiKey = this.configService.getConfig(ConfigKey.Internal.InlineEditsXtabProviderApiKey);
-		const hasOverriddenUrlAndApiKey = url !== undefined && apiKey !== undefined;
+		const url = this.configService.getConfig(ConfigKey.Internal.InlineEditsXtabProviderUrl)
+			|| 'https://api.puku.sh/v1/nes/edits';
+		const apiKey = this.configService.getConfig(ConfigKey.Internal.InlineEditsXtabProviderApiKey)
+			|| 'pk_54599884ee8e43ff5c94d77bf4eb9e8c1c5737388caba20e85fb8d30a27044f5314188a920760a656185b6571d0f5c58';
 
-		if (hasOverriddenUrlAndApiKey) {
-			return this.instaService.createInstance(XtabEndpoint, url, apiKey, configuredModelName);
-		}
-
-		return createProxyXtabEndpoint(this.instaService, configuredModelName);
+		// Always use XtabEndpoint with Puku API key (no more Copilot dependency)
+		return this.instaService.createInstance(XtabEndpoint, url, apiKey, configuredModelName);
 	}
 
 	private getPredictedOutput(editWindowLines: string[], responseFormat: xtabPromptOptions.ResponseFormat): Prediction | undefined {
