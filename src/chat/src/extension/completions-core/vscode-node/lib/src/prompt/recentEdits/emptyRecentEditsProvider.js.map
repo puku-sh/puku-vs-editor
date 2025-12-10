@@ -1,0 +1,1 @@
+{"version":3,"file":"emptyRecentEditsProvider.js","sourceRoot":"","sources":["emptyRecentEditsProvider.ts"],"names":[],"mappings":";AAAA;;;gGAGgG;;;AAKhG,MAAa,wBAAwB;IAEpC,SAAS;QACR,OAAO,KAAK,CAAC;IACd,CAAC;IAED,KAAK;QACJ,OAAO;IACR,CAAC;IAED,cAAc;QACb,OAAO,EAAE,CAAC;IACX,CAAC;IAED,cAAc,CAAC,IAAgB;QAC9B,OAAO,IAAI,CAAC;IACb,CAAC;CACD;AAjBD,4DAiBC"}

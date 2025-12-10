@@ -3,32 +3,18 @@ package main
 
 
 // add rest api in echo framework to create a user
-
-// add rest api in echo framework to get a user
-func getUser(c echo.Context) error {
-    id := c.Param("id")
-    user := new(User)
-    if err := c.Bind(user); err != nil {
-        return err
-    }
-    return c.JSON(http.StatusOK, user)
-}
-// add rest api in echo framework to update a user
-func updateUser(c echo.Context) error {
-    id := c.Param("id")
-    user := new(User)
-    if err := c.Bind(user); err != nil {
-        return err
-    }
-    return c.JSON(http.StatusOK, user)
-}
-
-// add rest api in echo framework to delete a user
-func deleteUser(c echo.Context) error {
-    id := c.Param("id")
-    user := new(User)
-    if err := c.Bind(user); err != nil {
-        return err
-    }
-    return c.JSON(http.StatusOK, user)
-}
+func main() {
+	e := echo.New()
+	e.POST("/users", func(c echo.Context) error {
+		db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, err)
+		}
+		user := new(User)
+		if err := c.Bind(user); err != nil {
+			return c.JSON(http.StatusBadRequest, err)
+		}
+		createUser(db, user.Name, user.Email)
+		return c.JSON(http.StatusCreated, user)
+	})
+	e.Logger.Fatal(e.Start(":8080"))
