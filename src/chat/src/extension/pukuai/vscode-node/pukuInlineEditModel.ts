@@ -94,8 +94,9 @@ export class PukuInlineEditModel extends Disposable {
 			const fimPromise = this.fimProvider.getNextEdit(docId, context, fimCts.token);
 
 			// Start diagnostics with delay (Copilot pattern - give FIM priority)
-			// Use config value for delay (default 200ms)
-			const delayMs = this.configService.getConfig().diagnostics.delayBeforeFixMs;
+			// Use config value for delay (default 50ms, matching Copilot)
+			const delayMs = this.configService.getConfig()?.diagnostics?.delayBeforeFixMs ?? 50;
+			console.log(`[PukuInlineEditModel] 🏁 Starting race: FIM vs Diagnostics (delay: ${delayMs}ms)`);
 			const diagnosticsPromise = this.diagnosticsProvider
 				? this.diagnosticsProvider.runUntilNextEdit?.(docId, context, delayMs, diagnosticsCts.token) ||
 				  this.diagnosticsProvider.getNextEdit(docId, context, diagnosticsCts.token)
@@ -107,20 +108,46 @@ export class PukuInlineEditModel extends Disposable {
 			// Wait for first result
 			let [fimResult, diagnosticsResult] = await first;
 
-			const hasFim = fimResult !== null && fimResult !== undefined;
-			const hasDiagnostics = diagnosticsResult !== null && diagnosticsResult !== undefined;
+			console.log('[PukuInlineEditModel] 🔍 Race results:', {
+				fimResult: fimResult ? `type=${fimResult.type}, hasCompletion=${!!fimResult.completion}` : 'null/undefined',
+				diagnosticsResult: diagnosticsResult ? 'has result' : 'null/undefined'
+			});
 
-			// If neither has result, give diagnostics 1 second more (Copilot's approach)
-			const shouldGiveMoreTimeToDiagnostics = !hasFim && !hasDiagnostics && this.diagnosticsProvider;
+			// Distinguish between "settled" (promise resolved) vs "has result" (has actual completion)
+			// undefined = provider hasn't completed yet
+			// null = provider completed but returned nothing
+			const fimSettled = fimResult !== undefined;
+			const diagnosticsSettled = diagnosticsResult !== undefined;
 
-			if (shouldGiveMoreTimeToDiagnostics) {
-				this.logService.info('[PukuInlineEditModel] Giving diagnostics 1 second more...');
+			const fimHasResult = fimResult !== null && fimResult !== undefined && fimResult.completion;
+			const diagnosticsHasResult = diagnosticsResult !== null && diagnosticsResult !== undefined;
+
+			// Wait for all if:
+			// 1. FIM hasn't settled yet (still fetching from API), OR
+			// 2. Both settled but neither has results (give diagnostics more time)
+			const shouldWaitForAll = !fimSettled || (!fimHasResult && !diagnosticsHasResult);
+
+			if (shouldWaitForAll) {
+				const reason = !fimSettled
+					? 'FIM still fetching'
+					: 'both returned null, giving diagnostics 1s more';
+
+				this.logService.info(`[PukuInlineEditModel] Waiting for all promises: ${reason}`);
+				console.log(`[PukuInlineEditModel] ⏳ Waiting for all promises: ${reason}`);
 
 				// Set timeout to cancel after 1 second
-				this.timeout(1000).then(() => diagnosticsCts.cancel());
+				this.timeout(1000).then(() => {
+					diagnosticsCts.cancel();
+					// Don't cancel FIM - let it complete and cache
+				});
 
 				// Wait for all results
 				[fimResult, diagnosticsResult] = await all;
+
+				console.log('[PukuInlineEditModel] 📊 Final results after wait:', {
+					fimResult: fimResult ? `type=${fimResult.type}, hasCompletion=${!!fimResult.completion}` : 'null/undefined',
+					diagnosticsResult: diagnosticsResult ? 'has result' : 'null/undefined'
+				});
 			}
 
 			// Cancel ongoing requests (but FIM will complete anyway due to independent token)
