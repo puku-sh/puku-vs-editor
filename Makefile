@@ -1,16 +1,21 @@
 # Puku Editor Makefile
 # Compile and launch VS Code (Code-OSS) with Puku Editor extension
 
-.PHONY: help compile compile-extension compile-vscode launch clean kill all test
+.PHONY: help install compile compile-ext compile-vs compile-extension compile-vscode launch clean kill all test
 
 # Default target
 help:
 	@echo "Puku Editor - Makefile Commands"
 	@echo "================================"
 	@echo ""
+	@echo "Setup (First Time):"
+	@echo "  make install          - Install all dependencies (extension + VS Code)"
+	@echo ""
 	@echo "Development:"
 	@echo "  make all              - Compile everything and launch IDE"
 	@echo "  make compile          - Compile both extension and VS Code"
+	@echo "  make compile-ext      - Compile only the extension (alias)"
+	@echo "  make compile-vs       - Compile only VS Code (alias)"
 	@echo "  make compile-extension - Compile only the extension"
 	@echo "  make compile-vscode   - Compile only VS Code (Code-OSS)"
 	@echo "  make launch           - Launch Code-OSS with extension"
@@ -23,7 +28,9 @@ help:
 	@echo "  make clean            - Clean build artifacts"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make launch FOLDER=src/chat"
+	@echo "  make install                    # First time setup"
+	@echo "  make compile-ext                # Quick extension build"
+	@echo "  make launch FOLDER=src/chat     # Launch with folder"
 	@echo "  make run FOLDER=/Users/name/project"
 	@echo ""
 	@echo "Node Setup:"
@@ -100,6 +107,40 @@ node-extension:
 node-vscode:
 	@echo "Switching to Node 22.20.0..."
 	@source ~/.nvm/nvm.sh && nvm use 22.20.0 && node -v
+
+# Install dependencies for extension (requires Node 23.5.0)
+install-extension:
+	@echo "=== Installing Extension Dependencies ==="
+	@cd src/chat && \
+	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
+	npm install
+
+# Install dependencies for VS Code (requires Node 22.20.0)
+install-vscode:
+	@echo "=== Installing VS Code (Code-OSS) Dependencies ==="
+	@cd src/vscode && \
+	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
+	npm install
+
+# Install all dependencies (extension + VS Code)
+install:
+	@echo "=== Installing All Dependencies ==="
+	@echo ""
+	@echo "Step 1/2: Installing extension dependencies (Node 23.5.0)..."
+	@$(MAKE) install-extension
+	@echo ""
+	@echo "Step 2/2: Installing VS Code dependencies (Node 22.20.0)..."
+	@$(MAKE) install-vscode
+	@echo ""
+	@echo "=== Installation Complete ==="
+	@echo ""
+	@echo "Next steps:"
+	@echo "  make compile     # Compile extension + VS Code"
+	@echo "  make all         # Compile and launch"
+
+# Aliases for shorter commands
+compile-ext: compile-extension
+compile-vs: compile-vscode
 
 # Watch mode for extension (Terminal 1)
 watch-extension:
