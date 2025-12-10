@@ -9,7 +9,7 @@ help:
 	@echo "================================"
 	@echo ""
 	@echo "Setup (First Time):"
-	@echo "  make install          - Install all dependencies (extension + VS Code)"
+	@echo "  make install          - Install all dependencies"
 	@echo ""
 	@echo "Development:"
 	@echo "  make all              - Compile everything and launch IDE"
@@ -33,9 +33,7 @@ help:
 	@echo "  make launch FOLDER=src/chat     # Launch with folder"
 	@echo "  make run FOLDER=/Users/name/project"
 	@echo ""
-	@echo "Node Setup:"
-	@echo "  make node-extension   - Switch to Node 23.5.0 (for extension)"
-	@echo "  make node-vscode      - Switch to Node 22.20.0 (for VS Code)"
+	@echo "Note: All commands use Node 23.5.0 (required for sqlite-vec)"
 
 # Compile extension (requires Node 23.5.0)
 compile-extension:
@@ -44,11 +42,11 @@ compile-extension:
 	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
 	npm run compile
 
-# Compile VS Code (requires Node 22.20.0)
+# Compile VS Code (requires Node 23.5.0)
 compile-vscode:
 	@echo "=== Compiling VS Code (Code-OSS) ==="
 	@cd src/vscode && \
-	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
+	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
 	npm run compile
 
 # Compile both in sequence
@@ -98,16 +96,6 @@ clean:
 	@rm -rf src/vscode/out
 	@echo "Clean complete"
 
-# Switch to Node 23.5.0 (for extension development)
-node-extension:
-	@echo "Switching to Node 23.5.0..."
-	@source ~/.nvm/nvm.sh && nvm use 23.5.0 && node -v
-
-# Switch to Node 22.20.0 (for VS Code development)
-node-vscode:
-	@echo "Switching to Node 22.20.0..."
-	@source ~/.nvm/nvm.sh && nvm use 22.20.0 && node -v
-
 # Install dependencies for extension (requires Node 23.5.0)
 install-extension:
 	@echo "=== Installing Extension Dependencies ==="
@@ -115,21 +103,21 @@ install-extension:
 	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
 	npm install
 
-# Install dependencies for VS Code (requires Node 22.20.0)
+# Install dependencies for VS Code (requires Node 23.5.0)
 install-vscode:
 	@echo "=== Installing VS Code (Code-OSS) Dependencies ==="
 	@cd src/vscode && \
-	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
+	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
 	npm install
 
 # Install all dependencies (extension + VS Code)
 install:
-	@echo "=== Installing All Dependencies ==="
+	@echo "=== Installing All Dependencies (Node 23.5.0) ==="
 	@echo ""
-	@echo "Step 1/2: Installing extension dependencies (Node 23.5.0)..."
+	@echo "Step 1/2: Installing extension dependencies..."
 	@$(MAKE) install-extension
 	@echo ""
-	@echo "Step 2/2: Installing VS Code dependencies (Node 22.20.0)..."
+	@echo "Step 2/2: Installing VS Code dependencies..."
 	@$(MAKE) install-vscode
 	@echo ""
 	@echo "=== Installation Complete ==="
