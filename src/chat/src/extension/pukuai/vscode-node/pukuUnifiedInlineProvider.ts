@@ -210,20 +210,28 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 			position: `${metadata.document.fileName}:${metadata.position.line}:${metadata.position.character}`
 		});
 
+		const fileUri = metadata.document.uri.toString();
+
 		switch (reason.kind) {
 			case vscode.InlineCompletionEndOfLifeReasonKind.Accepted:
 				this.logService.info('[PukuUnifiedProvider] ✅ Completion accepted');
+				// Issue #57: Clear ghost text on acceptance
+				this.fimProvider.clearGhostText(fileUri);
 				// TODO: Send acceptance telemetry (Issue #56 - future work)
 				break;
 
 			case vscode.InlineCompletionEndOfLifeReasonKind.Rejected:
 				this.logService.info('[PukuUnifiedProvider] ❌ Completion explicitly rejected (ESC key)');
 				this.rejectionCollector.reject(metadata.document, text, metadata.position);
+				// Issue #57: Clear ghost text on rejection
+				this.fimProvider.clearGhostText(fileUri);
 				// TODO: Send rejection telemetry (Issue #56 - future work)
 				break;
 
 			case vscode.InlineCompletionEndOfLifeReasonKind.Ignored:
 				this.logService.info('[PukuUnifiedProvider] 🔄 Completion ignored (superseded or timeout)');
+				// Issue #57: Clear ghost text on ignore (user typed something different)
+				this.fimProvider.clearGhostText(fileUri);
 				// Don't track ignores as rejections - user didn't explicitly reject
 				break;
 		}

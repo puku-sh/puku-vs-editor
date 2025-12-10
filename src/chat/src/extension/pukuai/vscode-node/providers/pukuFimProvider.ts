@@ -795,4 +795,16 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		console.log(`[PukuFimProvider] ⏭️ Completion ignored: reqId=${result.requestId}, supersededBy=${supersededBy?.requestId}`);
 		// Track when completions are superseded by newer ones (racing)
 	}
+
+	/**
+	 * Clear ghost text for a file (Issue #57)
+	 * Called by unified provider's lifecycle hooks when completion is accepted/rejected/ignored
+	 */
+	public clearGhostText(fileUri: string): void {
+		const currentGhostText = this._currentGhostTextByFile.get(fileUri);
+		if (currentGhostText) {
+			currentGhostText.clear();
+			console.log(`[PukuFimProvider] 🗑️ Cleared ghost text for ${fileUri}`);
+		}
+	}
 }

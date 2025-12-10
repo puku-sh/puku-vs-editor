@@ -151,6 +151,12 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 	// Radix Trie cache for intelligent completion matching (handles typing, backspace, partial edits)
 	// File-aware: separate cache per file
 	private _completionsCacheByFile = new Map<string, CompletionsCache>();
+	// Ghost text storage for "typing as suggested" optimization (Issue #57)
+	private _currentGhostTextByFile = new Map<string, {
+		text: string;
+		position: vscode.Position;
+		timestamp: number;
+	}>();
 	// Comment completion flow handler
 	private _commentFlow: CommentCompletionFlow;
 	// Refactoring detection flow handler
@@ -366,6 +372,58 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 					items: [completionItem],
 					enableForwardStability: true
 				};
+			}
+		}
+
+		// ===== Issue #57: "Typing as Suggested" Optimization =====
+		// Check if user is typing text that matches the current ghost text
+		// If so, update ghost text INSTANTLY (bypass debounce)
+		const ghostTextInfo = this._currentGhostTextByFile.get(fileUri);
+
+		if (ghostTextInfo) {
+			// Calculate what user just typed since last check
+			const typedText = prefix.slice(this._lastPrefix.length);
+
+			// What we expected based on current ghost text
+			const expectedText = ghostTextInfo.text.slice(0, typedText.length);
+
+			if (typedText === expectedText && typedText.length > 0) {
+				// User is typing the suggestion! Update ghost text instantly ✨
+				console.log(`[PukuInlineCompletion][${reqId}] ✨ Typing as suggested: "${typedText}" (bypassing debounce)`);
+
+				// Update ghost text by removing the typed prefix
+				const newGhostText = ghostTextInfo.text.slice(typedText.length);
+
+				if (newGhostText.length > 0) {
+					// Update stored ghost text for next keystroke
+					this._currentGhostTextByFile.set(fileUri, {
+						text: newGhostText,
+						position: position,
+						timestamp: Date.now()
+					});
+
+					// Update tracking for next check
+					this._lastPrefix = prefix;
+
+					// Return updated completion INSTANTLY (no API call, no debounce!)
+					return {
+						items: [{
+							insertText: newGhostText,
+							range: new vscode.Range(position, position),
+						}],
+						enableForwardStability: true  // Issue #55
+					};
+				} else {
+					// User finished typing the entire suggestion
+					console.log(`[PukuInlineCompletion][${reqId}] ✅ Suggestion fully typed, clearing ghost text`);
+					this._currentGhostTextByFile.delete(fileUri);
+					return null;
+				}
+			} else if (typedText.length > 0) {
+				// Mismatch! User typed something different from suggestion
+				console.log(`[PukuInlineCompletion][${reqId}] ❌ Typing diverged from suggestion: expected "${expectedText}", got "${typedText}"`);
+				this._currentGhostTextByFile.delete(fileUri);
+				// Fall through to normal debounce + API call flow
 			}
 		}
 
@@ -621,6 +679,14 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		const completionItem = this._createCompletionItem(completion, finalRange, position, document.uri);
 		console.log(`[PukuInlineCompletion][${reqId}] ✅ Returning completion item with forward stability`);
 
+		// Issue #57: Store ghost text for "typing as suggested" optimization
+		this._currentGhostTextByFile.set(fileUri, {
+			text: completion,
+			position: position,
+			timestamp: Date.now()
+		});
+		console.log(`[PukuInlineCompletion][${reqId}] 💾 Stored ghost text for typing-as-suggested (length=${completion.length})`);
+
 		// Return InlineCompletionList with enableForwardStability
 		// This prevents ghost text from jumping position during edits (Issue #55)
 		return {
@@ -808,6 +874,18 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 	setEnabled(enabled: boolean): void {
 		this._enabled = enabled;
 		this._logService.info(`[PukuInlineCompletion] Provider ${enabled ? 'enabled' : 'disabled'}`);
+	}
+
+	/**
+	 * Clear ghost text for a file (Issue #57)
+	 * Called by lifecycle hooks when completion is accepted/rejected
+	 */
+	public clearGhostText(fileUri: string): void {
+		const had = this._currentGhostTextByFile.has(fileUri);
+		this._currentGhostTextByFile.delete(fileUri);
+		if (had) {
+			console.log(`[PukuInlineCompletion] 🗑️  Cleared ghost text for ${fileUri}`);
+		}
 	}
 
 }
