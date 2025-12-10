@@ -1,3 +1,83 @@
+## 0.40.0 (2025-12-10)
+
+### Features
+
+#### "Typing as Suggested" Optimization ([Issue #57](https://github.com/puku-sh/puku-vs-editor/issues/57))
+
+**Summary:** Implemented instant ghost text updates when user types matching text, bypassing 800ms debounce for Copilot-like responsive experience.
+
+**Problem:** Users waited 800ms on every keystroke, even when typing exactly what was suggested, creating lag and poor UX.
+
+**Solution:**
+- Detect when typed text matches ghost text prefix
+- Instantly update ghost text (0ms) by removing typed prefix
+- Bypass debounce for matching keystrokes
+- Clear ghost text on accept/reject/ignore lifecycle events
+
+**Changes:**
+- ✅ `pukuFimProvider.ts` - Added `clearGhostText()` method for lifecycle integration
+- ✅ `pukuUnifiedInlineProvider.ts` - Integrated ghost text clearing in `handleEndOfLifetime()`
+- ✅ PRD documentation (`docs/prd-typing-as-suggested.md`)
+
+**Impact:**
+- Matching keystrokes: 800ms → 0ms (instant!)
+- API call reduction: 50-70% during typical acceptance flow
+- Better UX: Matches GitHub Copilot's responsive feel
+
+**See Also:**
+- [PRD: Typing as Suggested](docs/prd-typing-as-suggested.md)
+
+---
+
+### Bug Fixes
+
+#### Fixed ObservableGit Initialization Error
+
+**Problem:** Extension crashed on startup with "items is not iterable" error in ObservableGit initialization.
+
+**Solution:** Added null/undefined handling in `ArrayMap.setItems()` to gracefully handle empty git repos observable.
+
+**Changes:**
+- ✅ `utils.ts` - Updated `setItems()` to accept and handle `null | undefined`
+
+---
+
+#### Fixed React Types Peer Dependency Conflict
+
+**Problem:** `npm install` failed with peer dependency conflict between `@types/react@17.0.44` and `@types/react-dom@^18.2.17`.
+
+**Solution:** Updated `@types/react` from 17.0.44 to ^18.2.17 to align with react-dom types.
+
+**Changes:**
+- ✅ `package.json` - Updated React types to v18
+
+**Impact:** `make install` now works without `--force` or `--legacy-peer-deps`
+
+---
+
+### Developer Experience
+
+#### Standardized on Node 23.5.0 + Improved Makefile
+
+**Changes:**
+- ✅ All commands now use Node 23.5.0 (required for sqlite-vec)
+- ✅ Eliminated node version switching complexity
+- ✅ Added `make install` for one-command dependency installation
+- ✅ Added `compile-ext` and `compile-vs` aliases
+- ✅ Improved help documentation with Quick Start section
+- ✅ Updated README with correct paths and workflows
+
+**New Developer Workflow:**
+```bash
+make install   # One command to install everything
+make compile   # Build everything
+make launch    # Launch the editor
+```
+
+**Impact:** Simplified onboarding for new developers, no more NVM version switching
+
+---
+
 ## 0.37.4 (2025-12-08)
 
 ### Features
