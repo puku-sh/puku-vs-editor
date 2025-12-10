@@ -141,7 +141,7 @@ export class PukuDiagnosticsNextEditProvider extends Disposable implements IPuku
 			// Use config value (GitHub Copilot uses maxDistance=12 for imports)
 			if (cachedFix && cachedFix.fix.label.includes('import')) {
 				const config = this._configService.getConfig();
-				const maxDistance = config.diagnostics.maxDistanceForImport;
+				const maxDistance = config?.diagnostics?.maxDistanceForImport ?? 12; // Default to 12 (Copilot value)
 				const distanceFromCursor = Math.abs(cachedFix.fix.range.start.line - position.line);
 				if (distanceFromCursor > maxDistance) {
 					console.log(`[PukuDiagnosticsNextEdit][${reqId}] Cached import fix too far from cursor (distance: ${distanceFromCursor}, max: ${maxDistance})`);
@@ -192,7 +192,7 @@ export class PukuDiagnosticsNextEditProvider extends Disposable implements IPuku
 			// Skip import fixes that are too far from cursor (Copilot approach)
 			// Use config value (GitHub Copilot uses maxDistance=12 for imports)
 			const config = this._configService.getConfig();
-			const maxDistance = config.diagnostics.maxDistanceForImport;
+			const maxDistance = config?.diagnostics?.maxDistanceForImport ?? 12; // Default to 12 (Copilot value)
 			const distanceFromCursor = Math.abs(fix.range.start.line - position.line);
 			if (distanceFromCursor > maxDistance) {
 				console.log(`[PukuDiagnosticsNextEdit][${reqId}] Import fix too far from cursor (distance: ${distanceFromCursor}, max: ${maxDistance})`);

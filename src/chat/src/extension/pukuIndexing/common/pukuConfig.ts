@@ -75,7 +75,7 @@ export const DEFAULT_PUKU_CONFIG: PukuConfig = {
 		maxDistanceForImport: 12, // GitHub Copilot uses 12
 		maxDistanceForAsync: 3, // GitHub Copilot uses 3
 		maxDistanceForAny: 5, // GitHub Copilot uses 5
-		delayBeforeFixMs: 200,
+		delayBeforeFixMs: 50, // GitHub Copilot uses 50ms (see inlineCompletionProvider.ts:183)
 	},
 };
 
