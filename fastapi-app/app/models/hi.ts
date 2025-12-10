@@ -1,28 +1,66 @@
-
-
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 const [data, setData] = useState(null);
 
-useEffect(() => {
+
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState(null);
+const fetchData = async (url) => {
+  setLoading(true);
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const jsonData = await response.json();
+    setData(jsonData);
+  } catch (err) {
+    setError(err);
+  }
+  const useFetch = (url) => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const fetchData = async () => {
+    setLoading(true);
     try {
-      const response = await fetch('https://api.example.com/data');
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
       const jsonData = await response.json();
       setData(jsonData);
-      console.log(jsonData);
-      console.log('Data fetched successfully');
-
-    } catch (error) {
-    
-      console.error('Error fetching data:', error);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  return { data, loading, error, fetchData };
+};const useFetch = (url) => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  fetchData();
-}, []);
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const jsonData = await response.json();
+      setData(jsonData);
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-
-
-
-
+  return { data, loading, error, fetchData };
+};finally {
+    setLoading(false);
+  }
+};export { data, loading, error, fetchData };

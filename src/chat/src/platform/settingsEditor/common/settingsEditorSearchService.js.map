@@ -1,0 +1,1 @@
+{"version":3,"file":"settingsEditorSearchService.js","sourceRoot":"","sources":["settingsEditorSearchService.ts"],"names":[],"mappings":";;;AAKA,4DAAwE;AAE3D,QAAA,4BAA4B,GAAG,IAAA,kCAAuB,EAA+B,8BAA8B,CAAC,CAAC;AAQlI,MAAa,+BAA+B;IAG3C,4BAA4B,CAAC,KAAa,EAAE,OAAsC,EAAE,QAAwC,EAAE,KAAwB;QACrJ,OAAO,OAAO,CAAC,OAAO,CAAC,SAAS,CAAC,CAAC;IACnC,CAAC;CACD;AAND,0EAMC"}
