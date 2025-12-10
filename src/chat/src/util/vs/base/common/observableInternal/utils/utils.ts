@@ -247,9 +247,20 @@ class ArrayMap<TIn, TOut, TKey> implements IDisposable {
 		this._cache.clear();
 	}
 
-	public setItems(items: readonly TIn[]): void {
+	public setItems(items: readonly TIn[] | undefined | null): void {
 		const newItems: TOut[] = [];
 		const itemsToRemove = new Set(this._cache.keys());
+
+		// Handle null/undefined items gracefully
+		if (!items) {
+			// Clear all cached items if items is null/undefined
+			for (const entry of this._cache.values()) {
+				entry.store.dispose();
+			}
+			this._cache.clear();
+			this._items = [];
+			return;
+		}
 
 		for (const item of items) {
 			const key = this._keySelector ? this._keySelector(item) : item as unknown as TKey;
