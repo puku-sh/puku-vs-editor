@@ -12,6 +12,8 @@ import { IPukuIndexingService } from '../../../pukuIndexing/node/pukuIndexingSer
 import { CompletionsCache } from '../../common/completionsCache';
 import { CurrentGhostText } from '../../common/currentGhostText';
 import { IPukuNextEditProvider, PukuFimResult, DocumentId } from '../../common/nextEditProvider';
+import { ResponseStream } from '../../common/responseStream';
+import { streamToCompletions } from '../../common/streamTransformer';
 import { CommentCompletionFlow } from '../flows/commentCompletion';
 import { RefactoringDetectionFlow } from '../flows/refactoringDetection';
 import { ImportContextFlow } from '../flows/importContext';
@@ -640,7 +642,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			language: languageId,
 			max_tokens: 500, // Match GitHub Copilot's DEFAULT_MAX_COMPLETION_LENGTH (Issue #83)
 			temperature: 0.1,
-			stream: false,
+			stream: true, // Enable SSE streaming (Copilot-style architecture)
 			n, // Feature #64: Multiple completions
 		};
 
@@ -668,8 +670,28 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			return null;
 		}
 
-		const data = await response.json() as CompletionResponse;
-		console.log(`[FetchCompletion] 📥 API response: ${data.choices?.length || 0} choice(s)`);
+		// Process SSE stream (Copilot-style architecture)
+		const responseText = await response.text();
+		console.log(`[FetchCompletion] 📡 Received SSE stream: ${responseText.length} bytes`);
+
+		// Parse SSE stream into completions
+		const completions = streamToCompletions(responseText);
+		console.log(`[FetchCompletion] 📦 Parsed ${completions.length} stream chunk(s)`);
+
+		if (completions.length === 0) {
+			console.log(`[FetchCompletion] ❌ No completions in stream`);
+			return null;
+		}
+
+		// Aggregate stream chunks into complete response
+		const responseStream = new ResponseStream();
+		for (const completion of completions) {
+			responseStream.addChunk(completion);
+		}
+		responseStream.complete();
+
+		const data = responseStream.getResponse() as CompletionResponse;
+		console.log(`[FetchCompletion] 📥 Aggregated response: ${data.choices?.length || 0} choice(s)`);
 
 		if (!data.choices || data.choices.length === 0) {
 			console.log(`[FetchCompletion] ❌ No choices in API response`);

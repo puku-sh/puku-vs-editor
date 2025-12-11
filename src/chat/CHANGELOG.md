@@ -1,3 +1,44 @@
+## 0.42.0 (2025-12-11)
+
+### Features
+
+#### Copilot-Style SSE Streaming Architecture ([Issue #60](https://github.com/puku-sh/puku-vs-editor/issues/60))
+
+**Summary:** Implemented Server-Sent Events (SSE) streaming with frontend aggregation, matching GitHub Copilot's architecture for better performance and reliability.
+
+**Problem:** Previous implementation used non-streaming requests, missing benefits of early cancellation and progressive processing.
+
+**Solution:**
+- Backend sends SSE stream with `stream: true` parameter
+- Frontend parses SSE chunks using `streamToCompletions()` utility
+- `ResponseStream` class aggregates all chunks into complete completion
+- Returns final result to VS Code (no partial rendering)
+
+**Architecture:**
+```
+Request (stream: true) → SSE Stream → Parse chunks → Aggregate → Complete response
+```
+
+**Changes:**
+- ✅ `responseStream.ts` - New `ResponseStream` class for aggregation
+- ✅ `streamTransformer.ts` - SSE parsing utilities (`parseSSEStream`, `parseJSONL`)
+- ✅ `pukuFimProvider.ts` - Enabled streaming with `stream: true`
+- ✅ Supports both `text` and `delta.content` formats
+
+**Benefits:**
+- Early cancellation support (abort mid-stream)
+- Better error handling and network efficiency
+- Matches Copilot's proven architecture
+- No frontend changes needed (aggregation preserves existing UX)
+
+**Technical Details:**
+- Parses SSE format: `data: {...}\ndata: [DONE]`
+- Handles `delta.content` (streaming) and `text` (non-streaming)
+- Aggregates chunks: `text = chunk1 + chunk2 + ... + chunkN`
+- Returns complete `Completion` object after `[DONE]` signal
+
+---
+
 ## 0.40.0 (2025-12-10)
 
 ### Features
