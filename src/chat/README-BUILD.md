@@ -13,8 +13,13 @@ nvm use  # Reads .nvmrc automatically
 
 ### 2. Install dependencies
 \`\`\`bash
-npm install --legacy-peer-deps --ignore-scripts
+npm install --legacy-peer-deps
 \`\`\`
+
+**Note**: The postinstall script automatically:
+- Compresses and copies tiktoken files to \`dist/\`
+- Copies tree-sitter WASM files
+- Creates required shims
 
 ### 3. Compile
 \`\`\`bash
