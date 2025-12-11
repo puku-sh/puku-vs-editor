@@ -2,7 +2,7 @@
 .vscode-test/
 .vscode-test-web/
 node_modules/
-dist/
+# dist/
 
 # created by simulation
 .simulation
