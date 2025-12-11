@@ -1,0 +1,118 @@
+name: Test Makefile Setup
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'Makefile'
+      - '.github/workflows/test-setup.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Makefile'
+      - '.github/workflows/test-setup.yml'
+  workflow_dispatch:
+
+jobs:
+  test-setup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install nvm
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          echo 'export NVM_DIR="$HOME/.nvm"' >> $GITHUB_ENV
+          echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $GITHUB_ENV
+
+      - name: Install Node.js 23.5.0
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm install 23.5.0
+          nvm use 23.5.0
+          node -v
+          npm -v
+
+      - name: Test make install (without VS Code fork)
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 23.5.0
+
+          # Ensure VS Code fork doesn't exist
+          rm -rf src/vscode
+
+          # Run install - should clone VS Code and install deps
+          make install
+
+      - name: Verify VS Code was cloned
+        run: |
+          if [ ! -d "src/vscode" ]; then
+            echo "❌ VS Code fork was not cloned"
+            exit 1
+          fi
+          if [ ! -f "src/vscode/package.json" ]; then
+            echo "❌ VS Code package.json not found"
+            exit 1
+          fi
+          echo "✅ VS Code fork cloned successfully"
+
+      - name: Verify extension dependencies installed
+        run: |
+          if [ ! -d "src/chat/node_modules" ]; then
+            echo "❌ Extension dependencies not installed"
+            exit 1
+          fi
+          echo "✅ Extension dependencies installed"
+
+      - name: Verify VS Code dependencies installed
+        run: |
+          if [ ! -d "src/vscode/node_modules" ]; then
+            echo "❌ VS Code dependencies not installed"
+            exit 1
+          fi
+          echo "✅ VS Code dependencies installed"
+
+      - name: Test make compile
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 23.5.0
+
+          # Compile both extension and VS Code
+          make compile
+
+      - name: Verify compilation artifacts
+        run: |
+          # Check extension build
+          if [ ! -d "src/chat/dist" ]; then
+            echo "❌ Extension dist not found"
+            exit 1
+          fi
+          echo "✅ Extension compiled"
+
+          # Check VS Code build
+          if [ ! -d "src/vscode/out" ]; then
+            echo "❌ VS Code out directory not found"
+            exit 1
+          fi
+          echo "✅ VS Code compiled"
+
+      - name: Summary
+        run: |
+          echo "=================================================="
+          echo "✅ All tests passed!"
+          echo "=================================================="
+          echo "✅ VS Code fork cloned automatically"
+          echo "✅ Extension dependencies installed"
+          echo "✅ VS Code dependencies installed"
+          echo "✅ Extension compiled successfully"
+          echo "✅ VS Code compiled successfully"
+          echo "=================================================="
+          echo ""
+          echo "The Makefile setup works correctly on Linux!"
