@@ -12,8 +12,6 @@ import { IPukuIndexingService } from '../../../pukuIndexing/node/pukuIndexingSer
 import { CompletionsCache } from '../../common/completionsCache';
 import { CurrentGhostText } from '../../common/currentGhostText';
 import { IPukuNextEditProvider, PukuFimResult, DocumentId } from '../../common/nextEditProvider';
-import { ResponseStream } from '../../common/responseStream';
-import { streamToCompletions } from '../../common/streamTransformer';
 import { CommentCompletionFlow } from '../flows/commentCompletion';
 import { RefactoringDetectionFlow } from '../flows/refactoringDetection';
 import { ImportContextFlow } from '../flows/importContext';
@@ -642,7 +640,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			language: languageId,
 			max_tokens: 500, // Match GitHub Copilot's DEFAULT_MAX_COMPLETION_LENGTH (Issue #83)
 			temperature: 0.1,
-			stream: true, // Enable SSE streaming (Copilot-style architecture)
+			stream: false, // Streaming not needed for fast FIM responses
 			n, // Feature #64: Multiple completions
 		};
 
@@ -670,32 +668,8 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			return null;
 		}
 
-		// Process SSE stream (Copilot-style architecture)
-		const responseText = await response.text();
-		console.log(`[FetchCompletion] 📡 Received SSE stream: ${responseText.length} bytes`);
-		console.log(`[FetchCompletion] 📝 First 500 chars:`, responseText.substring(0, 500));
-
-		// Parse SSE stream into completions
-		const completions = streamToCompletions(responseText);
-		console.log(`[FetchCompletion] 📦 Parsed ${completions.length} stream chunk(s)`);
-
-		if (completions.length === 0) {
-			console.log(`[FetchCompletion] ❌ No completions in stream`);
-			console.log(`[FetchCompletion] 🔍 Raw response:`, responseText);
-			return null;
-		}
-
-		// Aggregate stream chunks into complete response
-		const responseStream = new ResponseStream();
-		for (const completion of completions) {
-			console.log(`[FetchCompletion] 📦 Adding chunk:`, JSON.stringify(completion));
-			responseStream.addChunk(completion);
-		}
-		responseStream.complete();
-
-		const data = responseStream.getResponse() as CompletionResponse;
-		console.log(`[FetchCompletion] 📥 Aggregated response:`, JSON.stringify(data));
-		console.log(`[FetchCompletion] 📊 Choices: ${data.choices?.length || 0}`);
+		const data = await response.json() as CompletionResponse;
+		console.log(`[FetchCompletion] 📥 API response: ${data.choices?.length || 0} choice(s)`);
 
 		if (!data.choices || data.choices.length === 0) {
 			console.log(`[FetchCompletion] ❌ No choices in API response`);
