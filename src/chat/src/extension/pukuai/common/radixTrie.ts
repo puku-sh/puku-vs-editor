@@ -84,6 +84,23 @@ export class LRURadixTrie<T> {
 		this.deleteNode(node);
 	}
 
+	/** Iterates over all key-value pairs in the trie. */
+	*entries(): IterableIterator<[string, T]> {
+		for (const leaf of this.leafNodes) {
+			if (leaf.value !== undefined) {
+				// Reconstruct the key by traversing back up to the root
+				const keyParts: string[] = [];
+				let current: { node: LRURadixNode<T>; edge: string } | undefined = leaf.parent;
+				while (current) {
+					keyParts.unshift(current.edge);
+					current = current.node.parent;
+				}
+				const key = keyParts.join('');
+				yield [key, leaf.value];
+			}
+		}
+	}
+
 	/** Traverses the trie to find the node with the closest prefix to a given key. */
 	private findClosestNode(key: string) {
 		let hasNext = true;

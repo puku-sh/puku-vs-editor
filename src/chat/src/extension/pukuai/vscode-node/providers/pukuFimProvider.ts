@@ -285,8 +285,9 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		console.log(`[PukuFimProvider][${reqId}] ❌ CurrentGhostText cache MISS`);
 
 		// Check Radix Trie cache (Layer 2) - handles typing, backspace, partial edits
+		// Issue #58.5: Pass document and position for rebase support
 		const completionsCache = this._getCompletionsCache(fileUri);
-		const cached = completionsCache.findAll(prefix, suffix);
+		const cached = completionsCache.findAll(prefix, suffix, document, position);
 		if (cached.length > 0 && cached[0].length > 0) {
 			const completions = cached[0]; // Get first array of completions
 			console.log(`[PukuFimProvider][${reqId}] 🎯 Radix Trie cache HIT! Found ${completions.length} cached completion(s)`);
@@ -637,7 +638,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			suffix: suffix,
 			openFiles: openFiles,
 			language: languageId,
-			max_tokens: 100,
+			max_tokens: 500, // Match GitHub Copilot's DEFAULT_MAX_COMPLETION_LENGTH (Issue #83)
 			temperature: 0.1,
 			stream: false,
 			n, // Feature #64: Multiple completions
@@ -680,12 +681,15 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		const prefixLines = prefix.split('\n');
 		const lastLines = prefixLines.slice(-10).join('\n');
 
+		// DEBUG: Log raw API response
+		console.log(`[FetchCompletion] 🔍 Raw API response:`, JSON.stringify(data, null, 2));
+
 		for (let i = 0; i < data.choices.length; i++) {
 			const choice = data.choices[i];
 			const text = choice.text || '';
 			const trimmed = text.trim();
 
-			console.log(`[FetchCompletion] Processing choice ${i + 1}/${data.choices.length}: length=${trimmed.length}`);
+			console.log(`[FetchCompletion] Processing choice ${i + 1}/${data.choices.length}: length=${trimmed.length}, text="${text.substring(0, 100)}..."`);
 
 			if (!trimmed) {
 				console.log(`[FetchCompletion] ⚠️ Choice ${i + 1} is empty, skipping`);
