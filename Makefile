@@ -1,15 +1,22 @@
 # Puku Editor Makefile
 # Compile and launch VS Code (Code-OSS) with Puku Editor extension
 
-.PHONY: help install compile compile-ext compile-vs compile-extension compile-vscode launch clean kill all test
+.PHONY: help setup check-vscode install compile compile-ext compile-vs compile-extension compile-vscode launch clean kill all test first-time-setup
+
+# VS Code fork repository
+VSCODE_REPO = https://github.com/poridhiAILab/vscode.git
+VSCODE_DIR = src/vscode
 
 # Default target
 help:
 	@echo "Puku Editor - Makefile Commands"
 	@echo "================================"
 	@echo ""
+	@echo "🚀 First Time Setup (ONE COMMAND!):"
+	@echo "  make setup            - Clone VS Code + install all deps + compile + launch"
+	@echo ""
 	@echo "Quick Start:"
-	@echo "  make install          - Install all dependencies (first time)"
+	@echo "  make install          - Install all dependencies"
 	@echo "  make compile          - Build extension + VS Code"
 	@echo "  make launch           - Launch the editor (no build)"
 	@echo ""
@@ -29,11 +36,48 @@ help:
 	@echo "  make clean            - Clean build artifacts"
 	@echo ""
 	@echo "Common Workflows:"
-	@echo "  make install && make compile && make launch  # First time"
+	@echo "  make setup                                   # First time (automatic)"
 	@echo "  make compile-ext && make quick               # Quick rebuild"
 	@echo "  make run FOLDER=src/chat                     # Full rebuild + launch"
 	@echo ""
 	@echo "Note: All commands use Node 23.5.0 (required for sqlite-vec)"
+
+# Check if VS Code directory exists and has content
+check-vscode:
+	@if [ ! -d "$(VSCODE_DIR)" ] || [ ! -f "$(VSCODE_DIR)/package.json" ]; then \
+		echo "❌ VS Code fork not found at $(VSCODE_DIR)"; \
+		echo ""; \
+		echo "Run 'make setup' to clone VS Code automatically"; \
+		echo "Or manually clone: git clone $(VSCODE_REPO) $(VSCODE_DIR)"; \
+		exit 1; \
+	fi
+
+# Clone VS Code fork if needed
+clone-vscode:
+	@echo "=== Checking VS Code Fork ==="
+	@if [ ! -d "$(VSCODE_DIR)" ] || [ ! -f "$(VSCODE_DIR)/package.json" ]; then \
+		echo "📥 Cloning VS Code fork from $(VSCODE_REPO)..."; \
+		echo "This may take 5-10 minutes (large repository)..."; \
+		rm -rf $(VSCODE_DIR); \
+		git clone --depth 1 $(VSCODE_REPO) $(VSCODE_DIR); \
+		echo "✅ VS Code cloned successfully"; \
+	else \
+		echo "✅ VS Code already cloned"; \
+	fi
+
+# First-time setup: clone + install + compile + launch
+setup: clone-vscode
+	@echo ""
+	@echo "🚀 Setting up Puku Editor (this may take 5-10 minutes)..."
+	@echo ""
+	@$(MAKE) install-extension
+	@$(MAKE) install-vscode
+	@$(MAKE) compile-extension
+	@$(MAKE) compile-vscode
+	@sleep 2
+	@$(MAKE) launch
+	@echo ""
+	@echo "✅ Setup complete! Puku Editor is running."
 
 # Compile extension (requires Node 23.5.0)
 compile-extension:
@@ -43,14 +87,14 @@ compile-extension:
 	npm run compile
 
 # Compile VS Code (requires Node 23.5.0)
-compile-vscode:
+compile-vscode: check-vscode
 	@echo "=== Compiling VS Code (Code-OSS) ==="
 	@cd src/vscode && \
 	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
 	npm run compile
 
 # Compile both in sequence
-compile:
+compile: check-vscode
 	@echo "=== Starting Compilation ==="
 	@$(MAKE) compile-extension
 	@$(MAKE) compile-vscode
@@ -104,20 +148,16 @@ install-extension:
 	npm install
 
 # Install dependencies for VS Code (requires Node 23.5.0)
-install-vscode:
+install-vscode: check-vscode
 	@echo "=== Installing VS Code (Code-OSS) Dependencies ==="
 	@cd src/vscode && \
 	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
 	npm install
 
 # Install all dependencies (extension + VS Code)
-install:
+install: clone-vscode
 	@echo "=== Installing All Dependencies (Node 23.5.0) ==="
-	@echo ""
-	@echo "Step 1/2: Installing extension dependencies..."
 	@$(MAKE) install-extension
-	@echo ""
-	@echo "Step 2/2: Installing VS Code dependencies..."
 	@$(MAKE) install-vscode
 	@echo ""
 	@echo "=== Installation Complete ==="
