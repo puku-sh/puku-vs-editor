@@ -2,52 +2,63 @@
 
 AI-powered code editor built on VS Code (Code-OSS) with integrated Puku authentication and semantic search.
 
-## Quick Start
-
-### Prerequisites
-
-- Node.js 23.5.0+ (required for sqlite-vec extension support)
-  ```bash
-  nvm install 23.5.0 && nvm use 23.5.0
-  ```
-- macOS 10.15+
-
-### Development Setup
-
-#### Using Makefile (Recommended)
+## 🚀 Quick Start (One Command)
 
 ```bash
-# First time setup - install all dependencies
-make install
+# Clone and run everything automatically
+git clone https://github.com/puku-sh/puku-vs-editor.git
+cd puku-vs-editor/puku-editor
+make setup
+```
 
-# Compile and launch (handles Node version switching automatically)
-make run
+That's it! The Makefile will:
+1. Clone the VS Code fork (if needed)
+2. Install all dependencies
+3. Compile everything
+4. Launch the editor
 
-# Or compile without launching
-make compile
+**📖 Full documentation:** See [SETUP.md](SETUP.md)
 
-# Quick launch (no compilation)
-make quick
+---
 
-# View all available commands
+## Prerequisites
+
+- **Node.js 23.5.0+** (required for sqlite-vec)
+- **Python 3.10-3.12**
+- **nvm** (Node version manager)
+
+```bash
+# Install nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+
+# Install Node.js 23.5.0
+nvm install 23.5.0
+nvm use 23.5.0
+```
+
+---
+
+## Development Workflow
+
+### Using Makefile (Recommended)
+
+```bash
+# First time setup (automatic)
+make setup
+
+# Compile and launch
+make all
+
+# Quick rebuild
+make compile-ext && make quick
+
+# View all commands
 make help
 ```
 
-#### Manual Setup
+### Manual Setup
 
-```bash
-# 1. Install dependencies (Node 23.5.0)
-source ~/.nvm/nvm.sh && nvm use 23.5.0
-
-# Extension dependencies
-cd src/chat
-npm install
-
-# VS Code dependencies
-cd ../vscode
-npm install
-
-# 2. Compile both
+See [SETUP.md](SETUP.md) for detailed manual setup instructions.
 cd ../chat
 npm run compile
 
