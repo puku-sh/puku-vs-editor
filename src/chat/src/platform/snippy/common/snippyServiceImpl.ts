@@ -40,7 +40,9 @@ export class SnippyService implements ISnippyService {
 		try {
 			matchResponse = await this.fetcher.fetchMatch(sourceToCheck.source, CancellationToken.None);
 		} catch (e: unknown) {
-			throw e;
+			// Silently ignore Snippy errors (service may not be available)
+			console.warn('[Snippy] Service unavailable, skipping match check');
+			return;
 		}
 		if (!matchResponse) {
 			throw new Error(`Failed to parse match response: ${matchResponse}`);

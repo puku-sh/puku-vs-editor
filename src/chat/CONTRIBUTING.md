@@ -74,9 +74,11 @@ Please include the following with each issue:
 
 ### First-time setup
 - on Windows you need to run `Set-ExecutionPolicy Unrestricted` as admin in Powershell.
-- `npm install`
+- `npm install --legacy-peer-deps` (this runs postinstall to setup tiktoken files)
 - `npm run get_token`
 - Then you can run the build task with `cmd+shift+B`, or just start the "Launch Copilot Extension - Watch Mode" launch config to start the build then start debugging the extension.
+
+**Note**: The postinstall script automatically sets up required files (tiktoken, tree-sitter WASM, etc.). If you need to re-run it manually: `npm run postinstall`
 
 **Tip:** If "Launch Copilot Extension - Watch Mode" doesn't work for you, try using the "Launch Copilot Extension" debug configuration instead.
 

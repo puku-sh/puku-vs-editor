@@ -673,6 +673,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		// Process SSE stream (Copilot-style architecture)
 		const responseText = await response.text();
 		console.log(`[FetchCompletion] 📡 Received SSE stream: ${responseText.length} bytes`);
+		console.log(`[FetchCompletion] 📝 First 500 chars:`, responseText.substring(0, 500));
 
 		// Parse SSE stream into completions
 		const completions = streamToCompletions(responseText);
@@ -680,18 +681,21 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 
 		if (completions.length === 0) {
 			console.log(`[FetchCompletion] ❌ No completions in stream`);
+			console.log(`[FetchCompletion] 🔍 Raw response:`, responseText);
 			return null;
 		}
 
 		// Aggregate stream chunks into complete response
 		const responseStream = new ResponseStream();
 		for (const completion of completions) {
+			console.log(`[FetchCompletion] 📦 Adding chunk:`, JSON.stringify(completion));
 			responseStream.addChunk(completion);
 		}
 		responseStream.complete();
 
 		const data = responseStream.getResponse() as CompletionResponse;
-		console.log(`[FetchCompletion] 📥 Aggregated response: ${data.choices?.length || 0} choice(s)`);
+		console.log(`[FetchCompletion] 📥 Aggregated response:`, JSON.stringify(data));
+		console.log(`[FetchCompletion] 📊 Choices: ${data.choices?.length || 0}`);
 
 		if (!data.choices || data.choices.length === 0) {
 			console.log(`[FetchCompletion] ❌ No choices in API response`);

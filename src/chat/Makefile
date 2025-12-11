@@ -28,7 +28,7 @@ install-all: install install-chat-lib ## Install all dependencies (main + chat-l
 
 ##@ Build
 
-compile: ## Compile TypeScript in development mode
+compile: verify-tiktoken ## Compile TypeScript in development mode
 	@echo "Compiling TypeScript..."
 	$(NPM) run compile
 
@@ -131,7 +131,13 @@ check-versions: ## Check Node.js and npm versions
 	@node --version | grep -q "v$(NODE_VERSION)" || (echo "Warning: Node.js version should be >= $(NODE_VERSION)" && node --version)
 	@$(NPM) --version | awk '{if ($$1 < $(NPM_VERSION)) {print "Warning: npm version should be >= $(NPM_VERSION)"; exit 1} else {print "npm version:", $$1}}'
 
-verify: check-versions typecheck lint ## Run all verification checks
+verify-tiktoken: ## Verify tiktoken files exist in dist/
+	@echo "Checking tiktoken files..."
+	@test -f dist/cl100k_base.tiktoken || (echo "❌ Missing dist/cl100k_base.tiktoken - run 'make install' or 'npm run postinstall'" && exit 1)
+	@test -f dist/o200k_base.tiktoken || (echo "❌ Missing dist/o200k_base.tiktoken - run 'make install' or 'npm run postinstall'" && exit 1)
+	@echo "✅ Tiktoken files OK"
+
+verify: check-versions verify-tiktoken typecheck lint ## Run all verification checks
 
 ##@ Full Workflow
 
