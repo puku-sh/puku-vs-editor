@@ -8,7 +8,7 @@ dist/
 .simulation
 
 # stores wasm and other build files
-.build
+# .build
 
 # created by python scripts
 __pycache__/
