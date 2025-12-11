@@ -15,5 +15,7 @@ coverage/
 l10n/
 *.log
 build/
+!build/npm/*.js
+!build/npm/dirs.js
 *.puku/
 nohup.out
