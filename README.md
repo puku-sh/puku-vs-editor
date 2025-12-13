@@ -23,7 +23,17 @@ That's it! The Makefile will:
 
 ## Prerequisites
 
-- **Node.js 23.5.0+** (required for sqlite-vec)
+### Required Node.js Versions
+
+**IMPORTANT**: Different Node versions are required for different components:
+
+- **Extension (src/chat)**: Node.js **23.5.0** (required for sqlite-vec)
+- **VS Code (src/vscode)**: Node.js **22.20.0** (as specified in .nvmrc)
+
+The Makefile handles this automatically by switching Node versions for each build step.
+
+### Other Requirements
+
 - **Python 3.10-3.12**
 - **nvm** (Node version manager)
 
@@ -31,9 +41,12 @@ That's it! The Makefile will:
 # Install nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 
-# Install Node.js 23.5.0
+# Install both required Node versions
 nvm install 23.5.0
-nvm use 23.5.0
+nvm install 22.20.0
+
+# Default to 22.20.0 for VS Code
+nvm use 22.20.0
 ```
 
 ---
