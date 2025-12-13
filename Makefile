@@ -1,7 +1,7 @@
 # Puku Editor Makefile
 # Compile and launch VS Code (Code-OSS) with Puku Editor extension
 
-.PHONY: help setup install compile compile-ext compile-vs compile-extension compile-vscode launch clean kill all test
+.PHONY: help setup install compile compile-ext compile-vs compile-extension compile-vscode postinstall-extension launch  clean kill all test
 
 # Default target
 help:
@@ -47,6 +47,7 @@ setup:
 	@$(MAKE) install-vscode
 	@$(MAKE) compile-extension
 	@$(MAKE) compile-vscode
+	@$(MAKE) postinstall-extension
 	@sleep 2
 	@$(MAKE) launch
 	@echo ""
@@ -56,15 +57,19 @@ setup:
 compile-extension:
 	@echo "=== Compiling Puku Editor Extension (Node 23.5.0) ==="
 	@cd src/chat && \
-	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
-	npm run compile
+	bash -c '. ~/.nvm/nvm.sh && nvm use 23.5.0 && npm run compile'
+
+# Run postinstall script after compilation (requires Node 23.5.0)
+postinstall-extension:
+	@echo "=== Running Extension Post-install (Node 23.5.0) ==="
+	@cd src/chat && \
+	bash -c '. ~/.nvm/nvm.sh && nvm use 23.5.0 && npm run postinstall'
 
 # Compile VS Code (requires Node 22.20.0)
 compile-vscode:
 	@echo "=== Compiling VS Code (Node 22.20.0) ==="
 	@cd src/vscode && \
-	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
-	npm run compile
+	bash -c '. ~/.nvm/nvm.sh && nvm use 22.20.0 && npm run compile'
 
 # Compile both in sequence
 compile:
@@ -117,15 +122,14 @@ clean:
 install-extension:
 	@echo "=== Installing Extension Dependencies (Node 23.5.0) ==="
 	@cd src/chat && \
-	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
-	npm install
+	bash -c '. ~/.nvm/nvm.sh && nvm use 23.5.0 && npm install --ignore-scripts'
 
 # Install dependencies for VS Code (requires Node 22.20.0)
 install-vscode:
 	@echo "=== Installing VS Code Dependencies (Node 22.20.0) ==="
 	@cd src/vscode && \
-	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
-	npm install
+	bash -c '. ~/.nvm/nvm.sh && nvm use 22.20.0 && npm install && \
+	if [ -f gulpfile.mjs ]; then mv gulpfile.mjs gulpfile.js; fi'
 
 # Install all dependencies (extension + VS Code)
 install:
@@ -147,12 +151,10 @@ compile-vs: compile-vscode
 watch-extension:
 	@echo "=== Starting Extension Watch Mode ==="
 	@cd src/chat && \
-	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
-	npm run watch
+	bash -c '. ~/.nvm/nvm.sh && nvm use 23.5.0 && npm run watch'
 
 # Test target
 test:
 	@echo "=== Running Tests ==="
 	@cd src/chat && \
-	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
-	npm test
+	bash -c '. ~/.nvm/nvm.sh && nvm use 23.5.0 && npm test'

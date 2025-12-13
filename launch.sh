@@ -4,4 +4,12 @@ set -e
 # Launch Code-OSS with Puku Editor extension loaded
 cd src/vscode
 source ~/.nvm/nvm.sh && nvm use 22.20.0
-./scripts/code.sh --extensionDevelopmentPath=/Users/sahamed/Desktop/puku-vs-editor/puku-editor/src/chat /Users/sahamed/Desktop/puku-vs-editor/puku-editor/fastapi-app
+# Get the absolute path to the chat directory
+CHAT_PATH="$(pwd)/../chat"
+# Optional: Add fastapi-app if it exists
+if [ -d "../fastapi-app" ]; then
+    FASTAPI_PATH="$(pwd)/../fastapi-app"
+    ./scripts/code.sh --extensionDevelopmentPath="$CHAT_PATH" "$FASTAPI_PATH"
+else
+    ./scripts/code.sh --extensionDevelopmentPath="$CHAT_PATH"
+fi

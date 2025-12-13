@@ -8,23 +8,70 @@ This workspace contains multiple projects:
 
 - **`src/chat`** - **Puku Editor** - AI-powered code editor extension built on GitHub Copilot Chat architecture with support for Z.AI's GLM models. Provides chat interfaces, inline completions (FIM), agent mode, and tool calling.
 - **`src/vscode`** - **Forked VS Code** (Code-OSS) from `poridhiAILab/vscode`. Custom VS Code build for UI modifications and extension debugging.
-- **`../puku-worker`** - **Puku Backend API** - Cloudflare Worker that provides API endpoints for completions, FIM, embeddings, and authentication. Located at `/Users/sahamed/Desktop/puku-vs-editor/puku-worker`.
+- **`../puku-worker`** - **Puku Backend API** - Cloudflare Worker that provides API endpoints for completions, FIM, embeddings, and authentication (if present).
 
 ## Requirements
 
-- Node 23.5.0+ (use `nvm install 23.5.0 && nvm use 23.5.0`) - Required for sqlite-vec extension support
+- **Node.js Dual Version Setup:**
+  - **Node 23.5.0+** (extension) - Required for sqlite-vec extension support
+  - **Node 22.20.0+** (VS Code) - Required for VS Code compilation
+  - Managed automatically via Makefile with nvm
 - Python >= 3.10, <= 3.12
 - Git Large File Storage (LFS) - for running tests
 - (Windows) Visual Studio Build Tools >=2019 - for building with node-gyp
 
 ## Common Commands
 
-### Setup
+### Quick Start (First Time Setup)
 
 ```bash
-npm install
-npm run get_token
+make setup              # ONE-COMMAND setup: installs deps + compiles + launches
 ```
+
+### Development Workflow
+
+```bash
+make compile            # Compile extension + VS Code
+make all                # Compile everything and launch IDE
+make run                # Kill existing, compile, and launch
+make quick              # Kill and launch (no compilation)
+make watch-extension    # Start extension watch mode (Terminal 1)
+```
+
+### Individual Commands
+
+```bash
+make install            # Install all dependencies (extension + VS Code)
+make compile-extension  # Compile only the extension
+make compile-vscode     # Compile only VS Code
+make postinstall-extension # Run extension postinstall after build
+make launch             # Launch editor (no build)
+make launch FOLDER=/path # Launch with specific folder
+make kill               # Kill all running Electron processes
+make clean              # Clean build artifacts
+make test               # Run tests
+```
+
+### Extension-Specific Commands (in `src/chat/`)
+
+```bash
+npm run compile         # Development build
+npm run build          # Production build
+npm run watch          # Watch all (runs watch:* scripts in parallel)
+npm run test:unit      # Unit tests (Node.js)
+npm run test:extension # Integration tests (VS Code)
+npm run simulate       # Simulation tests (LLM-based, cached)
+npm run lint           # ESLint with zero warnings policy
+```
+
+### VS Code Tasks
+
+Use the `start-watch-tasks` VS Code task to monitor compilation errors in real-time. This runs:
+
+- `npm: watch:tsc-extension`
+- `npm: watch:tsc-extension-web`
+- `npm: watch:tsc-simulation-workbench`
+- `npm: watch:esbuild`
 
 **Z.AI API Key** (for GLM 4.6 model):
 
@@ -32,26 +79,21 @@ npm run get_token
 bb67b33d81b74ae7a5882c94f222f2a8.ZNWzVkKE0V1rz0m9
 ```
 
-**Copilot Proxy Features:**
+## Puku AI Integration
 
-- `/v1/chat/completions` - Chat interface (works with Copilot Chat panel) ✅ Working
-- `/v1/completions` - Fill-In-Middle (FIM) for inline code suggestions ✅ Working
-- Ollama API compatible endpoints (`/api/tags`, `/api/show`, etc.)
-- Supports GLM-4.6, GLM-4.5, GLM-4.5-Air models
+### Built-in AI Support
 
-**Using Puku Editor:**
+Puku Editor has built-in Puku AI support with Z.AI's GLM models:
 
-Puku Editor (in `src/chat`) has built-in Puku AI support. To use GLM models:
-
-1. **Build and run the extension:**
+1. **Build and run:**
 
    ```bash
-   cd src/chat
-   npm install
-   npm run compile
+   make setup              # First time setup
+   make watch-extension    # Start development watch mode
+   make launch             # Launch Puku Editor
    ```
 
-2. **Configure VS Code to use the proxy:**
+2. **Configure VS Code to use the Puku proxy:**
 
    Add to `.vscode/settings.json` or user settings:
 
@@ -61,19 +103,30 @@ Puku Editor (in `src/chat`) has built-in Puku AI support. To use GLM models:
    }
    ```
 
-   The extension will automatically discover GLM models from the proxy:
-
-   - GLM-4.6 (flagship with tool calling and vision)
-   - GLM-4.5 (balanced performance)
-   - GLM-4.5-Air (lightweight, faster)
-
 3. **Select Ollama provider in Chat:**
 
    - Open Copilot Chat panel
    - Click on the current model name
    - Click "Manage Models..."
-   - Select "Ollama" from the list of providers
-   - Choose your preferred GLM model
+   - Select "Ollama" from providers
+   - Choose GLM-4.6, GLM-4.5, or GLM-4.5-Air
+
+### AI Features
+
+- **Chat Interface**: Conversational AI with multiple participants
+- **Inline Completions**: GitHub Copilot-style code suggestions (FIM)
+- **Agent Mode**: Multi-step autonomous coding tasks
+- **Semantic Search**: AST-based code indexing with vector embeddings
+- **Tool Calling**: Integration with external tools and APIs
+
+### Backend API
+
+The Puku Worker backend provides:
+
+- `/v1/chat/completions` - Chat completions
+- `/v1/completions` - Fill-in-middle for inline suggestions
+- `/v1/fim/context` - Enhanced FIM with context support
+- `/v1/summarize/batch` - Code summarization for semantic search
 
 **How it works:**
 
@@ -505,6 +558,68 @@ x => x + x                    // ✓ Correct
 1. Monitor `start-watch-tasks` task output for real-time errors
 2. Fix all compilation errors before proceeding
 3. DO NOT rely on `compile` task alone for validation
+
+## Known Issues & Solutions
+
+### Common Build Issues
+
+**1. "source: not found" Error**
+- **Cause**: Makefile uses `source` command which doesn't exist in `/bin/sh`
+- **Solution**: Already fixed - Makefile now uses `bash -c '. ~/.nvm/nvm.sh && ...'`
+
+**2. "Missing script: compile" Error**
+- **Cause**: Extension package.json was corrupted/minified, missing dependencies and scripts
+- **Solution**: Restored from git: `git show d71bd723:src/chat/package.json > package.json`
+
+**3. "Cannot find module './build/gulpfile.mjs'" Error**
+- **Cause**: VS Code gulpfile trying to import compiled JavaScript that doesn't exist
+- **Solution**: Renamed `gulpfile.mjs` to `gulpfile.js` and use tsx for TypeScript execution
+
+**4. "No checksum found for electron-v39.2.0-linux-x64.zip" Error**
+- **Cause**: Version mismatch between `.npmrc` (v39.2.0) and checksum file (v39.2.3)
+- **Solution**: Updated `.npmrc` target version from "39.2.0" to "39.2.3"
+
+**5. "Missing script: build" in VS Code package.json**
+- **Cause**: VS Code scripts using `node` on TypeScript files
+- **Solution**: Updated scripts to use `npx tsx` for TypeScript execution
+
+### Critical Setup Requirements
+
+**Always run setup in correct order:**
+```bash
+# The complete setup flow that works:
+make setup               # Does: install-extension → install-vscode → compile-extension → compile-vscode → postinstall-extension → launch
+
+# If individual steps fail:
+make clean               # Clean all artifacts
+make install             # Install all dependencies
+make compile             # Build everything
+make launch              # Launch editor
+```
+
+**Electron Download Issues:**
+- Electron binaries are large (~100MB) and may take time to download
+- Check if `.build/electron/` directory exists after `npm run electron`
+- If download fails, try `rm -rf .build/electron && npm run electron`
+
+### Development Debugging
+
+**Extension Debugging:**
+- Debug port: `5870` (extension host)
+- TypeScript Server debug port: `9223`
+- Use "Show Chat Debug View" command to inspect AI prompts/responses
+
+**VS Code Build Debugging:**
+- Monitor `start-watch-tasks` VS Code task for real-time compilation errors
+- Never rely on `compile` task alone for validation
+- Check `.build/electron/` directory if Electron fails to launch
+
+### Performance Notes
+
+**Expected Build Times:**
+- First-time setup: 5-10 minutes (includes Electron download)
+- Subsequent compiles: 1-3 minutes (VS Code) + 30 seconds (extension)
+- Extension watch mode: Near-instant for changes
 
 ## Important Notes
 

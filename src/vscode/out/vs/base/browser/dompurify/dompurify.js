@@ -1355,4 +1355,4 @@ var purify = createDOMPurify();
 
 export { purify as default };
 
-//# sourceURL=file:///Users/sahamed/Desktop/puku-vs-editor/puku-editor/src/vscode/src/vs/base/browser/dompurify/dompurify.js
+//# sourceURL=file:///home/poridhi/development/puku-vs-editor/src/vscode/src/vs/base/browser/dompurify/dompurify.js

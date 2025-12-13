@@ -16,17 +16,20 @@ fi
 function code() {
 	cd "$ROOT"
 
+	# Always skip preLaunch for debugging - we'll handle manually
+	export VSCODE_SKIP_PRELAUNCH=1
+
 	if [[ "$OSTYPE" == "darwin"* ]]; then
 		NAME=`node -p "require('./product.json').nameLong"`
 		CODE="./.build/electron/$NAME.app/Contents/MacOS/Electron"
 	else
 		NAME=`node -p "require('./product.json').applicationName"`
-		CODE=".build/electron/$NAME"
-	fi
-
-	# Get electron, compile, built-in extensions
-	if [[ -z "${VSCODE_SKIP_PRELAUNCH}" ]]; then
-		node build/lib/preLaunch.js
+		# Try to use existing electron if available, otherwise look in .build
+		if [ -f ".build/electron/$NAME" ]; then
+			CODE=".build/electron/$NAME"
+		else
+			CODE="node_modules/.bin/electron"
+		fi
 	fi
 
 	# Manage built-in extensions
@@ -41,14 +44,33 @@ function code() {
 	export VSCODE_CLI=1
 	export ELECTRON_ENABLE_STACK_DUMPING=1
 	export ELECTRON_ENABLE_LOGGING=1
+	export ELECTRON_ENABLE_LOGGING_FILE=1
+	export ELECTRON_ENABLE_INSPECTOR=1
 
 	DISABLE_TEST_EXTENSION="--disable-extension=vscode.vscode-api-tests"
 	if [[ "$@" == *"--extensionTestsPath"* ]]; then
 		DISABLE_TEST_EXTENSION=""
 	fi
 
-	# Launch Code
-	exec "$CODE" . $DISABLE_TEST_EXTENSION "$@"
+	# Launch Code with debug support
+	if [[ "$@" == *"--inspect"* ]]; then
+		# If --inspect is passed, use it for debugging
+		INSPECT_ARGS="$@"
+	else
+		# Otherwise add default inspect for debugging with break to ensure DevTools opens
+		INSPECT_ARGS="$@ --inspect-brk=5871"
+	fi
+
+	# Add remote debugging port for DevTools
+	if [[ "$@" != *"--remote-debugging-port"* ]]; then
+		INSPECT_ARGS="$INSPECT_ARGS --remote-debugging-port=9223"
+	fi
+
+	# Open DevTools automatically
+	export ELECTRON_ENABLE_INSPECTOR=1
+	export ELECTRON_ENABLE_LOGGING_FILE=1
+
+	exec "$CODE" . $DISABLE_TEST_EXTENSION $INSPECT_ARGS
 }
 
 function code-wsl()

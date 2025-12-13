@@ -51,4 +51,4 @@ export const SemVer = module.exports.SemVer;
 export const Comparator = module.exports.Comparator;
 export const Range = module.exports.Range;
 
-//# sourceURL=file:///Users/sahamed/Desktop/puku-vs-editor/puku-editor/src/vscode/src/vs/base/common/semver/semver.js
+//# sourceURL=file:///home/poridhi/development/puku-vs-editor/src/vscode/src/vs/base/common/semver/semver.js
