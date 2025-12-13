@@ -2,19 +2,20 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-// @ts-check
-const path = require('path');
-const fs = require('fs');
+import path from 'path';
+import * as fs from 'fs';
+import * as child_process from 'child_process';
+import * as os from 'os';
 
 if (!process.env['VSCODE_SKIP_NODE_VERSION_CHECK']) {
 	// Get the running Node.js version
 	const nodeVersion = /^(\d+)\.(\d+)\.(\d+)/.exec(process.versions.node);
-	const majorNodeVersion = parseInt(nodeVersion[1]);
-	const minorNodeVersion = parseInt(nodeVersion[2]);
-	const patchNodeVersion = parseInt(nodeVersion[3]);
+	const majorNodeVersion = parseInt(nodeVersion![1]);
+	const minorNodeVersion = parseInt(nodeVersion![2]);
+	const patchNodeVersion = parseInt(nodeVersion![3]);
 
 	// Get the required Node.js version from .nvmrc
-	const nvmrcPath = path.join(__dirname, '..', '..', '.nvmrc');
+	const nvmrcPath = path.join(import.meta.dirname, '..', '..', '.nvmrc');
 	const requiredVersion = fs.readFileSync(nvmrcPath, 'utf8').trim();
 	const requiredVersionMatch = /^(\d+)\.(\d+)\.(\d+)/.exec(requiredVersion);
 
@@ -40,9 +41,6 @@ if (process.env.npm_execpath?.includes('yarn')) {
 	throw new Error();
 }
 
-const cp = require('child_process');
-const os = require('os');
-
 if (process.platform === 'win32') {
 	if (!hasSupportedVisualStudioVersion()) {
 		console.error('\x1b[1;31m*** Invalid C/C++ Compiler Toolchain. Please check https://github.com/microsoft/vscode/wiki/How-to-Contribute#prerequisites.\x1b[0;0m');
@@ -60,8 +58,6 @@ if (process.arch !== os.arch()) {
 }
 
 function hasSupportedVisualStudioVersion() {
-	const fs = require('fs');
-	const path = require('path');
 	// Translated over from
 	// https://source.chromium.org/chromium/chromium/src/+/master:build/vs_toolchain.py;l=140-175
 	const supportedVersions = ['2022', '2019'];
@@ -82,7 +78,7 @@ function hasSupportedVisualStudioVersion() {
 		const vsTypes = ['Enterprise', 'Professional', 'Community', 'Preview', 'BuildTools', 'IntPreview'];
 		if (programFiles64Path) {
 			vsPath = `${programFiles64Path}/Microsoft Visual Studio/${version}`;
-			if (vsTypes.some(vsType => fs.existsSync(path.join(vsPath, vsType)))) {
+			if (vsTypes.some(vsType => fs.existsSync(path.join(vsPath!, vsType)))) {
 				availableVersions.push(version);
 				break;
 			}
@@ -90,7 +86,7 @@ function hasSupportedVisualStudioVersion() {
 
 		if (programFiles86Path) {
 			vsPath = `${programFiles86Path}/Microsoft Visual Studio/${version}`;
-			if (vsTypes.some(vsType => fs.existsSync(path.join(vsPath, vsType)))) {
+			if (vsTypes.some(vsType => fs.existsSync(path.join(vsPath!, vsType)))) {
 				availableVersions.push(version);
 				break;
 			}
@@ -102,9 +98,9 @@ function hasSupportedVisualStudioVersion() {
 
 function installHeaders() {
 	const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-	cp.execSync(`${npm} ${process.env.npm_command || 'ci'}`, {
+	child_process.execSync(`${npm} ${process.env.npm_command || 'ci'}`, {
 		env: process.env,
-		cwd: path.join(__dirname, 'gyp'),
+		cwd: path.join(import.meta.dirname, 'gyp'),
 		stdio: 'inherit'
 	});
 
@@ -112,20 +108,20 @@ function installHeaders() {
 	// file checked into our repository. So from that point it is safe to construct the path
 	// to that executable
 	const node_gyp = process.platform === 'win32'
-		? path.join(__dirname, 'gyp', 'node_modules', '.bin', 'node-gyp.cmd')
-		: path.join(__dirname, 'gyp', 'node_modules', '.bin', 'node-gyp');
+		? path.join(import.meta.dirname, 'gyp', 'node_modules', '.bin', 'node-gyp.cmd')
+		: path.join(import.meta.dirname, 'gyp', 'node_modules', '.bin', 'node-gyp');
 
-	const local = getHeaderInfo(path.join(__dirname, '..', '..', '.npmrc'));
-	const remote = getHeaderInfo(path.join(__dirname, '..', '..', 'remote', '.npmrc'));
+	const local = getHeaderInfo(path.join(import.meta.dirname, '..', '..', '.npmrc'));
+	const remote = getHeaderInfo(path.join(import.meta.dirname, '..', '..', 'remote', '.npmrc'));
 
 	if (local !== undefined) {
 		// Both disturl and target come from a file checked into our repository
-		cp.execFileSync(node_gyp, ['install', '--dist-url', local.disturl, local.target], { shell: true });
+		child_process.execFileSync(node_gyp, ['install', '--dist-url', local.disturl, local.target], { shell: true });
 	}
 
 	if (remote !== undefined) {
 		// Both disturl and target come from a file checked into our repository
-		cp.execFileSync(node_gyp, ['install', '--dist-url', remote.disturl, remote.target], { shell: true });
+		child_process.execFileSync(node_gyp, ['install', '--dist-url', remote.disturl, remote.target], { shell: true });
 	}
 
 	// On Linux, apply a patch to the downloaded headers
@@ -135,27 +131,24 @@ function installHeaders() {
 		const homedir = os.homedir();
 		const cachePath = process.env.XDG_CACHE_HOME || path.join(homedir, '.cache');
 		const nodeGypCache = path.join(cachePath, 'node-gyp');
-		const localHeaderPath = path.join(nodeGypCache, local.target, 'include', 'node');
+		const localHeaderPath = path.join(nodeGypCache, local!.target, 'include', 'node');
 		if (fs.existsSync(localHeaderPath)) {
 			console.log('Applying v8-source-location.patch to', localHeaderPath);
 			try {
-				cp.execFileSync('patch', ['-p0', '-i', path.join(__dirname, 'gyp', 'custom-headers', 'v8-source-location.patch')], {
+				child_process.execFileSync('patch', ['-p0', '-i', path.join(import.meta.dirname, 'gyp', 'custom-headers', 'v8-source-location.patch')], {
 					cwd: localHeaderPath
 				});
 			} catch (error) {
-				throw new Error(`Error applying v8-source-location.patch: ${error.message}`);
-			};
+				throw new Error(`Error applying v8-source-location.patch: ${(error as Error).message}`);
+			}
 		}
 	}
 }
 
-/**
- * @param {string} rcFile
- * @returns {{ disturl: string; target: string } | undefined}
- */
-function getHeaderInfo(rcFile) {
+function getHeaderInfo(rcFile: string): { disturl: string; target: string } | undefined {
 	const lines = fs.readFileSync(rcFile, 'utf8').split(/\r\n|\n/g);
-	let disturl, target;
+	let disturl: string | undefined;
+	let target: string | undefined;
 	for (const line of lines) {
 		let match = line.match(/\s*disturl=*\"(.*)\"\s*$/);
 		if (match !== null && match.length >= 1) {
