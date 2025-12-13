@@ -36,7 +36,7 @@ help:
 	@echo "  make compile-ext && make quick               # Quick rebuild"
 	@echo "  make run FOLDER=src/chat                     # Full rebuild + launch"
 	@echo ""
-	@echo "Note: All commands use Node 23.5.0 (required for sqlite-vec)"
+	@echo "Note: Extension uses Node 23.5.0, VS Code uses Node 22.20.0"
 
 # First-time setup: install + compile + launch
 setup:
@@ -52,18 +52,18 @@ setup:
 	@echo ""
 	@echo "✅ Setup complete! Puku Editor is running."
 
-# Compile extension (requires Node 23.5.0)
+# Compile extension (requires Node 23.5.0 for sqlite-vec)
 compile-extension:
-	@echo "=== Compiling Puku Editor Extension ==="
+	@echo "=== Compiling Puku Editor Extension (Node 23.5.0) ==="
 	@cd src/chat && \
 	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
 	npm run compile
 
-# Compile VS Code (requires Node 23.5.0)
+# Compile VS Code (requires Node 22.20.0)
 compile-vscode:
-	@echo "=== Compiling VS Code (Code-OSS) ==="
+	@echo "=== Compiling VS Code (Node 22.20.0) ==="
 	@cd src/vscode && \
-	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
+	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
 	npm run compile
 
 # Compile both in sequence
@@ -113,23 +113,23 @@ clean:
 	@rm -rf src/vscode/out
 	@echo "Clean complete"
 
-# Install dependencies for extension (requires Node 23.5.0)
+# Install dependencies for extension (requires Node 23.5.0 for sqlite-vec)
 install-extension:
-	@echo "=== Installing Extension Dependencies ==="
+	@echo "=== Installing Extension Dependencies (Node 23.5.0) ==="
 	@cd src/chat && \
 	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
 	npm install
 
-# Install dependencies for VS Code (requires Node 23.5.0)
+# Install dependencies for VS Code (requires Node 22.20.0)
 install-vscode:
-	@echo "=== Installing VS Code (Code-OSS) Dependencies ==="
+	@echo "=== Installing VS Code Dependencies (Node 22.20.0) ==="
 	@cd src/vscode && \
-	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
+	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
 	npm install
 
 # Install all dependencies (extension + VS Code)
 install:
-	@echo "=== Installing All Dependencies (Node 23.5.0) ==="
+	@echo "=== Installing All Dependencies ==="
 	@$(MAKE) install-extension
 	@$(MAKE) install-vscode
 	@echo ""
