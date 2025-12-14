@@ -94,6 +94,7 @@ launch:
 		echo "Opening folder: $(FOLDER)"; \
 		./launch.sh "$(FOLDER)"; \
 	else \
+		echo "Launching with no folder"; \
 		./launch.sh; \
 	fi
 
