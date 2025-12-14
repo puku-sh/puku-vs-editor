@@ -1,0 +1,68 @@
+#!/bin/bash
+set -e
+
+# Puku Editor launcher script for installed package
+cd /opt/puku-editor
+
+# Check if Node.js is available
+if ! command -v node >/dev/null 2>&1; then
+    echo "Error: Node.js is required but not installed."
+    echo "Please install Node.js >= 22.20.0 from https://nodejs.org or your package manager."
+    exit 1
+fi
+
+# Check Node.js version
+node_version=$(node --version | sed 's/v//')
+required_version="22.20.0"
+if [ "$(printf '%s\n' "$required_version" "$node_version" | sort -V | head -n1)" != "$required_version" ]; then
+    echo "Error: Node.js version >= $required_version required, but $node_version found."
+    echo "Please upgrade Node.js from https://nodejs.org or your package manager."
+    exit 1
+fi
+
+# Check if NVM is available and set up Node.js version if possible
+if [ -f "$HOME/.nvm/nvm.sh" ]; then
+    source "$HOME/.nvm/nvm.sh"
+    nvm use 22.20.0 2>/dev/null || echo "Using system Node.js version: $node_version"
+elif [ -f "/usr/local/nvm/nvm.sh" ]; then
+    source "/usr/local/nvm/nvm.sh"
+    nvm use 22.20.0 2>/dev/null || echo "Using system Node.js version: $node_version"
+else
+    echo "NVM not found, using system Node.js version: $node_version"
+fi
+
+# Check if VS Code files exist
+if [ ! -d "out" ]; then
+    echo "Error: VS Code build files not found in /opt/puku-editor/out"
+    echo "The package may be corrupted or incomplete."
+    exit 1
+fi
+
+# Check if extension files exist
+if [ ! -d "extension" ]; then
+    echo "Error: Puku Editor extension not found in /opt/puku-editor/extension"
+    echo "The package may be corrupted or incomplete."
+    exit 1
+fi
+
+# Launch VS Code with Puku Editor extension
+echo "Launching Puku Editor..."
+echo "Using Node.js: $(node --version)"
+echo "Extension path: /opt/puku-editor/extension"
+
+# Check if Electron binary exists
+if [ ! -f "out/vs/server/main.js" ] && [ ! -f "out/main.js" ]; then
+    echo "Error: VS Code binaries not found"
+    echo "Please ensure the package was built correctly"
+    exit 1
+fi
+
+# Try different launch methods
+if [ -f "out/main.js" ]; then
+    node out/main.js --extensionDevelopmentPath="/opt/puku-editor/extension" "$@"
+elif [ -f "out/vs/server/main.js" ]; then
+    node out/vs/server/main.js --extensionDevelopmentPath="/opt/puku-editor/extension" "$@"
+else
+    echo "Error: Could not find VS Code main executable"
+    exit 1
+fi

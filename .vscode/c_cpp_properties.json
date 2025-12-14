@@ -1,0 +1,36 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/poridhi/rosbot_ws/install/tricycle_controller/include/**",
+        "/home/poridhi/rosbot_ws/install/steering_controllers_library/include/**",
+        "/home/poridhi/rosbot_ws/install/rosbot_hardware_interfaces/include/**",
+        "/home/poridhi/rosbot_ws/install/range_sensor_broadcaster/include/**",
+        "/home/poridhi/rosbot_ws/install/micro_ros_msgs/include/**",
+        "/home/poridhi/rosbot_ws/install/mecanum_drive_controller/include/**",
+        "/home/poridhi/rosbot_ws/install/joint_trajectory_controller/include/**",
+        "/home/poridhi/rosbot_ws/install/joint_state_broadcaster/include/**",
+        "/home/poridhi/rosbot_ws/install/imu_sensor_broadcaster/include/**",
+        "/home/poridhi/rosbot_ws/install/gripper_controllers/include/**",
+        "/home/poridhi/rosbot_ws/install/forward_command_controller/include/**",
+        "/home/poridhi/rosbot_ws/install/force_torque_sensor_broadcaster/include/**",
+        "/home/poridhi/rosbot_ws/install/diff_drive_controller/include/**",
+        "/opt/ros/humble/include/**",
+        "/home/poridhi/development/puku-vs-editor/debian/puku-editor/opt/puku-editor/node_modules/@vscode/spdlog/deps/spdlog/include/**",
+        "/home/poridhi/development/puku-vs-editor/src/vscode/node_modules/@vscode/spdlog/deps/spdlog/include/**",
+        "/home/poridhi/development/puku-vs-editor/src/vscode/remote/node_modules/@vscode/spdlog/deps/spdlog/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

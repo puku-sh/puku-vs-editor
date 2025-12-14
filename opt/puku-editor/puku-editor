@@ -1,0 +1,49 @@
+#!/bin/bash
+# Puku Editor Launcher
+
+set -e
+
+# Get installation directory
+INSTALL_DIR="/opt/puku-editor"
+EXTENSION_DIR="${INSTALL_DIR}/extension"
+
+# Check if Node.js is available
+if ! command -v node >/dev/null 2>&1; then
+    echo "❌ Node.js is required but not installed."
+    echo "Please install Node.js >= 22.20.0 from https://nodejs.org or your package manager."
+    exit 1
+fi
+
+# Get the folder to open
+FOLDER="${1:-.}"
+
+# Convert to absolute path
+if [[ "$FOLDER" != /* ]]; then
+    FOLDER="$(pwd)/$FOLDER"
+fi
+
+echo "🚀 Launching Puku Editor..."
+echo "📁 Opening folder: $FOLDER"
+echo "📋 Using Node.js: $(node --version)"
+
+# Change to installation directory
+cd "$INSTALL_DIR"
+
+# Setup environment
+export NODE_PATH="${INSTALL_DIR}/node_modules:${NODE_PATH}"
+export ELECTRON_RUN_AS_NODE=1
+
+# Try different launch methods
+if [ -f "./out/vs/server/main.js" ]; then
+    # Server mode (preferred)
+    exec node out/vs/server/main.js --extensionDevelopmentPath="$EXTENSION_DIR" "$FOLDER"
+elif [ -f "./out/main.js" ]; then
+    # Direct mode - try with regular node first
+    echo "📝 Launching with Node.js..."
+    exec node out/main.js --extensionDevelopmentPath="$EXTENSION_DIR" "$FOLDER"
+else
+    echo "❌ Cannot find VS Code executable"
+    echo "Contents of out directory:"
+    ls -la out/ 2>/dev/null || echo "No out directory found"
+    exit 1
+fi

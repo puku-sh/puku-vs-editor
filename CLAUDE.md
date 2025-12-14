@@ -52,6 +52,16 @@ make clean              # Clean build artifacts
 make test               # Run tests
 ```
 
+### Debian Packaging
+
+```bash
+make deb                # Build .deb package for distribution
+make deb-install        # Build and install .deb package
+make deb-source         # Create source package (for PPA)
+make deb-full           # Build source + binary packages
+make deb-clean          # Clean Debian build artifacts
+```
+
 ### Extension-Specific Commands (in `src/chat/`)
 
 ```bash
@@ -61,7 +71,11 @@ npm run watch          # Watch all (runs watch:* scripts in parallel)
 npm run test:unit      # Unit tests (Node.js)
 npm run test:extension # Integration tests (VS Code)
 npm run simulate       # Simulation tests (LLM-based, cached)
+npm run simulate-require-cache # Verify simulation cache is populated
+npm run simulate-update-baseline # Update simulation baseline
 npm run lint           # ESLint with zero warnings policy
+npm run typecheck      # TypeScript type checking across all projects
+npm run package        # Create VSIX package
 ```
 
 ### VS Code Tasks
@@ -451,29 +465,70 @@ The codebase is organized into three main layers:
 
 **`src/extension/`** - Feature implementations organized by domain:
 
-- `conversation/` - Chat participants, agents, conversation flow
+**Core Chat & Conversation Features:**
+- `conversation/` - Chat participants, agents, and conversation flow orchestration
+- `inlineChat/` - Inline editing features (`Ctrl+I`) and hints system
+- `inlineEdits/` - Advanced inline editing capabilities with streaming edits
+
+**Context & Intelligence:**
+- `context/` - Context resolution for code understanding and workspace analysis
+- `contextKeys/` - VS Code context key management for UI state
 - `intents/` - Chat participant/slash command implementations
 - `prompts/` - TSX-based prompt engineering system
-- `inlineChat/`, `inlineEdits/` - Inline editing features (`Ctrl+I`)
-- `context/`, `typescriptContext/` - Context resolution and code analysis
-- `tools/` - Language model tool integrations
-- `search/`, `workspaceChunkSearch/`, `workspaceSemanticSearch/` - Search functionality
+- `prompt/` - Common prompt utilities
+- `relatedFiles/` - Related file discovery and context gathering
+- `typescriptContext/` - TypeScript-specific context and analysis
+
+**Search & Discovery:**
+- `search/` - General search functionality within the extension
+- `workspaceChunkSearch/` - Chunked workspace search for large codebases
+- `workspaceSemanticSearch/` - Semantic search across workspace content
+- `workspaceRecorder/` - Recording and tracking workspace interactions
+
+**Authentication & Configuration:**
 - `authentication/` - GitHub authentication and token management
+- `configuration/` - Settings and configuration management
+- `byok/` - Bring Your Own Key (BYOK) functionality for custom API keys
+
+**AI Integration & Endpoints:**
 - `endpoint/` - AI service endpoints and model selection
+- `tools/` - Language model tools and integrations
+- `api/` - Core API abstractions and interfaces
 - `mcp/` - Model Context Protocol integration
+
+**Specialized Features:**
+- `notebook/` - Notebook integration and support
+- `review/` - Code review and PR integration features
+- `renameSuggestions/` - AI-powered rename suggestions
+- `ignore/` - File and pattern ignore functionality
+- `xtab/` - Cross-tab communication and state management
+
+**Infrastructure & Utilities:**
+- `extension/` - Core extension initialization and lifecycle
+- `commands/` - Service for working with VS Code commands
+- `codeBlocks/` - Streaming code block processing
+- `linkify/` - URL and reference linkification
+- `getting-started/` - Onboarding and setup experience
+- `log/` - Logging infrastructure and utilities
+- `telemetry/` - Analytics and usage tracking
+- `testing/` - Test generation and execution features
 
 **`src/platform/`** - Shared platform services:
 
-- `chat/` - Core chat services
-- `openai/` - OpenAI API protocol integration
+- `chat/` - Core chat services and conversation options
+- `openai/` - OpenAI API protocol integration and request handling
 - `embedding/` - Vector embeddings for semantic search
 - `parser/` - Code parsing and AST analysis
-- `search/`, `workspace/`, `git/`, `notebook/` - Platform integrations
+- `search/` - Workspace search and indexing
+- `telemetry/` - Analytics and usage tracking
+- `workspace/` - Workspace understanding and file management
+- `notebook/` - Notebook integration
+- `git/` - Git integration and repository analysis
 
 **`src/util/`** - Infrastructure and utilities:
 
-- `common/` - Shared utilities and service infrastructure
-- `vs/` - Utilities from microsoft/vscode repo (readonly, managed by `script/setup/copySources.ts`)
+- `common/` - Shared utilities, service infrastructure, and abstractions
+- `vs/` - Utilities borrowed from the microsoft/vscode repo (readonly, managed by `script/setup/copySources.ts`)
 
 ### Runtime Layers
 
@@ -525,13 +580,18 @@ Tools follow VS Code's Language Model Tool API:
 
 ## Coding Standards
 
-### TypeScript Style
+### TypeScript/JavaScript Guidelines
 
-- **Indentation**: Tabs (not spaces)
-- **Naming**: `PascalCase` for types/enums, `camelCase` for functions/variables
-- **Strings**: "double quotes" for user-facing, 'single quotes' for internal
-- **Functions**: Arrow functions `=>` preferred
-- **Braces**: Always use, opening brace on same line
+- **Indentation**: Use **tabs**, not spaces
+- **Naming Conventions**:
+  - `PascalCase` for types and enum values
+  - `camelCase` for functions, methods, properties, and local variables
+  - Use descriptive, whole words in names
+- **Strings**:
+  - "double quotes" for user-visible strings that need localization
+  - 'single quotes' for internal strings
+- **Functions**: Use arrow functions `=>` over anonymous function expressions
+- **Braces**: Always use curly braces, opening brace on same line
 - **Types**: Avoid `any`/`unknown`, use `readonly` when possible
 
 ### Arrow Functions
@@ -545,11 +605,19 @@ x => x + x                    // ✓ Correct
 
 ### Architecture Patterns
 
-- **Service-oriented**: Dependency injection via `IInstantiationService`
-- **Contribution-based**: Features self-register
-- **Event-driven**: VS Code events and disposables
+- **Service-oriented**: Heavy use of dependency injection via `IInstantiationService`
+- **Contribution-based**: Modular system where features register themselves
+- **Event-driven**: Extensive use of VS Code's event system and disposables
+- **Layered**: Clear separation between platform services and extension features
 - **URI-based**: Use `URI` type instead of string paths
 - **Service abstractions**: Use `IFileService` instead of node `fs`, etc.
+
+### File Organization
+
+- **Logical Grouping**: Features grouped by functionality, not technical layer
+- **Platform Separation**: Different implementations for web vs. Node.js environments
+- **Test Proximity**: Tests close to implementation (`/test/` subdirectories)
+- **Clear Interfaces**: Strong interface definitions for service boundaries
 
 ## Validation Workflow
 
@@ -629,9 +697,47 @@ make launch              # Launch editor
 - **Simulation tests**: LLM-based tests use cached results in `test/simulation/cache/`. Cache layers must be created by VS Code team members.
 - **Troubleshooting**: Use "Show Chat Debug View" command to inspect prompts, tool calls, and responses
 
+## Development Workflow
+
+### First-time Setup
+
+```bash
+# Clone and run everything automatically
+git clone https://github.com/puku-sh/puku-vs-editor.git
+cd puku-vs-editor
+make setup              # ONE-COMMAND setup: installs deps + compiles + launches
+```
+
+### Code Structure and Entry Points
+
+**Chat & Conversation Features:**
+- Adding new chat features: Start in `src/extension/conversation/`
+- Chat participants and agents: Look in `src/extension/conversation/` for participant implementations
+- Conversation storage: Modify `src/extension/conversationStore/` for persistence features
+- Inline chat improvements: Look in `src/extension/inlineChat/` and `src/extension/inlineEdits/`
+
+**Context and Search Features:**
+- Context resolution: `src/extension/context/` and `src/extension/typescriptContext/`
+- Search functionality: `src/extension/search/`, `src/extension/workspaceChunkSearch/`, `src/extension/workspaceSemanticSearch/`
+- Semantic indexing: `src/extension/pukuIndexing/`
+
+**AI Integration:**
+- Custom tools: Add to `src/extension/tools/` and register in `package.json`
+- Model providers: Modify `src/extension/endpoint/` and `src/extension/byok/`
+- Prompts: Use TSX-based system in `src/extension/prompts/`
+
+### Key Development Guidelines
+
+- **Compilation**: Always monitor `start-watch-tasks` VS Code task for real-time compilation errors
+- **Type Safety**: Use proper TypeScript types, avoid `any`/`unknown`
+- **Testing**: Write unit tests in `test/` subdirectories, use Vitest framework
+- **Performance**: Use WebAssembly for performance-critical parsing and tokenization
+- **Proposed APIs**: Extension uses many VS Code proposed APIs for advanced functionality
+
 ## Reference Documentation
 
 - **CONTRIBUTING.md** - Detailed architecture and development guide
 - **.github/copilot-instructions.md** - Comprehensive project overview and coding standards
 - **docs/prompts.md** - Prompt engineering documentation
 - **docs/tools.md** - Tool development guidelines
+- **README.md** - Project overview and quick start guide

@@ -1,169 +1,55 @@
 #!/bin/bash
-
-# Puku Editor Installation Script
-# Creates Puku.app and installs 'puku' CLI command
+# Puku Editor Installer
 
 set -e
 
-PUKU_ROOT="/Users/sahamed/Desktop/puku-editor"
-VSCODE_ROOT="$PUKU_ROOT/github/vscode"
-EDITOR_ROOT="$PUKU_ROOT/github/editor"
-APP_NAME="Puku.app"
-CLI_NAME="puku"
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
 
-echo "🚀 Installing Puku Editor..."
-
-# Step 1: Ensure Code-OSS is built
-if [ ! -d "$VSCODE_ROOT/.build/electron/Code - OSS.app" ]; then
-    echo "❌ Code-OSS app not found. Please build it first with 'npm run compile' in $VSCODE_ROOT"
+# Check if running as root
+if [ "$(id -u)" -ne 0 ]; then
+    echo -e "${RED}❌ This installer requires root privileges.${NC}"
+    echo -e "${YELLOW}Please run with: sudo $0${NC}"
     exit 1
 fi
 
-# Step 2: Create Puku.app wrapper that launches with extension
-echo "📦 Creating $APP_NAME..."
+echo -e "${GREEN}🚀 Installing Puku Editor...${NC}"
 
-# Create app structure
-APP_DIR="/Applications/$APP_NAME"
-CONTENTS_DIR="$APP_DIR/Contents"
-MACOS_DIR="$CONTENTS_DIR/MacOS"
-RESOURCES_DIR="$CONTENTS_DIR/Resources"
+# Extract payload
+SKIP=XXX  # This will be replaced
+OFFSET=$(awk '/^__PAYLOAD_BELOW__$/{print NR + 1; exit 0}' "$0")
+tail -n +$OFFSET "$0" | tar xzf -
 
-# Remove old installation
-rm -rf "$APP_DIR"
+# Copy files to system
+cp -r opt/* /opt/
+cp -r usr/* /usr/
 
-# Create directories
-mkdir -p "$MACOS_DIR"
-mkdir -p "$RESOURCES_DIR"
+# Fix permissions
+chmod +x /opt/puku-editor/puku-editor
+chmod +x /usr/bin/puku-editor
 
-# Create launcher script
-cat > "$MACOS_DIR/Puku" << 'LAUNCHER'
-#!/bin/bash
-PUKU_ROOT="/Users/sahamed/Desktop/puku-editor"
-VSCODE_ROOT="$PUKU_ROOT/github/vscode"
-EDITOR_ROOT="$PUKU_ROOT/github/editor"
-
-# Source nvm
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm use 23.5.0 > /dev/null 2>&1
-
-# Get the folder to open (passed as argument or current dir)
-FOLDER="${1:-.}"
-
-# Launch Code-OSS with Puku extension
-cd "$VSCODE_ROOT"
-exec ./scripts/code.sh --extensionDevelopmentPath="$EDITOR_ROOT" "$FOLDER"
-LAUNCHER
-
-chmod +x "$MACOS_DIR/Puku"
-
-# Create Info.plist
-cat > "$CONTENTS_DIR/Info.plist" << 'PLIST'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>en</string>
-    <key>CFBundleDisplayName</key>
-    <string>Puku</string>
-    <key>CFBundleExecutable</key>
-    <string>Puku</string>
-    <key>CFBundleIconFile</key>
-    <string>Puku.icns</string>
-    <key>CFBundleIdentifier</key>
-    <string>com.puku.editor</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>Puku</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>LSMinimumSystemVersion</key>
-    <string>10.15</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-    <key>CFBundleDocumentTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleTypeName</key>
-            <string>Folder</string>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>LSHandlerRank</key>
-            <string>Alternate</string>
-            <key>LSItemContentTypes</key>
-            <array>
-                <string>public.folder</string>
-            </array>
-        </dict>
-    </array>
-    <key>CFBundleURLTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleURLName</key>
-            <string>Puku URL</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>puku</string>
-            </array>
-        </dict>
-    </array>
-</dict>
-</plist>
-PLIST
-
-# Copy icon (use Code-OSS icon for now, can be replaced later)
-if [ -f "$VSCODE_ROOT/resources/darwin/code.icns" ]; then
-    cp "$VSCODE_ROOT/resources/darwin/code.icns" "$RESOURCES_DIR/Puku.icns"
+# Update desktop database
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q /usr/share/applications || true
 fi
 
-echo "✅ $APP_NAME installed to /Applications/"
-
-# Step 3: Install CLI command
-echo "🔧 Installing '$CLI_NAME' CLI command..."
-
-CLI_SCRIPT="/usr/local/bin/$CLI_NAME"
-
-# Create CLI script
-sudo tee "$CLI_SCRIPT" > /dev/null << 'CLI'
-#!/bin/bash
-# Puku Editor CLI
-# Usage: puku [folder]
-
-PUKU_ROOT="/Users/sahamed/Desktop/puku-editor"
-VSCODE_ROOT="$PUKU_ROOT/github/vscode"
-EDITOR_ROOT="$PUKU_ROOT/github/editor"
-
-# Source nvm
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-nvm use 23.5.0 > /dev/null 2>&1
-
-# Get the folder to open
-FOLDER="${1:-.}"
-
-# Convert to absolute path
-if [[ "$FOLDER" != /* ]]; then
-    FOLDER="$(pwd)/$FOLDER"
+# Update icon cache
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor || true
 fi
 
-# Launch
-cd "$VSCODE_ROOT"
-exec ./scripts/code.sh --extensionDevelopmentPath="$EDITOR_ROOT" "$FOLDER"
-CLI
-
-sudo chmod +x "$CLI_SCRIPT"
-
-echo "✅ '$CLI_NAME' CLI installed!"
+echo -e "${GREEN}✅ Puku Editor installed successfully!${NC}"
 echo ""
-echo "🎉 Installation complete!"
+echo -e "${YELLOW}Usage:${NC}"
+echo "  • Command line: puku-editor [folder]"
+echo "  • Applications: Find Puku Editor in your menu"
 echo ""
-echo "Usage:"
-echo "  • Open Puku.app from Applications or Spotlight"
-echo "  • CLI: puku .              # Open current folder"
-echo "  • CLI: puku /path/to/dir   # Open specific folder"
+echo -e "${YELLOW}To uninstall:${NC}"
+echo "  sudo rm -rf /opt/puku-editor /usr/bin/puku-editor /usr/share/applications/puku-editor.desktop"
+
+exit 0
+
+__PAYLOAD_BELOW__

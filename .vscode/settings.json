@@ -1,0 +1,28 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/poridhi/rosbot_ws/build/rqt_joint_trajectory_controller",
+        "/home/poridhi/rosbot_ws/install/rqt_joint_trajectory_controller/lib/python3.10/site-packages",
+        "/home/poridhi/rosbot_ws/build/rosbot_xl_utils",
+        "/home/poridhi/rosbot_ws/install/rosbot_xl_utils/lib/python3.10/site-packages",
+        "/home/poridhi/rosbot_ws/build/rosbot_xl_controller",
+        "/home/poridhi/rosbot_ws/install/rosbot_xl_controller/lib/python3.10/site-packages",
+        "/home/poridhi/rosbot_ws/build/ros2_controllers_test_nodes",
+        "/home/poridhi/rosbot_ws/install/ros2_controllers_test_nodes/lib/python3.10/site-packages",
+        "/home/poridhi/rosbot_ws/install/micro_ros_msgs/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/poridhi/rosbot_ws/build/rqt_joint_trajectory_controller",
+        "/home/poridhi/rosbot_ws/install/rqt_joint_trajectory_controller/lib/python3.10/site-packages",
+        "/home/poridhi/rosbot_ws/build/rosbot_xl_utils",
+        "/home/poridhi/rosbot_ws/install/rosbot_xl_utils/lib/python3.10/site-packages",
+        "/home/poridhi/rosbot_ws/build/rosbot_xl_controller",
+        "/home/poridhi/rosbot_ws/install/rosbot_xl_controller/lib/python3.10/site-packages",
+        "/home/poridhi/rosbot_ws/build/ros2_controllers_test_nodes",
+        "/home/poridhi/rosbot_ws/install/ros2_controllers_test_nodes/lib/python3.10/site-packages",
+        "/home/poridhi/rosbot_ws/install/micro_ros_msgs/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
+}

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Puku Editor
+Comment=AI-powered code editor built on VS Code
+Exec=/usr/bin/puku-editor %U
+Icon=puku-editor
+Terminal=false
+Categories=Development;IDE;TextEditor;Programming;
+Keywords=editor;code;development;programming;ai;chat;
+StartupNotify=true
+MimeType=text/plain;inode/directory;
