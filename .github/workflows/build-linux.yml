@@ -37,7 +37,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '23.5.0'
+          node-version-file: 'src/vscode/.nvmrc'
           cache: 'npm'
           cache-dependency-path: |
             src/chat/package-lock.json
@@ -167,7 +167,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '23.5.0'
+          node-version-file: 'src/vscode/.nvmrc'
           cache: 'npm'
           cache-dependency-path: |
             src/chat/package-lock.json
