@@ -86,8 +86,11 @@ setup:
 compile-extension:
 	@echo "=== Compiling Puku Editor Extension (Node 23.5.0) ==="
 	@cd src/chat && \
-	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
-	npm run compile
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 23.5.0 && npm run compile"; \
+	else \
+		npm run compile; \
+	fi
 
 # Compile VS Code (requires Node 22.20.0)
 compile-vscode:
@@ -355,16 +358,22 @@ build:
 build-ext:
 	@echo "=== Incremental Extension Build ==="
 	@cd src/chat && \
-	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
-	npm run compile
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 23.5.0 && npm run compile"; \
+	else \
+		npm run compile; \
+	fi
 	@echo "✅ Extension build complete"
 
 # Incremental VS Code build (only changed files)
 build-vs:
 	@echo "=== Incremental VS Code Build ==="
 	@cd src/vscode && \
-	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
-	npm run compile
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 22.20.0 && npm run compile"; \
+	else \
+		npm run compile; \
+	fi
 	@echo "✅ VS Code build complete"
 
 # Minimal incremental: extension + package (~16 seconds total)
