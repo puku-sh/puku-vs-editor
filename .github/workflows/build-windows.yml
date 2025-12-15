@@ -66,7 +66,7 @@ jobs:
         run: |
           Write-Host "=== Installing Extension Dependencies ==="
           cd src/chat
-          $retries = 3
+          $retries = 5
           $success = $false
           for ($i = 1; $i -le $retries; $i++) {
             try {
@@ -78,7 +78,7 @@ jobs:
                 Write-Error "Extension npm install failed after $retries attempts"
                 exit 1
               }
-              Write-Host "Retry $i..."
+              Write-Host "Npm install failed, retry $i..."
               Start-Sleep -Seconds 2
             }
           }
@@ -96,7 +96,7 @@ jobs:
                 Write-Error "VS Code npm install failed after $retries attempts"
                 exit 1
               }
-              Write-Host "Retry $i..."
+              Write-Host "Npm install failed, retry $i..."
               Start-Sleep -Seconds 2
             }
           }
@@ -181,7 +181,7 @@ jobs:
         run: |
           Write-Host "=== Installing Extension Dependencies ==="
           cd src/chat
-          $retries = 3
+          $retries = 5
           $success = $false
           for ($i = 1; $i -le $retries; $i++) {
             try {
@@ -193,7 +193,7 @@ jobs:
                 Write-Error "Extension npm install failed after $retries attempts"
                 exit 1
               }
-              Write-Host "Retry $i..."
+              Write-Host "Npm install failed, retry $i..."
               Start-Sleep -Seconds 2
             }
           }
@@ -211,7 +211,7 @@ jobs:
                 Write-Error "VS Code npm install failed after $retries attempts"
                 exit 1
               }
-              Write-Host "Retry $i..."
+              Write-Host "Npm install failed, retry $i..."
               Start-Sleep -Seconds 2
             }
           }

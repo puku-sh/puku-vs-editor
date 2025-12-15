@@ -78,25 +78,25 @@ jobs:
           set -e
           echo "=== Installing Extension Dependencies ==="
           cd src/chat
-          for i in {1..3}; do
+          for i in {1..5}; do
             npm ci && break
-            if [ $i -eq 3 ]; then
-              echo "Extension npm install failed" >&2
+            if [ $i -eq 5 ]; then
+              echo "Extension npm install failed after 5 attempts" >&2
               exit 1
             fi
-            echo "Retry $i..."
+            echo "Npm install failed, retry $i..."
             sleep 2
           done
 
           echo "=== Installing VS Code Dependencies ==="
           cd ../vscode
-          for i in {1..3}; do
+          for i in {1..5}; do
             npm ci && break
-            if [ $i -eq 3 ]; then
-              echo "VS Code npm install failed" >&2
+            if [ $i -eq 5 ]; then
+              echo "VS Code npm install failed after 5 attempts" >&2
               exit 1
             fi
-            echo "Retry $i..."
+            echo "Npm install failed, retry $i..."
             sleep 2
           done
         env:
@@ -193,25 +193,25 @@ jobs:
           set -e
           echo "=== Installing Extension Dependencies ==="
           cd src/chat
-          for i in {1..3}; do
+          for i in {1..5}; do
             npm ci && break
-            if [ $i -eq 3 ]; then
-              echo "Extension npm install failed" >&2
+            if [ $i -eq 5 ]; then
+              echo "Extension npm install failed after 5 attempts" >&2
               exit 1
             fi
-            echo "Retry $i..."
+            echo "Npm install failed, retry $i..."
             sleep 2
           done
 
           echo "=== Installing VS Code Dependencies ==="
           cd ../vscode
-          for i in {1..3}; do
+          for i in {1..5}; do
             npm ci --arch=arm64 && break
-            if [ $i -eq 3 ]; then
-              echo "VS Code npm install failed" >&2
+            if [ $i -eq 5 ]; then
+              echo "VS Code npm install failed after 5 attempts" >&2
               exit 1
             fi
-            echo "Retry $i..."
+            echo "Npm install failed, retry $i..."
             sleep 2
           done
         env:
