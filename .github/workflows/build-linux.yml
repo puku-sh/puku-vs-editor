@@ -24,7 +24,7 @@ on:
 jobs:
   build-linux-x64:
     name: Build Linux (x64)
-    runs-on: [self-hosted, Linux, X64]  # 🚀 Self-hosted runner
+    runs-on: namespace-profile-default  # 🚀 Namespace.so runner
     if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.architecture == 'x64' }}
     env:
       VSCODE_ARCH: x64
