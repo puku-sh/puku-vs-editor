@@ -108,17 +108,13 @@ if (Test-Path $APP_EXTENSIONS) {
         # Skip test/development extensions
         if ($ext_name -like "*test*" -or $ext_name -eq "node_modules") {
             Remove-Item -Path $_.FullName -Recurse -Force
-            return
         }
-
-        # Check if extension is in essential list
-        $IS_ESSENTIAL = $ESSENTIAL_EXTENSIONS -contains $ext_name
-
-        if ($IS_ESSENTIAL) {
-            Write-Host "  ✓ Keeping $ext_name"
+        elseif ($ESSENTIAL_EXTENSIONS -contains $ext_name) {
+            Write-Host "  [+] Keeping $ext_name"
             $script:BUNDLED_COUNT++
-        } else {
-            Write-Host "  ✗ Removing $ext_name"
+        }
+        else {
+            Write-Host "  [-] Removing $ext_name"
             Remove-Item -Path $_.FullName -Recurse -Force
             $script:SKIPPED_COUNT++
         }
