@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { defineConfig } from '@vscode/test-cli';
-import { readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { loadEnvFile } from 'process';
 import { fileURLToPath } from 'url';
@@ -27,12 +27,24 @@ writeFileSync(packageJsonPath, JSON.stringify(pkg, null, '\t'));
 // and revert it once done
 process.on('exit', () => writeFileSync(packageJsonPath, raw));
 
-const isRecoveryBuild = !pkg.version.endsWith('.0');
+// Use our forked VS Code build if available
+const vscodePath = resolve(__dirname, '../vscode/.build/electron/Puku.app/Contents/MacOS/Electron');
+const vscodePathExists = existsSync(vscodePath);
+
+if (!vscodePathExists) {
+	console.error('\n❌ Puku VS Code not found at:', vscodePath);
+	console.error('Please build VS Code first:');
+	console.error('  cd ../../ && make build-vs\n');
+	process.exit(1);
+}
 
 export default defineConfig({
 	files: __dirname + (isSanity ? '/dist/sanity-test-extension.js' : '/dist/test-extension.js'),
-	version: isRecoveryBuild ? 'stable' : 'insiders-unreleased',
+	// Use our custom-built VS Code with all proposed APIs
+	vscodeExecutablePath: vscodePath,
 	launchArgs: [
+		'--extensionDevelopmentPath=' + __dirname,
+		'--enable-proposed-api=GitHub.puku-editor',
 		'--disable-extensions',
 		'--profile-temp'
 	],
@@ -40,6 +52,6 @@ export default defineConfig({
 		ui: 'tdd',
 		color: true,
 		forbidOnly: !!process.env.CI,
-		timeout: 5000
+		timeout: 10000
 	}
 });

@@ -14,10 +14,11 @@ const mockPukuImportExtractor = {
 	}
 };
 
-// Replace the real import extractor with our mock
-jest.mock('../../../../platform/parser/node/pukuImportExtractor', () => ({
-	pukuImportExtractor: mockPukuImportExtractor
-}));
+// NOTE: jest.mock() is not compatible with mocha test runner
+// TODO: Port this to use sinon.js for mocking when running in mocha
+// jest.mock('../../../../platform/parser/node/pukuImportExtractor', () => ({
+// 	pukuImportExtractor: mockPukuImportExtractor
+// }));
 
 suite('ImportContextFlow', function () {
 	let flow: ImportContextFlow;
