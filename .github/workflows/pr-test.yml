@@ -1,0 +1,95 @@
+name: PR Tests
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+    tags-ignore:
+      - 'v*'
+
+jobs:
+  test:
+    name: Test Extension
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23.5.0'
+          cache: 'npm'
+          cache-dependency-path: |
+            src/chat/package-lock.json
+            src/vscode/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            src/chat/node_modules
+            src/vscode/node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('src/chat/package-lock.json', 'src/vscode/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          echo "=== Installing Extension Dependencies ==="
+          cd src/chat
+          for i in {1..5}; do
+            npm ci && break
+            if [ $i -eq 5 ]; then
+              echo "Extension npm install failed after 5 attempts" >&2
+              exit 1
+            fi
+            echo "Npm install failed, retry $i..."
+            sleep 2
+          done
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compile extension
+        run: |
+          cd src/chat
+          npm run compile
+
+      - name: Run linter
+        run: |
+          cd src/chat
+          npm run lint
+
+      - name: Run unit tests
+        run: |
+          cd src/chat
+          npm run test:unit
+
+      - name: Run integration tests
+        run: |
+          cd src/chat
+          npm run test:extension
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            src/chat/test-results/
+            src/chat/.nyc_output/
+          retention-days: 7
+          if-no-files-found: ignore
