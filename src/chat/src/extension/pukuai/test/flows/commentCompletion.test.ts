@@ -28,7 +28,7 @@ suite('CommentCompletionFlow', function () {
 			});
 			const position = new vscode.Position(1, 10); // Middle of 'const x = 1;'
 
-			const result = flow.isCommentBasedCompletion(doc, position);
+			const result = await flow.isCommentBasedCompletion(doc, position);
 			assert.strictEqual(result, false);
 		});
 
@@ -39,7 +39,7 @@ suite('CommentCompletionFlow', function () {
 			});
 			const position = new vscode.Position(1, 0); // Start of empty line after comment
 
-			const result = flow.isCommentBasedCompletion(doc, position);
+			const result = await flow.isCommentBasedCompletion(doc, position);
 			assert.strictEqual(result, true);
 		});
 
@@ -50,7 +50,7 @@ suite('CommentCompletionFlow', function () {
 			});
 			const position = new vscode.Position(1, 0);
 
-			const result = flow.isCommentBasedCompletion(doc, position);
+			const result = await flow.isCommentBasedCompletion(doc, position);
 			assert.strictEqual(result, false);
 		});
 
@@ -61,7 +61,7 @@ suite('CommentCompletionFlow', function () {
 			});
 			const position = new vscode.Position(1, 0);
 
-			const result = flow.isCommentBasedCompletion(doc, position);
+			const result = await flow.isCommentBasedCompletion(doc, position);
 			assert.strictEqual(result, true);
 		});
 
@@ -72,7 +72,7 @@ suite('CommentCompletionFlow', function () {
 			});
 			const position = new vscode.Position(1, 0);
 
-			const result = flow.isCommentBasedCompletion(doc, position);
+			const result = await flow.isCommentBasedCompletion(doc, position);
 			assert.strictEqual(result, true);
 		});
 
@@ -83,7 +83,7 @@ suite('CommentCompletionFlow', function () {
 			});
 			const position = new vscode.Position(0, 20); // Middle of comment
 
-			const result = flow.isCommentBasedCompletion(doc, position);
+			const result = await flow.isCommentBasedCompletion(doc, position);
 			assert.strictEqual(result, false);
 		});
 	});
@@ -96,7 +96,7 @@ suite('CommentCompletionFlow', function () {
 			});
 			const position = new vscode.Position(1, 0);
 
-			const intent = flow.extractCommentIntent(doc, position);
+			const intent = await flow.extractCommentIntent(doc, position);
 			assert.strictEqual(intent, 'add number inverse function');
 		});
 
@@ -107,7 +107,7 @@ suite('CommentCompletionFlow', function () {
 			});
 			const position = new vscode.Position(1, 0);
 
-			const intent = flow.extractCommentIntent(doc, position);
+			const intent = await flow.extractCommentIntent(doc, position);
 			assert.strictEqual(intent, 'calculate fibonacci sequence');
 		});
 
@@ -118,7 +118,7 @@ suite('CommentCompletionFlow', function () {
 			});
 			const position = new vscode.Position(1, 0);
 
-			const intent = flow.extractCommentIntent(doc, position);
+			const intent = await flow.extractCommentIntent(doc, position);
 			assert.strictEqual(intent, null);
 		});
 
@@ -129,7 +129,7 @@ suite('CommentCompletionFlow', function () {
 			});
 			const position = new vscode.Position(1, 0);
 
-			const intent = flow.extractCommentIntent(doc, position);
+			const intent = await flow.extractCommentIntent(doc, position);
 			assert.strictEqual(intent, 'add REST API handler');
 		});
 
@@ -140,7 +140,7 @@ suite('CommentCompletionFlow', function () {
 			});
 			const position = new vscode.Position(1, 0);
 
-			const intent = flow.extractCommentIntent(doc, position);
+			const intent = await flow.extractCommentIntent(doc, position);
 			assert.strictEqual(intent, 'add REST API handler');
 		});
 	});
