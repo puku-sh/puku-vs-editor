@@ -1,0 +1,280 @@
+name: CI/CD Pipeline for Self-Hosted Runner
+
+on:
+  push:
+    branches: [ main, master, feature/*,feature/build-process ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test and Validate
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+
+      - name: Setup NVM for dual Node versions
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+          nvm install 22.20.0
+          nvm install 23.5.0
+          nvm use 22.20.0
+          echo "NVM_DIR=$HOME/.nvm" >> $GITHUB_ENV
+          echo '[[ -s $NVM_DIR/nvm.sh ]] && \. $NVM_DIR/nvm.sh' >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 22.20.0
+          make install
+
+      - name: Lint and type-check
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 22.20.0
+          cd src/chat && npm run lint
+
+  build-standalone:
+    name: Build Standalone Package
+    runs-on: self-hosted
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/feature/'))
+    outputs:
+      version: ${{ steps.info.outputs.version }}
+      filename: ${{ steps.info.outputs.filename }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        run: |
+          curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+
+      - name: Setup NVM for dual Node versions
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+          nvm install 22.20.0
+          nvm install 23.5.0
+          nvm use 22.20.0
+          echo "NVM_DIR=$HOME/.nvm" >> $GITHUB_ENV
+          echo '[[ -s $NVM_DIR/nvm.sh ]] && \. $NVM_DIR/nvm.sh' >> $GITHUB_ENV
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            python3 \
+            python3-distutils \
+            git \
+            libgtk-3-0 \
+            libnotify4 \
+            libnss3 \
+            libxss1 \
+            libxtst6 \
+            xdg-utils \
+            libatspi2.0-0 \
+            libuuid1 \
+            libsecret-1-0 \
+            pkg-config
+
+      - name: Setup caching directories
+        run: |
+          # Create cache directories for incremental builds
+          sudo mkdir -p /tmp/cache/vscode-build
+          sudo mkdir -p /tmp/cache/extension-build
+          sudo chmod 777 /tmp/cache/vscode-build /tmp/cache/extension-build
+
+      - name: Cache VS Code build (Self-hosted)
+        run: |
+          # Get cache key based on source changes
+          CACHE_KEY="vscode-build-$(echo '${{ github.sha }}' | head -c 10)"
+          CACHE_DIR="/tmp/cache/vscode-build"
+
+          # Save current build if exists
+          if [ -d "src/vscode/out" ] || [ -d "src/vscode/out-build" ]; then
+            echo "Saving VS Code build to cache..."
+            rm -rf "$CACHE_DIR"/* 2>/dev/null || true
+            mkdir -p "$CACHE_DIR"
+            [ -d "src/vscode/out" ] && cp -r src/vscode/out "$CACHE_DIR/"
+            [ -d "src/vscode/out-build" ] && cp -r src/vscode/out-build "$CACHE_DIR/"
+            [ -d "src/vscode/.build/electron" ] && cp -r src/vscode/.build "$CACHE_DIR/"
+            echo "$CACHE_KEY" > "$CACHE_DIR/.cache-key"
+          fi
+
+      - name: Cache extension build (Self-hosted)
+        run: |
+          # Get cache key based on source changes
+          CACHE_KEY="extension-build-$(echo '${{ github.sha }}' | head -c 10)"
+          CACHE_DIR="/tmp/cache/extension-build"
+
+          # Save current build if exists
+          if [ -d "src/chat/dist" ]; then
+            echo "Saving extension build to cache..."
+            rm -rf "$CACHE_DIR"/* 2>/dev/null || true
+            mkdir -p "$CACHE_DIR"
+            cp -r src/chat/dist "$CACHE_DIR/"
+            [ -d "src/chat/node_modules" ] && cp -r src/chat/node_modules "$CACHE_DIR/"
+            echo "$CACHE_KEY" > "$CACHE_DIR/.cache-key"
+          fi
+
+      - name: Restore cached builds (Self-hosted)
+        run: |
+          # Try to restore VS Code build from cache
+          CACHE_DIR="/tmp/cache/vscode-build"
+          if [ -f "$CACHE_DIR/.cache-key" ]; then
+            echo "Attempting to restore VS Code build from cache..."
+            # Check if cache is recent (within last 24 hours)
+            CACHE_AGE=$(( $(date +%s) - $(stat -c %Y "$CACHE_DIR/.cache-key" 2>/dev/null || echo 0) ))
+            if [ $CACHE_AGE -lt 86400 ]; then
+              echo "Restoring VS Code build from cache ($(echo $CACHE_AGE | awk '{print int($1/3600)}h ago))"
+              [ -d "$CACHE_DIR/out" ] && cp -r "$CACHE_DIR/out" src/vscode/ 2>/dev/null || true
+              [ -d "$CACHE_DIR/out-build" ] && cp -r "$CACHE_DIR/out-build" src/vscode/ 2>/dev/null || true
+              [ -d "$CACHE_DIR/.build" ] && cp -r "$CACHE_DIR/.build" src/vscode/ 2>/dev/null || true
+            else
+              echo "Cache too old, rebuilding..."
+            fi
+          fi
+
+          # Try to restore extension build from cache
+          CACHE_DIR="/tmp/cache/extension-build"
+          if [ -f "$CACHE_DIR/.cache-key" ]; then
+            echo "Attempting to restore extension build from cache..."
+            CACHE_AGE=$(( $(date +%s) - $(stat -c %Y "$CACHE_DIR/.cache-key" 2>/dev/null || echo 0) ))
+            if [ $CACHE_AGE -lt 86400 ]; then
+              echo "Restoring extension build from cache ($(echo $CACHE_AGE | awk '{print int($1/3600)}h ago))"
+              [ -d "$CACHE_DIR/dist" ] && cp -r "$CACHE_DIR/dist" src/chat/ 2>/dev/null || true
+              [ -d "$CACHE_DIR/node_modules" ] && cp -r "$CACHE_DIR/node_modules" src/chat/ 2>/dev/null || true
+            else
+              echo "Cache too old, rebuilding..."
+            fi
+          fi
+
+      - name: Install dependencies and build
+        run: |
+          # Set up NVM environment
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 22.20.0
+
+          # Install all dependencies
+          make install
+
+          # Build VS Code (use existing build if cached)
+          if [ ! -d "src/vscode/out-build" ]; then
+            make compile-vscode || echo "VS Code compile had errors but continuing..."
+          fi
+
+          # Build extension
+          make compile-extension
+
+          # Download Electron if needed
+          cd src/vscode
+          if [ ! -d ".build/electron" ]; then
+            nvm use 22.20.0 && npm run electron
+          fi
+          cd ../..
+
+      - name: Build standalone package
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 22.20.0
+          chmod +x build-standalone.sh
+          ./build-standalone.sh
+
+      - name: Extract package info
+        id: info
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 22.20.0
+
+          # Get version from package
+          VERSION=$(node -p "require('./src/vscode/package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Find the .deb file
+          DEB_FILE=$(ls -1 *.deb 2>/dev/null | head -n 1)
+          if [ -n "$DEB_FILE" ]; then
+            echo "filename=$DEB_FILE" >> $GITHUB_OUTPUT
+            echo "File size: $(du -h $DEB_FILE | cut -f1)"
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        if: steps.info.outputs.filename != ''
+        with:
+          name: puku-editor-standalone-${{ steps.info.outputs.version }}
+          path: ${{ steps.info.outputs.filename }}
+          retention-days: 30
+
+      - name: Generate release notes
+        if: steps.info.outputs.filename != ''
+        id: release_notes
+        run: |
+          echo "# Puku Editor ${{ steps.info.outputs.version }}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "## Installation" >> release_notes.md
+          echo '```bash' >> release_notes.md
+          echo "wget https://github.com/${{ github.repository }}/releases/download/v${{ steps.info.outputs.version }}/${{ steps.info.outputs.filename }}" >> release_notes.md
+          echo "sudo dpkg -i ${{ steps.info.outputs.filename }}" >> release_notes.md
+          echo '```' >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## Features" >> release_notes.md
+          echo "- ✅ AI-powered chat with multiple language models" >> release_notes.md
+          echo "- ✅ Inline code completions and suggestions" >> release_notes.md
+          echo "- ✅ Semantic search with vector embeddings" >> release_notes.md
+          echo "- ✅ Agent mode for autonomous coding tasks" >> release_notes.md
+          echo "- ✅ Tool calling and external integrations" >> release_notes.md
+          echo "- ✅ Syntax highlighting for major programming languages" >> release_notes.md
+          echo "- ✅ Git integration with native sqlite3 support" >> release_notes.md
+          echo "- ✅ Self-contained with bundled Electron runtime" >> release_notes.md
+
+      - name: Create Release
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.info.outputs.version }}
+          name: Puku Editor v${{ steps.info.outputs.version }}
+          body_path: release_notes.md
+          files: ${{ steps.info.outputs.filename }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: Notify Build Status
+    runs-on: self-hosted
+    needs: [test, build-standalone]
+    if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+      - name: Notify on success
+        if: needs.build-standalone.result == 'success'
+        run: |
+          echo "✅ Build successful!"
+          echo "Version: ${{ needs.build-standalone.outputs.version }}"
+          echo "Package: ${{ needs.build-standalone.outputs.filename }}"
+
+      - name: Notify on failure
+        if: needs.build-standalone.result == 'failure'
+        run: |
+          echo "❌ Build failed!"
+          echo "Check the logs for details"

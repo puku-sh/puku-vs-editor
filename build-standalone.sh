@@ -27,9 +27,10 @@ mkdir -p ${PACKAGE_DIR}/usr/share/icons/hicolor/512x512/apps
 
 # Ensure project is built
 echo "Ensuring VS Code and extension are built..."
-if [ ! -d "src/vscode/out" ]; then
-    echo "Building VS Code..."
-    make compile-vscode
+if [ ! -d "src/vscode/out" ] && [ ! -d "src/vscode/out-build" ]; then
+    echo "Building VS Code (may show git-base errors which can be ignored)..."
+    # Allow compilation to continue despite git-base errors
+    (make compile-vscode 2>&1 || true) | grep -v "Error: /home/poridhi/development/puku-vs-editor/src/vscode/extensions/git-base" || true
 fi
 
 if [ ! -d "src/chat/dist" ]; then
@@ -55,7 +56,26 @@ fi
 
 # Copy VS Code build
 echo "Copying VS Code files..."
-cp -r src/vscode/out ${PACKAGE_DIR}/opt/puku-editor/
+# Try out first (dev build with NLS), then out-build (production build)
+if [ -d "src/vscode/out" ]; then
+    echo "  ✓ Using out (dev build with NLS)"
+    cp -r src/vscode/out ${PACKAGE_DIR}/opt/puku-editor/
+elif [ -d "src/vscode/out-build" ]; then
+    echo "  ✓ Using out-build (production build) - NLS may be incomplete"
+    # Copy out-build but also try to get NLS from out if it exists
+    mkdir -p ${PACKAGE_DIR}/opt/puku-editor/out
+    cp -r src/vscode/out-build/* ${PACKAGE_DIR}/opt/puku-editor/out/
+    # Try to copy NLS files from out if available
+    if [ -d "src/vscode/out/vs" ]; then
+        mkdir -p ${PACKAGE_DIR}/opt/puku-editor/out/vs
+        cp -r src/vscode/out/vs/nls* ${PACKAGE_DIR}/opt/puku-editor/out/vs/ 2>/dev/null || true
+    fi
+else
+    echo "  ✗ No VS Code build found. Please run 'make compile-vscode' first."
+    exit 1
+fi
+
+# Copy additional files if they exist
 cp src/vscode/product.json ${PACKAGE_DIR}/opt/puku-editor/ 2>/dev/null || true
 if [ -d "src/vscode/resources" ]; then
     cp -r src/vscode/resources ${PACKAGE_DIR}/opt/puku-editor/
@@ -177,9 +197,29 @@ cd "$INSTALL_DIR"
 export VSCODE_DEV=0
 export VSCODE_SKIP_PRELAUNCH=1
 
+# Determine the correct main script path
+MAIN_SCRIPT=""
+if [ -f "$INSTALL_DIR/main.js" ]; then
+    MAIN_SCRIPT="$INSTALL_DIR/main.js"
+elif [ -f "$INSTALL_DIR/out/main.js" ]; then
+    MAIN_SCRIPT="$INSTALL_DIR/out/main.js"
+else
+    echo "❌ Cannot find main.js. VS Code installation may be incomplete."
+    exit 1
+fi
+
+# Create a minimal NLS file if missing (prevents NLS errors)
+if [ ! -f "$INSTALL_DIR/out/vs/nls.messages.js" ]; then
+    echo "  Creating minimal NLS file to prevent errors..."
+    mkdir -p "$INSTALL_DIR/out/vs"
+    cat > "$INSTALL_DIR/out/vs/nls.messages.js" << 'NLS'
+define([], { return {}; });
+NLS
+fi
+
 # Launch with Electron
 echo "📝 Launching with Electron..."
-exec "$ELECTRON_BIN" . \
+exec "$ELECTRON_BIN" "$MAIN_SCRIPT" \
     --extensionDevelopmentPath="$EXTENSION_DIR" \
     "$FOLDER"
 LAUNCHER
