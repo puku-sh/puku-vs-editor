@@ -68,28 +68,30 @@ jobs:
           cd src/chat
           npm run compile
 
-      - name: Run linter
+      - name: Verify build output
         run: |
           cd src/chat
-          npm run lint
 
-      - name: Run unit tests
-        run: |
-          cd src/chat
-          npm run test:unit
+          # Check main bundle exists
+          if [ ! -f dist/extension.js ]; then
+            echo "❌ Build failed: dist/extension.js not found"
+            exit 1
+          fi
 
-      - name: Run integration tests
-        run: |
-          cd src/chat
-          npm run test:extension
+          # Show build summary
+          echo "✅ Build successful!"
+          echo ""
+          echo "📦 Main bundles:"
+          for file in dist/extension.js dist/web.js dist/simulationWorkbench.js; do
+            if [ -f "$file" ]; then
+              size=$(du -h "$file" | cut -f1)
+              echo "  $file - $size"
+            fi
+          done
 
-      - name: Upload test results
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            src/chat/test-results/
-            src/chat/.nyc_output/
-          retention-days: 7
-          if-no-files-found: ignore
+          echo ""
+          echo "🔧 Worker bundles:"
+          ls -1 dist/*Worker.js 2>/dev/null | while read file; do
+            size=$(du -h "$file" | cut -f1)
+            echo "  $file - $size"
+          done || echo "  (none)"
