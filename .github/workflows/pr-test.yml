@@ -69,6 +69,11 @@ jobs:
           npm run lint
         continue-on-error: true
 
+      - name: Run unit tests
+        run: |
+          cd src/chat
+          npm run test:unit
+
       - name: Compile extension
         run: |
           cd src/chat
