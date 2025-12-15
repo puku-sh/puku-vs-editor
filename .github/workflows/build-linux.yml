@@ -125,6 +125,7 @@ jobs:
           VSCODE_ARCH: x64
           UV_THREADPOOL_SIZE: 128
           VSCODE_USE_ESBUILD: 1
+          NODE_OPTIONS: --max-old-space-size=8192
 
       - name: Package Linux builds
         run: ./build-linux-optimized.sh
@@ -259,6 +260,7 @@ jobs:
           VSCODE_ARCH: arm64
           UV_THREADPOOL_SIZE: 128
           VSCODE_USE_ESBUILD: 1
+          NODE_OPTIONS: --max-old-space-size=8192
 
       - name: Package Linux builds
         run: ./build-linux-optimized.sh
