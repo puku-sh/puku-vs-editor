@@ -24,7 +24,7 @@ on:
 jobs:
   build-linux-x64:
     name: Build Linux (x64)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04  # 🚀 Standard 4-core runner
     if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.architecture == 'x64' }}
     env:
       VSCODE_ARCH: x64
@@ -60,6 +60,7 @@ jobs:
             fakeroot \
             dpkg
 
+      # 🚀 Cache node_modules
       - name: Cache node_modules
         id: cache-node-modules
         uses: actions/cache@v4
@@ -70,6 +71,19 @@ jobs:
           key: ${{ runner.os }}-x64-node-modules-${{ hashFiles('src/chat/package-lock.json', 'src/vscode/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-x64-node-modules-
+
+      # 🚀 Cache VS Code build output (saves 30-60 minutes)
+      - name: Cache VS Code Build
+        uses: actions/cache@v4
+        with:
+          path: |
+            src/vscode/out
+            src/vscode/out-build
+            src/vscode/.build/extensions
+            src/vscode/.build/builtInExtensions
+          key: ${{ runner.os }}-x64-vscode-build-${{ hashFiles('src/vscode/src/**/*.ts', 'src/vscode/build/**/*.ts', 'src/vscode/product.json') }}
+          restore-keys: |
+            ${{ runner.os }}-x64-vscode-build-
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
@@ -103,10 +117,13 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # 🚀 Build with optimizations
       - name: Build using Makefile
         run: make build
         env:
           VSCODE_ARCH: x64
+          UV_THREADPOOL_SIZE: 128
+          VSCODE_USE_ESBUILD: 1
 
       - name: Package Linux builds
         run: ./build-linux-optimized.sh
@@ -137,7 +154,7 @@ jobs:
 
   build-linux-arm64:
     name: Build Linux (ARM64)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-22.04  # 🚀 Standard 4-core runner
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.architecture == 'arm64' }}
     env:
       VSCODE_ARCH: arm64
@@ -175,6 +192,7 @@ jobs:
             gcc-aarch64-linux-gnu \
             g++-aarch64-linux-gnu
 
+      # 🚀 Cache node_modules
       - name: Cache node_modules
         id: cache-node-modules
         uses: actions/cache@v4
@@ -185,6 +203,19 @@ jobs:
           key: ${{ runner.os }}-arm64-node-modules-${{ hashFiles('src/chat/package-lock.json', 'src/vscode/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-arm64-node-modules-
+
+      # 🚀 Cache VS Code build output (saves 30-60 minutes)
+      - name: Cache VS Code Build
+        uses: actions/cache@v4
+        with:
+          path: |
+            src/vscode/out
+            src/vscode/out-build
+            src/vscode/.build/extensions
+            src/vscode/.build/builtInExtensions
+          key: ${{ runner.os }}-arm64-vscode-build-${{ hashFiles('src/vscode/src/**/*.ts', 'src/vscode/build/**/*.ts', 'src/vscode/product.json') }}
+          restore-keys: |
+            ${{ runner.os }}-arm64-vscode-build-
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
@@ -219,10 +250,13 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # 🚀 Build with optimizations
       - name: Build using Makefile
         run: make build
         env:
           VSCODE_ARCH: arm64
+          UV_THREADPOOL_SIZE: 128
+          VSCODE_USE_ESBUILD: 1
 
       - name: Package Linux builds
         run: ./build-linux-optimized.sh

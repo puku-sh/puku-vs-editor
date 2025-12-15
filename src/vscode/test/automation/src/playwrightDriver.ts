@@ -4,11 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as playwright from '@playwright/test';
-import type { Protocol } from 'playwright-core/types/protocol';
+import type { Protocol } from '../../../node_modules/playwright-core/types/protocol';
 import { dirname, join } from 'path';
 import { promises } from 'fs';
-import { IWindowDriver } from './driver';
-import { PageFunction } from 'playwright-core/types/structs';
+import { IWindowDriver, ILocaleInfo, ILocalizedStrings } from './driver';
 import { measureAndLog } from './logger';
 import { LaunchOptions } from './code';
 import { teardown } from './processes';
@@ -299,11 +298,11 @@ export class PlaywrightDriver {
 		return this.page.evaluate(([driver, selector, text]) => driver.writeInTerminal(selector, text), [await this.getDriverHandle(), selector, text] as const);
 	}
 
-	async getLocaleInfo() {
+	async getLocaleInfo(): Promise<ILocaleInfo> {
 		return this.evaluateWithDriver(([driver]) => driver.getLocaleInfo());
 	}
 
-	async getLocalizedStrings() {
+	async getLocalizedStrings(): Promise<ILocalizedStrings> {
 		return this.evaluateWithDriver(([driver]) => driver.getLocalizedStrings());
 	}
 
@@ -311,7 +310,7 @@ export class PlaywrightDriver {
 		return this.page.evaluate(([driver]) => driver.getLogs(), [await this.getDriverHandle()] as const);
 	}
 
-	private async evaluateWithDriver<T>(pageFunction: PageFunction<IWindowDriver[], T>) {
+	private async evaluateWithDriver<T>(pageFunction: (args: IWindowDriver[]) => T | Promise<T>) {
 		return this.page.evaluate(pageFunction, [await this.getDriverHandle()]);
 	}
 
