@@ -133,7 +133,7 @@ jobs:
           path: |
             *.exe
             *.zip
-          retention-days: 30
+          retention-days: 1
           if-no-files-found: error
 
       - name: Upload build logs
@@ -258,7 +258,7 @@ jobs:
           path: |
             *.exe
             *.zip
-          retention-days: 30
+          retention-days: 1
           if-no-files-found: error
 
       - name: Upload build logs

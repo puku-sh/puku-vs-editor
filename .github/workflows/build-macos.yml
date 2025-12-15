@@ -123,7 +123,7 @@ jobs:
           name: puku-editor-macos-arm64
           path: |
             *.dmg
-          retention-days: 30
+          retention-days: 1
           if-no-files-found: error
 
       - name: Upload build logs
@@ -236,7 +236,7 @@ jobs:
           name: puku-editor-macos-x64
           path: |
             *.dmg
-          retention-days: 30
+          retention-days: 1
           if-no-files-found: error
 
       - name: Upload build logs
