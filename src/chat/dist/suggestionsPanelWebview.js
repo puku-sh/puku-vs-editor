@@ -1,96 +1,5492 @@
-"use strict";(()=>{var nt=(function(){if(typeof globalThis<"u")return globalThis;if(typeof global<"u")return global;if(typeof self<"u")return self;if(typeof window<"u")return window;try{return new Function("return this")()}catch{return{}}})();nt.trustedTypes===void 0&&(nt.trustedTypes={createPolicy:(r,t)=>t});var Rn={configurable:!1,enumerable:!1,writable:!1};nt.FAST===void 0&&Reflect.defineProperty(nt,"FAST",Object.assign({value:Object.create(null)},Rn));var pt=nt.FAST;if(pt.getById===void 0){let r=Object.create(null);Reflect.defineProperty(pt,"getById",Object.assign({value(t,e){let n=r[t];return n===void 0&&(n=e?r[t]=e():null),n}},Rn))}var st=Object.freeze([]);function ve(){let r=new WeakMap;return function(t){let e=r.get(t);if(e===void 0){let n=Reflect.getPrototypeOf(t);for(;e===void 0&&n!==null;)e=r.get(n),n=Reflect.getPrototypeOf(n);e=e===void 0?[]:e.slice(0),r.set(t,e)}return e}}var ir=nt.FAST.getById(1,()=>{let r=[],t=[];function e(){if(t.length)throw t.shift()}function n(a){try{a.call()}catch(l){t.push(l),setTimeout(e,0)}}function o(){let l=0;for(;l<r.length;)if(n(r[l]),l++,l>1024){for(let f=0,c=r.length-l;f<c;f++)r[f]=r[f+l];r.length-=l,l=0}r.length=0}function i(a){r.length<1&&nt.requestAnimationFrame(o),r.push(a)}return Object.freeze({enqueue:i,process:o})}),Dn=nt.trustedTypes.createPolicy("fast-html",{createHTML:r=>r}),sr=Dn,Vt=`fast-${Math.random().toString(36).substring(2,8)}`,ar=`${Vt}{`,xe=`}${Vt}`,g=Object.freeze({supportsAdoptedStyleSheets:Array.isArray(document.adoptedStyleSheets)&&"replace"in CSSStyleSheet.prototype,setHTMLPolicy(r){if(sr!==Dn)throw new Error("The HTML policy can only be set once.");sr=r},createHTML(r){return sr.createHTML(r)},isMarker(r){return r&&r.nodeType===8&&r.data.startsWith(Vt)},extractDirectiveIndexFromMarker(r){return parseInt(r.data.replace(`${Vt}:`,""))},createInterpolationPlaceholder(r){return`${ar}${r}${xe}`},createCustomAttributePlaceholder(r,t){return`${r}="${this.createInterpolationPlaceholder(t)}"`},createBlockPlaceholder(r){return`<!--${Vt}:${r}-->`},queueUpdate:ir.enqueue,processUpdates:ir.process,nextUpdate(){return new Promise(ir.enqueue)},setAttribute(r,t,e){e==null?r.removeAttribute(t):r.setAttribute(t,e)},setBooleanAttribute(r,t,e){e?r.setAttribute(t,""):r.removeAttribute(t)},removeChildNodes(r){for(let t=r.firstChild;t!==null;t=r.firstChild)r.removeChild(t)},createTemplateWalker(r){return document.createTreeWalker(r,133,null,!1)}});var Pt=class{constructor(t,e){this.sub1=void 0,this.sub2=void 0,this.spillover=void 0,this.source=t,this.sub1=e}has(t){return this.spillover===void 0?this.sub1===t||this.sub2===t:this.spillover.indexOf(t)!==-1}subscribe(t){let e=this.spillover;if(e===void 0){if(this.has(t))return;if(this.sub1===void 0){this.sub1=t;return}if(this.sub2===void 0){this.sub2=t;return}this.spillover=[this.sub1,this.sub2,t],this.sub1=void 0,this.sub2=void 0}else e.indexOf(t)===-1&&e.push(t)}unsubscribe(t){let e=this.spillover;if(e===void 0)this.sub1===t?this.sub1=void 0:this.sub2===t&&(this.sub2=void 0);else{let n=e.indexOf(t);n!==-1&&e.splice(n,1)}}notify(t){let e=this.spillover,n=this.source;if(e===void 0){let o=this.sub1,i=this.sub2;o!==void 0&&o.handleChange(n,t),i!==void 0&&i.handleChange(n,t)}else for(let o=0,i=e.length;o<i;++o)e[o].handleChange(n,t)}},It=class{constructor(t){this.subscribers={},this.sourceSubscribers=null,this.source=t}notify(t){var e;let n=this.subscribers[t];n!==void 0&&n.notify(t),(e=this.sourceSubscribers)===null||e===void 0||e.notify(t)}subscribe(t,e){var n;if(e){let o=this.subscribers[e];o===void 0&&(this.subscribers[e]=o=new Pt(this.source)),o.subscribe(t)}else this.sourceSubscribers=(n=this.sourceSubscribers)!==null&&n!==void 0?n:new Pt(this.source),this.sourceSubscribers.subscribe(t)}unsubscribe(t,e){var n;if(e){let o=this.subscribers[e];o!==void 0&&o.unsubscribe(t)}else(n=this.sourceSubscribers)===null||n===void 0||n.unsubscribe(t)}};var S=pt.getById(2,()=>{let r=/(:|&&|\|\||if)/,t=new WeakMap,e=g.queueUpdate,n,o=c=>{throw new Error("Must call enableArrayObservation before observing arrays.")};function i(c){let d=c.$fastController||t.get(c);return d===void 0&&(Array.isArray(c)?d=o(c):t.set(c,d=new It(c))),d}let a=ve();class l{constructor(d){this.name=d,this.field=`_${d}`,this.callback=`${d}Changed`}getValue(d){return n!==void 0&&n.watch(d,this.name),d[this.field]}setValue(d,x){let k=this.field,M=d[k];if(M!==x){d[k]=x;let C=d[this.callback];typeof C=="function"&&C.call(d,M,x),i(d).notify(this.name)}}}class f extends Pt{constructor(d,x,k=!1){super(d,x),this.binding=d,this.isVolatileBinding=k,this.needsRefresh=!0,this.needsQueue=!0,this.first=this,this.last=null,this.propertySource=void 0,this.propertyName=void 0,this.notifier=void 0,this.next=void 0}observe(d,x){this.needsRefresh&&this.last!==null&&this.disconnect();let k=n;n=this.needsRefresh?this:void 0,this.needsRefresh=this.isVolatileBinding;let M=this.binding(d,x);return n=k,M}disconnect(){if(this.last!==null){let d=this.first;for(;d!==void 0;)d.notifier.unsubscribe(this,d.propertyName),d=d.next;this.last=null,this.needsRefresh=this.needsQueue=!0}}watch(d,x){let k=this.last,M=i(d),C=k===null?this.first:{};if(C.propertySource=d,C.propertyName=x,C.notifier=M,M.subscribe(this,x),k!==null){if(!this.needsRefresh){let W;n=void 0,W=k.propertySource[k.propertyName],n=this,d===W&&(this.needsRefresh=!0)}k.next=C}this.last=C}handleChange(){this.needsQueue&&(this.needsQueue=!1,e(this))}call(){this.last!==null&&(this.needsQueue=!0,this.notify(this))}records(){let d=this.first;return{next:()=>{let x=d;return x===void 0?{value:void 0,done:!0}:(d=d.next,{value:x,done:!1})},[Symbol.iterator]:function(){return this}}}}return Object.freeze({setArrayObserverFactory(c){o=c},getNotifier:i,track(c,d){n!==void 0&&n.watch(c,d)},trackVolatile(){n!==void 0&&(n.needsRefresh=!0)},notify(c,d){i(c).notify(d)},defineProperty(c,d){typeof d=="string"&&(d=new l(d)),a(c).push(d),Reflect.defineProperty(c,d.name,{enumerable:!0,get:function(){return d.getValue(this)},set:function(x){d.setValue(this,x)}})},getAccessors:a,binding(c,d,x=this.isVolatileBinding(c)){return new f(c,d,x)},isVolatileBinding(c){return r.test(c.toString())}})});function G(r,t){S.defineProperty(r,t)}var Pn=pt.getById(3,()=>{let r=null;return{get(){return r},set(t){r=t}}}),at=class{constructor(){this.index=0,this.length=0,this.parent=null,this.parentContext=null}get event(){return Pn.get()}get isEven(){return this.index%2===0}get isOdd(){return this.index%2!==0}get isFirst(){return this.index===0}get isInMiddle(){return!this.isFirst&&!this.isLast}get isLast(){return this.index===this.length-1}static setEvent(t){Pn.set(t)}};S.defineProperty(at.prototype,"index");S.defineProperty(at.prototype,"length");var lt=Object.seal(new at);var Lt=class{constructor(){this.targetIndex=0}},Mt=class extends Lt{constructor(){super(...arguments),this.createPlaceholder=g.createInterpolationPlaceholder}},Nt=class extends Lt{constructor(t,e,n){super(),this.name=t,this.behavior=e,this.options=n}createPlaceholder(t){return g.createCustomAttributePlaceholder(this.name,t)}createBehavior(t){return new this.behavior(t,this.options)}};function vi(r,t){this.source=r,this.context=t,this.bindingObserver===null&&(this.bindingObserver=S.binding(this.binding,this,this.isBindingVolatile)),this.updateTarget(this.bindingObserver.observe(r,t))}function xi(r,t){this.source=r,this.context=t,this.target.addEventListener(this.targetName,this)}function wi(){this.bindingObserver.disconnect(),this.source=null,this.context=null}function Si(){this.bindingObserver.disconnect(),this.source=null,this.context=null;let r=this.target.$fastView;r!==void 0&&r.isComposed&&(r.unbind(),r.needsBindOnly=!0)}function Ti(){this.target.removeEventListener(this.targetName,this),this.source=null,this.context=null}function Ci(r){g.setAttribute(this.target,this.targetName,r)}function Ei(r){g.setBooleanAttribute(this.target,this.targetName,r)}function _i(r){if(r==null&&(r=""),r.create){this.target.textContent="";let t=this.target.$fastView;t===void 0?t=r.create():this.target.$fastTemplate!==r&&(t.isComposed&&(t.remove(),t.unbind()),t=r.create()),t.isComposed?t.needsBindOnly&&(t.needsBindOnly=!1,t.bind(this.source,this.context)):(t.isComposed=!0,t.bind(this.source,this.context),t.insertBefore(this.target),this.target.$fastView=t,this.target.$fastTemplate=r)}else{let t=this.target.$fastView;t!==void 0&&t.isComposed&&(t.isComposed=!1,t.remove(),t.needsBindOnly?t.needsBindOnly=!1:t.unbind()),this.target.textContent=r}}function Ai(r){this.target[this.targetName]=r}function ki(r){let t=this.classVersions||Object.create(null),e=this.target,n=this.version||0;if(r!=null&&r.length){let o=r.split(/\s+/);for(let i=0,a=o.length;i<a;++i){let l=o[i];l!==""&&(t[l]=n,e.classList.add(l))}}if(this.classVersions=t,this.version=n+1,n!==0){n-=1;for(let o in t)t[o]===n&&e.classList.remove(o)}}var mt=class extends Mt{constructor(t){super(),this.binding=t,this.bind=vi,this.unbind=wi,this.updateTarget=Ci,this.isBindingVolatile=S.isVolatileBinding(this.binding)}get targetName(){return this.originalTargetName}set targetName(t){if(this.originalTargetName=t,t!==void 0)switch(t[0]){case":":if(this.cleanedTargetName=t.substr(1),this.updateTarget=Ai,this.cleanedTargetName==="innerHTML"){let e=this.binding;this.binding=(n,o)=>g.createHTML(e(n,o))}break;case"?":this.cleanedTargetName=t.substr(1),this.updateTarget=Ei;break;case"@":this.cleanedTargetName=t.substr(1),this.bind=xi,this.unbind=Ti;break;default:this.cleanedTargetName=t,t==="class"&&(this.updateTarget=ki);break}}targetAtContent(){this.updateTarget=_i,this.unbind=Si}createBehavior(t){return new lr(t,this.binding,this.isBindingVolatile,this.bind,this.unbind,this.updateTarget,this.cleanedTargetName)}},lr=class{constructor(t,e,n,o,i,a,l){this.source=null,this.context=null,this.bindingObserver=null,this.target=t,this.binding=e,this.isBindingVolatile=n,this.bind=o,this.unbind=i,this.updateTarget=a,this.targetName=l}handleChange(){this.updateTarget(this.bindingObserver.observe(this.source,this.context))}handleEvent(t){at.setEvent(t);let e=this.binding(this.source,this.context);at.setEvent(null),e!==!0&&t.preventDefault()}};var cr=null,ur=class r{addFactory(t){t.targetIndex=this.targetIndex,this.behaviorFactories.push(t)}captureContentBinding(t){t.targetAtContent(),this.addFactory(t)}reset(){this.behaviorFactories=[],this.targetIndex=-1}release(){cr=this}static borrow(t){let e=cr||new r;return e.directives=t,e.reset(),cr=null,e}};function Oi(r){if(r.length===1)return r[0];let t,e=r.length,n=r.map(a=>typeof a=="string"?()=>a:(t=a.targetName||t,a.binding)),o=(a,l)=>{let f="";for(let c=0;c<e;++c)f+=n[c](a,l);return f},i=new mt(o);return i.targetName=t,i}var Ri=xe.length;function Ln(r,t){let e=t.split(ar);if(e.length===1)return null;let n=[];for(let o=0,i=e.length;o<i;++o){let a=e[o],l=a.indexOf(xe),f;if(l===-1)f=a;else{let c=parseInt(a.substring(0,l));n.push(r.directives[c]),f=a.substring(l+Ri)}f!==""&&n.push(f)}return n}function In(r,t,e=!1){let n=t.attributes;for(let o=0,i=n.length;o<i;++o){let a=n[o],l=a.value,f=Ln(r,l),c=null;f===null?e&&(c=new mt(()=>l),c.targetName=a.name):c=Oi(f),c!==null&&(t.removeAttributeNode(a),o--,i--,r.addFactory(c))}}function Di(r,t,e){let n=Ln(r,t.textContent);if(n!==null){let o=t;for(let i=0,a=n.length;i<a;++i){let l=n[i],f=i===0?t:o.parentNode.insertBefore(document.createTextNode(""),o.nextSibling);typeof l=="string"?f.textContent=l:(f.textContent=" ",r.captureContentBinding(l)),o=f,r.targetIndex++,f!==t&&e.nextNode()}r.targetIndex--}}function Mn(r,t){let e=r.content;document.adoptNode(e);let n=ur.borrow(t);In(n,r,!0);let o=n.behaviorFactories;n.reset();let i=g.createTemplateWalker(e),a;for(;a=i.nextNode();)switch(n.targetIndex++,a.nodeType){case 1:In(n,a);break;case 3:Di(n,a,i);break;case 8:g.isMarker(a)&&n.addFactory(t[g.extractDirectiveIndexFromMarker(a)])}let l=0;(g.isMarker(e.firstChild)||e.childNodes.length===1&&t.length)&&(e.insertBefore(document.createComment(""),e.firstChild),l=-1);let f=n.behaviorFactories;return n.release(),{fragment:e,viewBehaviorFactories:f,hostBehaviorFactories:o,targetOffset:l}}var fr=document.createRange(),we=class{constructor(t,e){this.fragment=t,this.behaviors=e,this.source=null,this.context=null,this.firstChild=t.firstChild,this.lastChild=t.lastChild}appendTo(t){t.appendChild(this.fragment)}insertBefore(t){if(this.fragment.hasChildNodes())t.parentNode.insertBefore(this.fragment,t);else{let e=this.lastChild;if(t.previousSibling===e)return;let n=t.parentNode,o=this.firstChild,i;for(;o!==e;)i=o.nextSibling,n.insertBefore(o,t),o=i;n.insertBefore(e,t)}}remove(){let t=this.fragment,e=this.lastChild,n=this.firstChild,o;for(;n!==e;)o=n.nextSibling,t.appendChild(n),n=o;t.appendChild(e)}dispose(){let t=this.firstChild.parentNode,e=this.lastChild,n=this.firstChild,o;for(;n!==e;)o=n.nextSibling,t.removeChild(n),n=o;t.removeChild(e);let i=this.behaviors,a=this.source;for(let l=0,f=i.length;l<f;++l)i[l].unbind(a)}bind(t,e){let n=this.behaviors;if(this.source!==t)if(this.source!==null){let o=this.source;this.source=t,this.context=e;for(let i=0,a=n.length;i<a;++i){let l=n[i];l.unbind(o),l.bind(t,e)}}else{this.source=t,this.context=e;for(let o=0,i=n.length;o<i;++o)n[o].bind(t,e)}}unbind(){if(this.source===null)return;let t=this.behaviors,e=this.source;for(let n=0,o=t.length;n<o;++n)t[n].unbind(e);this.source=null}static disposeContiguousBatch(t){if(t.length!==0){fr.setStartBefore(t[0].firstChild),fr.setEndAfter(t[t.length-1].lastChild),fr.deleteContents();for(let e=0,n=t.length;e<n;++e){let o=t[e],i=o.behaviors,a=o.source;for(let l=0,f=i.length;l<f;++l)i[l].unbind(a)}}}};var Se=class{constructor(t,e){this.behaviorCount=0,this.hasHostBehaviors=!1,this.fragment=null,this.targetOffset=0,this.viewBehaviorFactories=null,this.hostBehaviorFactories=null,this.html=t,this.directives=e}create(t){if(this.fragment===null){let c,d=this.html;if(typeof d=="string"){c=document.createElement("template"),c.innerHTML=g.createHTML(d);let k=c.content.firstElementChild;k!==null&&k.tagName==="TEMPLATE"&&(c=k)}else c=d;let x=Mn(c,this.directives);this.fragment=x.fragment,this.viewBehaviorFactories=x.viewBehaviorFactories,this.hostBehaviorFactories=x.hostBehaviorFactories,this.targetOffset=x.targetOffset,this.behaviorCount=this.viewBehaviorFactories.length+this.hostBehaviorFactories.length,this.hasHostBehaviors=this.hostBehaviorFactories.length>0}let e=this.fragment.cloneNode(!0),n=this.viewBehaviorFactories,o=new Array(this.behaviorCount),i=g.createTemplateWalker(e),a=0,l=this.targetOffset,f=i.nextNode();for(let c=n.length;a<c;++a){let d=n[a],x=d.targetIndex;for(;f!==null;)if(l===x){o[a]=d.createBehavior(f);break}else f=i.nextNode(),l++}if(this.hasHostBehaviors){let c=this.hostBehaviorFactories;for(let d=0,x=c.length;d<x;++d,++a)o[a]=c[d].createBehavior(t)}return new we(e,o)}render(t,e,n){typeof e=="string"&&(e=document.getElementById(e)),n===void 0&&(n=e);let o=this.create(n);return o.bind(t,lt),o.appendTo(e),o}},Pi=/([ \x09\x0a\x0c\x0d])([^\0-\x1F\x7F-\x9F "'>=/]+)([ \x09\x0a\x0c\x0d]*=[ \x09\x0a\x0c\x0d]*(?:[^ \x09\x0a\x0c\x0d"'`<>=]*|"[^"]*|'[^']*))$/;function gt(r,...t){let e=[],n="";for(let o=0,i=r.length-1;o<i;++o){let a=r[o],l=t[o];if(n+=a,l instanceof Se){let f=l;l=()=>f}if(typeof l=="function"&&(l=new mt(l)),l instanceof Mt){let f=Pi.exec(a);f!==null&&(l.targetName=f[2])}l instanceof Lt?(n+=l.createPlaceholder(e.length),e.push(l)):n+=l}return n+=r[r.length-1],new Se(n,e)}var A=class{constructor(){this.targets=new WeakSet}addStylesTo(t){this.targets.add(t)}removeStylesFrom(t){this.targets.delete(t)}isAttachedTo(t){return this.targets.has(t)}withBehaviors(...t){return this.behaviors=this.behaviors===null?t:this.behaviors.concat(t),this}};A.create=(()=>{if(g.supportsAdoptedStyleSheets){let r=new Map;return t=>new dr(t,r)}return r=>new hr(r)})();function pr(r){return r.map(t=>t instanceof A?pr(t.styles):[t]).reduce((t,e)=>t.concat(e),[])}function Nn(r){return r.map(t=>t instanceof A?t.behaviors:null).reduce((t,e)=>e===null?t:(t===null&&(t=[]),t.concat(e)),null)}var Te=Symbol("prependToAdoptedStyleSheets");function Fn(r){let t=[],e=[];return r.forEach(n=>(n[Te]?t:e).push(n)),{prepend:t,append:e}}var $n=(r,t)=>{let{prepend:e,append:n}=Fn(t);r.adoptedStyleSheets=[...e,...r.adoptedStyleSheets,...n]},Bn=(r,t)=>{r.adoptedStyleSheets=r.adoptedStyleSheets.filter(e=>t.indexOf(e)===-1)};if(g.supportsAdoptedStyleSheets)try{document.adoptedStyleSheets.push(),document.adoptedStyleSheets.splice(),$n=(r,t)=>{let{prepend:e,append:n}=Fn(t);r.adoptedStyleSheets.splice(0,0,...e),r.adoptedStyleSheets.push(...n)},Bn=(r,t)=>{for(let e of t){let n=r.adoptedStyleSheets.indexOf(e);n!==-1&&r.adoptedStyleSheets.splice(n,1)}}}catch{}var dr=class extends A{constructor(t,e){super(),this.styles=t,this.styleSheetCache=e,this._styleSheets=void 0,this.behaviors=Nn(t)}get styleSheets(){if(this._styleSheets===void 0){let t=this.styles,e=this.styleSheetCache;this._styleSheets=pr(t).map(n=>{if(n instanceof CSSStyleSheet)return n;let o=e.get(n);return o===void 0&&(o=new CSSStyleSheet,o.replaceSync(n),e.set(n,o)),o})}return this._styleSheets}addStylesTo(t){$n(t,this.styleSheets),super.addStylesTo(t)}removeStylesFrom(t){Bn(t,this.styleSheets),super.removeStylesFrom(t)}},Ii=0;function Li(){return`fast-style-class-${++Ii}`}var hr=class extends A{constructor(t){super(),this.styles=t,this.behaviors=null,this.behaviors=Nn(t),this.styleSheets=pr(t),this.styleClass=Li()}addStylesTo(t){let e=this.styleSheets,n=this.styleClass;t=this.normalizeTarget(t);for(let o=0;o<e.length;o++){let i=document.createElement("style");i.innerHTML=e[o],i.className=n,t.append(i)}super.addStylesTo(t)}removeStylesFrom(t){t=this.normalizeTarget(t);let e=t.querySelectorAll(`.${this.styleClass}`);for(let n=0,o=e.length;n<o;++n)t.removeChild(e[n]);super.removeStylesFrom(t)}isAttachedTo(t){return super.isAttachedTo(this.normalizeTarget(t))}normalizeTarget(t){return t===document?document.body:t}};var Wt=Object.freeze({locate:ve()}),jn={toView(r){return r?"true":"false"},fromView(r){return!(r==null||r==="false"||r===!1||r===0)}};var Ce=class r{constructor(t,e,n=e.toLowerCase(),o="reflect",i){this.guards=new Set,this.Owner=t,this.name=e,this.attribute=n,this.mode=o,this.converter=i,this.fieldName=`_${e}`,this.callbackName=`${e}Changed`,this.hasCallback=this.callbackName in t.prototype,o==="boolean"&&i===void 0&&(this.converter=jn)}setValue(t,e){let n=t[this.fieldName],o=this.converter;o!==void 0&&(e=o.fromView(e)),n!==e&&(t[this.fieldName]=e,this.tryReflectToAttribute(t),this.hasCallback&&t[this.callbackName](n,e),t.$fastController.notify(this.name))}getValue(t){return S.track(t,this.name),t[this.fieldName]}onAttributeChangedCallback(t,e){this.guards.has(t)||(this.guards.add(t),this.setValue(t,e),this.guards.delete(t))}tryReflectToAttribute(t){let e=this.mode,n=this.guards;n.has(t)||e==="fromView"||g.queueUpdate(()=>{n.add(t);let o=t[this.fieldName];switch(e){case"reflect":let i=this.converter;g.setAttribute(t,this.attribute,i!==void 0?i.toView(o):o);break;case"boolean":g.setBooleanAttribute(t,this.attribute,o);break}n.delete(t)})}static collect(t,...e){let n=[];e.push(Wt.locate(t));for(let o=0,i=e.length;o<i;++o){let a=e[o];if(a!==void 0)for(let l=0,f=a.length;l<f;++l){let c=a[l];typeof c=="string"?n.push(new r(t,c)):n.push(new r(t,c.property,c.attribute,c.mode,c.converter))}}return n}};function b(r,t){let e;function n(o,i){arguments.length>1&&(e.property=i),Wt.locate(o.constructor).push(e)}if(arguments.length>1){e={},n(r,t);return}return e=r===void 0?{}:r,n}var Hn={mode:"open"},Un={},mr=pt.getById(4,()=>{let r=new Map;return Object.freeze({register(t){return r.has(t.type)?!1:(r.set(t.type,t),!0)},getByType(t){return r.get(t)}})}),J=class{constructor(t,e=t.definition){typeof e=="string"&&(e={name:e}),this.type=t,this.name=e.name,this.template=e.template;let n=Ce.collect(t,e.attributes),o=new Array(n.length),i={},a={};for(let l=0,f=n.length;l<f;++l){let c=n[l];o[l]=c.attribute,i[c.name]=c,a[c.attribute]=c}this.attributes=n,this.observedAttributes=o,this.propertyLookup=i,this.attributeLookup=a,this.shadowOptions=e.shadowOptions===void 0?Hn:e.shadowOptions===null?void 0:Object.assign(Object.assign({},Hn),e.shadowOptions),this.elementOptions=e.elementOptions===void 0?Un:Object.assign(Object.assign({},Un),e.elementOptions),this.styles=e.styles===void 0?void 0:Array.isArray(e.styles)?A.create(e.styles):e.styles instanceof A?e.styles:A.create([e.styles])}get isDefined(){return!!mr.getByType(this.type)}define(t=customElements){let e=this.type;if(mr.register(this)){let n=this.attributes,o=e.prototype;for(let i=0,a=n.length;i<a;++i)S.defineProperty(o,n[i]);Reflect.defineProperty(e,"observedAttributes",{value:this.observedAttributes,enumerable:!0})}return t.get(this.name)||t.define(this.name,e,this.elementOptions),this}};J.forType=mr.getByType;var zn=new WeakMap,Mi={bubbles:!0,composed:!0,cancelable:!0};function gr(r){return r.shadowRoot||zn.get(r)||null}var Ee=class r extends It{constructor(t,e){super(t),this.boundObservables=null,this.behaviors=null,this.needsInitialization=!0,this._template=null,this._styles=null,this._isConnected=!1,this.$fastController=this,this.view=null,this.element=t,this.definition=e;let n=e.shadowOptions;if(n!==void 0){let i=t.attachShadow(n);n.mode==="closed"&&zn.set(t,i)}let o=S.getAccessors(t);if(o.length>0){let i=this.boundObservables=Object.create(null);for(let a=0,l=o.length;a<l;++a){let f=o[a].name,c=t[f];c!==void 0&&(delete t[f],i[f]=c)}}}get isConnected(){return S.track(this,"isConnected"),this._isConnected}setIsConnected(t){this._isConnected=t,S.notify(this,"isConnected")}get template(){return this._template}set template(t){this._template!==t&&(this._template=t,this.needsInitialization||this.renderTemplate(t))}get styles(){return this._styles}set styles(t){this._styles!==t&&(this._styles!==null&&this.removeStyles(this._styles),this._styles=t,!this.needsInitialization&&t!==null&&this.addStyles(t))}addStyles(t){let e=gr(this.element)||this.element.getRootNode();if(t instanceof HTMLStyleElement)e.append(t);else if(!t.isAttachedTo(e)){let n=t.behaviors;t.addStylesTo(e),n!==null&&this.addBehaviors(n)}}removeStyles(t){let e=gr(this.element)||this.element.getRootNode();if(t instanceof HTMLStyleElement)e.removeChild(t);else if(t.isAttachedTo(e)){let n=t.behaviors;t.removeStylesFrom(e),n!==null&&this.removeBehaviors(n)}}addBehaviors(t){let e=this.behaviors||(this.behaviors=new Map),n=t.length,o=[];for(let i=0;i<n;++i){let a=t[i];e.has(a)?e.set(a,e.get(a)+1):(e.set(a,1),o.push(a))}if(this._isConnected){let i=this.element;for(let a=0;a<o.length;++a)o[a].bind(i,lt)}}removeBehaviors(t,e=!1){let n=this.behaviors;if(n===null)return;let o=t.length,i=[];for(let a=0;a<o;++a){let l=t[a];if(n.has(l)){let f=n.get(l)-1;f===0||e?n.delete(l)&&i.push(l):n.set(l,f)}}if(this._isConnected){let a=this.element;for(let l=0;l<i.length;++l)i[l].unbind(a)}}onConnectedCallback(){if(this._isConnected)return;let t=this.element;this.needsInitialization?this.finishInitialization():this.view!==null&&this.view.bind(t,lt);let e=this.behaviors;if(e!==null)for(let[n]of e)n.bind(t,lt);this.setIsConnected(!0)}onDisconnectedCallback(){if(!this._isConnected)return;this.setIsConnected(!1);let t=this.view;t!==null&&t.unbind();let e=this.behaviors;if(e!==null){let n=this.element;for(let[o]of e)o.unbind(n)}}onAttributeChangedCallback(t,e,n){let o=this.definition.attributeLookup[t];o!==void 0&&o.onAttributeChangedCallback(this.element,n)}emit(t,e,n){return this._isConnected?this.element.dispatchEvent(new CustomEvent(t,Object.assign(Object.assign({detail:e},Mi),n))):!1}finishInitialization(){let t=this.element,e=this.boundObservables;if(e!==null){let o=Object.keys(e);for(let i=0,a=o.length;i<a;++i){let l=o[i];t[l]=e[l]}this.boundObservables=null}let n=this.definition;this._template===null&&(this.element.resolveTemplate?this._template=this.element.resolveTemplate():n.template&&(this._template=n.template||null)),this._template!==null&&this.renderTemplate(this._template),this._styles===null&&(this.element.resolveStyles?this._styles=this.element.resolveStyles():n.styles&&(this._styles=n.styles||null)),this._styles!==null&&this.addStyles(this._styles),this.needsInitialization=!1}renderTemplate(t){let e=this.element,n=gr(e)||e;this.view!==null?(this.view.dispose(),this.view=null):this.needsInitialization||g.removeChildNodes(n),t&&(this.view=t.render(e,n,e))}static forCustomElement(t){let e=t.$fastController;if(e!==void 0)return e;let n=J.forType(t.constructor);if(n===void 0)throw new Error("Missing FASTElement definition.");return t.$fastController=new r(t,n)}};function Vn(r){return class extends r{constructor(){super(),Ee.forCustomElement(this)}$emit(t,e,n){return this.$fastController.emit(t,e,n)}connectedCallback(){this.$fastController.onConnectedCallback()}disconnectedCallback(){this.$fastController.onDisconnectedCallback()}attributeChangedCallback(t,e,n){this.$fastController.onAttributeChangedCallback(t,e,n)}}}var ct=Object.assign(Vn(HTMLElement),{from(r){return Vn(r)},define(r,t){return new J(r,t).define().type}});var bt=class{createCSS(){return""}createBehavior(){}};function Ni(r,t){let e=[],n="",o=[];for(let i=0,a=r.length-1;i<a;++i){n+=r[i];let l=t[i];if(l instanceof bt){let f=l.createBehavior();l=l.createCSS(),f&&o.push(f)}l instanceof A||l instanceof CSSStyleSheet?(n.trim()!==""&&(e.push(n),n=""),e.push(l)):n+=l}return n+=r[r.length-1],n.trim()!==""&&e.push(n),{styles:e,behaviors:o}}function yt(r,...t){let{styles:e,behaviors:n}=Ni(r,t),o=A.create(e);return n.length&&o.withBehaviors(...n),o}var br=class{constructor(t,e){this.target=t,this.propertyName=e}bind(t){t[this.propertyName]=this.target}unbind(){}};function Y(r){return new Nt("fast-ref",br,r)}var _e=class{constructor(t,e){this.target=t,this.options=e,this.source=null}bind(t){let e=this.options.property;this.shouldUpdate=S.getAccessors(t).some(n=>n.name===e),this.source=t,this.updateTarget(this.computeNodes()),this.shouldUpdate&&this.observe()}unbind(){this.updateTarget(st),this.source=null,this.shouldUpdate&&this.disconnect()}handleEvent(){this.updateTarget(this.computeNodes())}computeNodes(){let t=this.getNodes();return this.options.filter!==void 0&&(t=t.filter(this.options.filter)),t}updateTarget(t){this.source[this.options.property]=t}};var yr=class extends _e{constructor(t,e){super(t,e)}observe(){this.target.addEventListener("slotchange",this)}disconnect(){this.target.removeEventListener("slotchange",this)}getNodes(){return this.target.assignedNodes(this.options)}};function Wn(r){return typeof r=="string"&&(r={property:r}),new Nt("fast-slotted",yr,r)}var Ae=class{handleStartContentChange(){this.startContainer.classList.toggle("start",this.start.assignedNodes().length>0)}handleEndContentChange(){this.endContainer.classList.toggle("end",this.end.assignedNodes().length>0)}},qn=(r,t)=>gt`
+"use strict";
+(() => {
+  // node_modules/@microsoft/fast-element/dist/esm/platform.js
+  var $global = (function() {
+    if (typeof globalThis !== "undefined") {
+      return globalThis;
+    }
+    if (typeof global !== "undefined") {
+      return global;
+    }
+    if (typeof self !== "undefined") {
+      return self;
+    }
+    if (typeof window !== "undefined") {
+      return window;
+    }
+    try {
+      return new Function("return this")();
+    } catch (_a) {
+      return {};
+    }
+  })();
+  if ($global.trustedTypes === void 0) {
+    $global.trustedTypes = { createPolicy: (n, r) => r };
+  }
+  var propConfig = {
+    configurable: false,
+    enumerable: false,
+    writable: false
+  };
+  if ($global.FAST === void 0) {
+    Reflect.defineProperty($global, "FAST", Object.assign({ value: /* @__PURE__ */ Object.create(null) }, propConfig));
+  }
+  var FAST = $global.FAST;
+  if (FAST.getById === void 0) {
+    const storage = /* @__PURE__ */ Object.create(null);
+    Reflect.defineProperty(FAST, "getById", Object.assign({ value(id, initialize) {
+      let found = storage[id];
+      if (found === void 0) {
+        found = initialize ? storage[id] = initialize() : null;
+      }
+      return found;
+    } }, propConfig));
+  }
+  var emptyArray = Object.freeze([]);
+  function createMetadataLocator() {
+    const metadataLookup = /* @__PURE__ */ new WeakMap();
+    return function(target) {
+      let metadata = metadataLookup.get(target);
+      if (metadata === void 0) {
+        let currentTarget = Reflect.getPrototypeOf(target);
+        while (metadata === void 0 && currentTarget !== null) {
+          metadata = metadataLookup.get(currentTarget);
+          currentTarget = Reflect.getPrototypeOf(currentTarget);
+        }
+        metadata = metadata === void 0 ? [] : metadata.slice(0);
+        metadataLookup.set(target, metadata);
+      }
+      return metadata;
+    };
+  }
+
+  // node_modules/@microsoft/fast-element/dist/esm/dom.js
+  var updateQueue = $global.FAST.getById(1, () => {
+    const tasks = [];
+    const pendingErrors = [];
+    function throwFirstError() {
+      if (pendingErrors.length) {
+        throw pendingErrors.shift();
+      }
+    }
+    function tryRunTask(task) {
+      try {
+        task.call();
+      } catch (error) {
+        pendingErrors.push(error);
+        setTimeout(throwFirstError, 0);
+      }
+    }
+    function process() {
+      const capacity = 1024;
+      let index = 0;
+      while (index < tasks.length) {
+        tryRunTask(tasks[index]);
+        index++;
+        if (index > capacity) {
+          for (let scan = 0, newLength = tasks.length - index; scan < newLength; scan++) {
+            tasks[scan] = tasks[scan + index];
+          }
+          tasks.length -= index;
+          index = 0;
+        }
+      }
+      tasks.length = 0;
+    }
+    function enqueue(callable) {
+      if (tasks.length < 1) {
+        $global.requestAnimationFrame(process);
+      }
+      tasks.push(callable);
+    }
+    return Object.freeze({
+      enqueue,
+      process
+    });
+  });
+  var fastHTMLPolicy = $global.trustedTypes.createPolicy("fast-html", {
+    createHTML: (html3) => html3
+  });
+  var htmlPolicy = fastHTMLPolicy;
+  var marker = `fast-${Math.random().toString(36).substring(2, 8)}`;
+  var _interpolationStart = `${marker}{`;
+  var _interpolationEnd = `}${marker}`;
+  var DOM = Object.freeze({
+    /**
+     * Indicates whether the DOM supports the adoptedStyleSheets feature.
+     */
+    supportsAdoptedStyleSheets: Array.isArray(document.adoptedStyleSheets) && "replace" in CSSStyleSheet.prototype,
+    /**
+     * Sets the HTML trusted types policy used by the templating engine.
+     * @param policy - The policy to set for HTML.
+     * @remarks
+     * This API can only be called once, for security reasons. It should be
+     * called by the application developer at the start of their program.
+     */
+    setHTMLPolicy(policy) {
+      if (htmlPolicy !== fastHTMLPolicy) {
+        throw new Error("The HTML policy can only be set once.");
+      }
+      htmlPolicy = policy;
+    },
+    /**
+     * Turns a string into trusted HTML using the configured trusted types policy.
+     * @param html - The string to turn into trusted HTML.
+     * @remarks
+     * Used internally by the template engine when creating templates
+     * and setting innerHTML.
+     */
+    createHTML(html3) {
+      return htmlPolicy.createHTML(html3);
+    },
+    /**
+     * Determines if the provided node is a template marker used by the runtime.
+     * @param node - The node to test.
+     */
+    isMarker(node) {
+      return node && node.nodeType === 8 && node.data.startsWith(marker);
+    },
+    /**
+     * Given a marker node, extract the {@link HTMLDirective} index from the placeholder.
+     * @param node - The marker node to extract the index from.
+     */
+    extractDirectiveIndexFromMarker(node) {
+      return parseInt(node.data.replace(`${marker}:`, ""));
+    },
+    /**
+     * Creates a placeholder string suitable for marking out a location *within*
+     * an attribute value or HTML content.
+     * @param index - The directive index to create the placeholder for.
+     * @remarks
+     * Used internally by binding directives.
+     */
+    createInterpolationPlaceholder(index) {
+      return `${_interpolationStart}${index}${_interpolationEnd}`;
+    },
+    /**
+     * Creates a placeholder that manifests itself as an attribute on an
+     * element.
+     * @param attributeName - The name of the custom attribute.
+     * @param index - The directive index to create the placeholder for.
+     * @remarks
+     * Used internally by attribute directives such as `ref`, `slotted`, and `children`.
+     */
+    createCustomAttributePlaceholder(attributeName, index) {
+      return `${attributeName}="${this.createInterpolationPlaceholder(index)}"`;
+    },
+    /**
+     * Creates a placeholder that manifests itself as a marker within the DOM structure.
+     * @param index - The directive index to create the placeholder for.
+     * @remarks
+     * Used internally by structural directives such as `repeat`.
+     */
+    createBlockPlaceholder(index) {
+      return `<!--${marker}:${index}-->`;
+    },
+    /**
+     * Schedules DOM update work in the next async batch.
+     * @param callable - The callable function or object to queue.
+     */
+    queueUpdate: updateQueue.enqueue,
+    /**
+     * Immediately processes all work previously scheduled
+     * through queueUpdate.
+     * @remarks
+     * This also forces nextUpdate promises
+     * to resolve.
+     */
+    processUpdates: updateQueue.process,
+    /**
+     * Resolves with the next DOM update.
+     */
+    nextUpdate() {
+      return new Promise(updateQueue.enqueue);
+    },
+    /**
+     * Sets an attribute value on an element.
+     * @param element - The element to set the attribute value on.
+     * @param attributeName - The attribute name to set.
+     * @param value - The value of the attribute to set.
+     * @remarks
+     * If the value is `null` or `undefined`, the attribute is removed, otherwise
+     * it is set to the provided value using the standard `setAttribute` API.
+     */
+    setAttribute(element, attributeName, value) {
+      if (value === null || value === void 0) {
+        element.removeAttribute(attributeName);
+      } else {
+        element.setAttribute(attributeName, value);
+      }
+    },
+    /**
+     * Sets a boolean attribute value.
+     * @param element - The element to set the boolean attribute value on.
+     * @param attributeName - The attribute name to set.
+     * @param value - The value of the attribute to set.
+     * @remarks
+     * If the value is true, the attribute is added; otherwise it is removed.
+     */
+    setBooleanAttribute(element, attributeName, value) {
+      value ? element.setAttribute(attributeName, "") : element.removeAttribute(attributeName);
+    },
+    /**
+     * Removes all the child nodes of the provided parent node.
+     * @param parent - The node to remove the children from.
+     */
+    removeChildNodes(parent) {
+      for (let child = parent.firstChild; child !== null; child = parent.firstChild) {
+        parent.removeChild(child);
+      }
+    },
+    /**
+     * Creates a TreeWalker configured to walk a template fragment.
+     * @param fragment - The fragment to walk.
+     */
+    createTemplateWalker(fragment) {
+      return document.createTreeWalker(
+        fragment,
+        133,
+        // element, text, comment
+        null,
+        false
+      );
+    }
+  });
+
+  // node_modules/@microsoft/fast-element/dist/esm/observation/notifier.js
+  var SubscriberSet = class {
+    /**
+     * Creates an instance of SubscriberSet for the specified source.
+     * @param source - The object source that subscribers will receive notifications from.
+     * @param initialSubscriber - An initial subscriber to changes.
+     */
+    constructor(source, initialSubscriber) {
+      this.sub1 = void 0;
+      this.sub2 = void 0;
+      this.spillover = void 0;
+      this.source = source;
+      this.sub1 = initialSubscriber;
+    }
+    /**
+     * Checks whether the provided subscriber has been added to this set.
+     * @param subscriber - The subscriber to test for inclusion in this set.
+     */
+    has(subscriber) {
+      return this.spillover === void 0 ? this.sub1 === subscriber || this.sub2 === subscriber : this.spillover.indexOf(subscriber) !== -1;
+    }
+    /**
+     * Subscribes to notification of changes in an object's state.
+     * @param subscriber - The object that is subscribing for change notification.
+     */
+    subscribe(subscriber) {
+      const spillover = this.spillover;
+      if (spillover === void 0) {
+        if (this.has(subscriber)) {
+          return;
+        }
+        if (this.sub1 === void 0) {
+          this.sub1 = subscriber;
+          return;
+        }
+        if (this.sub2 === void 0) {
+          this.sub2 = subscriber;
+          return;
+        }
+        this.spillover = [this.sub1, this.sub2, subscriber];
+        this.sub1 = void 0;
+        this.sub2 = void 0;
+      } else {
+        const index = spillover.indexOf(subscriber);
+        if (index === -1) {
+          spillover.push(subscriber);
+        }
+      }
+    }
+    /**
+     * Unsubscribes from notification of changes in an object's state.
+     * @param subscriber - The object that is unsubscribing from change notification.
+     */
+    unsubscribe(subscriber) {
+      const spillover = this.spillover;
+      if (spillover === void 0) {
+        if (this.sub1 === subscriber) {
+          this.sub1 = void 0;
+        } else if (this.sub2 === subscriber) {
+          this.sub2 = void 0;
+        }
+      } else {
+        const index = spillover.indexOf(subscriber);
+        if (index !== -1) {
+          spillover.splice(index, 1);
+        }
+      }
+    }
+    /**
+     * Notifies all subscribers.
+     * @param args - Data passed along to subscribers during notification.
+     */
+    notify(args) {
+      const spillover = this.spillover;
+      const source = this.source;
+      if (spillover === void 0) {
+        const sub1 = this.sub1;
+        const sub2 = this.sub2;
+        if (sub1 !== void 0) {
+          sub1.handleChange(source, args);
+        }
+        if (sub2 !== void 0) {
+          sub2.handleChange(source, args);
+        }
+      } else {
+        for (let i = 0, ii = spillover.length; i < ii; ++i) {
+          spillover[i].handleChange(source, args);
+        }
+      }
+    }
+  };
+  var PropertyChangeNotifier = class {
+    /**
+     * Creates an instance of PropertyChangeNotifier for the specified source.
+     * @param source - The object source that subscribers will receive notifications from.
+     */
+    constructor(source) {
+      this.subscribers = {};
+      this.sourceSubscribers = null;
+      this.source = source;
+    }
+    /**
+     * Notifies all subscribers, based on the specified property.
+     * @param propertyName - The property name, passed along to subscribers during notification.
+     */
+    notify(propertyName) {
+      var _a;
+      const subscribers = this.subscribers[propertyName];
+      if (subscribers !== void 0) {
+        subscribers.notify(propertyName);
+      }
+      (_a = this.sourceSubscribers) === null || _a === void 0 ? void 0 : _a.notify(propertyName);
+    }
+    /**
+     * Subscribes to notification of changes in an object's state.
+     * @param subscriber - The object that is subscribing for change notification.
+     * @param propertyToWatch - The name of the property that the subscriber is interested in watching for changes.
+     */
+    subscribe(subscriber, propertyToWatch) {
+      var _a;
+      if (propertyToWatch) {
+        let subscribers = this.subscribers[propertyToWatch];
+        if (subscribers === void 0) {
+          this.subscribers[propertyToWatch] = subscribers = new SubscriberSet(this.source);
+        }
+        subscribers.subscribe(subscriber);
+      } else {
+        this.sourceSubscribers = (_a = this.sourceSubscribers) !== null && _a !== void 0 ? _a : new SubscriberSet(this.source);
+        this.sourceSubscribers.subscribe(subscriber);
+      }
+    }
+    /**
+     * Unsubscribes from notification of changes in an object's state.
+     * @param subscriber - The object that is unsubscribing from change notification.
+     * @param propertyToUnwatch - The name of the property that the subscriber is no longer interested in watching.
+     */
+    unsubscribe(subscriber, propertyToUnwatch) {
+      var _a;
+      if (propertyToUnwatch) {
+        const subscribers = this.subscribers[propertyToUnwatch];
+        if (subscribers !== void 0) {
+          subscribers.unsubscribe(subscriber);
+        }
+      } else {
+        (_a = this.sourceSubscribers) === null || _a === void 0 ? void 0 : _a.unsubscribe(subscriber);
+      }
+    }
+  };
+
+  // node_modules/@microsoft/fast-element/dist/esm/observation/observable.js
+  var Observable = FAST.getById(2, () => {
+    const volatileRegex = /(:|&&|\|\||if)/;
+    const notifierLookup = /* @__PURE__ */ new WeakMap();
+    const queueUpdate = DOM.queueUpdate;
+    let watcher = void 0;
+    let createArrayObserver = (array) => {
+      throw new Error("Must call enableArrayObservation before observing arrays.");
+    };
+    function getNotifier(source) {
+      let found = source.$fastController || notifierLookup.get(source);
+      if (found === void 0) {
+        if (Array.isArray(source)) {
+          found = createArrayObserver(source);
+        } else {
+          notifierLookup.set(source, found = new PropertyChangeNotifier(source));
+        }
+      }
+      return found;
+    }
+    const getAccessors = createMetadataLocator();
+    class DefaultObservableAccessor {
+      constructor(name) {
+        this.name = name;
+        this.field = `_${name}`;
+        this.callback = `${name}Changed`;
+      }
+      getValue(source) {
+        if (watcher !== void 0) {
+          watcher.watch(source, this.name);
+        }
+        return source[this.field];
+      }
+      setValue(source, newValue) {
+        const field = this.field;
+        const oldValue = source[field];
+        if (oldValue !== newValue) {
+          source[field] = newValue;
+          const callback = source[this.callback];
+          if (typeof callback === "function") {
+            callback.call(source, oldValue, newValue);
+          }
+          getNotifier(source).notify(this.name);
+        }
+      }
+    }
+    class BindingObserverImplementation extends SubscriberSet {
+      constructor(binding, initialSubscriber, isVolatileBinding = false) {
+        super(binding, initialSubscriber);
+        this.binding = binding;
+        this.isVolatileBinding = isVolatileBinding;
+        this.needsRefresh = true;
+        this.needsQueue = true;
+        this.first = this;
+        this.last = null;
+        this.propertySource = void 0;
+        this.propertyName = void 0;
+        this.notifier = void 0;
+        this.next = void 0;
+      }
+      observe(source, context) {
+        if (this.needsRefresh && this.last !== null) {
+          this.disconnect();
+        }
+        const previousWatcher = watcher;
+        watcher = this.needsRefresh ? this : void 0;
+        this.needsRefresh = this.isVolatileBinding;
+        const result = this.binding(source, context);
+        watcher = previousWatcher;
+        return result;
+      }
+      disconnect() {
+        if (this.last !== null) {
+          let current = this.first;
+          while (current !== void 0) {
+            current.notifier.unsubscribe(this, current.propertyName);
+            current = current.next;
+          }
+          this.last = null;
+          this.needsRefresh = this.needsQueue = true;
+        }
+      }
+      watch(propertySource, propertyName) {
+        const prev = this.last;
+        const notifier = getNotifier(propertySource);
+        const current = prev === null ? this.first : {};
+        current.propertySource = propertySource;
+        current.propertyName = propertyName;
+        current.notifier = notifier;
+        notifier.subscribe(this, propertyName);
+        if (prev !== null) {
+          if (!this.needsRefresh) {
+            let prevValue;
+            watcher = void 0;
+            prevValue = prev.propertySource[prev.propertyName];
+            watcher = this;
+            if (propertySource === prevValue) {
+              this.needsRefresh = true;
+            }
+          }
+          prev.next = current;
+        }
+        this.last = current;
+      }
+      handleChange() {
+        if (this.needsQueue) {
+          this.needsQueue = false;
+          queueUpdate(this);
+        }
+      }
+      call() {
+        if (this.last !== null) {
+          this.needsQueue = true;
+          this.notify(this);
+        }
+      }
+      records() {
+        let next = this.first;
+        return {
+          next: () => {
+            const current = next;
+            if (current === void 0) {
+              return { value: void 0, done: true };
+            } else {
+              next = next.next;
+              return {
+                value: current,
+                done: false
+              };
+            }
+          },
+          [Symbol.iterator]: function() {
+            return this;
+          }
+        };
+      }
+    }
+    return Object.freeze({
+      /**
+       * @internal
+       * @param factory - The factory used to create array observers.
+       */
+      setArrayObserverFactory(factory) {
+        createArrayObserver = factory;
+      },
+      /**
+       * Gets a notifier for an object or Array.
+       * @param source - The object or Array to get the notifier for.
+       */
+      getNotifier,
+      /**
+       * Records a property change for a source object.
+       * @param source - The object to record the change against.
+       * @param propertyName - The property to track as changed.
+       */
+      track(source, propertyName) {
+        if (watcher !== void 0) {
+          watcher.watch(source, propertyName);
+        }
+      },
+      /**
+       * Notifies watchers that the currently executing property getter or function is volatile
+       * with respect to its observable dependencies.
+       */
+      trackVolatile() {
+        if (watcher !== void 0) {
+          watcher.needsRefresh = true;
+        }
+      },
+      /**
+       * Notifies subscribers of a source object of changes.
+       * @param source - the object to notify of changes.
+       * @param args - The change args to pass to subscribers.
+       */
+      notify(source, args) {
+        getNotifier(source).notify(args);
+      },
+      /**
+       * Defines an observable property on an object or prototype.
+       * @param target - The target object to define the observable on.
+       * @param nameOrAccessor - The name of the property to define as observable;
+       * or a custom accessor that specifies the property name and accessor implementation.
+       */
+      defineProperty(target, nameOrAccessor) {
+        if (typeof nameOrAccessor === "string") {
+          nameOrAccessor = new DefaultObservableAccessor(nameOrAccessor);
+        }
+        getAccessors(target).push(nameOrAccessor);
+        Reflect.defineProperty(target, nameOrAccessor.name, {
+          enumerable: true,
+          get: function() {
+            return nameOrAccessor.getValue(this);
+          },
+          set: function(newValue) {
+            nameOrAccessor.setValue(this, newValue);
+          }
+        });
+      },
+      /**
+       * Finds all the observable accessors defined on the target,
+       * including its prototype chain.
+       * @param target - The target object to search for accessor on.
+       */
+      getAccessors,
+      /**
+       * Creates a {@link BindingObserver} that can watch the
+       * provided {@link Binding} for changes.
+       * @param binding - The binding to observe.
+       * @param initialSubscriber - An initial subscriber to changes in the binding value.
+       * @param isVolatileBinding - Indicates whether the binding's dependency list must be re-evaluated on every value evaluation.
+       */
+      binding(binding, initialSubscriber, isVolatileBinding = this.isVolatileBinding(binding)) {
+        return new BindingObserverImplementation(binding, initialSubscriber, isVolatileBinding);
+      },
+      /**
+       * Determines whether a binding expression is volatile and needs to have its dependency list re-evaluated
+       * on every evaluation of the value.
+       * @param binding - The binding to inspect.
+       */
+      isVolatileBinding(binding) {
+        return volatileRegex.test(binding.toString());
+      }
+    });
+  });
+  function observable(target, nameOrAccessor) {
+    Observable.defineProperty(target, nameOrAccessor);
+  }
+  var contextEvent = FAST.getById(3, () => {
+    let current = null;
+    return {
+      get() {
+        return current;
+      },
+      set(event) {
+        current = event;
+      }
+    };
+  });
+  var ExecutionContext = class {
+    constructor() {
+      this.index = 0;
+      this.length = 0;
+      this.parent = null;
+      this.parentContext = null;
+    }
+    /**
+     * The current event within an event handler.
+     */
+    get event() {
+      return contextEvent.get();
+    }
+    /**
+     * Indicates whether the current item within a repeat context
+     * has an even index.
+     */
+    get isEven() {
+      return this.index % 2 === 0;
+    }
+    /**
+     * Indicates whether the current item within a repeat context
+     * has an odd index.
+     */
+    get isOdd() {
+      return this.index % 2 !== 0;
+    }
+    /**
+     * Indicates whether the current item within a repeat context
+     * is the first item in the collection.
+     */
+    get isFirst() {
+      return this.index === 0;
+    }
+    /**
+     * Indicates whether the current item within a repeat context
+     * is somewhere in the middle of the collection.
+     */
+    get isInMiddle() {
+      return !this.isFirst && !this.isLast;
+    }
+    /**
+     * Indicates whether the current item within a repeat context
+     * is the last item in the collection.
+     */
+    get isLast() {
+      return this.index === this.length - 1;
+    }
+    /**
+     * Sets the event for the current execution context.
+     * @param event - The event to set.
+     * @internal
+     */
+    static setEvent(event) {
+      contextEvent.set(event);
+    }
+  };
+  Observable.defineProperty(ExecutionContext.prototype, "index");
+  Observable.defineProperty(ExecutionContext.prototype, "length");
+  var defaultExecutionContext = Object.seal(new ExecutionContext());
+
+  // node_modules/@microsoft/fast-element/dist/esm/templating/html-directive.js
+  var HTMLDirective = class {
+    constructor() {
+      this.targetIndex = 0;
+    }
+  };
+  var TargetedHTMLDirective = class extends HTMLDirective {
+    constructor() {
+      super(...arguments);
+      this.createPlaceholder = DOM.createInterpolationPlaceholder;
+    }
+  };
+  var AttachedBehaviorHTMLDirective = class extends HTMLDirective {
+    /**
+     *
+     * @param name - The name of the behavior; used as a custom attribute on the element.
+     * @param behavior - The behavior to instantiate and attach to the element.
+     * @param options - Options to pass to the behavior during creation.
+     */
+    constructor(name, behavior, options) {
+      super();
+      this.name = name;
+      this.behavior = behavior;
+      this.options = options;
+    }
+    /**
+     * Creates a placeholder string based on the directive's index within the template.
+     * @param index - The index of the directive within the template.
+     * @remarks
+     * Creates a custom attribute placeholder.
+     */
+    createPlaceholder(index) {
+      return DOM.createCustomAttributePlaceholder(this.name, index);
+    }
+    /**
+     * Creates a behavior for the provided target node.
+     * @param target - The node instance to create the behavior for.
+     * @remarks
+     * Creates an instance of the `behavior` type this directive was constructed with
+     * and passes the target and options to that `behavior`'s constructor.
+     */
+    createBehavior(target) {
+      return new this.behavior(target, this.options);
+    }
+  };
+
+  // node_modules/@microsoft/fast-element/dist/esm/templating/binding.js
+  function normalBind(source, context) {
+    this.source = source;
+    this.context = context;
+    if (this.bindingObserver === null) {
+      this.bindingObserver = Observable.binding(this.binding, this, this.isBindingVolatile);
+    }
+    this.updateTarget(this.bindingObserver.observe(source, context));
+  }
+  function triggerBind(source, context) {
+    this.source = source;
+    this.context = context;
+    this.target.addEventListener(this.targetName, this);
+  }
+  function normalUnbind() {
+    this.bindingObserver.disconnect();
+    this.source = null;
+    this.context = null;
+  }
+  function contentUnbind() {
+    this.bindingObserver.disconnect();
+    this.source = null;
+    this.context = null;
+    const view = this.target.$fastView;
+    if (view !== void 0 && view.isComposed) {
+      view.unbind();
+      view.needsBindOnly = true;
+    }
+  }
+  function triggerUnbind() {
+    this.target.removeEventListener(this.targetName, this);
+    this.source = null;
+    this.context = null;
+  }
+  function updateAttributeTarget(value) {
+    DOM.setAttribute(this.target, this.targetName, value);
+  }
+  function updateBooleanAttributeTarget(value) {
+    DOM.setBooleanAttribute(this.target, this.targetName, value);
+  }
+  function updateContentTarget(value) {
+    if (value === null || value === void 0) {
+      value = "";
+    }
+    if (value.create) {
+      this.target.textContent = "";
+      let view = this.target.$fastView;
+      if (view === void 0) {
+        view = value.create();
+      } else {
+        if (this.target.$fastTemplate !== value) {
+          if (view.isComposed) {
+            view.remove();
+            view.unbind();
+          }
+          view = value.create();
+        }
+      }
+      if (!view.isComposed) {
+        view.isComposed = true;
+        view.bind(this.source, this.context);
+        view.insertBefore(this.target);
+        this.target.$fastView = view;
+        this.target.$fastTemplate = value;
+      } else if (view.needsBindOnly) {
+        view.needsBindOnly = false;
+        view.bind(this.source, this.context);
+      }
+    } else {
+      const view = this.target.$fastView;
+      if (view !== void 0 && view.isComposed) {
+        view.isComposed = false;
+        view.remove();
+        if (view.needsBindOnly) {
+          view.needsBindOnly = false;
+        } else {
+          view.unbind();
+        }
+      }
+      this.target.textContent = value;
+    }
+  }
+  function updatePropertyTarget(value) {
+    this.target[this.targetName] = value;
+  }
+  function updateClassTarget(value) {
+    const classVersions = this.classVersions || /* @__PURE__ */ Object.create(null);
+    const target = this.target;
+    let version = this.version || 0;
+    if (value !== null && value !== void 0 && value.length) {
+      const names = value.split(/\s+/);
+      for (let i = 0, ii = names.length; i < ii; ++i) {
+        const currentName = names[i];
+        if (currentName === "") {
+          continue;
+        }
+        classVersions[currentName] = version;
+        target.classList.add(currentName);
+      }
+    }
+    this.classVersions = classVersions;
+    this.version = version + 1;
+    if (version === 0) {
+      return;
+    }
+    version -= 1;
+    for (const name in classVersions) {
+      if (classVersions[name] === version) {
+        target.classList.remove(name);
+      }
+    }
+  }
+  var HTMLBindingDirective = class extends TargetedHTMLDirective {
+    /**
+     * Creates an instance of BindingDirective.
+     * @param binding - A binding that returns the data used to update the DOM.
+     */
+    constructor(binding) {
+      super();
+      this.binding = binding;
+      this.bind = normalBind;
+      this.unbind = normalUnbind;
+      this.updateTarget = updateAttributeTarget;
+      this.isBindingVolatile = Observable.isVolatileBinding(this.binding);
+    }
+    /**
+     * Gets/sets the name of the attribute or property that this
+     * binding is targeting.
+     */
+    get targetName() {
+      return this.originalTargetName;
+    }
+    set targetName(value) {
+      this.originalTargetName = value;
+      if (value === void 0) {
+        return;
+      }
+      switch (value[0]) {
+        case ":":
+          this.cleanedTargetName = value.substr(1);
+          this.updateTarget = updatePropertyTarget;
+          if (this.cleanedTargetName === "innerHTML") {
+            const binding = this.binding;
+            this.binding = (s, c) => DOM.createHTML(binding(s, c));
+          }
+          break;
+        case "?":
+          this.cleanedTargetName = value.substr(1);
+          this.updateTarget = updateBooleanAttributeTarget;
+          break;
+        case "@":
+          this.cleanedTargetName = value.substr(1);
+          this.bind = triggerBind;
+          this.unbind = triggerUnbind;
+          break;
+        default:
+          this.cleanedTargetName = value;
+          if (value === "class") {
+            this.updateTarget = updateClassTarget;
+          }
+          break;
+      }
+    }
+    /**
+     * Makes this binding target the content of an element rather than
+     * a particular attribute or property.
+     */
+    targetAtContent() {
+      this.updateTarget = updateContentTarget;
+      this.unbind = contentUnbind;
+    }
+    /**
+     * Creates the runtime BindingBehavior instance based on the configuration
+     * information stored in the BindingDirective.
+     * @param target - The target node that the binding behavior should attach to.
+     */
+    createBehavior(target) {
+      return new BindingBehavior(target, this.binding, this.isBindingVolatile, this.bind, this.unbind, this.updateTarget, this.cleanedTargetName);
+    }
+  };
+  var BindingBehavior = class {
+    /**
+     * Creates an instance of BindingBehavior.
+     * @param target - The target of the data updates.
+     * @param binding - The binding that returns the latest value for an update.
+     * @param isBindingVolatile - Indicates whether the binding has volatile dependencies.
+     * @param bind - The operation to perform during binding.
+     * @param unbind - The operation to perform during unbinding.
+     * @param updateTarget - The operation to perform when updating.
+     * @param targetName - The name of the target attribute or property to update.
+     */
+    constructor(target, binding, isBindingVolatile, bind, unbind, updateTarget, targetName) {
+      this.source = null;
+      this.context = null;
+      this.bindingObserver = null;
+      this.target = target;
+      this.binding = binding;
+      this.isBindingVolatile = isBindingVolatile;
+      this.bind = bind;
+      this.unbind = unbind;
+      this.updateTarget = updateTarget;
+      this.targetName = targetName;
+    }
+    /** @internal */
+    handleChange() {
+      this.updateTarget(this.bindingObserver.observe(this.source, this.context));
+    }
+    /** @internal */
+    handleEvent(event) {
+      ExecutionContext.setEvent(event);
+      const result = this.binding(this.source, this.context);
+      ExecutionContext.setEvent(null);
+      if (result !== true) {
+        event.preventDefault();
+      }
+    }
+  };
+
+  // node_modules/@microsoft/fast-element/dist/esm/templating/compiler.js
+  var sharedContext = null;
+  var CompilationContext = class _CompilationContext {
+    addFactory(factory) {
+      factory.targetIndex = this.targetIndex;
+      this.behaviorFactories.push(factory);
+    }
+    captureContentBinding(directive) {
+      directive.targetAtContent();
+      this.addFactory(directive);
+    }
+    reset() {
+      this.behaviorFactories = [];
+      this.targetIndex = -1;
+    }
+    release() {
+      sharedContext = this;
+    }
+    static borrow(directives) {
+      const shareable = sharedContext || new _CompilationContext();
+      shareable.directives = directives;
+      shareable.reset();
+      sharedContext = null;
+      return shareable;
+    }
+  };
+  function createAggregateBinding(parts) {
+    if (parts.length === 1) {
+      return parts[0];
+    }
+    let targetName;
+    const partCount = parts.length;
+    const finalParts = parts.map((x) => {
+      if (typeof x === "string") {
+        return () => x;
+      }
+      targetName = x.targetName || targetName;
+      return x.binding;
+    });
+    const binding = (scope, context) => {
+      let output = "";
+      for (let i = 0; i < partCount; ++i) {
+        output += finalParts[i](scope, context);
+      }
+      return output;
+    };
+    const directive = new HTMLBindingDirective(binding);
+    directive.targetName = targetName;
+    return directive;
+  }
+  var interpolationEndLength = _interpolationEnd.length;
+  function parseContent(context, value) {
+    const valueParts = value.split(_interpolationStart);
+    if (valueParts.length === 1) {
+      return null;
+    }
+    const bindingParts = [];
+    for (let i = 0, ii = valueParts.length; i < ii; ++i) {
+      const current = valueParts[i];
+      const index = current.indexOf(_interpolationEnd);
+      let literal;
+      if (index === -1) {
+        literal = current;
+      } else {
+        const directiveIndex = parseInt(current.substring(0, index));
+        bindingParts.push(context.directives[directiveIndex]);
+        literal = current.substring(index + interpolationEndLength);
+      }
+      if (literal !== "") {
+        bindingParts.push(literal);
+      }
+    }
+    return bindingParts;
+  }
+  function compileAttributes(context, node, includeBasicValues = false) {
+    const attributes = node.attributes;
+    for (let i = 0, ii = attributes.length; i < ii; ++i) {
+      const attr2 = attributes[i];
+      const attrValue = attr2.value;
+      const parseResult = parseContent(context, attrValue);
+      let result = null;
+      if (parseResult === null) {
+        if (includeBasicValues) {
+          result = new HTMLBindingDirective(() => attrValue);
+          result.targetName = attr2.name;
+        }
+      } else {
+        result = createAggregateBinding(parseResult);
+      }
+      if (result !== null) {
+        node.removeAttributeNode(attr2);
+        i--;
+        ii--;
+        context.addFactory(result);
+      }
+    }
+  }
+  function compileContent(context, node, walker) {
+    const parseResult = parseContent(context, node.textContent);
+    if (parseResult !== null) {
+      let lastNode = node;
+      for (let i = 0, ii = parseResult.length; i < ii; ++i) {
+        const currentPart = parseResult[i];
+        const currentNode = i === 0 ? node : lastNode.parentNode.insertBefore(document.createTextNode(""), lastNode.nextSibling);
+        if (typeof currentPart === "string") {
+          currentNode.textContent = currentPart;
+        } else {
+          currentNode.textContent = " ";
+          context.captureContentBinding(currentPart);
+        }
+        lastNode = currentNode;
+        context.targetIndex++;
+        if (currentNode !== node) {
+          walker.nextNode();
+        }
+      }
+      context.targetIndex--;
+    }
+  }
+  function compileTemplate(template, directives) {
+    const fragment = template.content;
+    document.adoptNode(fragment);
+    const context = CompilationContext.borrow(directives);
+    compileAttributes(context, template, true);
+    const hostBehaviorFactories = context.behaviorFactories;
+    context.reset();
+    const walker = DOM.createTemplateWalker(fragment);
+    let node;
+    while (node = walker.nextNode()) {
+      context.targetIndex++;
+      switch (node.nodeType) {
+        case 1:
+          compileAttributes(context, node);
+          break;
+        case 3:
+          compileContent(context, node, walker);
+          break;
+        case 8:
+          if (DOM.isMarker(node)) {
+            context.addFactory(directives[DOM.extractDirectiveIndexFromMarker(node)]);
+          }
+      }
+    }
+    let targetOffset = 0;
+    if (
+      // If the first node in a fragment is a marker, that means it's an unstable first node,
+      // because something like a when, repeat, etc. could add nodes before the marker.
+      // To mitigate this, we insert a stable first node. However, if we insert a node,
+      // that will alter the result of the TreeWalker. So, we also need to offset the target index.
+      DOM.isMarker(fragment.firstChild) || // Or if there is only one node and a directive, it means the template's content
+      // is *only* the directive. In that case, HTMLView.dispose() misses any nodes inserted by
+      // the directive. Inserting a new node ensures proper disposal of nodes added by the directive.
+      fragment.childNodes.length === 1 && directives.length
+    ) {
+      fragment.insertBefore(document.createComment(""), fragment.firstChild);
+      targetOffset = -1;
+    }
+    const viewBehaviorFactories = context.behaviorFactories;
+    context.release();
+    return {
+      fragment,
+      viewBehaviorFactories,
+      hostBehaviorFactories,
+      targetOffset
+    };
+  }
+
+  // node_modules/@microsoft/fast-element/dist/esm/templating/view.js
+  var range = document.createRange();
+  var HTMLView = class {
+    /**
+     * Constructs an instance of HTMLView.
+     * @param fragment - The html fragment that contains the nodes for this view.
+     * @param behaviors - The behaviors to be applied to this view.
+     */
+    constructor(fragment, behaviors) {
+      this.fragment = fragment;
+      this.behaviors = behaviors;
+      this.source = null;
+      this.context = null;
+      this.firstChild = fragment.firstChild;
+      this.lastChild = fragment.lastChild;
+    }
+    /**
+     * Appends the view's DOM nodes to the referenced node.
+     * @param node - The parent node to append the view's DOM nodes to.
+     */
+    appendTo(node) {
+      node.appendChild(this.fragment);
+    }
+    /**
+     * Inserts the view's DOM nodes before the referenced node.
+     * @param node - The node to insert the view's DOM before.
+     */
+    insertBefore(node) {
+      if (this.fragment.hasChildNodes()) {
+        node.parentNode.insertBefore(this.fragment, node);
+      } else {
+        const end = this.lastChild;
+        if (node.previousSibling === end)
+          return;
+        const parentNode = node.parentNode;
+        let current = this.firstChild;
+        let next;
+        while (current !== end) {
+          next = current.nextSibling;
+          parentNode.insertBefore(current, node);
+          current = next;
+        }
+        parentNode.insertBefore(end, node);
+      }
+    }
+    /**
+     * Removes the view's DOM nodes.
+     * The nodes are not disposed and the view can later be re-inserted.
+     */
+    remove() {
+      const fragment = this.fragment;
+      const end = this.lastChild;
+      let current = this.firstChild;
+      let next;
+      while (current !== end) {
+        next = current.nextSibling;
+        fragment.appendChild(current);
+        current = next;
+      }
+      fragment.appendChild(end);
+    }
+    /**
+     * Removes the view and unbinds its behaviors, disposing of DOM nodes afterward.
+     * Once a view has been disposed, it cannot be inserted or bound again.
+     */
+    dispose() {
+      const parent = this.firstChild.parentNode;
+      const end = this.lastChild;
+      let current = this.firstChild;
+      let next;
+      while (current !== end) {
+        next = current.nextSibling;
+        parent.removeChild(current);
+        current = next;
+      }
+      parent.removeChild(end);
+      const behaviors = this.behaviors;
+      const oldSource = this.source;
+      for (let i = 0, ii = behaviors.length; i < ii; ++i) {
+        behaviors[i].unbind(oldSource);
+      }
+    }
+    /**
+     * Binds a view's behaviors to its binding source.
+     * @param source - The binding source for the view's binding behaviors.
+     * @param context - The execution context to run the behaviors within.
+     */
+    bind(source, context) {
+      const behaviors = this.behaviors;
+      if (this.source === source) {
+        return;
+      } else if (this.source !== null) {
+        const oldSource = this.source;
+        this.source = source;
+        this.context = context;
+        for (let i = 0, ii = behaviors.length; i < ii; ++i) {
+          const current = behaviors[i];
+          current.unbind(oldSource);
+          current.bind(source, context);
+        }
+      } else {
+        this.source = source;
+        this.context = context;
+        for (let i = 0, ii = behaviors.length; i < ii; ++i) {
+          behaviors[i].bind(source, context);
+        }
+      }
+    }
+    /**
+     * Unbinds a view's behaviors from its binding source.
+     */
+    unbind() {
+      if (this.source === null) {
+        return;
+      }
+      const behaviors = this.behaviors;
+      const oldSource = this.source;
+      for (let i = 0, ii = behaviors.length; i < ii; ++i) {
+        behaviors[i].unbind(oldSource);
+      }
+      this.source = null;
+    }
+    /**
+     * Efficiently disposes of a contiguous range of synthetic view instances.
+     * @param views - A contiguous range of views to be disposed.
+     */
+    static disposeContiguousBatch(views) {
+      if (views.length === 0) {
+        return;
+      }
+      range.setStartBefore(views[0].firstChild);
+      range.setEndAfter(views[views.length - 1].lastChild);
+      range.deleteContents();
+      for (let i = 0, ii = views.length; i < ii; ++i) {
+        const view = views[i];
+        const behaviors = view.behaviors;
+        const oldSource = view.source;
+        for (let j = 0, jj = behaviors.length; j < jj; ++j) {
+          behaviors[j].unbind(oldSource);
+        }
+      }
+    }
+  };
+
+  // node_modules/@microsoft/fast-element/dist/esm/templating/template.js
+  var ViewTemplate = class {
+    /**
+     * Creates an instance of ViewTemplate.
+     * @param html - The html representing what this template will instantiate, including placeholders for directives.
+     * @param directives - The directives that will be connected to placeholders in the html.
+     */
+    constructor(html3, directives) {
+      this.behaviorCount = 0;
+      this.hasHostBehaviors = false;
+      this.fragment = null;
+      this.targetOffset = 0;
+      this.viewBehaviorFactories = null;
+      this.hostBehaviorFactories = null;
+      this.html = html3;
+      this.directives = directives;
+    }
+    /**
+     * Creates an HTMLView instance based on this template definition.
+     * @param hostBindingTarget - The element that host behaviors will be bound to.
+     */
+    create(hostBindingTarget) {
+      if (this.fragment === null) {
+        let template;
+        const html3 = this.html;
+        if (typeof html3 === "string") {
+          template = document.createElement("template");
+          template.innerHTML = DOM.createHTML(html3);
+          const fec = template.content.firstElementChild;
+          if (fec !== null && fec.tagName === "TEMPLATE") {
+            template = fec;
+          }
+        } else {
+          template = html3;
+        }
+        const result = compileTemplate(template, this.directives);
+        this.fragment = result.fragment;
+        this.viewBehaviorFactories = result.viewBehaviorFactories;
+        this.hostBehaviorFactories = result.hostBehaviorFactories;
+        this.targetOffset = result.targetOffset;
+        this.behaviorCount = this.viewBehaviorFactories.length + this.hostBehaviorFactories.length;
+        this.hasHostBehaviors = this.hostBehaviorFactories.length > 0;
+      }
+      const fragment = this.fragment.cloneNode(true);
+      const viewFactories = this.viewBehaviorFactories;
+      const behaviors = new Array(this.behaviorCount);
+      const walker = DOM.createTemplateWalker(fragment);
+      let behaviorIndex = 0;
+      let targetIndex = this.targetOffset;
+      let node = walker.nextNode();
+      for (let ii = viewFactories.length; behaviorIndex < ii; ++behaviorIndex) {
+        const factory = viewFactories[behaviorIndex];
+        const factoryIndex = factory.targetIndex;
+        while (node !== null) {
+          if (targetIndex === factoryIndex) {
+            behaviors[behaviorIndex] = factory.createBehavior(node);
+            break;
+          } else {
+            node = walker.nextNode();
+            targetIndex++;
+          }
+        }
+      }
+      if (this.hasHostBehaviors) {
+        const hostFactories = this.hostBehaviorFactories;
+        for (let i = 0, ii = hostFactories.length; i < ii; ++i, ++behaviorIndex) {
+          behaviors[behaviorIndex] = hostFactories[i].createBehavior(hostBindingTarget);
+        }
+      }
+      return new HTMLView(fragment, behaviors);
+    }
+    /**
+     * Creates an HTMLView from this template, binds it to the source, and then appends it to the host.
+     * @param source - The data source to bind the template to.
+     * @param host - The Element where the template will be rendered.
+     * @param hostBindingTarget - An HTML element to target the host bindings at if different from the
+     * host that the template is being attached to.
+     */
+    render(source, host, hostBindingTarget) {
+      if (typeof host === "string") {
+        host = document.getElementById(host);
+      }
+      if (hostBindingTarget === void 0) {
+        hostBindingTarget = host;
+      }
+      const view = this.create(hostBindingTarget);
+      view.bind(source, defaultExecutionContext);
+      view.appendTo(host);
+      return view;
+    }
+  };
+  var lastAttributeNameRegex = (
+    /* eslint-disable-next-line no-control-regex */
+    /([ \x09\x0a\x0c\x0d])([^\0-\x1F\x7F-\x9F "'>=/]+)([ \x09\x0a\x0c\x0d]*=[ \x09\x0a\x0c\x0d]*(?:[^ \x09\x0a\x0c\x0d"'`<>=]*|"[^"]*|'[^']*))$/
+  );
+  function html(strings, ...values) {
+    const directives = [];
+    let html3 = "";
+    for (let i = 0, ii = strings.length - 1; i < ii; ++i) {
+      const currentString = strings[i];
+      let value = values[i];
+      html3 += currentString;
+      if (value instanceof ViewTemplate) {
+        const template = value;
+        value = () => template;
+      }
+      if (typeof value === "function") {
+        value = new HTMLBindingDirective(value);
+      }
+      if (value instanceof TargetedHTMLDirective) {
+        const match = lastAttributeNameRegex.exec(currentString);
+        if (match !== null) {
+          value.targetName = match[2];
+        }
+      }
+      if (value instanceof HTMLDirective) {
+        html3 += value.createPlaceholder(directives.length);
+        directives.push(value);
+      } else {
+        html3 += value;
+      }
+    }
+    html3 += strings[strings.length - 1];
+    return new ViewTemplate(html3, directives);
+  }
+
+  // node_modules/@microsoft/fast-element/dist/esm/styles/element-styles.js
+  var ElementStyles = class {
+    constructor() {
+      this.targets = /* @__PURE__ */ new WeakSet();
+    }
+    /** @internal */
+    addStylesTo(target) {
+      this.targets.add(target);
+    }
+    /** @internal */
+    removeStylesFrom(target) {
+      this.targets.delete(target);
+    }
+    /** @internal */
+    isAttachedTo(target) {
+      return this.targets.has(target);
+    }
+    /**
+     * Associates behaviors with this set of styles.
+     * @param behaviors - The behaviors to associate.
+     */
+    withBehaviors(...behaviors) {
+      this.behaviors = this.behaviors === null ? behaviors : this.behaviors.concat(behaviors);
+      return this;
+    }
+  };
+  ElementStyles.create = (() => {
+    if (DOM.supportsAdoptedStyleSheets) {
+      const styleSheetCache = /* @__PURE__ */ new Map();
+      return (styles) => (
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        new AdoptedStyleSheetsStyles(styles, styleSheetCache)
+      );
+    }
+    return (styles) => new StyleElementStyles(styles);
+  })();
+  function reduceStyles(styles) {
+    return styles.map((x) => x instanceof ElementStyles ? reduceStyles(x.styles) : [x]).reduce((prev, curr) => prev.concat(curr), []);
+  }
+  function reduceBehaviors(styles) {
+    return styles.map((x) => x instanceof ElementStyles ? x.behaviors : null).reduce((prev, curr) => {
+      if (curr === null) {
+        return prev;
+      }
+      if (prev === null) {
+        prev = [];
+      }
+      return prev.concat(curr);
+    }, null);
+  }
+  var prependToAdoptedStyleSheetsSymbol = Symbol("prependToAdoptedStyleSheets");
+  function separateSheetsToPrepend(sheets) {
+    const prepend = [];
+    const append = [];
+    sheets.forEach((x) => (x[prependToAdoptedStyleSheetsSymbol] ? prepend : append).push(x));
+    return { prepend, append };
+  }
+  var addAdoptedStyleSheets = (target, sheets) => {
+    const { prepend, append } = separateSheetsToPrepend(sheets);
+    target.adoptedStyleSheets = [...prepend, ...target.adoptedStyleSheets, ...append];
+  };
+  var removeAdoptedStyleSheets = (target, sheets) => {
+    target.adoptedStyleSheets = target.adoptedStyleSheets.filter((x) => sheets.indexOf(x) === -1);
+  };
+  if (DOM.supportsAdoptedStyleSheets) {
+    try {
+      document.adoptedStyleSheets.push();
+      document.adoptedStyleSheets.splice();
+      addAdoptedStyleSheets = (target, sheets) => {
+        const { prepend, append } = separateSheetsToPrepend(sheets);
+        target.adoptedStyleSheets.splice(0, 0, ...prepend);
+        target.adoptedStyleSheets.push(...append);
+      };
+      removeAdoptedStyleSheets = (target, sheets) => {
+        for (const sheet of sheets) {
+          const index = target.adoptedStyleSheets.indexOf(sheet);
+          if (index !== -1) {
+            target.adoptedStyleSheets.splice(index, 1);
+          }
+        }
+      };
+    } catch (e) {
+    }
+  }
+  var AdoptedStyleSheetsStyles = class extends ElementStyles {
+    constructor(styles, styleSheetCache) {
+      super();
+      this.styles = styles;
+      this.styleSheetCache = styleSheetCache;
+      this._styleSheets = void 0;
+      this.behaviors = reduceBehaviors(styles);
+    }
+    get styleSheets() {
+      if (this._styleSheets === void 0) {
+        const styles = this.styles;
+        const styleSheetCache = this.styleSheetCache;
+        this._styleSheets = reduceStyles(styles).map((x) => {
+          if (x instanceof CSSStyleSheet) {
+            return x;
+          }
+          let sheet = styleSheetCache.get(x);
+          if (sheet === void 0) {
+            sheet = new CSSStyleSheet();
+            sheet.replaceSync(x);
+            styleSheetCache.set(x, sheet);
+          }
+          return sheet;
+        });
+      }
+      return this._styleSheets;
+    }
+    addStylesTo(target) {
+      addAdoptedStyleSheets(target, this.styleSheets);
+      super.addStylesTo(target);
+    }
+    removeStylesFrom(target) {
+      removeAdoptedStyleSheets(target, this.styleSheets);
+      super.removeStylesFrom(target);
+    }
+  };
+  var styleClassId = 0;
+  function getNextStyleClass() {
+    return `fast-style-class-${++styleClassId}`;
+  }
+  var StyleElementStyles = class extends ElementStyles {
+    constructor(styles) {
+      super();
+      this.styles = styles;
+      this.behaviors = null;
+      this.behaviors = reduceBehaviors(styles);
+      this.styleSheets = reduceStyles(styles);
+      this.styleClass = getNextStyleClass();
+    }
+    addStylesTo(target) {
+      const styleSheets = this.styleSheets;
+      const styleClass = this.styleClass;
+      target = this.normalizeTarget(target);
+      for (let i = 0; i < styleSheets.length; i++) {
+        const element = document.createElement("style");
+        element.innerHTML = styleSheets[i];
+        element.className = styleClass;
+        target.append(element);
+      }
+      super.addStylesTo(target);
+    }
+    removeStylesFrom(target) {
+      target = this.normalizeTarget(target);
+      const styles = target.querySelectorAll(`.${this.styleClass}`);
+      for (let i = 0, ii = styles.length; i < ii; ++i) {
+        target.removeChild(styles[i]);
+      }
+      super.removeStylesFrom(target);
+    }
+    isAttachedTo(target) {
+      return super.isAttachedTo(this.normalizeTarget(target));
+    }
+    normalizeTarget(target) {
+      return target === document ? document.body : target;
+    }
+  };
+
+  // node_modules/@microsoft/fast-element/dist/esm/components/attributes.js
+  var AttributeConfiguration = Object.freeze({
+    /**
+     * Locates all attribute configurations associated with a type.
+     */
+    locate: createMetadataLocator()
+  });
+  var booleanConverter = {
+    toView(value) {
+      return value ? "true" : "false";
+    },
+    fromView(value) {
+      if (value === null || value === void 0 || value === "false" || value === false || value === 0) {
+        return false;
+      }
+      return true;
+    }
+  };
+  var AttributeDefinition = class _AttributeDefinition {
+    /**
+     * Creates an instance of AttributeDefinition.
+     * @param Owner - The class constructor that owns this attribute.
+     * @param name - The name of the property associated with the attribute.
+     * @param attribute - The name of the attribute in HTML.
+     * @param mode - The {@link AttributeMode} that describes the behavior of this attribute.
+     * @param converter - A {@link ValueConverter} that integrates with the property getter/setter
+     * to convert values to and from a DOM string.
+     */
+    constructor(Owner, name, attribute = name.toLowerCase(), mode = "reflect", converter) {
+      this.guards = /* @__PURE__ */ new Set();
+      this.Owner = Owner;
+      this.name = name;
+      this.attribute = attribute;
+      this.mode = mode;
+      this.converter = converter;
+      this.fieldName = `_${name}`;
+      this.callbackName = `${name}Changed`;
+      this.hasCallback = this.callbackName in Owner.prototype;
+      if (mode === "boolean" && converter === void 0) {
+        this.converter = booleanConverter;
+      }
+    }
+    /**
+     * Sets the value of the attribute/property on the source element.
+     * @param source - The source element to access.
+     * @param value - The value to set the attribute/property to.
+     */
+    setValue(source, newValue) {
+      const oldValue = source[this.fieldName];
+      const converter = this.converter;
+      if (converter !== void 0) {
+        newValue = converter.fromView(newValue);
+      }
+      if (oldValue !== newValue) {
+        source[this.fieldName] = newValue;
+        this.tryReflectToAttribute(source);
+        if (this.hasCallback) {
+          source[this.callbackName](oldValue, newValue);
+        }
+        source.$fastController.notify(this.name);
+      }
+    }
+    /**
+     * Gets the value of the attribute/property on the source element.
+     * @param source - The source element to access.
+     */
+    getValue(source) {
+      Observable.track(source, this.name);
+      return source[this.fieldName];
+    }
+    /** @internal */
+    onAttributeChangedCallback(element, value) {
+      if (this.guards.has(element)) {
+        return;
+      }
+      this.guards.add(element);
+      this.setValue(element, value);
+      this.guards.delete(element);
+    }
+    tryReflectToAttribute(element) {
+      const mode = this.mode;
+      const guards = this.guards;
+      if (guards.has(element) || mode === "fromView") {
+        return;
+      }
+      DOM.queueUpdate(() => {
+        guards.add(element);
+        const latestValue = element[this.fieldName];
+        switch (mode) {
+          case "reflect":
+            const converter = this.converter;
+            DOM.setAttribute(element, this.attribute, converter !== void 0 ? converter.toView(latestValue) : latestValue);
+            break;
+          case "boolean":
+            DOM.setBooleanAttribute(element, this.attribute, latestValue);
+            break;
+        }
+        guards.delete(element);
+      });
+    }
+    /**
+     * Collects all attribute definitions associated with the owner.
+     * @param Owner - The class constructor to collect attribute for.
+     * @param attributeLists - Any existing attributes to collect and merge with those associated with the owner.
+     * @internal
+     */
+    static collect(Owner, ...attributeLists) {
+      const attributes = [];
+      attributeLists.push(AttributeConfiguration.locate(Owner));
+      for (let i = 0, ii = attributeLists.length; i < ii; ++i) {
+        const list = attributeLists[i];
+        if (list === void 0) {
+          continue;
+        }
+        for (let j = 0, jj = list.length; j < jj; ++j) {
+          const config = list[j];
+          if (typeof config === "string") {
+            attributes.push(new _AttributeDefinition(Owner, config));
+          } else {
+            attributes.push(new _AttributeDefinition(Owner, config.property, config.attribute, config.mode, config.converter));
+          }
+        }
+      }
+      return attributes;
+    }
+  };
+  function attr(configOrTarget, prop) {
+    let config;
+    function decorator($target, $prop) {
+      if (arguments.length > 1) {
+        config.property = $prop;
+      }
+      AttributeConfiguration.locate($target.constructor).push(config);
+    }
+    if (arguments.length > 1) {
+      config = {};
+      decorator(configOrTarget, prop);
+      return;
+    }
+    config = configOrTarget === void 0 ? {} : configOrTarget;
+    return decorator;
+  }
+
+  // node_modules/@microsoft/fast-element/dist/esm/components/fast-definitions.js
+  var defaultShadowOptions = { mode: "open" };
+  var defaultElementOptions = {};
+  var fastRegistry = FAST.getById(4, () => {
+    const typeToDefinition = /* @__PURE__ */ new Map();
+    return Object.freeze({
+      register(definition) {
+        if (typeToDefinition.has(definition.type)) {
+          return false;
+        }
+        typeToDefinition.set(definition.type, definition);
+        return true;
+      },
+      getByType(key) {
+        return typeToDefinition.get(key);
+      }
+    });
+  });
+  var FASTElementDefinition = class {
+    /**
+     * Creates an instance of FASTElementDefinition.
+     * @param type - The type this definition is being created for.
+     * @param nameOrConfig - The name of the element to define or a config object
+     * that describes the element to define.
+     */
+    constructor(type, nameOrConfig = type.definition) {
+      if (typeof nameOrConfig === "string") {
+        nameOrConfig = { name: nameOrConfig };
+      }
+      this.type = type;
+      this.name = nameOrConfig.name;
+      this.template = nameOrConfig.template;
+      const attributes = AttributeDefinition.collect(type, nameOrConfig.attributes);
+      const observedAttributes = new Array(attributes.length);
+      const propertyLookup = {};
+      const attributeLookup = {};
+      for (let i = 0, ii = attributes.length; i < ii; ++i) {
+        const current = attributes[i];
+        observedAttributes[i] = current.attribute;
+        propertyLookup[current.name] = current;
+        attributeLookup[current.attribute] = current;
+      }
+      this.attributes = attributes;
+      this.observedAttributes = observedAttributes;
+      this.propertyLookup = propertyLookup;
+      this.attributeLookup = attributeLookup;
+      this.shadowOptions = nameOrConfig.shadowOptions === void 0 ? defaultShadowOptions : nameOrConfig.shadowOptions === null ? void 0 : Object.assign(Object.assign({}, defaultShadowOptions), nameOrConfig.shadowOptions);
+      this.elementOptions = nameOrConfig.elementOptions === void 0 ? defaultElementOptions : Object.assign(Object.assign({}, defaultElementOptions), nameOrConfig.elementOptions);
+      this.styles = nameOrConfig.styles === void 0 ? void 0 : Array.isArray(nameOrConfig.styles) ? ElementStyles.create(nameOrConfig.styles) : nameOrConfig.styles instanceof ElementStyles ? nameOrConfig.styles : ElementStyles.create([nameOrConfig.styles]);
+    }
+    /**
+     * Indicates if this element has been defined in at least one registry.
+     */
+    get isDefined() {
+      return !!fastRegistry.getByType(this.type);
+    }
+    /**
+     * Defines a custom element based on this definition.
+     * @param registry - The element registry to define the element in.
+     */
+    define(registry = customElements) {
+      const type = this.type;
+      if (fastRegistry.register(this)) {
+        const attributes = this.attributes;
+        const proto = type.prototype;
+        for (let i = 0, ii = attributes.length; i < ii; ++i) {
+          Observable.defineProperty(proto, attributes[i]);
+        }
+        Reflect.defineProperty(type, "observedAttributes", {
+          value: this.observedAttributes,
+          enumerable: true
+        });
+      }
+      if (!registry.get(this.name)) {
+        registry.define(this.name, type, this.elementOptions);
+      }
+      return this;
+    }
+  };
+  FASTElementDefinition.forType = fastRegistry.getByType;
+
+  // node_modules/@microsoft/fast-element/dist/esm/components/controller.js
+  var shadowRoots = /* @__PURE__ */ new WeakMap();
+  var defaultEventOptions = {
+    bubbles: true,
+    composed: true,
+    cancelable: true
+  };
+  function getShadowRoot(element) {
+    return element.shadowRoot || shadowRoots.get(element) || null;
+  }
+  var Controller = class _Controller extends PropertyChangeNotifier {
+    /**
+     * Creates a Controller to control the specified element.
+     * @param element - The element to be controlled by this controller.
+     * @param definition - The element definition metadata that instructs this
+     * controller in how to handle rendering and other platform integrations.
+     * @internal
+     */
+    constructor(element, definition) {
+      super(element);
+      this.boundObservables = null;
+      this.behaviors = null;
+      this.needsInitialization = true;
+      this._template = null;
+      this._styles = null;
+      this._isConnected = false;
+      this.$fastController = this;
+      this.view = null;
+      this.element = element;
+      this.definition = definition;
+      const shadowOptions = definition.shadowOptions;
+      if (shadowOptions !== void 0) {
+        const shadowRoot = element.attachShadow(shadowOptions);
+        if (shadowOptions.mode === "closed") {
+          shadowRoots.set(element, shadowRoot);
+        }
+      }
+      const accessors = Observable.getAccessors(element);
+      if (accessors.length > 0) {
+        const boundObservables = this.boundObservables = /* @__PURE__ */ Object.create(null);
+        for (let i = 0, ii = accessors.length; i < ii; ++i) {
+          const propertyName = accessors[i].name;
+          const value = element[propertyName];
+          if (value !== void 0) {
+            delete element[propertyName];
+            boundObservables[propertyName] = value;
+          }
+        }
+      }
+    }
+    /**
+     * Indicates whether or not the custom element has been
+     * connected to the document.
+     */
+    get isConnected() {
+      Observable.track(this, "isConnected");
+      return this._isConnected;
+    }
+    setIsConnected(value) {
+      this._isConnected = value;
+      Observable.notify(this, "isConnected");
+    }
+    /**
+     * Gets/sets the template used to render the component.
+     * @remarks
+     * This value can only be accurately read after connect but can be set at any time.
+     */
+    get template() {
+      return this._template;
+    }
+    set template(value) {
+      if (this._template === value) {
+        return;
+      }
+      this._template = value;
+      if (!this.needsInitialization) {
+        this.renderTemplate(value);
+      }
+    }
+    /**
+     * Gets/sets the primary styles used for the component.
+     * @remarks
+     * This value can only be accurately read after connect but can be set at any time.
+     */
+    get styles() {
+      return this._styles;
+    }
+    set styles(value) {
+      if (this._styles === value) {
+        return;
+      }
+      if (this._styles !== null) {
+        this.removeStyles(this._styles);
+      }
+      this._styles = value;
+      if (!this.needsInitialization && value !== null) {
+        this.addStyles(value);
+      }
+    }
+    /**
+     * Adds styles to this element. Providing an HTMLStyleElement will attach the element instance to the shadowRoot.
+     * @param styles - The styles to add.
+     */
+    addStyles(styles) {
+      const target = getShadowRoot(this.element) || this.element.getRootNode();
+      if (styles instanceof HTMLStyleElement) {
+        target.append(styles);
+      } else if (!styles.isAttachedTo(target)) {
+        const sourceBehaviors = styles.behaviors;
+        styles.addStylesTo(target);
+        if (sourceBehaviors !== null) {
+          this.addBehaviors(sourceBehaviors);
+        }
+      }
+    }
+    /**
+     * Removes styles from this element. Providing an HTMLStyleElement will detach the element instance from the shadowRoot.
+     * @param styles - the styles to remove.
+     */
+    removeStyles(styles) {
+      const target = getShadowRoot(this.element) || this.element.getRootNode();
+      if (styles instanceof HTMLStyleElement) {
+        target.removeChild(styles);
+      } else if (styles.isAttachedTo(target)) {
+        const sourceBehaviors = styles.behaviors;
+        styles.removeStylesFrom(target);
+        if (sourceBehaviors !== null) {
+          this.removeBehaviors(sourceBehaviors);
+        }
+      }
+    }
+    /**
+     * Adds behaviors to this element.
+     * @param behaviors - The behaviors to add.
+     */
+    addBehaviors(behaviors) {
+      const targetBehaviors = this.behaviors || (this.behaviors = /* @__PURE__ */ new Map());
+      const length = behaviors.length;
+      const behaviorsToBind = [];
+      for (let i = 0; i < length; ++i) {
+        const behavior = behaviors[i];
+        if (targetBehaviors.has(behavior)) {
+          targetBehaviors.set(behavior, targetBehaviors.get(behavior) + 1);
+        } else {
+          targetBehaviors.set(behavior, 1);
+          behaviorsToBind.push(behavior);
+        }
+      }
+      if (this._isConnected) {
+        const element = this.element;
+        for (let i = 0; i < behaviorsToBind.length; ++i) {
+          behaviorsToBind[i].bind(element, defaultExecutionContext);
+        }
+      }
+    }
+    /**
+     * Removes behaviors from this element.
+     * @param behaviors - The behaviors to remove.
+     * @param force - Forces unbinding of behaviors.
+     */
+    removeBehaviors(behaviors, force = false) {
+      const targetBehaviors = this.behaviors;
+      if (targetBehaviors === null) {
+        return;
+      }
+      const length = behaviors.length;
+      const behaviorsToUnbind = [];
+      for (let i = 0; i < length; ++i) {
+        const behavior = behaviors[i];
+        if (targetBehaviors.has(behavior)) {
+          const count = targetBehaviors.get(behavior) - 1;
+          count === 0 || force ? targetBehaviors.delete(behavior) && behaviorsToUnbind.push(behavior) : targetBehaviors.set(behavior, count);
+        }
+      }
+      if (this._isConnected) {
+        const element = this.element;
+        for (let i = 0; i < behaviorsToUnbind.length; ++i) {
+          behaviorsToUnbind[i].unbind(element);
+        }
+      }
+    }
+    /**
+     * Runs connected lifecycle behavior on the associated element.
+     */
+    onConnectedCallback() {
+      if (this._isConnected) {
+        return;
+      }
+      const element = this.element;
+      if (this.needsInitialization) {
+        this.finishInitialization();
+      } else if (this.view !== null) {
+        this.view.bind(element, defaultExecutionContext);
+      }
+      const behaviors = this.behaviors;
+      if (behaviors !== null) {
+        for (const [behavior] of behaviors) {
+          behavior.bind(element, defaultExecutionContext);
+        }
+      }
+      this.setIsConnected(true);
+    }
+    /**
+     * Runs disconnected lifecycle behavior on the associated element.
+     */
+    onDisconnectedCallback() {
+      if (!this._isConnected) {
+        return;
+      }
+      this.setIsConnected(false);
+      const view = this.view;
+      if (view !== null) {
+        view.unbind();
+      }
+      const behaviors = this.behaviors;
+      if (behaviors !== null) {
+        const element = this.element;
+        for (const [behavior] of behaviors) {
+          behavior.unbind(element);
+        }
+      }
+    }
+    /**
+     * Runs the attribute changed callback for the associated element.
+     * @param name - The name of the attribute that changed.
+     * @param oldValue - The previous value of the attribute.
+     * @param newValue - The new value of the attribute.
+     */
+    onAttributeChangedCallback(name, oldValue, newValue) {
+      const attrDef = this.definition.attributeLookup[name];
+      if (attrDef !== void 0) {
+        attrDef.onAttributeChangedCallback(this.element, newValue);
+      }
+    }
+    /**
+     * Emits a custom HTML event.
+     * @param type - The type name of the event.
+     * @param detail - The event detail object to send with the event.
+     * @param options - The event options. By default bubbles and composed.
+     * @remarks
+     * Only emits events if connected.
+     */
+    emit(type, detail, options) {
+      if (this._isConnected) {
+        return this.element.dispatchEvent(new CustomEvent(type, Object.assign(Object.assign({ detail }, defaultEventOptions), options)));
+      }
+      return false;
+    }
+    finishInitialization() {
+      const element = this.element;
+      const boundObservables = this.boundObservables;
+      if (boundObservables !== null) {
+        const propertyNames = Object.keys(boundObservables);
+        for (let i = 0, ii = propertyNames.length; i < ii; ++i) {
+          const propertyName = propertyNames[i];
+          element[propertyName] = boundObservables[propertyName];
+        }
+        this.boundObservables = null;
+      }
+      const definition = this.definition;
+      if (this._template === null) {
+        if (this.element.resolveTemplate) {
+          this._template = this.element.resolveTemplate();
+        } else if (definition.template) {
+          this._template = definition.template || null;
+        }
+      }
+      if (this._template !== null) {
+        this.renderTemplate(this._template);
+      }
+      if (this._styles === null) {
+        if (this.element.resolveStyles) {
+          this._styles = this.element.resolveStyles();
+        } else if (definition.styles) {
+          this._styles = definition.styles || null;
+        }
+      }
+      if (this._styles !== null) {
+        this.addStyles(this._styles);
+      }
+      this.needsInitialization = false;
+    }
+    renderTemplate(template) {
+      const element = this.element;
+      const host = getShadowRoot(element) || element;
+      if (this.view !== null) {
+        this.view.dispose();
+        this.view = null;
+      } else if (!this.needsInitialization) {
+        DOM.removeChildNodes(host);
+      }
+      if (template) {
+        this.view = template.render(element, host, element);
+      }
+    }
+    /**
+     * Locates or creates a controller for the specified element.
+     * @param element - The element to return the controller for.
+     * @remarks
+     * The specified element must have a {@link FASTElementDefinition}
+     * registered either through the use of the {@link customElement}
+     * decorator or a call to `FASTElement.define`.
+     */
+    static forCustomElement(element) {
+      const controller = element.$fastController;
+      if (controller !== void 0) {
+        return controller;
+      }
+      const definition = FASTElementDefinition.forType(element.constructor);
+      if (definition === void 0) {
+        throw new Error("Missing FASTElement definition.");
+      }
+      return element.$fastController = new _Controller(element, definition);
+    }
+  };
+
+  // node_modules/@microsoft/fast-element/dist/esm/components/fast-element.js
+  function createFASTElement(BaseType) {
+    return class extends BaseType {
+      constructor() {
+        super();
+        Controller.forCustomElement(this);
+      }
+      $emit(type, detail, options) {
+        return this.$fastController.emit(type, detail, options);
+      }
+      connectedCallback() {
+        this.$fastController.onConnectedCallback();
+      }
+      disconnectedCallback() {
+        this.$fastController.onDisconnectedCallback();
+      }
+      attributeChangedCallback(name, oldValue, newValue) {
+        this.$fastController.onAttributeChangedCallback(name, oldValue, newValue);
+      }
+    };
+  }
+  var FASTElement = Object.assign(createFASTElement(HTMLElement), {
+    /**
+     * Creates a new FASTElement base class inherited from the
+     * provided base type.
+     * @param BaseType - The base element type to inherit from.
+     */
+    from(BaseType) {
+      return createFASTElement(BaseType);
+    },
+    /**
+     * Defines a platform custom element based on the provided type and definition.
+     * @param type - The custom element type to define.
+     * @param nameOrDef - The name of the element to define or a definition object
+     * that describes the element to define.
+     */
+    define(type, nameOrDef) {
+      return new FASTElementDefinition(type, nameOrDef).define().type;
+    }
+  });
+
+  // node_modules/@microsoft/fast-element/dist/esm/styles/css-directive.js
+  var CSSDirective = class {
+    /**
+     * Creates a CSS fragment to interpolate into the CSS document.
+     * @returns - the string to interpolate into CSS
+     */
+    createCSS() {
+      return "";
+    }
+    /**
+     * Creates a behavior to bind to the host element.
+     * @returns - the behavior to bind to the host element, or undefined.
+     */
+    createBehavior() {
+      return void 0;
+    }
+  };
+
+  // node_modules/@microsoft/fast-element/dist/esm/styles/css.js
+  function collectStyles(strings, values) {
+    const styles = [];
+    let cssString = "";
+    const behaviors = [];
+    for (let i = 0, ii = strings.length - 1; i < ii; ++i) {
+      cssString += strings[i];
+      let value = values[i];
+      if (value instanceof CSSDirective) {
+        const behavior = value.createBehavior();
+        value = value.createCSS();
+        if (behavior) {
+          behaviors.push(behavior);
+        }
+      }
+      if (value instanceof ElementStyles || value instanceof CSSStyleSheet) {
+        if (cssString.trim() !== "") {
+          styles.push(cssString);
+          cssString = "";
+        }
+        styles.push(value);
+      } else {
+        cssString += value;
+      }
+    }
+    cssString += strings[strings.length - 1];
+    if (cssString.trim() !== "") {
+      styles.push(cssString);
+    }
+    return {
+      styles,
+      behaviors
+    };
+  }
+  function css(strings, ...values) {
+    const { styles, behaviors } = collectStyles(strings, values);
+    const elementStyles = ElementStyles.create(styles);
+    if (behaviors.length) {
+      elementStyles.withBehaviors(...behaviors);
+    }
+    return elementStyles;
+  }
+
+  // node_modules/@microsoft/fast-element/dist/esm/templating/ref.js
+  var RefBehavior = class {
+    /**
+     * Creates an instance of RefBehavior.
+     * @param target - The element to reference.
+     * @param propertyName - The name of the property to assign the reference to.
+     */
+    constructor(target, propertyName) {
+      this.target = target;
+      this.propertyName = propertyName;
+    }
+    /**
+     * Bind this behavior to the source.
+     * @param source - The source to bind to.
+     * @param context - The execution context that the binding is operating within.
+     */
+    bind(source) {
+      source[this.propertyName] = this.target;
+    }
+    /**
+     * Unbinds this behavior from the source.
+     * @param source - The source to unbind from.
+     */
+    /* eslint-disable-next-line @typescript-eslint/no-empty-function */
+    unbind() {
+    }
+  };
+  function ref(propertyName) {
+    return new AttachedBehaviorHTMLDirective("fast-ref", RefBehavior, propertyName);
+  }
+
+  // node_modules/@microsoft/fast-element/dist/esm/templating/node-observation.js
+  var NodeObservationBehavior = class {
+    /**
+     * Creates an instance of NodeObservationBehavior.
+     * @param target - The target to assign the nodes property on.
+     * @param options - The options to use in configuring node observation.
+     */
+    constructor(target, options) {
+      this.target = target;
+      this.options = options;
+      this.source = null;
+    }
+    /**
+     * Bind this behavior to the source.
+     * @param source - The source to bind to.
+     * @param context - The execution context that the binding is operating within.
+     */
+    bind(source) {
+      const name = this.options.property;
+      this.shouldUpdate = Observable.getAccessors(source).some((x) => x.name === name);
+      this.source = source;
+      this.updateTarget(this.computeNodes());
+      if (this.shouldUpdate) {
+        this.observe();
+      }
+    }
+    /**
+     * Unbinds this behavior from the source.
+     * @param source - The source to unbind from.
+     */
+    unbind() {
+      this.updateTarget(emptyArray);
+      this.source = null;
+      if (this.shouldUpdate) {
+        this.disconnect();
+      }
+    }
+    /** @internal */
+    handleEvent() {
+      this.updateTarget(this.computeNodes());
+    }
+    computeNodes() {
+      let nodes = this.getNodes();
+      if (this.options.filter !== void 0) {
+        nodes = nodes.filter(this.options.filter);
+      }
+      return nodes;
+    }
+    updateTarget(value) {
+      this.source[this.options.property] = value;
+    }
+  };
+
+  // node_modules/@microsoft/fast-element/dist/esm/templating/slotted.js
+  var SlottedBehavior = class extends NodeObservationBehavior {
+    /**
+     * Creates an instance of SlottedBehavior.
+     * @param target - The slot element target to observe.
+     * @param options - The options to use when observing the slot.
+     */
+    constructor(target, options) {
+      super(target, options);
+    }
+    /**
+     * Begins observation of the nodes.
+     */
+    observe() {
+      this.target.addEventListener("slotchange", this);
+    }
+    /**
+     * Disconnects observation of the nodes.
+     */
+    disconnect() {
+      this.target.removeEventListener("slotchange", this);
+    }
+    /**
+     * Retrieves the nodes that should be assigned to the target.
+     */
+    getNodes() {
+      return this.target.assignedNodes(this.options);
+    }
+  };
+  function slotted(propertyOrOptions) {
+    if (typeof propertyOrOptions === "string") {
+      propertyOrOptions = { property: propertyOrOptions };
+    }
+    return new AttachedBehaviorHTMLDirective("fast-slotted", SlottedBehavior, propertyOrOptions);
+  }
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/patterns/start-end.js
+  var StartEnd = class {
+    handleStartContentChange() {
+      this.startContainer.classList.toggle("start", this.start.assignedNodes().length > 0);
+    }
+    handleEndContentChange() {
+      this.endContainer.classList.toggle("end", this.end.assignedNodes().length > 0);
+    }
+  };
+  var endSlotTemplate = (context, definition) => html`
     <span
         part="end"
-        ${Y("endContainer")}
-        class=${e=>t.end?"end":void 0}
+        ${ref("endContainer")}
+        class=${(x) => definition.end ? "end" : void 0}
     >
-        <slot name="end" ${Y("end")} @slotchange="${e=>e.handleEndContentChange()}">
-            ${t.end||""}
+        <slot name="end" ${ref("end")} @slotchange="${(x) => x.handleEndContentChange()}">
+            ${definition.end || ""}
         </slot>
     </span>
-`,Gn=(r,t)=>gt`
+`;
+  var startSlotTemplate = (context, definition) => html`
     <span
         part="start"
-        ${Y("startContainer")}
-        class="${e=>t.start?"start":void 0}"
+        ${ref("startContainer")}
+        class="${(x) => definition.start ? "start" : void 0}"
     >
         <slot
             name="start"
-            ${Y("start")}
-            @slotchange="${e=>e.handleStartContentChange()}"
+            ${ref("start")}
+            @slotchange="${(x) => x.handleStartContentChange()}"
         >
-            ${t.start||""}
+            ${definition.start || ""}
         </slot>
     </span>
-`,ol=gt`
-    <span part="end" ${Y("endContainer")}>
+`;
+  var endTemplate = html`
+    <span part="end" ${ref("endContainer")}>
         <slot
             name="end"
-            ${Y("end")}
-            @slotchange="${r=>r.handleEndContentChange()}"
+            ${ref("end")}
+            @slotchange="${(x) => x.handleEndContentChange()}"
         ></slot>
     </span>
-`,il=gt`
-    <span part="start" ${Y("startContainer")}>
+`;
+  var startTemplate = html`
+    <span part="start" ${ref("startContainer")}>
         <slot
             name="start"
-            ${Y("start")}
-            @slotchange="${r=>r.handleStartContentChange()}"
+            ${ref("start")}
+            @slotchange="${(x) => x.handleStartContentChange()}"
         ></slot>
     </span>
-`;function y(r,t,e,n){var o=arguments.length,i=o<3?t:n===null?n=Object.getOwnPropertyDescriptor(t,e):n,a;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")i=Reflect.decorate(r,t,e,n);else for(var l=r.length-1;l>=0;l--)(a=r[l])&&(i=(o<3?a(i):o>3?a(t,e,i):a(t,e))||i);return o>3&&i&&Object.defineProperty(t,e,i),i}var vr=new Map;"metadata"in Reflect||(Reflect.metadata=function(r,t){return function(e){Reflect.defineMetadata(r,t,e)}},Reflect.defineMetadata=function(r,t,e){let n=vr.get(e);n===void 0&&vr.set(e,n=new Map),n.set(r,t)},Reflect.getOwnMetadata=function(r,t){let e=vr.get(t);if(e!==void 0)return e.get(r)});var Tr=class{constructor(t,e){this.container=t,this.key=e}instance(t){return this.registerResolver(0,t)}singleton(t){return this.registerResolver(1,t)}transient(t){return this.registerResolver(2,t)}callback(t){return this.registerResolver(3,t)}cachedCallback(t){return this.registerResolver(3,oo(t))}aliasTo(t){return this.registerResolver(5,t)}registerResolver(t,e){let{container:n,key:o}=this;return this.container=this.key=void 0,n.registerResolver(o,new $(o,t,e))}};function qt(r){let t=r.slice(),e=Object.keys(r),n=e.length,o;for(let i=0;i<n;++i)o=e[i],io(o)||(t[o]=r[o]);return t}var Fi=Object.freeze({none(r){throw Error(`${r.toString()} not registered, did you forget to add @singleton()?`)},singleton(r){return new $(r,1,r)},transient(r){return new $(r,2,r)}}),xr=Object.freeze({default:Object.freeze({parentLocator:()=>null,responsibleForOwnerRequests:!1,defaultResolver:Fi.singleton})}),Yn=new Map;function Xn(r){return t=>Reflect.getOwnMetadata(r,t)}var Qn=null,w=Object.freeze({createContainer(r){return new Gt(null,Object.assign({},xr.default,r))},findResponsibleContainer(r){let t=r.$$container$$;return t&&t.responsibleForOwnerRequests?t:w.findParentContainer(r)},findParentContainer(r){let t=new CustomEvent(no,{bubbles:!0,composed:!0,cancelable:!0,detail:{container:void 0}});return r.dispatchEvent(t),t.detail.container||w.getOrCreateDOMContainer()},getOrCreateDOMContainer(r,t){return r?r.$$container$$||new Gt(r,Object.assign({},xr.default,t,{parentLocator:w.findParentContainer})):Qn||(Qn=new Gt(null,Object.assign({},xr.default,t,{parentLocator:()=>null})))},getDesignParamtypes:Xn("design:paramtypes"),getAnnotationParamtypes:Xn("di:paramtypes"),getOrCreateAnnotationParamTypes(r){let t=this.getAnnotationParamtypes(r);return t===void 0&&Reflect.defineMetadata("di:paramtypes",t=[],r),t},getDependencies(r){let t=Yn.get(r);if(t===void 0){let e=r.inject;if(e===void 0){let n=w.getDesignParamtypes(r),o=w.getAnnotationParamtypes(r);if(n===void 0)if(o===void 0){let i=Object.getPrototypeOf(r);typeof i=="function"&&i!==Function.prototype?t=qt(w.getDependencies(i)):t=[]}else t=qt(o);else if(o===void 0)t=qt(n);else{t=qt(n);let i=o.length,a;for(let c=0;c<i;++c)a=o[c],a!==void 0&&(t[c]=a);let l=Object.keys(o);i=l.length;let f;for(let c=0;c<i;++c)f=l[c],io(f)||(t[f]=o[f])}}else t=qt(e);Yn.set(r,t)}return t},defineProperty(r,t,e,n=!1){let o=`$di_${t}`;Reflect.defineProperty(r,t,{get:function(){let i=this[o];if(i===void 0&&(i=(this instanceof HTMLElement?w.findResponsibleContainer(this):w.getOrCreateDOMContainer()).get(e),this[o]=i,n&&this instanceof ct)){let l=this.$fastController,f=()=>{let d=w.findResponsibleContainer(this).get(e),x=this[o];d!==x&&(this[o]=i,l.notify(t))};l.subscribe({handleChange:f},"isConnected")}return i}})},createInterface(r,t){let e=typeof r=="function"?r:t,n=typeof r=="string"?r:r&&"friendlyName"in r&&r.friendlyName||to,o=typeof r=="string"?!1:r&&"respectConnection"in r&&r.respectConnection||!1,i=function(a,l,f){if(a==null||new.target!==void 0)throw new Error(`No registration for interface: '${i.friendlyName}'`);if(l)w.defineProperty(a,l,i,o);else{let c=w.getOrCreateAnnotationParamTypes(a);c[f]=i}};return i.$isInterface=!0,i.friendlyName=n??"(anonymous)",e!=null&&(i.register=function(a,l){return e(new Tr(a,l??i))}),i.toString=function(){return`InterfaceSymbol<${i.friendlyName}>`},i},inject(...r){return function(t,e,n){if(typeof n=="number"){let o=w.getOrCreateAnnotationParamTypes(t),i=r[0];i!==void 0&&(o[n]=i)}else if(e)w.defineProperty(t,e,r[0]);else{let o=n?w.getOrCreateAnnotationParamTypes(n.value):w.getOrCreateAnnotationParamTypes(t),i;for(let a=0;a<r.length;++a)i=r[a],i!==void 0&&(o[a]=i)}}},transient(r){return r.register=function(e){return vt.transient(r,r).register(e)},r.registerInRequestor=!1,r},singleton(r,t=Bi){return r.register=function(n){return vt.singleton(r,r).register(n)},r.registerInRequestor=t.scoped,r}}),$i=w.createInterface("Container");function De(r){return function(t){let e=function(n,o,i){w.inject(e)(n,o,i)};return e.$isResolver=!0,e.resolve=function(n,o){return r(t,n,o)},e}}var cl=w.inject;var Bi={scoped:!1};function ji(r){return function(t,e){e=!!e;let n=function(o,i,a){w.inject(n)(o,i,a)};return n.$isResolver=!0,n.resolve=function(o,i){return r(t,o,i,e)},n}}var ul=ji((r,t,e,n)=>e.getAll(r,n)),fl=De((r,t,e)=>()=>e.get(r)),dl=De((r,t,e)=>{if(e.has(r,!0))return e.get(r)});function Er(r,t,e){w.inject(Er)(r,t,e)}Er.$isResolver=!0;Er.resolve=()=>{};var hl=De((r,t,e)=>{let n=ro(r,t),o=new $(r,0,n);return e.registerResolver(r,o),n}),pl=De((r,t,e)=>ro(r,t));function ro(r,t){return t.getFactory(r).construct(t)}var $=class{constructor(t,e,n){this.key=t,this.strategy=e,this.state=n,this.resolving=!1}get $isResolver(){return!0}register(t){return t.registerResolver(this.key,this)}resolve(t,e){switch(this.strategy){case 0:return this.state;case 1:{if(this.resolving)throw new Error(`Cyclic dependency found: ${this.state.name}`);return this.resolving=!0,this.state=t.getFactory(this.state).construct(e),this.strategy=0,this.resolving=!1,this.state}case 2:{let n=t.getFactory(this.state);if(n===null)throw new Error(`Resolver for ${String(this.key)} returned a null factory`);return n.construct(e)}case 3:return this.state(t,e,this);case 4:return this.state[0].resolve(t,e);case 5:return e.get(this.state);default:throw new Error(`Invalid resolver strategy specified: ${this.strategy}.`)}}getFactory(t){var e,n,o;switch(this.strategy){case 1:case 2:return t.getFactory(this.state);case 5:return(o=(n=(e=t.getResolver(this.state))===null||e===void 0?void 0:e.getFactory)===null||n===void 0?void 0:n.call(e,t))!==null&&o!==void 0?o:null;default:return null}}};function Zn(r){return this.get(r)}function Hi(r,t){return t(r)}var Cr=class{constructor(t,e){this.Type=t,this.dependencies=e,this.transformers=null}construct(t,e){let n;return e===void 0?n=new this.Type(...this.dependencies.map(Zn,t)):n=new this.Type(...this.dependencies.map(Zn,t),...e),this.transformers==null?n:this.transformers.reduce(Hi,n)}registerTransformer(t){(this.transformers||(this.transformers=[])).push(t)}},Ui={$isResolver:!0,resolve(r,t){return t}};function Re(r){return typeof r.register=="function"}function zi(r){return Re(r)&&typeof r.registerInRequestor=="boolean"}function Jn(r){return zi(r)&&r.registerInRequestor}function Vi(r){return r.prototype!==void 0}var Wi=new Set(["Array","ArrayBuffer","Boolean","DataView","Date","Error","EvalError","Float32Array","Float64Array","Function","Int8Array","Int16Array","Int32Array","Map","Number","Object","Promise","RangeError","ReferenceError","RegExp","Set","SharedArrayBuffer","String","SyntaxError","TypeError","Uint8Array","Uint8ClampedArray","Uint16Array","Uint32Array","URIError","WeakMap","WeakSet"]),no="__DI_LOCATE_PARENT__",wr=new Map,Gt=class r{constructor(t,e){this.owner=t,this.config=e,this._parent=void 0,this.registerDepth=0,this.context=null,t!==null&&(t.$$container$$=this),this.resolvers=new Map,this.resolvers.set($i,Ui),t instanceof Node&&t.addEventListener(no,n=>{n.composedPath()[0]!==this.owner&&(n.detail.container=this,n.stopImmediatePropagation())})}get parent(){return this._parent===void 0&&(this._parent=this.config.parentLocator(this.owner)),this._parent}get depth(){return this.parent===null?0:this.parent.depth+1}get responsibleForOwnerRequests(){return this.config.responsibleForOwnerRequests}registerWithContext(t,...e){return this.context=t,this.register(...e),this.context=null,this}register(...t){if(++this.registerDepth===100)throw new Error("Unable to autoregister dependency");let e,n,o,i,a,l=this.context;for(let f=0,c=t.length;f<c;++f)if(e=t[f],!!eo(e))if(Re(e))e.register(this,l);else if(Vi(e))vt.singleton(e,e).register(this);else for(n=Object.keys(e),i=0,a=n.length;i<a;++i)o=e[n[i]],eo(o)&&(Re(o)?o.register(this,l):this.register(o));return--this.registerDepth,this}registerResolver(t,e){ke(t);let n=this.resolvers,o=n.get(t);return o==null?n.set(t,e):o instanceof $&&o.strategy===4?o.state.push(e):n.set(t,new $(t,4,[o,e])),e}registerTransformer(t,e){let n=this.getResolver(t);if(n==null)return!1;if(n.getFactory){let o=n.getFactory(this);return o==null?!1:(o.registerTransformer(e),!0)}return!1}getResolver(t,e=!0){if(ke(t),t.resolve!==void 0)return t;let n=this,o;for(;n!=null;)if(o=n.resolvers.get(t),o==null){if(n.parent==null){let i=Jn(t)?this:n;return e?this.jitRegister(t,i):null}n=n.parent}else return o;return null}has(t,e=!1){return this.resolvers.has(t)?!0:e&&this.parent!=null?this.parent.has(t,!0):!1}get(t){if(ke(t),t.$isResolver)return t.resolve(this,this);let e=this,n;for(;e!=null;)if(n=e.resolvers.get(t),n==null){if(e.parent==null){let o=Jn(t)?this:e;return n=this.jitRegister(t,o),n.resolve(e,this)}e=e.parent}else return n.resolve(e,this);throw new Error(`Unable to resolve key: ${String(t)}`)}getAll(t,e=!1){ke(t);let n=this,o=n,i;if(e){let a=st;for(;o!=null;)i=o.resolvers.get(t),i!=null&&(a=a.concat(Kn(i,o,n))),o=o.parent;return a}else for(;o!=null;)if(i=o.resolvers.get(t),i==null){if(o=o.parent,o==null)return st}else return Kn(i,o,n);return st}getFactory(t){let e=wr.get(t);if(e===void 0){if(qi(t))throw new Error(`${t.name} is a native function and therefore cannot be safely constructed by DI. If this is intentional, please use a callback or cachedCallback resolver.`);wr.set(t,e=new Cr(t,w.getDependencies(t)))}return e}registerFactory(t,e){wr.set(t,e)}createChild(t){return new r(null,Object.assign({},this.config,t,{parentLocator:()=>this}))}jitRegister(t,e){if(typeof t!="function")throw new Error(`Attempted to jitRegister something that is not a constructor: '${t}'. Did you forget to register this dependency?`);if(Wi.has(t.name))throw new Error(`Attempted to jitRegister an intrinsic type: ${t.name}. Did you forget to add @inject(Key)`);if(Re(t)){let n=t.register(e);if(!(n instanceof Object)||n.resolve==null){let o=e.resolvers.get(t);if(o!=null)return o;throw new Error("A valid resolver was not returned from the static register method")}return n}else{if(t.$isInterface)throw new Error(`Attempted to jitRegister an interface: ${t.friendlyName}`);{let n=this.config.defaultResolver(t,e);return e.resolvers.set(t,n),n}}}},Sr=new WeakMap;function oo(r){return function(t,e,n){if(Sr.has(n))return Sr.get(n);let o=r(t,e,n);return Sr.set(n,o),o}}var vt=Object.freeze({instance(r,t){return new $(r,0,t)},singleton(r,t){return new $(r,1,t)},transient(r,t){return new $(r,2,t)},callback(r,t){return new $(r,3,t)},cachedCallback(r,t){return new $(r,3,oo(t))},aliasTo(r,t){return new $(t,5,r)}});function ke(r){if(r==null)throw new Error("key/value cannot be null or undefined. Are you trying to inject/register something that doesn't exist with DI?")}function Kn(r,t,e){if(r instanceof $&&r.strategy===4){let n=r.state,o=n.length,i=new Array(o);for(;o--;)i[o]=n[o].resolve(t,e);return i}return[r.resolve(t,e)]}var to="(anonymous)";function eo(r){return typeof r=="object"&&r!==null||typeof r=="function"}var qi=(function(){let r=new WeakMap,t=!1,e="",n=0;return function(o){return t=r.get(o),t===void 0&&(e=o.toString(),n=e.length,t=n>=29&&n<=100&&e.charCodeAt(n-1)===125&&e.charCodeAt(n-2)<=32&&e.charCodeAt(n-3)===93&&e.charCodeAt(n-4)===101&&e.charCodeAt(n-5)===100&&e.charCodeAt(n-6)===111&&e.charCodeAt(n-7)===99&&e.charCodeAt(n-8)===32&&e.charCodeAt(n-9)===101&&e.charCodeAt(n-10)===118&&e.charCodeAt(n-11)===105&&e.charCodeAt(n-12)===116&&e.charCodeAt(n-13)===97&&e.charCodeAt(n-14)===110&&e.charCodeAt(n-15)===88,r.set(o,t)),t}})(),Oe={};function io(r){switch(typeof r){case"number":return r>=0&&(r|0)===r;case"string":{let t=Oe[r];if(t!==void 0)return t;let e=r.length;if(e===0)return Oe[r]=!1;let n=0;for(let o=0;o<e;++o)if(n=r.charCodeAt(o),o===0&&n===48&&e>1||n<48||n>57)return Oe[r]=!1;return Oe[r]=!0}default:return!1}}function so(r){return`${r.toLowerCase()}:presentation`}var Pe=new Map,Le=Object.freeze({define(r,t,e){let n=so(r);Pe.get(n)===void 0?Pe.set(n,t):Pe.set(n,!1),e.register(vt.instance(n,t))},forTag(r,t){let e=so(r),n=Pe.get(e);return n===!1?w.findResponsibleContainer(t).get(e):n||null}}),Ie=class{constructor(t,e){this.template=t||null,this.styles=e===void 0?null:Array.isArray(e)?A.create(e):e instanceof A?e:A.create([e])}applyTo(t){let e=t.$fastController;e.template===null&&(e.template=this.template),e.styles===null&&(e.styles=this.styles)}};var ut=class r extends ct{constructor(){super(...arguments),this._presentation=void 0}get $presentation(){return this._presentation===void 0&&(this._presentation=Le.forTag(this.tagName,this)),this._presentation}templateChanged(){this.template!==void 0&&(this.$fastController.template=this.template)}stylesChanged(){this.styles!==void 0&&(this.$fastController.styles=this.styles)}connectedCallback(){this.$presentation!==null&&this.$presentation.applyTo(this),super.connectedCallback()}static compose(t){return(e={})=>new _r(this===r?class extends r{}:this,t,e)}};y([G],ut.prototype,"template",void 0);y([G],ut.prototype,"styles",void 0);function Yt(r,t,e){return typeof r=="function"?r(t,e):r}var _r=class{constructor(t,e,n){this.type=t,this.elementDefinition=e,this.overrideDefinition=n,this.definition=Object.assign(Object.assign({},this.elementDefinition),this.overrideDefinition)}register(t,e){let n=this.definition,o=this.overrideDefinition,a=`${n.prefix||e.elementPrefix}-${n.baseName}`;e.tryDefineElement({name:a,type:this.type,baseClass:this.elementDefinition.baseClass,callback:l=>{let f=new Ie(Yt(n.template,l,n),Yt(n.styles,l,n));l.definePresentation(f);let c=Yt(n.shadowOptions,l,n);l.shadowRootMode&&(c?o.shadowOptions||(c.mode=l.shadowRootMode):c!==null&&(c={mode:l.shadowRootMode})),l.defineElement({elementOptions:Yt(n.elementOptions,l,n),shadowOptions:c,attributes:Yt(n.attributes,l,n)})}})}};function Ar(r,...t){let e=Wt.locate(r);t.forEach(n=>{Object.getOwnPropertyNames(n.prototype).forEach(i=>{i!=="constructor"&&Object.defineProperty(r.prototype,i,Object.getOwnPropertyDescriptor(n.prototype,i))}),Wt.locate(n).forEach(i=>e.push(i))})}function ao(){return!!(typeof window<"u"&&window.document&&window.document.createElement)}function Gi(){let r=document.querySelector('meta[property="csp-nonce"]');return r?r.getAttribute("content"):null}var xt;function lo(){if(typeof xt=="boolean")return xt;if(!ao())return xt=!1,xt;let r=document.createElement("style"),t=Gi();t!==null&&r.setAttribute("nonce",t),document.head.appendChild(r);try{r.sheet.insertRule("foo:focus-visible {color:inherit}",0),xt=!0}catch{xt=!1}finally{document.head.removeChild(r)}return xt}var co;(function(r){r[r.alt=18]="alt",r[r.arrowDown=40]="arrowDown",r[r.arrowLeft=37]="arrowLeft",r[r.arrowRight=39]="arrowRight",r[r.arrowUp=38]="arrowUp",r[r.back=8]="back",r[r.backSlash=220]="backSlash",r[r.break=19]="break",r[r.capsLock=20]="capsLock",r[r.closeBracket=221]="closeBracket",r[r.colon=186]="colon",r[r.colon2=59]="colon2",r[r.comma=188]="comma",r[r.ctrl=17]="ctrl",r[r.delete=46]="delete",r[r.end=35]="end",r[r.enter=13]="enter",r[r.equals=187]="equals",r[r.equals2=61]="equals2",r[r.equals3=107]="equals3",r[r.escape=27]="escape",r[r.forwardSlash=191]="forwardSlash",r[r.function1=112]="function1",r[r.function10=121]="function10",r[r.function11=122]="function11",r[r.function12=123]="function12",r[r.function2=113]="function2",r[r.function3=114]="function3",r[r.function4=115]="function4",r[r.function5=116]="function5",r[r.function6=117]="function6",r[r.function7=118]="function7",r[r.function8=119]="function8",r[r.function9=120]="function9",r[r.home=36]="home",r[r.insert=45]="insert",r[r.menu=93]="menu",r[r.minus=189]="minus",r[r.minus2=109]="minus2",r[r.numLock=144]="numLock",r[r.numPad0=96]="numPad0",r[r.numPad1=97]="numPad1",r[r.numPad2=98]="numPad2",r[r.numPad3=99]="numPad3",r[r.numPad4=100]="numPad4",r[r.numPad5=101]="numPad5",r[r.numPad6=102]="numPad6",r[r.numPad7=103]="numPad7",r[r.numPad8=104]="numPad8",r[r.numPad9=105]="numPad9",r[r.numPadDivide=111]="numPadDivide",r[r.numPadDot=110]="numPadDot",r[r.numPadMinus=109]="numPadMinus",r[r.numPadMultiply=106]="numPadMultiply",r[r.numPadPlus=107]="numPadPlus",r[r.openBracket=219]="openBracket",r[r.pageDown=34]="pageDown",r[r.pageUp=33]="pageUp",r[r.period=190]="period",r[r.print=44]="print",r[r.quote=222]="quote",r[r.scrollLock=145]="scrollLock",r[r.shift=16]="shift",r[r.space=32]="space",r[r.tab=9]="tab",r[r.tilde=192]="tilde",r[r.windowsLeft=91]="windowsLeft",r[r.windowsOpera=219]="windowsOpera",r[r.windowsRight=92]="windowsRight"})(co||(co={}));var uo="Enter";var E=class{};y([b({attribute:"aria-atomic"})],E.prototype,"ariaAtomic",void 0);y([b({attribute:"aria-busy"})],E.prototype,"ariaBusy",void 0);y([b({attribute:"aria-controls"})],E.prototype,"ariaControls",void 0);y([b({attribute:"aria-current"})],E.prototype,"ariaCurrent",void 0);y([b({attribute:"aria-describedby"})],E.prototype,"ariaDescribedby",void 0);y([b({attribute:"aria-details"})],E.prototype,"ariaDetails",void 0);y([b({attribute:"aria-disabled"})],E.prototype,"ariaDisabled",void 0);y([b({attribute:"aria-errormessage"})],E.prototype,"ariaErrormessage",void 0);y([b({attribute:"aria-flowto"})],E.prototype,"ariaFlowto",void 0);y([b({attribute:"aria-haspopup"})],E.prototype,"ariaHaspopup",void 0);y([b({attribute:"aria-hidden"})],E.prototype,"ariaHidden",void 0);y([b({attribute:"aria-invalid"})],E.prototype,"ariaInvalid",void 0);y([b({attribute:"aria-keyshortcuts"})],E.prototype,"ariaKeyshortcuts",void 0);y([b({attribute:"aria-label"})],E.prototype,"ariaLabel",void 0);y([b({attribute:"aria-labelledby"})],E.prototype,"ariaLabelledby",void 0);y([b({attribute:"aria-live"})],E.prototype,"ariaLive",void 0);y([b({attribute:"aria-owns"})],E.prototype,"ariaOwns",void 0);y([b({attribute:"aria-relevant"})],E.prototype,"ariaRelevant",void 0);y([b({attribute:"aria-roledescription"})],E.prototype,"ariaRoledescription",void 0);var fo=(r,t)=>gt`
+`;
+
+  // node_modules/@microsoft/fast-foundation/node_modules/tslib/tslib.es6.js
+  function __decorate(decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+  }
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/di/di.js
+  var metadataByTarget = /* @__PURE__ */ new Map();
+  if (!("metadata" in Reflect)) {
+    Reflect.metadata = function(key, value) {
+      return function(target) {
+        Reflect.defineMetadata(key, value, target);
+      };
+    };
+    Reflect.defineMetadata = function(key, value, target) {
+      let metadata = metadataByTarget.get(target);
+      if (metadata === void 0) {
+        metadataByTarget.set(target, metadata = /* @__PURE__ */ new Map());
+      }
+      metadata.set(key, value);
+    };
+    Reflect.getOwnMetadata = function(key, target) {
+      const metadata = metadataByTarget.get(target);
+      if (metadata !== void 0) {
+        return metadata.get(key);
+      }
+      return void 0;
+    };
+  }
+  var ResolverBuilder = class {
+    /**
+     *
+     * @param container - The container to create resolvers for.
+     * @param key - The key to register resolvers under.
+     */
+    constructor(container, key) {
+      this.container = container;
+      this.key = key;
+    }
+    /**
+     * Creates a resolver for an existing object instance.
+     * @param value - The instance to resolve.
+     * @returns The resolver.
+     */
+    instance(value) {
+      return this.registerResolver(0, value);
+    }
+    /**
+     * Creates a resolver that enforces a singleton lifetime.
+     * @param value - The type to create and cache the singleton for.
+     * @returns The resolver.
+     */
+    singleton(value) {
+      return this.registerResolver(1, value);
+    }
+    /**
+     * Creates a resolver that creates a new instance for every dependency request.
+     * @param value - The type to create instances of.
+     * @returns - The resolver.
+     */
+    transient(value) {
+      return this.registerResolver(2, value);
+    }
+    /**
+     * Creates a resolver that invokes a callback function for every dependency resolution
+     * request, allowing custom logic to return the dependency.
+     * @param value - The callback to call during resolution.
+     * @returns The resolver.
+     */
+    callback(value) {
+      return this.registerResolver(3, value);
+    }
+    /**
+     * Creates a resolver that invokes a callback function the first time that a dependency
+     * resolution is requested. The returned value is then cached and provided for all
+     * subsequent requests.
+     * @param value - The callback to call during the first resolution.
+     * @returns The resolver.
+     */
+    cachedCallback(value) {
+      return this.registerResolver(3, cacheCallbackResult(value));
+    }
+    /**
+     * Aliases the current key to a different key.
+     * @param destinationKey - The key to point the alias to.
+     * @returns The resolver.
+     */
+    aliasTo(destinationKey) {
+      return this.registerResolver(5, destinationKey);
+    }
+    registerResolver(strategy, state) {
+      const { container, key } = this;
+      this.container = this.key = void 0;
+      return container.registerResolver(key, new ResolverImpl(key, strategy, state));
+    }
+  };
+  function cloneArrayWithPossibleProps(source) {
+    const clone2 = source.slice();
+    const keys = Object.keys(source);
+    const len = keys.length;
+    let key;
+    for (let i = 0; i < len; ++i) {
+      key = keys[i];
+      if (!isArrayIndex(key)) {
+        clone2[key] = source[key];
+      }
+    }
+    return clone2;
+  }
+  var DefaultResolver = Object.freeze({
+    /**
+     * Disables auto-registration and throws for all un-registered dependencies.
+     * @param key - The key to create the resolver for.
+     */
+    none(key) {
+      throw Error(`${key.toString()} not registered, did you forget to add @singleton()?`);
+    },
+    /**
+     * Provides default singleton resolution behavior during auto-registration.
+     * @param key - The key to create the resolver for.
+     * @returns The resolver.
+     */
+    singleton(key) {
+      return new ResolverImpl(key, 1, key);
+    },
+    /**
+     * Provides default transient resolution behavior during auto-registration.
+     * @param key - The key to create the resolver for.
+     * @returns The resolver.
+     */
+    transient(key) {
+      return new ResolverImpl(key, 2, key);
+    }
+  });
+  var ContainerConfiguration = Object.freeze({
+    /**
+     * The default configuration used when creating a DOM-disconnected container.
+     * @remarks
+     * The default creates a root container, with no parent container. It does not handle
+     * owner requests and it uses singleton resolution behavior for auto-registration.
+     */
+    default: Object.freeze({
+      parentLocator: () => null,
+      responsibleForOwnerRequests: false,
+      defaultResolver: DefaultResolver.singleton
+    })
+  });
+  var dependencyLookup = /* @__PURE__ */ new Map();
+  function getParamTypes(key) {
+    return (Type) => {
+      return Reflect.getOwnMetadata(key, Type);
+    };
+  }
+  var rootDOMContainer = null;
+  var DI = Object.freeze({
+    /**
+     * Creates a new dependency injection container.
+     * @param config - The configuration for the container.
+     * @returns A newly created dependency injection container.
+     */
+    createContainer(config) {
+      return new ContainerImpl(null, Object.assign({}, ContainerConfiguration.default, config));
+    },
+    /**
+     * Finds the dependency injection container responsible for providing dependencies
+     * to the specified node.
+     * @param node - The node to find the responsible container for.
+     * @returns The container responsible for providing dependencies to the node.
+     * @remarks
+     * This will be the same as the parent container if the specified node
+     * does not itself host a container configured with responsibleForOwnerRequests.
+     */
+    findResponsibleContainer(node) {
+      const owned = node.$$container$$;
+      if (owned && owned.responsibleForOwnerRequests) {
+        return owned;
+      }
+      return DI.findParentContainer(node);
+    },
+    /**
+     * Find the dependency injection container up the DOM tree from this node.
+     * @param node - The node to find the parent container for.
+     * @returns The parent container of this node.
+     * @remarks
+     * This will be the same as the responsible container if the specified node
+     * does not itself host a container configured with responsibleForOwnerRequests.
+     */
+    findParentContainer(node) {
+      const event = new CustomEvent(DILocateParentEventType, {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+        detail: { container: void 0 }
+      });
+      node.dispatchEvent(event);
+      return event.detail.container || DI.getOrCreateDOMContainer();
+    },
+    /**
+     * Returns a dependency injection container if one is explicitly owned by the specified
+     * node. If one is not owned, then a new container is created and assigned to the node.
+     * @param node - The node to find or create the container for.
+     * @param config - The configuration for the container if one needs to be created.
+     * @returns The located or created container.
+     * @remarks
+     * This API does not search for a responsible or parent container. It looks only for a container
+     * directly defined on the specified node and creates one at that location if one does not
+     * already exist.
+     */
+    getOrCreateDOMContainer(node, config) {
+      if (!node) {
+        return rootDOMContainer || (rootDOMContainer = new ContainerImpl(null, Object.assign({}, ContainerConfiguration.default, config, {
+          parentLocator: () => null
+        })));
+      }
+      return node.$$container$$ || new ContainerImpl(node, Object.assign({}, ContainerConfiguration.default, config, {
+        parentLocator: DI.findParentContainer
+      }));
+    },
+    /**
+     * Gets the "design:paramtypes" metadata for the specified type.
+     * @param Type - The type to get the metadata for.
+     * @returns The metadata array or undefined if no metadata is found.
+     */
+    getDesignParamtypes: getParamTypes("design:paramtypes"),
+    /**
+     * Gets the "di:paramtypes" metadata for the specified type.
+     * @param Type - The type to get the metadata for.
+     * @returns The metadata array or undefined if no metadata is found.
+     */
+    getAnnotationParamtypes: getParamTypes("di:paramtypes"),
+    /**
+     *
+     * @param Type - Gets the "di:paramtypes" metadata for the specified type. If none is found,
+     * an empty metadata array is created and added.
+     * @returns The metadata array.
+     */
+    getOrCreateAnnotationParamTypes(Type) {
+      let annotationParamtypes = this.getAnnotationParamtypes(Type);
+      if (annotationParamtypes === void 0) {
+        Reflect.defineMetadata("di:paramtypes", annotationParamtypes = [], Type);
+      }
+      return annotationParamtypes;
+    },
+    /**
+     * Gets the dependency keys representing what is needed to instantiate the specified type.
+     * @param Type - The type to get the dependencies for.
+     * @returns An array of dependency keys.
+     */
+    getDependencies(Type) {
+      let dependencies = dependencyLookup.get(Type);
+      if (dependencies === void 0) {
+        const inject2 = Type.inject;
+        if (inject2 === void 0) {
+          const designParamtypes = DI.getDesignParamtypes(Type);
+          const annotationParamtypes = DI.getAnnotationParamtypes(Type);
+          if (designParamtypes === void 0) {
+            if (annotationParamtypes === void 0) {
+              const Proto = Object.getPrototypeOf(Type);
+              if (typeof Proto === "function" && Proto !== Function.prototype) {
+                dependencies = cloneArrayWithPossibleProps(DI.getDependencies(Proto));
+              } else {
+                dependencies = [];
+              }
+            } else {
+              dependencies = cloneArrayWithPossibleProps(annotationParamtypes);
+            }
+          } else if (annotationParamtypes === void 0) {
+            dependencies = cloneArrayWithPossibleProps(designParamtypes);
+          } else {
+            dependencies = cloneArrayWithPossibleProps(designParamtypes);
+            let len = annotationParamtypes.length;
+            let auAnnotationParamtype;
+            for (let i = 0; i < len; ++i) {
+              auAnnotationParamtype = annotationParamtypes[i];
+              if (auAnnotationParamtype !== void 0) {
+                dependencies[i] = auAnnotationParamtype;
+              }
+            }
+            const keys = Object.keys(annotationParamtypes);
+            len = keys.length;
+            let key;
+            for (let i = 0; i < len; ++i) {
+              key = keys[i];
+              if (!isArrayIndex(key)) {
+                dependencies[key] = annotationParamtypes[key];
+              }
+            }
+          }
+        } else {
+          dependencies = cloneArrayWithPossibleProps(inject2);
+        }
+        dependencyLookup.set(Type, dependencies);
+      }
+      return dependencies;
+    },
+    /**
+     * Defines a property on a web component class. The value of this property will
+     * be resolved from the dependency injection container responsible for the element
+     * instance, based on where it is connected in the DOM.
+     * @param target - The target to define the property on.
+     * @param propertyName - The name of the property to define.
+     * @param key - The dependency injection key.
+     * @param respectConnection - Indicates whether or not to update the property value if the
+     * hosting component is disconnected and then re-connected at a different location in the DOM.
+     * @remarks
+     * The respectConnection option is only applicable to elements that descend from FASTElement.
+     */
+    defineProperty(target, propertyName, key, respectConnection = false) {
+      const diPropertyKey = `$di_${propertyName}`;
+      Reflect.defineProperty(target, propertyName, {
+        get: function() {
+          let value = this[diPropertyKey];
+          if (value === void 0) {
+            const container = this instanceof HTMLElement ? DI.findResponsibleContainer(this) : DI.getOrCreateDOMContainer();
+            value = container.get(key);
+            this[diPropertyKey] = value;
+            if (respectConnection && this instanceof FASTElement) {
+              const notifier = this.$fastController;
+              const handleChange = () => {
+                const newContainer = DI.findResponsibleContainer(this);
+                const newValue = newContainer.get(key);
+                const oldValue = this[diPropertyKey];
+                if (newValue !== oldValue) {
+                  this[diPropertyKey] = value;
+                  notifier.notify(propertyName);
+                }
+              };
+              notifier.subscribe({ handleChange }, "isConnected");
+            }
+          }
+          return value;
+        }
+      });
+    },
+    /**
+     * Creates a dependency injection key.
+     * @param nameConfigOrCallback - A friendly name for the key or a lambda that configures a
+     * default resolution for the dependency.
+     * @param configuror - If a friendly name was provided for the first parameter, then an optional
+     * lambda that configures a default resolution for the dependency can be provided second.
+     * @returns The created key.
+     * @remarks
+     * The created key can be used as a property decorator or constructor parameter decorator,
+     * in addition to its standard use in an inject array or through direct container APIs.
+     */
+    createInterface(nameConfigOrCallback, configuror) {
+      const configure = typeof nameConfigOrCallback === "function" ? nameConfigOrCallback : configuror;
+      const friendlyName = typeof nameConfigOrCallback === "string" ? nameConfigOrCallback : nameConfigOrCallback && "friendlyName" in nameConfigOrCallback ? nameConfigOrCallback.friendlyName || defaultFriendlyName : defaultFriendlyName;
+      const respectConnection = typeof nameConfigOrCallback === "string" ? false : nameConfigOrCallback && "respectConnection" in nameConfigOrCallback ? nameConfigOrCallback.respectConnection || false : false;
+      const Interface = function(target, property, index) {
+        if (target == null || new.target !== void 0) {
+          throw new Error(`No registration for interface: '${Interface.friendlyName}'`);
+        }
+        if (property) {
+          DI.defineProperty(target, property, Interface, respectConnection);
+        } else {
+          const annotationParamtypes = DI.getOrCreateAnnotationParamTypes(target);
+          annotationParamtypes[index] = Interface;
+        }
+      };
+      Interface.$isInterface = true;
+      Interface.friendlyName = friendlyName == null ? "(anonymous)" : friendlyName;
+      if (configure != null) {
+        Interface.register = function(container, key) {
+          return configure(new ResolverBuilder(container, key !== null && key !== void 0 ? key : Interface));
+        };
+      }
+      Interface.toString = function toString() {
+        return `InterfaceSymbol<${Interface.friendlyName}>`;
+      };
+      return Interface;
+    },
+    /**
+     * A decorator that specifies what to inject into its target.
+     * @param dependencies - The dependencies to inject.
+     * @returns The decorator to be applied to the target class.
+     * @remarks
+     * The decorator can be used to decorate a class, listing all of the classes dependencies.
+     * Or it can be used to decorate a constructor paramter, indicating what to inject for that
+     * parameter.
+     * Or it can be used for a web component property, indicating what that property should resolve to.
+     */
+    inject(...dependencies) {
+      return function(target, key, descriptor) {
+        if (typeof descriptor === "number") {
+          const annotationParamtypes = DI.getOrCreateAnnotationParamTypes(target);
+          const dep = dependencies[0];
+          if (dep !== void 0) {
+            annotationParamtypes[descriptor] = dep;
+          }
+        } else if (key) {
+          DI.defineProperty(target, key, dependencies[0]);
+        } else {
+          const annotationParamtypes = descriptor ? DI.getOrCreateAnnotationParamTypes(descriptor.value) : DI.getOrCreateAnnotationParamTypes(target);
+          let dep;
+          for (let i = 0; i < dependencies.length; ++i) {
+            dep = dependencies[i];
+            if (dep !== void 0) {
+              annotationParamtypes[i] = dep;
+            }
+          }
+        }
+      };
+    },
+    /**
+     * Registers the `target` class as a transient dependency; each time the dependency is resolved
+     * a new instance will be created.
+     *
+     * @param target - The class / constructor function to register as transient.
+     * @returns The same class, with a static `register` method that takes a container and returns the appropriate resolver.
+     *
+     * @example
+     * On an existing class
+     * ```ts
+     * class Foo { }
+     * DI.transient(Foo);
+     * ```
+     *
+     * @example
+     * Inline declaration
+     *
+     * ```ts
+     * const Foo = DI.transient(class { });
+     * // Foo is now strongly typed with register
+     * Foo.register(container);
+     * ```
+     *
+     * @public
+     */
+    transient(target) {
+      target.register = function register(container) {
+        const registration = Registration.transient(target, target);
+        return registration.register(container);
+      };
+      target.registerInRequestor = false;
+      return target;
+    },
+    /**
+     * Registers the `target` class as a singleton dependency; the class will only be created once. Each
+     * consecutive time the dependency is resolved, the same instance will be returned.
+     *
+     * @param target - The class / constructor function to register as a singleton.
+     * @returns The same class, with a static `register` method that takes a container and returns the appropriate resolver.
+     * @example
+     * On an existing class
+     * ```ts
+     * class Foo { }
+     * DI.singleton(Foo);
+     * ```
+     *
+     * @example
+     * Inline declaration
+     * ```ts
+     * const Foo = DI.singleton(class { });
+     * // Foo is now strongly typed with register
+     * Foo.register(container);
+     * ```
+     *
+     * @public
+     */
+    singleton(target, options = defaultSingletonOptions) {
+      target.register = function register(container) {
+        const registration = Registration.singleton(target, target);
+        return registration.register(container);
+      };
+      target.registerInRequestor = options.scoped;
+      return target;
+    }
+  });
+  var Container = DI.createInterface("Container");
+  function createResolver(getter) {
+    return function(key) {
+      const resolver = function(target, property, descriptor) {
+        DI.inject(resolver)(target, property, descriptor);
+      };
+      resolver.$isResolver = true;
+      resolver.resolve = function(handler, requestor) {
+        return getter(key, handler, requestor);
+      };
+      return resolver;
+    };
+  }
+  var inject = DI.inject;
+  var defaultSingletonOptions = { scoped: false };
+  function createAllResolver(getter) {
+    return function(key, searchAncestors) {
+      searchAncestors = !!searchAncestors;
+      const resolver = function(target, property, descriptor) {
+        DI.inject(resolver)(target, property, descriptor);
+      };
+      resolver.$isResolver = true;
+      resolver.resolve = function(handler, requestor) {
+        return getter(key, handler, requestor, searchAncestors);
+      };
+      return resolver;
+    };
+  }
+  var all = createAllResolver((key, handler, requestor, searchAncestors) => requestor.getAll(key, searchAncestors));
+  var lazy = createResolver((key, handler, requestor) => {
+    return () => requestor.get(key);
+  });
+  var optional = createResolver((key, handler, requestor) => {
+    if (requestor.has(key, true)) {
+      return requestor.get(key);
+    } else {
+      return void 0;
+    }
+  });
+  function ignore(target, property, descriptor) {
+    DI.inject(ignore)(target, property, descriptor);
+  }
+  ignore.$isResolver = true;
+  ignore.resolve = () => void 0;
+  var newInstanceForScope = createResolver((key, handler, requestor) => {
+    const instance = createNewInstance(key, handler);
+    const resolver = new ResolverImpl(key, 0, instance);
+    requestor.registerResolver(key, resolver);
+    return instance;
+  });
+  var newInstanceOf = createResolver((key, handler, _requestor) => createNewInstance(key, handler));
+  function createNewInstance(key, handler) {
+    return handler.getFactory(key).construct(handler);
+  }
+  var ResolverImpl = class {
+    constructor(key, strategy, state) {
+      this.key = key;
+      this.strategy = strategy;
+      this.state = state;
+      this.resolving = false;
+    }
+    get $isResolver() {
+      return true;
+    }
+    register(container) {
+      return container.registerResolver(this.key, this);
+    }
+    resolve(handler, requestor) {
+      switch (this.strategy) {
+        case 0:
+          return this.state;
+        case 1: {
+          if (this.resolving) {
+            throw new Error(`Cyclic dependency found: ${this.state.name}`);
+          }
+          this.resolving = true;
+          this.state = handler.getFactory(this.state).construct(requestor);
+          this.strategy = 0;
+          this.resolving = false;
+          return this.state;
+        }
+        case 2: {
+          const factory = handler.getFactory(this.state);
+          if (factory === null) {
+            throw new Error(`Resolver for ${String(this.key)} returned a null factory`);
+          }
+          return factory.construct(requestor);
+        }
+        case 3:
+          return this.state(handler, requestor, this);
+        case 4:
+          return this.state[0].resolve(handler, requestor);
+        case 5:
+          return requestor.get(this.state);
+        default:
+          throw new Error(`Invalid resolver strategy specified: ${this.strategy}.`);
+      }
+    }
+    getFactory(container) {
+      var _a, _b, _c;
+      switch (this.strategy) {
+        case 1:
+        case 2:
+          return container.getFactory(this.state);
+        case 5:
+          return (_c = (_b = (_a = container.getResolver(this.state)) === null || _a === void 0 ? void 0 : _a.getFactory) === null || _b === void 0 ? void 0 : _b.call(_a, container)) !== null && _c !== void 0 ? _c : null;
+        default:
+          return null;
+      }
+    }
+  };
+  function containerGetKey(d) {
+    return this.get(d);
+  }
+  function transformInstance(inst, transform) {
+    return transform(inst);
+  }
+  var FactoryImpl = class {
+    constructor(Type, dependencies) {
+      this.Type = Type;
+      this.dependencies = dependencies;
+      this.transformers = null;
+    }
+    construct(container, dynamicDependencies) {
+      let instance;
+      if (dynamicDependencies === void 0) {
+        instance = new this.Type(...this.dependencies.map(containerGetKey, container));
+      } else {
+        instance = new this.Type(...this.dependencies.map(containerGetKey, container), ...dynamicDependencies);
+      }
+      if (this.transformers == null) {
+        return instance;
+      }
+      return this.transformers.reduce(transformInstance, instance);
+    }
+    registerTransformer(transformer) {
+      (this.transformers || (this.transformers = [])).push(transformer);
+    }
+  };
+  var containerResolver = {
+    $isResolver: true,
+    resolve(handler, requestor) {
+      return requestor;
+    }
+  };
+  function isRegistry(obj) {
+    return typeof obj.register === "function";
+  }
+  function isSelfRegistry(obj) {
+    return isRegistry(obj) && typeof obj.registerInRequestor === "boolean";
+  }
+  function isRegisterInRequester(obj) {
+    return isSelfRegistry(obj) && obj.registerInRequestor;
+  }
+  function isClass(obj) {
+    return obj.prototype !== void 0;
+  }
+  var InstrinsicTypeNames = /* @__PURE__ */ new Set([
+    "Array",
+    "ArrayBuffer",
+    "Boolean",
+    "DataView",
+    "Date",
+    "Error",
+    "EvalError",
+    "Float32Array",
+    "Float64Array",
+    "Function",
+    "Int8Array",
+    "Int16Array",
+    "Int32Array",
+    "Map",
+    "Number",
+    "Object",
+    "Promise",
+    "RangeError",
+    "ReferenceError",
+    "RegExp",
+    "Set",
+    "SharedArrayBuffer",
+    "String",
+    "SyntaxError",
+    "TypeError",
+    "Uint8Array",
+    "Uint8ClampedArray",
+    "Uint16Array",
+    "Uint32Array",
+    "URIError",
+    "WeakMap",
+    "WeakSet"
+  ]);
+  var DILocateParentEventType = "__DI_LOCATE_PARENT__";
+  var factories = /* @__PURE__ */ new Map();
+  var ContainerImpl = class _ContainerImpl {
+    constructor(owner, config) {
+      this.owner = owner;
+      this.config = config;
+      this._parent = void 0;
+      this.registerDepth = 0;
+      this.context = null;
+      if (owner !== null) {
+        owner.$$container$$ = this;
+      }
+      this.resolvers = /* @__PURE__ */ new Map();
+      this.resolvers.set(Container, containerResolver);
+      if (owner instanceof Node) {
+        owner.addEventListener(DILocateParentEventType, (e) => {
+          if (e.composedPath()[0] !== this.owner) {
+            e.detail.container = this;
+            e.stopImmediatePropagation();
+          }
+        });
+      }
+    }
+    get parent() {
+      if (this._parent === void 0) {
+        this._parent = this.config.parentLocator(this.owner);
+      }
+      return this._parent;
+    }
+    get depth() {
+      return this.parent === null ? 0 : this.parent.depth + 1;
+    }
+    get responsibleForOwnerRequests() {
+      return this.config.responsibleForOwnerRequests;
+    }
+    registerWithContext(context, ...params) {
+      this.context = context;
+      this.register(...params);
+      this.context = null;
+      return this;
+    }
+    register(...params) {
+      if (++this.registerDepth === 100) {
+        throw new Error("Unable to autoregister dependency");
+      }
+      let current;
+      let keys;
+      let value;
+      let j;
+      let jj;
+      const context = this.context;
+      for (let i = 0, ii = params.length; i < ii; ++i) {
+        current = params[i];
+        if (!isObject(current)) {
+          continue;
+        }
+        if (isRegistry(current)) {
+          current.register(this, context);
+        } else if (isClass(current)) {
+          Registration.singleton(current, current).register(this);
+        } else {
+          keys = Object.keys(current);
+          j = 0;
+          jj = keys.length;
+          for (; j < jj; ++j) {
+            value = current[keys[j]];
+            if (!isObject(value)) {
+              continue;
+            }
+            if (isRegistry(value)) {
+              value.register(this, context);
+            } else {
+              this.register(value);
+            }
+          }
+        }
+      }
+      --this.registerDepth;
+      return this;
+    }
+    registerResolver(key, resolver) {
+      validateKey(key);
+      const resolvers = this.resolvers;
+      const result = resolvers.get(key);
+      if (result == null) {
+        resolvers.set(key, resolver);
+      } else if (result instanceof ResolverImpl && result.strategy === 4) {
+        result.state.push(resolver);
+      } else {
+        resolvers.set(key, new ResolverImpl(key, 4, [result, resolver]));
+      }
+      return resolver;
+    }
+    registerTransformer(key, transformer) {
+      const resolver = this.getResolver(key);
+      if (resolver == null) {
+        return false;
+      }
+      if (resolver.getFactory) {
+        const factory = resolver.getFactory(this);
+        if (factory == null) {
+          return false;
+        }
+        factory.registerTransformer(transformer);
+        return true;
+      }
+      return false;
+    }
+    getResolver(key, autoRegister = true) {
+      validateKey(key);
+      if (key.resolve !== void 0) {
+        return key;
+      }
+      let current = this;
+      let resolver;
+      while (current != null) {
+        resolver = current.resolvers.get(key);
+        if (resolver == null) {
+          if (current.parent == null) {
+            const handler = isRegisterInRequester(key) ? this : current;
+            return autoRegister ? this.jitRegister(key, handler) : null;
+          }
+          current = current.parent;
+        } else {
+          return resolver;
+        }
+      }
+      return null;
+    }
+    has(key, searchAncestors = false) {
+      return this.resolvers.has(key) ? true : searchAncestors && this.parent != null ? this.parent.has(key, true) : false;
+    }
+    get(key) {
+      validateKey(key);
+      if (key.$isResolver) {
+        return key.resolve(this, this);
+      }
+      let current = this;
+      let resolver;
+      while (current != null) {
+        resolver = current.resolvers.get(key);
+        if (resolver == null) {
+          if (current.parent == null) {
+            const handler = isRegisterInRequester(key) ? this : current;
+            resolver = this.jitRegister(key, handler);
+            return resolver.resolve(current, this);
+          }
+          current = current.parent;
+        } else {
+          return resolver.resolve(current, this);
+        }
+      }
+      throw new Error(`Unable to resolve key: ${String(key)}`);
+    }
+    getAll(key, searchAncestors = false) {
+      validateKey(key);
+      const requestor = this;
+      let current = requestor;
+      let resolver;
+      if (searchAncestors) {
+        let resolutions = emptyArray;
+        while (current != null) {
+          resolver = current.resolvers.get(key);
+          if (resolver != null) {
+            resolutions = resolutions.concat(
+              /* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */
+              buildAllResponse(resolver, current, requestor)
+            );
+          }
+          current = current.parent;
+        }
+        return resolutions;
+      } else {
+        while (current != null) {
+          resolver = current.resolvers.get(key);
+          if (resolver == null) {
+            current = current.parent;
+            if (current == null) {
+              return emptyArray;
+            }
+          } else {
+            return buildAllResponse(resolver, current, requestor);
+          }
+        }
+      }
+      return emptyArray;
+    }
+    getFactory(Type) {
+      let factory = factories.get(Type);
+      if (factory === void 0) {
+        if (isNativeFunction(Type)) {
+          throw new Error(`${Type.name} is a native function and therefore cannot be safely constructed by DI. If this is intentional, please use a callback or cachedCallback resolver.`);
+        }
+        factories.set(Type, factory = new FactoryImpl(Type, DI.getDependencies(Type)));
+      }
+      return factory;
+    }
+    registerFactory(key, factory) {
+      factories.set(key, factory);
+    }
+    createChild(config) {
+      return new _ContainerImpl(null, Object.assign({}, this.config, config, { parentLocator: () => this }));
+    }
+    jitRegister(keyAsValue, handler) {
+      if (typeof keyAsValue !== "function") {
+        throw new Error(`Attempted to jitRegister something that is not a constructor: '${keyAsValue}'. Did you forget to register this dependency?`);
+      }
+      if (InstrinsicTypeNames.has(keyAsValue.name)) {
+        throw new Error(`Attempted to jitRegister an intrinsic type: ${keyAsValue.name}. Did you forget to add @inject(Key)`);
+      }
+      if (isRegistry(keyAsValue)) {
+        const registrationResolver = keyAsValue.register(handler);
+        if (!(registrationResolver instanceof Object) || registrationResolver.resolve == null) {
+          const newResolver = handler.resolvers.get(keyAsValue);
+          if (newResolver != void 0) {
+            return newResolver;
+          }
+          throw new Error("A valid resolver was not returned from the static register method");
+        }
+        return registrationResolver;
+      } else if (keyAsValue.$isInterface) {
+        throw new Error(`Attempted to jitRegister an interface: ${keyAsValue.friendlyName}`);
+      } else {
+        const resolver = this.config.defaultResolver(keyAsValue, handler);
+        handler.resolvers.set(keyAsValue, resolver);
+        return resolver;
+      }
+    }
+  };
+  var cache = /* @__PURE__ */ new WeakMap();
+  function cacheCallbackResult(fun) {
+    return function(handler, requestor, resolver) {
+      if (cache.has(resolver)) {
+        return cache.get(resolver);
+      }
+      const t = fun(handler, requestor, resolver);
+      cache.set(resolver, t);
+      return t;
+    };
+  }
+  var Registration = Object.freeze({
+    /**
+     * Allows you to pass an instance.
+     * Every time you request this {@link Key} you will get this instance back.
+     *
+     * @example
+     * ```
+     * Registration.instance(Foo, new Foo()));
+     * ```
+     *
+     * @param key - The key to register the instance under.
+     * @param value - The instance to return when the key is requested.
+     */
+    instance(key, value) {
+      return new ResolverImpl(key, 0, value);
+    },
+    /**
+     * Creates an instance from the class.
+     * Every time you request this {@link Key} you will get the same one back.
+     *
+     * @example
+     * ```
+     * Registration.singleton(Foo, Foo);
+     * ```
+     *
+     * @param key - The key to register the singleton under.
+     * @param value - The class to instantiate as a singleton when first requested.
+     */
+    singleton(key, value) {
+      return new ResolverImpl(key, 1, value);
+    },
+    /**
+     * Creates an instance from a class.
+     * Every time you request this {@link Key} you will get a new instance.
+     *
+     * @example
+     * ```
+     * Registration.instance(Foo, Foo);
+     * ```
+     *
+     * @param key - The key to register the instance type under.
+     * @param value - The class to instantiate each time the key is requested.
+     */
+    transient(key, value) {
+      return new ResolverImpl(key, 2, value);
+    },
+    /**
+     * Delegates to a callback function to provide the dependency.
+     * Every time you request this {@link Key} the callback will be invoked to provide
+     * the dependency.
+     *
+     * @example
+     * ```
+     * Registration.callback(Foo, () => new Foo());
+     * Registration.callback(Bar, (c: Container) => new Bar(c.get(Foo)));
+     * ```
+     *
+     * @param key - The key to register the callback for.
+     * @param callback - The function that is expected to return the dependency.
+     */
+    callback(key, callback) {
+      return new ResolverImpl(key, 3, callback);
+    },
+    /**
+     * Delegates to a callback function to provide the dependency and then caches the
+     * dependency for future requests.
+     *
+     * @example
+     * ```
+     * Registration.cachedCallback(Foo, () => new Foo());
+     * Registration.cachedCallback(Bar, (c: Container) => new Bar(c.get(Foo)));
+     * ```
+     *
+     * @param key - The key to register the callback for.
+     * @param callback - The function that is expected to return the dependency.
+     * @remarks
+     * If you pass the same Registration to another container, the same cached value will be used.
+     * Should all references to the resolver returned be removed, the cache will expire.
+     */
+    cachedCallback(key, callback) {
+      return new ResolverImpl(key, 3, cacheCallbackResult(callback));
+    },
+    /**
+     * Creates an alternate {@link Key} to retrieve an instance by.
+     *
+     * @example
+     * ```
+     * Register.singleton(Foo, Foo)
+     * Register.aliasTo(Foo, MyFoos);
+     *
+     * container.getAll(MyFoos) // contains an instance of Foo
+     * ```
+     *
+     * @param originalKey - The original key that has been registered.
+     * @param aliasKey - The alias to the original key.
+     */
+    aliasTo(originalKey, aliasKey) {
+      return new ResolverImpl(aliasKey, 5, originalKey);
+    }
+  });
+  function validateKey(key) {
+    if (key === null || key === void 0) {
+      throw new Error("key/value cannot be null or undefined. Are you trying to inject/register something that doesn't exist with DI?");
+    }
+  }
+  function buildAllResponse(resolver, handler, requestor) {
+    if (resolver instanceof ResolverImpl && resolver.strategy === 4) {
+      const state = resolver.state;
+      let i = state.length;
+      const results = new Array(i);
+      while (i--) {
+        results[i] = state[i].resolve(handler, requestor);
+      }
+      return results;
+    }
+    return [resolver.resolve(handler, requestor)];
+  }
+  var defaultFriendlyName = "(anonymous)";
+  function isObject(value) {
+    return typeof value === "object" && value !== null || typeof value === "function";
+  }
+  var isNativeFunction = /* @__PURE__ */ (function() {
+    const lookup = /* @__PURE__ */ new WeakMap();
+    let isNative = false;
+    let sourceText = "";
+    let i = 0;
+    return function(fn) {
+      isNative = lookup.get(fn);
+      if (isNative === void 0) {
+        sourceText = fn.toString();
+        i = sourceText.length;
+        isNative = // 29 is the length of 'function () { [native code] }' which is the smallest length of a native function string
+        i >= 29 && // 100 seems to be a safe upper bound of the max length of a native function. In Chrome and FF it's 56, in Edge it's 61.
+        i <= 100 && // This whole heuristic *could* be tricked by a comment. Do we need to care about that?
+        sourceText.charCodeAt(i - 1) === 125 && // }
+        // TODO: the spec is a little vague about the precise constraints, so we do need to test this across various browsers to make sure just one whitespace is a safe assumption.
+        sourceText.charCodeAt(i - 2) <= 32 && // whitespace
+        sourceText.charCodeAt(i - 3) === 93 && // ]
+        sourceText.charCodeAt(i - 4) === 101 && // e
+        sourceText.charCodeAt(i - 5) === 100 && // d
+        sourceText.charCodeAt(i - 6) === 111 && // o
+        sourceText.charCodeAt(i - 7) === 99 && // c
+        sourceText.charCodeAt(i - 8) === 32 && //
+        sourceText.charCodeAt(i - 9) === 101 && // e
+        sourceText.charCodeAt(i - 10) === 118 && // v
+        sourceText.charCodeAt(i - 11) === 105 && // i
+        sourceText.charCodeAt(i - 12) === 116 && // t
+        sourceText.charCodeAt(i - 13) === 97 && // a
+        sourceText.charCodeAt(i - 14) === 110 && // n
+        sourceText.charCodeAt(i - 15) === 88;
+        lookup.set(fn, isNative);
+      }
+      return isNative;
+    };
+  })();
+  var isNumericLookup = {};
+  function isArrayIndex(value) {
+    switch (typeof value) {
+      case "number":
+        return value >= 0 && (value | 0) === value;
+      case "string": {
+        const result = isNumericLookup[value];
+        if (result !== void 0) {
+          return result;
+        }
+        const length = value.length;
+        if (length === 0) {
+          return isNumericLookup[value] = false;
+        }
+        let ch = 0;
+        for (let i = 0; i < length; ++i) {
+          ch = value.charCodeAt(i);
+          if (i === 0 && ch === 48 && length > 1 || ch < 48 || ch > 57) {
+            return isNumericLookup[value] = false;
+          }
+        }
+        return isNumericLookup[value] = true;
+      }
+      default:
+        return false;
+    }
+  }
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/design-system/component-presentation.js
+  function presentationKeyFromTag(tagName) {
+    return `${tagName.toLowerCase()}:presentation`;
+  }
+  var presentationRegistry = /* @__PURE__ */ new Map();
+  var ComponentPresentation = Object.freeze({
+    /**
+     * Defines a component presentation for an element.
+     * @param tagName - The element name to define the presentation for.
+     * @param presentation - The presentation that will be applied to matching elements.
+     * @param container - The dependency injection container to register the configuration in.
+     * @public
+     */
+    define(tagName, presentation, container) {
+      const key = presentationKeyFromTag(tagName);
+      const existing = presentationRegistry.get(key);
+      if (existing === void 0) {
+        presentationRegistry.set(key, presentation);
+      } else {
+        presentationRegistry.set(key, false);
+      }
+      container.register(Registration.instance(key, presentation));
+    },
+    /**
+     * Finds a component presentation for the specified element name,
+     * searching the DOM hierarchy starting from the provided element.
+     * @param tagName - The name of the element to locate the presentation for.
+     * @param element - The element to begin the search from.
+     * @returns The component presentation or null if none is found.
+     * @public
+     */
+    forTag(tagName, element) {
+      const key = presentationKeyFromTag(tagName);
+      const existing = presentationRegistry.get(key);
+      if (existing === false) {
+        const container = DI.findResponsibleContainer(element);
+        return container.get(key);
+      }
+      return existing || null;
+    }
+  });
+  var DefaultComponentPresentation = class {
+    /**
+     * Creates an instance of DefaultComponentPresentation.
+     * @param template - The template to apply to the element.
+     * @param styles - The styles to apply to the element.
+     * @public
+     */
+    constructor(template, styles) {
+      this.template = template || null;
+      this.styles = styles === void 0 ? null : Array.isArray(styles) ? ElementStyles.create(styles) : styles instanceof ElementStyles ? styles : ElementStyles.create([styles]);
+    }
+    /**
+     * Applies the presentation details to the specified element.
+     * @param element - The element to apply the presentation details to.
+     * @public
+     */
+    applyTo(element) {
+      const controller = element.$fastController;
+      if (controller.template === null) {
+        controller.template = this.template;
+      }
+      if (controller.styles === null) {
+        controller.styles = this.styles;
+      }
+    }
+  };
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/foundation-element/foundation-element.js
+  var FoundationElement = class _FoundationElement extends FASTElement {
+    constructor() {
+      super(...arguments);
+      this._presentation = void 0;
+    }
+    /**
+     * A property which resolves the ComponentPresentation instance
+     * for the current component.
+     * @public
+     */
+    get $presentation() {
+      if (this._presentation === void 0) {
+        this._presentation = ComponentPresentation.forTag(this.tagName, this);
+      }
+      return this._presentation;
+    }
+    templateChanged() {
+      if (this.template !== void 0) {
+        this.$fastController.template = this.template;
+      }
+    }
+    stylesChanged() {
+      if (this.styles !== void 0) {
+        this.$fastController.styles = this.styles;
+      }
+    }
+    /**
+     * The connected callback for this FASTElement.
+     * @remarks
+     * This method is invoked by the platform whenever this FoundationElement
+     * becomes connected to the document.
+     * @public
+     */
+    connectedCallback() {
+      if (this.$presentation !== null) {
+        this.$presentation.applyTo(this);
+      }
+      super.connectedCallback();
+    }
+    /**
+     * Defines an element registry function with a set of element definition defaults.
+     * @param elementDefinition - The definition of the element to create the registry
+     * function for.
+     * @public
+     */
+    static compose(elementDefinition) {
+      return (overrideDefinition = {}) => new FoundationElementRegistry(this === _FoundationElement ? class extends _FoundationElement {
+      } : this, elementDefinition, overrideDefinition);
+    }
+  };
+  __decorate([
+    observable
+  ], FoundationElement.prototype, "template", void 0);
+  __decorate([
+    observable
+  ], FoundationElement.prototype, "styles", void 0);
+  function resolveOption(option, context, definition) {
+    if (typeof option === "function") {
+      return option(context, definition);
+    }
+    return option;
+  }
+  var FoundationElementRegistry = class {
+    constructor(type, elementDefinition, overrideDefinition) {
+      this.type = type;
+      this.elementDefinition = elementDefinition;
+      this.overrideDefinition = overrideDefinition;
+      this.definition = Object.assign(Object.assign({}, this.elementDefinition), this.overrideDefinition);
+    }
+    register(container, context) {
+      const definition = this.definition;
+      const overrideDefinition = this.overrideDefinition;
+      const prefix = definition.prefix || context.elementPrefix;
+      const name = `${prefix}-${definition.baseName}`;
+      context.tryDefineElement({
+        name,
+        type: this.type,
+        baseClass: this.elementDefinition.baseClass,
+        callback: (x) => {
+          const presentation = new DefaultComponentPresentation(resolveOption(definition.template, x, definition), resolveOption(definition.styles, x, definition));
+          x.definePresentation(presentation);
+          let shadowOptions = resolveOption(definition.shadowOptions, x, definition);
+          if (x.shadowRootMode) {
+            if (shadowOptions) {
+              if (!overrideDefinition.shadowOptions) {
+                shadowOptions.mode = x.shadowRootMode;
+              }
+            } else if (shadowOptions !== null) {
+              shadowOptions = { mode: x.shadowRootMode };
+            }
+          }
+          x.defineElement({
+            elementOptions: resolveOption(definition.elementOptions, x, definition),
+            shadowOptions,
+            attributes: resolveOption(definition.attributes, x, definition)
+          });
+        }
+      });
+    }
+  };
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/utilities/apply-mixins.js
+  function applyMixins(derivedCtor, ...baseCtors) {
+    const derivedAttributes = AttributeConfiguration.locate(derivedCtor);
+    baseCtors.forEach((baseCtor) => {
+      Object.getOwnPropertyNames(baseCtor.prototype).forEach((name) => {
+        if (name !== "constructor") {
+          Object.defineProperty(
+            derivedCtor.prototype,
+            name,
+            /* eslint-disable-next-line @typescript-eslint/no-non-null-assertion */
+            Object.getOwnPropertyDescriptor(baseCtor.prototype, name)
+          );
+        }
+      });
+      const baseAttributes = AttributeConfiguration.locate(baseCtor);
+      baseAttributes.forEach((x) => derivedAttributes.push(x));
+    });
+  }
+
+  // node_modules/exenv-es6/dist/can-use-dom.js
+  function canUseDOM() {
+    return !!(typeof window !== "undefined" && window.document && window.document.createElement);
+  }
+
+  // node_modules/@microsoft/fast-web-utilities/dist/dom.js
+  function getNonce() {
+    const node = document.querySelector('meta[property="csp-nonce"]');
+    if (node) {
+      return node.getAttribute("content");
+    } else {
+      return null;
+    }
+  }
+  var _canUseFocusVisible;
+  function canUseFocusVisible() {
+    if (typeof _canUseFocusVisible === "boolean") {
+      return _canUseFocusVisible;
+    }
+    if (!canUseDOM()) {
+      _canUseFocusVisible = false;
+      return _canUseFocusVisible;
+    }
+    const styleElement = document.createElement("style");
+    const styleNonce = getNonce();
+    if (styleNonce !== null) {
+      styleElement.setAttribute("nonce", styleNonce);
+    }
+    document.head.appendChild(styleElement);
+    try {
+      styleElement.sheet.insertRule("foo:focus-visible {color:inherit}", 0);
+      _canUseFocusVisible = true;
+    } catch (e) {
+      _canUseFocusVisible = false;
+    } finally {
+      document.head.removeChild(styleElement);
+    }
+    return _canUseFocusVisible;
+  }
+
+  // node_modules/@microsoft/fast-web-utilities/dist/key-codes.js
+  var KeyCodes;
+  (function(KeyCodes2) {
+    KeyCodes2[KeyCodes2["alt"] = 18] = "alt";
+    KeyCodes2[KeyCodes2["arrowDown"] = 40] = "arrowDown";
+    KeyCodes2[KeyCodes2["arrowLeft"] = 37] = "arrowLeft";
+    KeyCodes2[KeyCodes2["arrowRight"] = 39] = "arrowRight";
+    KeyCodes2[KeyCodes2["arrowUp"] = 38] = "arrowUp";
+    KeyCodes2[KeyCodes2["back"] = 8] = "back";
+    KeyCodes2[KeyCodes2["backSlash"] = 220] = "backSlash";
+    KeyCodes2[KeyCodes2["break"] = 19] = "break";
+    KeyCodes2[KeyCodes2["capsLock"] = 20] = "capsLock";
+    KeyCodes2[KeyCodes2["closeBracket"] = 221] = "closeBracket";
+    KeyCodes2[KeyCodes2["colon"] = 186] = "colon";
+    KeyCodes2[KeyCodes2["colon2"] = 59] = "colon2";
+    KeyCodes2[KeyCodes2["comma"] = 188] = "comma";
+    KeyCodes2[KeyCodes2["ctrl"] = 17] = "ctrl";
+    KeyCodes2[KeyCodes2["delete"] = 46] = "delete";
+    KeyCodes2[KeyCodes2["end"] = 35] = "end";
+    KeyCodes2[KeyCodes2["enter"] = 13] = "enter";
+    KeyCodes2[KeyCodes2["equals"] = 187] = "equals";
+    KeyCodes2[KeyCodes2["equals2"] = 61] = "equals2";
+    KeyCodes2[KeyCodes2["equals3"] = 107] = "equals3";
+    KeyCodes2[KeyCodes2["escape"] = 27] = "escape";
+    KeyCodes2[KeyCodes2["forwardSlash"] = 191] = "forwardSlash";
+    KeyCodes2[KeyCodes2["function1"] = 112] = "function1";
+    KeyCodes2[KeyCodes2["function10"] = 121] = "function10";
+    KeyCodes2[KeyCodes2["function11"] = 122] = "function11";
+    KeyCodes2[KeyCodes2["function12"] = 123] = "function12";
+    KeyCodes2[KeyCodes2["function2"] = 113] = "function2";
+    KeyCodes2[KeyCodes2["function3"] = 114] = "function3";
+    KeyCodes2[KeyCodes2["function4"] = 115] = "function4";
+    KeyCodes2[KeyCodes2["function5"] = 116] = "function5";
+    KeyCodes2[KeyCodes2["function6"] = 117] = "function6";
+    KeyCodes2[KeyCodes2["function7"] = 118] = "function7";
+    KeyCodes2[KeyCodes2["function8"] = 119] = "function8";
+    KeyCodes2[KeyCodes2["function9"] = 120] = "function9";
+    KeyCodes2[KeyCodes2["home"] = 36] = "home";
+    KeyCodes2[KeyCodes2["insert"] = 45] = "insert";
+    KeyCodes2[KeyCodes2["menu"] = 93] = "menu";
+    KeyCodes2[KeyCodes2["minus"] = 189] = "minus";
+    KeyCodes2[KeyCodes2["minus2"] = 109] = "minus2";
+    KeyCodes2[KeyCodes2["numLock"] = 144] = "numLock";
+    KeyCodes2[KeyCodes2["numPad0"] = 96] = "numPad0";
+    KeyCodes2[KeyCodes2["numPad1"] = 97] = "numPad1";
+    KeyCodes2[KeyCodes2["numPad2"] = 98] = "numPad2";
+    KeyCodes2[KeyCodes2["numPad3"] = 99] = "numPad3";
+    KeyCodes2[KeyCodes2["numPad4"] = 100] = "numPad4";
+    KeyCodes2[KeyCodes2["numPad5"] = 101] = "numPad5";
+    KeyCodes2[KeyCodes2["numPad6"] = 102] = "numPad6";
+    KeyCodes2[KeyCodes2["numPad7"] = 103] = "numPad7";
+    KeyCodes2[KeyCodes2["numPad8"] = 104] = "numPad8";
+    KeyCodes2[KeyCodes2["numPad9"] = 105] = "numPad9";
+    KeyCodes2[KeyCodes2["numPadDivide"] = 111] = "numPadDivide";
+    KeyCodes2[KeyCodes2["numPadDot"] = 110] = "numPadDot";
+    KeyCodes2[KeyCodes2["numPadMinus"] = 109] = "numPadMinus";
+    KeyCodes2[KeyCodes2["numPadMultiply"] = 106] = "numPadMultiply";
+    KeyCodes2[KeyCodes2["numPadPlus"] = 107] = "numPadPlus";
+    KeyCodes2[KeyCodes2["openBracket"] = 219] = "openBracket";
+    KeyCodes2[KeyCodes2["pageDown"] = 34] = "pageDown";
+    KeyCodes2[KeyCodes2["pageUp"] = 33] = "pageUp";
+    KeyCodes2[KeyCodes2["period"] = 190] = "period";
+    KeyCodes2[KeyCodes2["print"] = 44] = "print";
+    KeyCodes2[KeyCodes2["quote"] = 222] = "quote";
+    KeyCodes2[KeyCodes2["scrollLock"] = 145] = "scrollLock";
+    KeyCodes2[KeyCodes2["shift"] = 16] = "shift";
+    KeyCodes2[KeyCodes2["space"] = 32] = "space";
+    KeyCodes2[KeyCodes2["tab"] = 9] = "tab";
+    KeyCodes2[KeyCodes2["tilde"] = 192] = "tilde";
+    KeyCodes2[KeyCodes2["windowsLeft"] = 91] = "windowsLeft";
+    KeyCodes2[KeyCodes2["windowsOpera"] = 219] = "windowsOpera";
+    KeyCodes2[KeyCodes2["windowsRight"] = 92] = "windowsRight";
+  })(KeyCodes || (KeyCodes = {}));
+  var keyEnter = "Enter";
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/patterns/aria-global.js
+  var ARIAGlobalStatesAndProperties = class {
+  };
+  __decorate([
+    attr({ attribute: "aria-atomic" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaAtomic", void 0);
+  __decorate([
+    attr({ attribute: "aria-busy" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaBusy", void 0);
+  __decorate([
+    attr({ attribute: "aria-controls" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaControls", void 0);
+  __decorate([
+    attr({ attribute: "aria-current" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaCurrent", void 0);
+  __decorate([
+    attr({ attribute: "aria-describedby" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaDescribedby", void 0);
+  __decorate([
+    attr({ attribute: "aria-details" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaDetails", void 0);
+  __decorate([
+    attr({ attribute: "aria-disabled" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaDisabled", void 0);
+  __decorate([
+    attr({ attribute: "aria-errormessage" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaErrormessage", void 0);
+  __decorate([
+    attr({ attribute: "aria-flowto" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaFlowto", void 0);
+  __decorate([
+    attr({ attribute: "aria-haspopup" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaHaspopup", void 0);
+  __decorate([
+    attr({ attribute: "aria-hidden" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaHidden", void 0);
+  __decorate([
+    attr({ attribute: "aria-invalid" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaInvalid", void 0);
+  __decorate([
+    attr({ attribute: "aria-keyshortcuts" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaKeyshortcuts", void 0);
+  __decorate([
+    attr({ attribute: "aria-label" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaLabel", void 0);
+  __decorate([
+    attr({ attribute: "aria-labelledby" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaLabelledby", void 0);
+  __decorate([
+    attr({ attribute: "aria-live" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaLive", void 0);
+  __decorate([
+    attr({ attribute: "aria-owns" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaOwns", void 0);
+  __decorate([
+    attr({ attribute: "aria-relevant" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaRelevant", void 0);
+  __decorate([
+    attr({ attribute: "aria-roledescription" })
+  ], ARIAGlobalStatesAndProperties.prototype, "ariaRoledescription", void 0);
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/button/button.template.js
+  var buttonTemplate = (context, definition) => html`
     <button
         class="control"
         part="control"
-        ?autofocus="${e=>e.autofocus}"
-        ?disabled="${e=>e.disabled}"
-        form="${e=>e.formId}"
-        formaction="${e=>e.formaction}"
-        formenctype="${e=>e.formenctype}"
-        formmethod="${e=>e.formmethod}"
-        formnovalidate="${e=>e.formnovalidate}"
-        formtarget="${e=>e.formtarget}"
-        name="${e=>e.name}"
-        type="${e=>e.type}"
-        value="${e=>e.value}"
-        aria-atomic="${e=>e.ariaAtomic}"
-        aria-busy="${e=>e.ariaBusy}"
-        aria-controls="${e=>e.ariaControls}"
-        aria-current="${e=>e.ariaCurrent}"
-        aria-describedby="${e=>e.ariaDescribedby}"
-        aria-details="${e=>e.ariaDetails}"
-        aria-disabled="${e=>e.ariaDisabled}"
-        aria-errormessage="${e=>e.ariaErrormessage}"
-        aria-expanded="${e=>e.ariaExpanded}"
-        aria-flowto="${e=>e.ariaFlowto}"
-        aria-haspopup="${e=>e.ariaHaspopup}"
-        aria-hidden="${e=>e.ariaHidden}"
-        aria-invalid="${e=>e.ariaInvalid}"
-        aria-keyshortcuts="${e=>e.ariaKeyshortcuts}"
-        aria-label="${e=>e.ariaLabel}"
-        aria-labelledby="${e=>e.ariaLabelledby}"
-        aria-live="${e=>e.ariaLive}"
-        aria-owns="${e=>e.ariaOwns}"
-        aria-pressed="${e=>e.ariaPressed}"
-        aria-relevant="${e=>e.ariaRelevant}"
-        aria-roledescription="${e=>e.ariaRoledescription}"
-        ${Y("control")}
+        ?autofocus="${(x) => x.autofocus}"
+        ?disabled="${(x) => x.disabled}"
+        form="${(x) => x.formId}"
+        formaction="${(x) => x.formaction}"
+        formenctype="${(x) => x.formenctype}"
+        formmethod="${(x) => x.formmethod}"
+        formnovalidate="${(x) => x.formnovalidate}"
+        formtarget="${(x) => x.formtarget}"
+        name="${(x) => x.name}"
+        type="${(x) => x.type}"
+        value="${(x) => x.value}"
+        aria-atomic="${(x) => x.ariaAtomic}"
+        aria-busy="${(x) => x.ariaBusy}"
+        aria-controls="${(x) => x.ariaControls}"
+        aria-current="${(x) => x.ariaCurrent}"
+        aria-describedby="${(x) => x.ariaDescribedby}"
+        aria-details="${(x) => x.ariaDetails}"
+        aria-disabled="${(x) => x.ariaDisabled}"
+        aria-errormessage="${(x) => x.ariaErrormessage}"
+        aria-expanded="${(x) => x.ariaExpanded}"
+        aria-flowto="${(x) => x.ariaFlowto}"
+        aria-haspopup="${(x) => x.ariaHaspopup}"
+        aria-hidden="${(x) => x.ariaHidden}"
+        aria-invalid="${(x) => x.ariaInvalid}"
+        aria-keyshortcuts="${(x) => x.ariaKeyshortcuts}"
+        aria-label="${(x) => x.ariaLabel}"
+        aria-labelledby="${(x) => x.ariaLabelledby}"
+        aria-live="${(x) => x.ariaLive}"
+        aria-owns="${(x) => x.ariaOwns}"
+        aria-pressed="${(x) => x.ariaPressed}"
+        aria-relevant="${(x) => x.ariaRelevant}"
+        aria-roledescription="${(x) => x.ariaRoledescription}"
+        ${ref("control")}
     >
-        ${Gn(r,t)}
+        ${startSlotTemplate(context, definition)}
         <span class="content" part="content">
-            <slot ${Wn("defaultSlottedContent")}></slot>
+            <slot ${slotted("defaultSlottedContent")}></slot>
         </span>
-        ${qn(r,t)}
+        ${endSlotTemplate(context, definition)}
     </button>
-`;var ho="form-associated-proxy",po="ElementInternals",mo=po in window&&"setFormValue"in window[po].prototype,go=new WeakMap;function bo(r){let t=class extends r{constructor(...e){super(...e),this.dirtyValue=!1,this.disabled=!1,this.proxyEventsToBlock=["change","click"],this.proxyInitialized=!1,this.required=!1,this.initialValue=this.initialValue||"",this.elementInternals||(this.formResetCallback=this.formResetCallback.bind(this))}static get formAssociated(){return mo}get validity(){return this.elementInternals?this.elementInternals.validity:this.proxy.validity}get form(){return this.elementInternals?this.elementInternals.form:this.proxy.form}get validationMessage(){return this.elementInternals?this.elementInternals.validationMessage:this.proxy.validationMessage}get willValidate(){return this.elementInternals?this.elementInternals.willValidate:this.proxy.willValidate}get labels(){if(this.elementInternals)return Object.freeze(Array.from(this.elementInternals.labels));if(this.proxy instanceof HTMLElement&&this.proxy.ownerDocument&&this.id){let e=this.proxy.labels,n=Array.from(this.proxy.getRootNode().querySelectorAll(`[for='${this.id}']`)),o=e?n.concat(Array.from(e)):n;return Object.freeze(o)}else return st}valueChanged(e,n){this.dirtyValue=!0,this.proxy instanceof HTMLElement&&(this.proxy.value=this.value),this.currentValue=this.value,this.setFormValue(this.value),this.validate()}currentValueChanged(){this.value=this.currentValue}initialValueChanged(e,n){this.dirtyValue||(this.value=this.initialValue,this.dirtyValue=!1)}disabledChanged(e,n){this.proxy instanceof HTMLElement&&(this.proxy.disabled=this.disabled),g.queueUpdate(()=>this.classList.toggle("disabled",this.disabled))}nameChanged(e,n){this.proxy instanceof HTMLElement&&(this.proxy.name=this.name)}requiredChanged(e,n){this.proxy instanceof HTMLElement&&(this.proxy.required=this.required),g.queueUpdate(()=>this.classList.toggle("required",this.required)),this.validate()}get elementInternals(){if(!mo)return null;let e=go.get(this);return e||(e=this.attachInternals(),go.set(this,e)),e}connectedCallback(){super.connectedCallback(),this.addEventListener("keypress",this._keypressHandler),this.value||(this.value=this.initialValue,this.dirtyValue=!1),this.elementInternals||(this.attachProxy(),this.form&&this.form.addEventListener("reset",this.formResetCallback))}disconnectedCallback(){super.disconnectedCallback(),this.proxyEventsToBlock.forEach(e=>this.proxy.removeEventListener(e,this.stopPropagation)),!this.elementInternals&&this.form&&this.form.removeEventListener("reset",this.formResetCallback)}checkValidity(){return this.elementInternals?this.elementInternals.checkValidity():this.proxy.checkValidity()}reportValidity(){return this.elementInternals?this.elementInternals.reportValidity():this.proxy.reportValidity()}setValidity(e,n,o){this.elementInternals?this.elementInternals.setValidity(e,n,o):typeof n=="string"&&this.proxy.setCustomValidity(n)}formDisabledCallback(e){this.disabled=e}formResetCallback(){this.value=this.initialValue,this.dirtyValue=!1}attachProxy(){var e;this.proxyInitialized||(this.proxyInitialized=!0,this.proxy.style.display="none",this.proxyEventsToBlock.forEach(n=>this.proxy.addEventListener(n,this.stopPropagation)),this.proxy.disabled=this.disabled,this.proxy.required=this.required,typeof this.name=="string"&&(this.proxy.name=this.name),typeof this.value=="string"&&(this.proxy.value=this.value),this.proxy.setAttribute("slot",ho),this.proxySlot=document.createElement("slot"),this.proxySlot.setAttribute("name",ho)),(e=this.shadowRoot)===null||e===void 0||e.appendChild(this.proxySlot),this.appendChild(this.proxy)}detachProxy(){var e;this.removeChild(this.proxy),(e=this.shadowRoot)===null||e===void 0||e.removeChild(this.proxySlot)}validate(e){this.proxy instanceof HTMLElement&&this.setValidity(this.proxy.validity,this.proxy.validationMessage,e)}setFormValue(e,n){this.elementInternals&&this.elementInternals.setFormValue(e,n||e)}_keypressHandler(e){switch(e.key){case uo:if(this.form instanceof HTMLFormElement){let n=this.form.querySelector("[type=submit]");n?.click()}break}}stopPropagation(e){e.stopPropagation()}};return b({mode:"boolean"})(t.prototype,"disabled"),b({mode:"fromView",attribute:"value"})(t.prototype,"initialValue"),b({attribute:"current-value"})(t.prototype,"currentValue"),b(t.prototype,"name"),b({mode:"boolean"})(t.prototype,"required"),G(t.prototype,"value"),t}var kr=class extends ut{},Me=class extends bo(kr){constructor(){super(...arguments),this.proxy=document.createElement("input")}};var V=class extends Me{constructor(){super(...arguments),this.handleClick=t=>{var e;this.disabled&&((e=this.defaultSlottedContent)===null||e===void 0?void 0:e.length)<=1&&t.stopPropagation()},this.handleSubmission=()=>{if(!this.form)return;let t=this.proxy.isConnected;t||this.attachProxy(),typeof this.form.requestSubmit=="function"?this.form.requestSubmit(this.proxy):this.proxy.click(),t||this.detachProxy()},this.handleFormReset=()=>{var t;(t=this.form)===null||t===void 0||t.reset()},this.handleUnsupportedDelegatesFocus=()=>{var t;window.ShadowRoot&&!window.ShadowRoot.prototype.hasOwnProperty("delegatesFocus")&&(!((t=this.$fastController.definition.shadowOptions)===null||t===void 0)&&t.delegatesFocus)&&(this.focus=()=>{this.control.focus()})}}formactionChanged(){this.proxy instanceof HTMLInputElement&&(this.proxy.formAction=this.formaction)}formenctypeChanged(){this.proxy instanceof HTMLInputElement&&(this.proxy.formEnctype=this.formenctype)}formmethodChanged(){this.proxy instanceof HTMLInputElement&&(this.proxy.formMethod=this.formmethod)}formnovalidateChanged(){this.proxy instanceof HTMLInputElement&&(this.proxy.formNoValidate=this.formnovalidate)}formtargetChanged(){this.proxy instanceof HTMLInputElement&&(this.proxy.formTarget=this.formtarget)}typeChanged(t,e){this.proxy instanceof HTMLInputElement&&(this.proxy.type=this.type),e==="submit"&&this.addEventListener("click",this.handleSubmission),t==="submit"&&this.removeEventListener("click",this.handleSubmission),e==="reset"&&this.addEventListener("click",this.handleFormReset),t==="reset"&&this.removeEventListener("click",this.handleFormReset)}validate(){super.validate(this.control)}connectedCallback(){var t;super.connectedCallback(),this.proxy.setAttribute("type",this.type),this.handleUnsupportedDelegatesFocus();let e=Array.from((t=this.control)===null||t===void 0?void 0:t.children);e&&e.forEach(n=>{n.addEventListener("click",this.handleClick)})}disconnectedCallback(){var t;super.disconnectedCallback();let e=Array.from((t=this.control)===null||t===void 0?void 0:t.children);e&&e.forEach(n=>{n.removeEventListener("click",this.handleClick)})}};y([b({mode:"boolean"})],V.prototype,"autofocus",void 0);y([b({attribute:"form"})],V.prototype,"formId",void 0);y([b],V.prototype,"formaction",void 0);y([b],V.prototype,"formenctype",void 0);y([b],V.prototype,"formmethod",void 0);y([b({mode:"boolean"})],V.prototype,"formnovalidate",void 0);y([b],V.prototype,"formtarget",void 0);y([b],V.prototype,"type",void 0);y([G],V.prototype,"defaultSlottedContent",void 0);var Ft=class{};y([b({attribute:"aria-expanded"})],Ft.prototype,"ariaExpanded",void 0);y([b({attribute:"aria-pressed"})],Ft.prototype,"ariaPressed",void 0);Ar(Ft,E);Ar(V,Ae,Ft);function Xt(r){let t=r.parentElement;if(t)return t;{let e=r.getRootNode();if(e.host instanceof HTMLElement)return e.host}return null}function yo(r,t){let e=t;for(;e!==null;){if(e===r)return!0;e=Xt(e)}return!1}var K=document.createElement("div");function Yi(r){return r instanceof ct}var Qt=class{setProperty(t,e){g.queueUpdate(()=>this.target.setProperty(t,e))}removeProperty(t){g.queueUpdate(()=>this.target.removeProperty(t))}},Rr=class extends Qt{constructor(t){super();let e=new CSSStyleSheet;e[Te]=!0,this.target=e.cssRules[e.insertRule(":host{}")].style,t.$fastController.addStyles(A.create([e]))}},Dr=class extends Qt{constructor(){super();let t=new CSSStyleSheet;this.target=t.cssRules[t.insertRule(":root{}")].style,document.adoptedStyleSheets=[...document.adoptedStyleSheets,t]}},Pr=class extends Qt{constructor(){super(),this.style=document.createElement("style"),document.head.appendChild(this.style);let{sheet:t}=this.style;if(t){let e=t.insertRule(":root{}",t.cssRules.length);this.target=t.cssRules[e].style}}},Ne=class{constructor(t){this.store=new Map,this.target=null;let e=t.$fastController;this.style=document.createElement("style"),e.addStyles(this.style),S.getNotifier(e).subscribe(this,"isConnected"),this.handleChange(e,"isConnected")}targetChanged(){if(this.target!==null)for(let[t,e]of this.store.entries())this.target.setProperty(t,e)}setProperty(t,e){this.store.set(t,e),g.queueUpdate(()=>{this.target!==null&&this.target.setProperty(t,e)})}removeProperty(t){this.store.delete(t),g.queueUpdate(()=>{this.target!==null&&this.target.removeProperty(t)})}handleChange(t,e){let{sheet:n}=this.style;if(n){let o=n.insertRule(":host{}",n.cssRules.length);this.target=n.cssRules[o].style}else this.target=null}};y([G],Ne.prototype,"target",void 0);var Ir=class{constructor(t){this.target=t.style}setProperty(t,e){g.queueUpdate(()=>this.target.setProperty(t,e))}removeProperty(t){g.queueUpdate(()=>this.target.removeProperty(t))}},ft=class r{setProperty(t,e){r.properties[t]=e;for(let n of r.roots.values())wt.getOrCreate(r.normalizeRoot(n)).setProperty(t,e)}removeProperty(t){delete r.properties[t];for(let e of r.roots.values())wt.getOrCreate(r.normalizeRoot(e)).removeProperty(t)}static registerRoot(t){let{roots:e}=r;if(!e.has(t)){e.add(t);let n=wt.getOrCreate(this.normalizeRoot(t));for(let o in r.properties)n.setProperty(o,r.properties[o])}}static unregisterRoot(t){let{roots:e}=r;if(e.has(t)){e.delete(t);let n=wt.getOrCreate(r.normalizeRoot(t));for(let o in r.properties)n.removeProperty(o)}}static normalizeRoot(t){return t===K?document:t}};ft.roots=new Set;ft.properties={};var Or=new WeakMap,Xi=g.supportsAdoptedStyleSheets?Rr:Ne,wt=Object.freeze({getOrCreate(r){if(Or.has(r))return Or.get(r);let t;return r===K?t=new ft:r instanceof Document?t=g.supportsAdoptedStyleSheets?new Dr:new Pr:Yi(r)?t=new Xi(r):t=new Ir(r),Or.set(r,t),t}});var X=class r extends bt{constructor(t){super(),this.subscribers=new WeakMap,this._appliedTo=new Set,this.name=t.name,t.cssCustomPropertyName!==null&&(this.cssCustomProperty=`--${t.cssCustomPropertyName}`,this.cssVar=`var(${this.cssCustomProperty})`),this.id=r.uniqueId(),r.tokensById.set(this.id,this)}get appliedTo(){return[...this._appliedTo]}static from(t){return new r({name:typeof t=="string"?t:t.name,cssCustomPropertyName:typeof t=="string"?t:t.cssCustomPropertyName===void 0?t.name:t.cssCustomPropertyName})}static isCSSDesignToken(t){return typeof t.cssCustomProperty=="string"}static isDerivedDesignTokenValue(t){return typeof t=="function"}static getTokenById(t){return r.tokensById.get(t)}getOrCreateSubscriberSet(t=this){return this.subscribers.get(t)||this.subscribers.set(t,new Set)&&this.subscribers.get(t)}createCSS(){return this.cssVar||""}getValueFor(t){let e=B.getOrCreate(t).get(this);if(e!==void 0)return e;throw new Error(`Value could not be retrieved for token named "${this.name}". Ensure the value is set for ${t} or an ancestor of ${t}.`)}setValueFor(t,e){return this._appliedTo.add(t),e instanceof r&&(e=this.alias(e)),B.getOrCreate(t).set(this,e),this}deleteValueFor(t){return this._appliedTo.delete(t),B.existsFor(t)&&B.getOrCreate(t).delete(this),this}withDefault(t){return this.setValueFor(K,t),this}subscribe(t,e){let n=this.getOrCreateSubscriberSet(e);e&&!B.existsFor(e)&&B.getOrCreate(e),n.has(t)||n.add(t)}unsubscribe(t,e){let n=this.subscribers.get(e||this);n&&n.has(t)&&n.delete(t)}notify(t){let e=Object.freeze({token:this,target:t});this.subscribers.has(this)&&this.subscribers.get(this).forEach(n=>n.handleChange(e)),this.subscribers.has(t)&&this.subscribers.get(t).forEach(n=>n.handleChange(e))}alias(t){return(e=>t.getValueFor(e))}};X.uniqueId=(()=>{let r=0;return()=>(r++,r.toString(16))})();X.tokensById=new Map;var Lr=class{startReflection(t,e){t.subscribe(this,e),this.handleChange({token:t,target:e})}stopReflection(t,e){t.unsubscribe(this,e),this.remove(t,e)}handleChange(t){let{token:e,target:n}=t;this.add(e,n)}add(t,e){wt.getOrCreate(e).setProperty(t.cssCustomProperty,this.resolveCSSValue(B.getOrCreate(e).get(t)))}remove(t,e){wt.getOrCreate(e).removeProperty(t.cssCustomProperty)}resolveCSSValue(t){return t&&typeof t.createCSS=="function"?t.createCSS():t}},Mr=class{constructor(t,e,n){this.source=t,this.token=e,this.node=n,this.dependencies=new Set,this.observer=S.binding(t,this,!1),this.observer.handleChange=this.observer.call,this.handleChange()}disconnect(){this.observer.disconnect()}handleChange(){try{this.node.store.set(this.token,this.observer.observe(this.node.target,lt))}catch(t){console.error(t)}}},Nr=class{constructor(){this.values=new Map}set(t,e){this.values.get(t)!==e&&(this.values.set(t,e),S.getNotifier(this).notify(t.id))}get(t){return S.track(this,t.id),this.values.get(t)}delete(t){this.values.delete(t),S.getNotifier(this).notify(t.id)}all(){return this.values.entries()}},Zt=new WeakMap,Jt=new WeakMap,B=class r{constructor(t){this.target=t,this.store=new Nr,this.children=[],this.assignedValues=new Map,this.reflecting=new Set,this.bindingObservers=new Map,this.tokenValueChangeHandler={handleChange:(e,n)=>{let o=X.getTokenById(n);o&&(o.notify(this.target),this.updateCSSTokenReflection(e,o))}},Zt.set(t,this),S.getNotifier(this.store).subscribe(this.tokenValueChangeHandler),t instanceof ct?t.$fastController.addBehaviors([this]):t.isConnected&&this.bind()}static getOrCreate(t){return Zt.get(t)||new r(t)}static existsFor(t){return Zt.has(t)}static findParent(t){if(K!==t.target){let e=Xt(t.target);for(;e!==null;){if(Zt.has(e))return Zt.get(e);e=Xt(e)}return r.getOrCreate(K)}return null}static findClosestAssignedNode(t,e){let n=e;do{if(n.has(t))return n;n=n.parent?n.parent:n.target!==K?r.getOrCreate(K):null}while(n!==null);return null}get parent(){return Jt.get(this)||null}updateCSSTokenReflection(t,e){if(X.isCSSDesignToken(e)){let n=this.parent,o=this.isReflecting(e);if(n){let i=n.get(e),a=t.get(e);i!==a&&!o?this.reflectToCSS(e):i===a&&o&&this.stopReflectToCSS(e)}else o||this.reflectToCSS(e)}}has(t){return this.assignedValues.has(t)}get(t){let e=this.store.get(t);if(e!==void 0)return e;let n=this.getRaw(t);if(n!==void 0)return this.hydrate(t,n),this.get(t)}getRaw(t){var e;return this.assignedValues.has(t)?this.assignedValues.get(t):(e=r.findClosestAssignedNode(t,this))===null||e===void 0?void 0:e.getRaw(t)}set(t,e){X.isDerivedDesignTokenValue(this.assignedValues.get(t))&&this.tearDownBindingObserver(t),this.assignedValues.set(t,e),X.isDerivedDesignTokenValue(e)?this.setupBindingObserver(t,e):this.store.set(t,e)}delete(t){this.assignedValues.delete(t),this.tearDownBindingObserver(t);let e=this.getRaw(t);e?this.hydrate(t,e):this.store.delete(t)}bind(){let t=r.findParent(this);t&&t.appendChild(this);for(let e of this.assignedValues.keys())e.notify(this.target)}unbind(){this.parent&&Jt.get(this).removeChild(this);for(let t of this.bindingObservers.keys())this.tearDownBindingObserver(t)}appendChild(t){t.parent&&Jt.get(t).removeChild(t);let e=this.children.filter(n=>t.contains(n));Jt.set(t,this),this.children.push(t),e.forEach(n=>t.appendChild(n)),S.getNotifier(this.store).subscribe(t);for(let[n,o]of this.store.all())t.hydrate(n,this.bindingObservers.has(n)?this.getRaw(n):o),t.updateCSSTokenReflection(t.store,n)}removeChild(t){let e=this.children.indexOf(t);if(e!==-1&&this.children.splice(e,1),S.getNotifier(this.store).unsubscribe(t),t.parent!==this)return!1;let n=Jt.delete(t);for(let[o]of this.store.all())t.hydrate(o,t.getRaw(o)),t.updateCSSTokenReflection(t.store,o);return n}contains(t){return yo(this.target,t.target)}reflectToCSS(t){this.isReflecting(t)||(this.reflecting.add(t),r.cssCustomPropertyReflector.startReflection(t,this.target))}stopReflectToCSS(t){this.isReflecting(t)&&(this.reflecting.delete(t),r.cssCustomPropertyReflector.stopReflection(t,this.target))}isReflecting(t){return this.reflecting.has(t)}handleChange(t,e){let n=X.getTokenById(e);n&&(this.hydrate(n,this.getRaw(n)),this.updateCSSTokenReflection(this.store,n))}hydrate(t,e){if(!this.has(t)){let n=this.bindingObservers.get(t);X.isDerivedDesignTokenValue(e)?n?n.source!==e&&(this.tearDownBindingObserver(t),this.setupBindingObserver(t,e)):this.setupBindingObserver(t,e):(n&&this.tearDownBindingObserver(t),this.store.set(t,e))}}setupBindingObserver(t,e){let n=new Mr(e,t,this);return this.bindingObservers.set(t,n),n}tearDownBindingObserver(t){return this.bindingObservers.has(t)?(this.bindingObservers.get(t).disconnect(),this.bindingObservers.delete(t),!0):!1}};B.cssCustomPropertyReflector=new Lr;y([G],B.prototype,"children",void 0);function Qi(r){return X.from(r)}var Kt=Object.freeze({create:Qi,notifyConnection(r){return!r.isConnected||!B.existsFor(r)?!1:(B.getOrCreate(r).bind(),!0)},notifyDisconnection(r){return r.isConnected||!B.existsFor(r)?!1:(B.getOrCreate(r).unbind(),!0)},registerRoot(r=K){ft.registerRoot(r)},unregisterRoot(r=K){ft.unregisterRoot(r)}});var Fr=Object.freeze({definitionCallbackOnly:null,ignoreDuplicate:Symbol()}),$r=new Map,Fe=new Map,$t=null,te=w.createInterface(r=>r.cachedCallback(t=>($t===null&&($t=new $e(null,t)),$t))),jr=Object.freeze({tagFor(r){return Fe.get(r)},responsibleFor(r){let t=r.$$designSystem$$;return t||w.findResponsibleContainer(r).get(te)},getOrCreate(r){if(!r)return $t===null&&($t=w.getOrCreateDOMContainer().get(te)),$t;let t=r.$$designSystem$$;if(t)return t;let e=w.getOrCreateDOMContainer(r);if(e.has(te,!1))return e.get(te);{let n=new $e(r,e);return e.register(vt.instance(te,n)),n}}});function Zi(r,t,e){return typeof r=="string"?{name:r,type:t,callback:e}:r}var $e=class{constructor(t,e){this.owner=t,this.container=e,this.designTokensInitialized=!1,this.prefix="fast",this.shadowRootMode=void 0,this.disambiguate=()=>Fr.definitionCallbackOnly,t!==null&&(t.$$designSystem$$=this)}withPrefix(t){return this.prefix=t,this}withShadowRootMode(t){return this.shadowRootMode=t,this}withElementDisambiguation(t){return this.disambiguate=t,this}withDesignTokenRoot(t){return this.designTokenRoot=t,this}register(...t){let e=this.container,n=[],o=this.disambiguate,i=this.shadowRootMode,a={elementPrefix:this.prefix,tryDefineElement(l,f,c){let d=Zi(l,f,c),{name:x,callback:k,baseClass:M}=d,{type:C}=d,W=x,Tt=$r.get(W),Bt=!0;for(;Tt;){let ue=o(W,C,Tt);switch(ue){case Fr.ignoreDuplicate:return;case Fr.definitionCallbackOnly:Bt=!1,Tt=void 0;break;default:W=ue,Tt=$r.get(W);break}}Bt&&((Fe.has(C)||C===ut)&&(C=class extends C{}),$r.set(W,C),Fe.set(C,W),M&&Fe.set(M,W)),n.push(new Br(e,W,C,i,k,Bt))}};this.designTokensInitialized||(this.designTokensInitialized=!0,this.designTokenRoot!==null&&Kt.registerRoot(this.designTokenRoot)),e.registerWithContext(a,...t);for(let l of n)l.callback(l),l.willDefine&&l.definition!==null&&l.definition.define();return this}},Br=class{constructor(t,e,n,o,i,a){this.container=t,this.name=e,this.type=n,this.shadowRootMode=o,this.callback=i,this.willDefine=a,this.definition=null}definePresentation(t){Le.define(this.name,t,this.container)}defineElement(t){this.definition=new J(this.type,Object.assign(Object.assign({},t),{name:this.name}))}tagFor(t){return jr.tagFor(t)}};var vo="not-allowed";var Ji=":host([hidden]){display:none}";function xo(r){return`${Ji}:host{display:${r}}`}var ee=lo()?"focus-visible":"focus";function wo(r){return jr.getOrCreate(r).withPrefix("vscode")}function To(r){window.addEventListener("load",()=>{new MutationObserver(()=>{So(r)}).observe(document.body,{attributes:!0,attributeFilter:["class"]}),So(r)})}function So(r){let t=getComputedStyle(document.body),e=document.querySelector("body");if(e){let n=e.getAttribute("data-vscode-theme-kind");for(let[o,i]of r){let a=t.getPropertyValue(o).toString();if(n==="vscode-high-contrast")a.length===0&&i.name.includes("background")&&(a="transparent"),i.name==="button-icon-hover-background"&&(a="transparent");else if(n==="vscode-high-contrast-light"){if(a.length===0&&i.name.includes("background"))switch(i.name){case"button-primary-hover-background":a="#0F4A85";break;case"button-secondary-hover-background":a="transparent";break;case"button-icon-hover-background":a="transparent";break}}else i.name==="contrast-active-border"&&(a="transparent");i.setValueFor(e,a)}}}var Co=new Map,Eo=!1;function h(r,t){let e=Kt.create(r);if(t){if(t.includes("--fake-vscode-token")){let n="id"+Math.random().toString(16).slice(2);t=`${t}-${n}`}Co.set(t,e)}return Eo||(To(Co),Eo=!0),e}var Cu=h("background","--vscode-editor-background").withDefault("#1e1e1e"),ot=h("border-width").withDefault(1),_o=h("contrast-active-border","--vscode-contrastActiveBorder").withDefault("#f38518"),Eu=h("contrast-border","--vscode-contrastBorder").withDefault("#6fc3df"),_u=h("corner-radius").withDefault(0),Ao=h("corner-radius-round").withDefault(2),Hr=h("design-unit").withDefault(4),ko=h("disabled-opacity").withDefault(.4),re=h("focus-border","--vscode-focusBorder").withDefault("#007fd4"),Oo=h("font-family","--vscode-font-family").withDefault("-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol"),Au=h("font-weight","--vscode-font-weight").withDefault("400"),Ro=h("foreground","--vscode-foreground").withDefault("#cccccc"),ku=h("input-height").withDefault("26"),Ou=h("input-min-width").withDefault("100px"),Do=h("type-ramp-base-font-size","--vscode-font-size").withDefault("13px"),Po=h("type-ramp-base-line-height").withDefault("normal"),Ru=h("type-ramp-minus1-font-size").withDefault("11px"),Du=h("type-ramp-minus1-line-height").withDefault("16px"),Pu=h("type-ramp-minus2-font-size").withDefault("9px"),Iu=h("type-ramp-minus2-line-height").withDefault("16px"),Lu=h("type-ramp-plus1-font-size").withDefault("16px"),Mu=h("type-ramp-plus1-line-height").withDefault("24px"),Nu=h("scrollbarWidth").withDefault("10px"),Fu=h("scrollbarHeight").withDefault("10px"),$u=h("scrollbar-slider-background","--vscode-scrollbarSlider-background").withDefault("#79797966"),Bu=h("scrollbar-slider-hover-background","--vscode-scrollbarSlider-hoverBackground").withDefault("#646464b3"),ju=h("scrollbar-slider-active-background","--vscode-scrollbarSlider-activeBackground").withDefault("#bfbfbf66"),Hu=h("badge-background","--vscode-badge-background").withDefault("#4d4d4d"),Uu=h("badge-foreground","--vscode-badge-foreground").withDefault("#ffffff"),Io=h("button-border","--vscode-button-border").withDefault("transparent"),Ur=h("button-icon-background").withDefault("transparent"),Lo=h("button-icon-corner-radius").withDefault("5px"),Mo=h("button-icon-outline-offset").withDefault(0),zr=h("button-icon-hover-background","--fake-vscode-token").withDefault("rgba(90, 93, 94, 0.31)"),No=h("button-icon-padding").withDefault("3px"),St=h("button-primary-background","--vscode-button-background").withDefault("#0e639c"),Vr=h("button-primary-foreground","--vscode-button-foreground").withDefault("#ffffff"),Wr=h("button-primary-hover-background","--vscode-button-hoverBackground").withDefault("#1177bb"),Be=h("button-secondary-background","--vscode-button-secondaryBackground").withDefault("#3a3d41"),Fo=h("button-secondary-foreground","--vscode-button-secondaryForeground").withDefault("#ffffff"),$o=h("button-secondary-hover-background","--vscode-button-secondaryHoverBackground").withDefault("#45494e"),Bo=h("button-padding-horizontal").withDefault("11px"),jo=h("button-padding-vertical").withDefault("4px"),zu=h("checkbox-background","--vscode-checkbox-background").withDefault("#3c3c3c"),Vu=h("checkbox-border","--vscode-checkbox-border").withDefault("#3c3c3c"),Wu=h("checkbox-corner-radius").withDefault(3),qu=h("checkbox-foreground","--vscode-checkbox-foreground").withDefault("#f0f0f0"),Gu=h("list-active-selection-background","--vscode-list-activeSelectionBackground").withDefault("#094771"),Yu=h("list-active-selection-foreground","--vscode-list-activeSelectionForeground").withDefault("#ffffff"),Xu=h("list-hover-background","--vscode-list-hoverBackground").withDefault("#2a2d2e"),Qu=h("divider-background","--vscode-settings-dropdownListBorder").withDefault("#454545"),Zu=h("dropdown-background","--vscode-dropdown-background").withDefault("#3c3c3c"),Ju=h("dropdown-border","--vscode-dropdown-border").withDefault("#3c3c3c"),Ku=h("dropdown-foreground","--vscode-dropdown-foreground").withDefault("#f0f0f0"),tf=h("dropdown-list-max-height").withDefault("200px"),ef=h("input-background","--vscode-input-background").withDefault("#3c3c3c"),rf=h("input-foreground","--vscode-input-foreground").withDefault("#cccccc"),nf=h("input-placeholder-foreground","--vscode-input-placeholderForeground").withDefault("#cccccc"),of=h("link-active-foreground","--vscode-textLink-activeForeground").withDefault("#3794ff"),sf=h("link-foreground","--vscode-textLink-foreground").withDefault("#3794ff"),af=h("progress-background","--vscode-progressBar-background").withDefault("#0e70c0"),lf=h("panel-tab-active-border","--vscode-panelTitle-activeBorder").withDefault("#e7e7e7"),cf=h("panel-tab-active-foreground","--vscode-panelTitle-activeForeground").withDefault("#e7e7e7"),uf=h("panel-tab-foreground","--vscode-panelTitle-inactiveForeground").withDefault("#e7e7e799"),ff=h("panel-view-background","--vscode-panel-background").withDefault("#1e1e1e"),df=h("panel-view-border","--vscode-panel-border").withDefault("#80808059"),hf=h("tag-corner-radius").withDefault("2px");function Ho(r,t,e,n){var o=arguments.length,i=o<3?t:n===null?n=Object.getOwnPropertyDescriptor(t,e):n,a;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")i=Reflect.decorate(r,t,e,n);else for(var l=r.length-1;l>=0;l--)(a=r[l])&&(i=(o<3?a(i):o>3?a(t,e,i):a(t,e))||i);return o>3&&i&&Object.defineProperty(t,e,i),i}var Ki=yt`
-	${xo("inline-flex")} :host {
+`;
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/form-associated/form-associated.js
+  var proxySlotName = "form-associated-proxy";
+  var ElementInternalsKey = "ElementInternals";
+  var supportsElementInternals = ElementInternalsKey in window && "setFormValue" in window[ElementInternalsKey].prototype;
+  var InternalsMap = /* @__PURE__ */ new WeakMap();
+  function FormAssociated(BaseCtor) {
+    const C = class extends BaseCtor {
+      constructor(...args) {
+        super(...args);
+        this.dirtyValue = false;
+        this.disabled = false;
+        this.proxyEventsToBlock = ["change", "click"];
+        this.proxyInitialized = false;
+        this.required = false;
+        this.initialValue = this.initialValue || "";
+        if (!this.elementInternals) {
+          this.formResetCallback = this.formResetCallback.bind(this);
+        }
+      }
+      /**
+       * Must evaluate to true to enable elementInternals.
+       * Feature detects API support and resolve respectively
+       *
+       * @internal
+       */
+      static get formAssociated() {
+        return supportsElementInternals;
+      }
+      /**
+       * Returns the validity state of the element
+       *
+       * @alpha
+       */
+      get validity() {
+        return this.elementInternals ? this.elementInternals.validity : this.proxy.validity;
+      }
+      /**
+       * Retrieve a reference to the associated form.
+       * Returns null if not associated to any form.
+       *
+       * @alpha
+       */
+      get form() {
+        return this.elementInternals ? this.elementInternals.form : this.proxy.form;
+      }
+      /**
+       * Retrieve the localized validation message,
+       * or custom validation message if set.
+       *
+       * @alpha
+       */
+      get validationMessage() {
+        return this.elementInternals ? this.elementInternals.validationMessage : this.proxy.validationMessage;
+      }
+      /**
+       * Whether the element will be validated when the
+       * form is submitted
+       */
+      get willValidate() {
+        return this.elementInternals ? this.elementInternals.willValidate : this.proxy.willValidate;
+      }
+      /**
+       * A reference to all associated label elements
+       */
+      get labels() {
+        if (this.elementInternals) {
+          return Object.freeze(Array.from(this.elementInternals.labels));
+        } else if (this.proxy instanceof HTMLElement && this.proxy.ownerDocument && this.id) {
+          const parentLabels = this.proxy.labels;
+          const forLabels = Array.from(this.proxy.getRootNode().querySelectorAll(`[for='${this.id}']`));
+          const labels = parentLabels ? forLabels.concat(Array.from(parentLabels)) : forLabels;
+          return Object.freeze(labels);
+        } else {
+          return emptyArray;
+        }
+      }
+      /**
+       * Invoked when the `value` property changes
+       * @param previous - the previous value
+       * @param next - the new value
+       *
+       * @remarks
+       * If elements extending `FormAssociated` implement a `valueChanged` method
+       * They must be sure to invoke `super.valueChanged(previous, next)` to ensure
+       * proper functioning of `FormAssociated`
+       */
+      valueChanged(previous, next) {
+        this.dirtyValue = true;
+        if (this.proxy instanceof HTMLElement) {
+          this.proxy.value = this.value;
+        }
+        this.currentValue = this.value;
+        this.setFormValue(this.value);
+        this.validate();
+      }
+      currentValueChanged() {
+        this.value = this.currentValue;
+      }
+      /**
+       * Invoked when the `initialValue` property changes
+       *
+       * @param previous - the previous value
+       * @param next - the new value
+       *
+       * @remarks
+       * If elements extending `FormAssociated` implement a `initialValueChanged` method
+       * They must be sure to invoke `super.initialValueChanged(previous, next)` to ensure
+       * proper functioning of `FormAssociated`
+       */
+      initialValueChanged(previous, next) {
+        if (!this.dirtyValue) {
+          this.value = this.initialValue;
+          this.dirtyValue = false;
+        }
+      }
+      /**
+       * Invoked when the `disabled` property changes
+       *
+       * @param previous - the previous value
+       * @param next - the new value
+       *
+       * @remarks
+       * If elements extending `FormAssociated` implement a `disabledChanged` method
+       * They must be sure to invoke `super.disabledChanged(previous, next)` to ensure
+       * proper functioning of `FormAssociated`
+       */
+      disabledChanged(previous, next) {
+        if (this.proxy instanceof HTMLElement) {
+          this.proxy.disabled = this.disabled;
+        }
+        DOM.queueUpdate(() => this.classList.toggle("disabled", this.disabled));
+      }
+      /**
+       * Invoked when the `name` property changes
+       *
+       * @param previous - the previous value
+       * @param next - the new value
+       *
+       * @remarks
+       * If elements extending `FormAssociated` implement a `nameChanged` method
+       * They must be sure to invoke `super.nameChanged(previous, next)` to ensure
+       * proper functioning of `FormAssociated`
+       */
+      nameChanged(previous, next) {
+        if (this.proxy instanceof HTMLElement) {
+          this.proxy.name = this.name;
+        }
+      }
+      /**
+       * Invoked when the `required` property changes
+       *
+       * @param previous - the previous value
+       * @param next - the new value
+       *
+       * @remarks
+       * If elements extending `FormAssociated` implement a `requiredChanged` method
+       * They must be sure to invoke `super.requiredChanged(previous, next)` to ensure
+       * proper functioning of `FormAssociated`
+       */
+      requiredChanged(prev, next) {
+        if (this.proxy instanceof HTMLElement) {
+          this.proxy.required = this.required;
+        }
+        DOM.queueUpdate(() => this.classList.toggle("required", this.required));
+        this.validate();
+      }
+      /**
+       * The element internals object. Will only exist
+       * in browsers supporting the attachInternals API
+       */
+      get elementInternals() {
+        if (!supportsElementInternals) {
+          return null;
+        }
+        let internals = InternalsMap.get(this);
+        if (!internals) {
+          internals = this.attachInternals();
+          InternalsMap.set(this, internals);
+        }
+        return internals;
+      }
+      /**
+       * @internal
+       */
+      connectedCallback() {
+        super.connectedCallback();
+        this.addEventListener("keypress", this._keypressHandler);
+        if (!this.value) {
+          this.value = this.initialValue;
+          this.dirtyValue = false;
+        }
+        if (!this.elementInternals) {
+          this.attachProxy();
+          if (this.form) {
+            this.form.addEventListener("reset", this.formResetCallback);
+          }
+        }
+      }
+      /**
+       * @internal
+       */
+      disconnectedCallback() {
+        super.disconnectedCallback();
+        this.proxyEventsToBlock.forEach((name) => this.proxy.removeEventListener(name, this.stopPropagation));
+        if (!this.elementInternals && this.form) {
+          this.form.removeEventListener("reset", this.formResetCallback);
+        }
+      }
+      /**
+       * Return the current validity of the element.
+       */
+      checkValidity() {
+        return this.elementInternals ? this.elementInternals.checkValidity() : this.proxy.checkValidity();
+      }
+      /**
+       * Return the current validity of the element.
+       * If false, fires an invalid event at the element.
+       */
+      reportValidity() {
+        return this.elementInternals ? this.elementInternals.reportValidity() : this.proxy.reportValidity();
+      }
+      /**
+       * Set the validity of the control. In cases when the elementInternals object is not
+       * available (and the proxy element is used to report validity), this function will
+       * do nothing unless a message is provided, at which point the setCustomValidity method
+       * of the proxy element will be invoked with the provided message.
+       * @param flags - Validity flags
+       * @param message - Optional message to supply
+       * @param anchor - Optional element used by UA to display an interactive validation UI
+       */
+      setValidity(flags, message, anchor) {
+        if (this.elementInternals) {
+          this.elementInternals.setValidity(flags, message, anchor);
+        } else if (typeof message === "string") {
+          this.proxy.setCustomValidity(message);
+        }
+      }
+      /**
+       * Invoked when a connected component's form or fieldset has its disabled
+       * state changed.
+       * @param disabled - the disabled value of the form / fieldset
+       */
+      formDisabledCallback(disabled) {
+        this.disabled = disabled;
+      }
+      formResetCallback() {
+        this.value = this.initialValue;
+        this.dirtyValue = false;
+      }
+      /**
+       * Attach the proxy element to the DOM
+       */
+      attachProxy() {
+        var _a;
+        if (!this.proxyInitialized) {
+          this.proxyInitialized = true;
+          this.proxy.style.display = "none";
+          this.proxyEventsToBlock.forEach((name) => this.proxy.addEventListener(name, this.stopPropagation));
+          this.proxy.disabled = this.disabled;
+          this.proxy.required = this.required;
+          if (typeof this.name === "string") {
+            this.proxy.name = this.name;
+          }
+          if (typeof this.value === "string") {
+            this.proxy.value = this.value;
+          }
+          this.proxy.setAttribute("slot", proxySlotName);
+          this.proxySlot = document.createElement("slot");
+          this.proxySlot.setAttribute("name", proxySlotName);
+        }
+        (_a = this.shadowRoot) === null || _a === void 0 ? void 0 : _a.appendChild(this.proxySlot);
+        this.appendChild(this.proxy);
+      }
+      /**
+       * Detach the proxy element from the DOM
+       */
+      detachProxy() {
+        var _a;
+        this.removeChild(this.proxy);
+        (_a = this.shadowRoot) === null || _a === void 0 ? void 0 : _a.removeChild(this.proxySlot);
+      }
+      /** {@inheritDoc (FormAssociated:interface).validate} */
+      validate(anchor) {
+        if (this.proxy instanceof HTMLElement) {
+          this.setValidity(this.proxy.validity, this.proxy.validationMessage, anchor);
+        }
+      }
+      /**
+       * Associates the provided value (and optional state) with the parent form.
+       * @param value - The value to set
+       * @param state - The state object provided to during session restores and when autofilling.
+       */
+      setFormValue(value, state) {
+        if (this.elementInternals) {
+          this.elementInternals.setFormValue(value, state || value);
+        }
+      }
+      _keypressHandler(e) {
+        switch (e.key) {
+          case keyEnter:
+            if (this.form instanceof HTMLFormElement) {
+              const defaultButton = this.form.querySelector("[type=submit]");
+              defaultButton === null || defaultButton === void 0 ? void 0 : defaultButton.click();
+            }
+            break;
+        }
+      }
+      /**
+       * Used to stop propagation of proxy element events
+       * @param e - Event object
+       */
+      stopPropagation(e) {
+        e.stopPropagation();
+      }
+    };
+    attr({ mode: "boolean" })(C.prototype, "disabled");
+    attr({ mode: "fromView", attribute: "value" })(C.prototype, "initialValue");
+    attr({ attribute: "current-value" })(C.prototype, "currentValue");
+    attr(C.prototype, "name");
+    attr({ mode: "boolean" })(C.prototype, "required");
+    observable(C.prototype, "value");
+    return C;
+  }
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/button/button.form-associated.js
+  var _Button = class extends FoundationElement {
+  };
+  var FormAssociatedButton = class extends FormAssociated(_Button) {
+    constructor() {
+      super(...arguments);
+      this.proxy = document.createElement("input");
+    }
+  };
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/button/button.js
+  var Button = class extends FormAssociatedButton {
+    constructor() {
+      super(...arguments);
+      this.handleClick = (e) => {
+        var _a;
+        if (this.disabled && ((_a = this.defaultSlottedContent) === null || _a === void 0 ? void 0 : _a.length) <= 1) {
+          e.stopPropagation();
+        }
+      };
+      this.handleSubmission = () => {
+        if (!this.form) {
+          return;
+        }
+        const attached = this.proxy.isConnected;
+        if (!attached) {
+          this.attachProxy();
+        }
+        typeof this.form.requestSubmit === "function" ? this.form.requestSubmit(this.proxy) : this.proxy.click();
+        if (!attached) {
+          this.detachProxy();
+        }
+      };
+      this.handleFormReset = () => {
+        var _a;
+        (_a = this.form) === null || _a === void 0 ? void 0 : _a.reset();
+      };
+      this.handleUnsupportedDelegatesFocus = () => {
+        var _a;
+        if (window.ShadowRoot && !window.ShadowRoot.prototype.hasOwnProperty("delegatesFocus") && ((_a = this.$fastController.definition.shadowOptions) === null || _a === void 0 ? void 0 : _a.delegatesFocus)) {
+          this.focus = () => {
+            this.control.focus();
+          };
+        }
+      };
+    }
+    formactionChanged() {
+      if (this.proxy instanceof HTMLInputElement) {
+        this.proxy.formAction = this.formaction;
+      }
+    }
+    formenctypeChanged() {
+      if (this.proxy instanceof HTMLInputElement) {
+        this.proxy.formEnctype = this.formenctype;
+      }
+    }
+    formmethodChanged() {
+      if (this.proxy instanceof HTMLInputElement) {
+        this.proxy.formMethod = this.formmethod;
+      }
+    }
+    formnovalidateChanged() {
+      if (this.proxy instanceof HTMLInputElement) {
+        this.proxy.formNoValidate = this.formnovalidate;
+      }
+    }
+    formtargetChanged() {
+      if (this.proxy instanceof HTMLInputElement) {
+        this.proxy.formTarget = this.formtarget;
+      }
+    }
+    typeChanged(previous, next) {
+      if (this.proxy instanceof HTMLInputElement) {
+        this.proxy.type = this.type;
+      }
+      next === "submit" && this.addEventListener("click", this.handleSubmission);
+      previous === "submit" && this.removeEventListener("click", this.handleSubmission);
+      next === "reset" && this.addEventListener("click", this.handleFormReset);
+      previous === "reset" && this.removeEventListener("click", this.handleFormReset);
+    }
+    /** {@inheritDoc (FormAssociated:interface).validate} */
+    validate() {
+      super.validate(this.control);
+    }
+    /**
+     * @internal
+     */
+    connectedCallback() {
+      var _a;
+      super.connectedCallback();
+      this.proxy.setAttribute("type", this.type);
+      this.handleUnsupportedDelegatesFocus();
+      const elements = Array.from((_a = this.control) === null || _a === void 0 ? void 0 : _a.children);
+      if (elements) {
+        elements.forEach((span) => {
+          span.addEventListener("click", this.handleClick);
+        });
+      }
+    }
+    /**
+     * @internal
+     */
+    disconnectedCallback() {
+      var _a;
+      super.disconnectedCallback();
+      const elements = Array.from((_a = this.control) === null || _a === void 0 ? void 0 : _a.children);
+      if (elements) {
+        elements.forEach((span) => {
+          span.removeEventListener("click", this.handleClick);
+        });
+      }
+    }
+  };
+  __decorate([
+    attr({ mode: "boolean" })
+  ], Button.prototype, "autofocus", void 0);
+  __decorate([
+    attr({ attribute: "form" })
+  ], Button.prototype, "formId", void 0);
+  __decorate([
+    attr
+  ], Button.prototype, "formaction", void 0);
+  __decorate([
+    attr
+  ], Button.prototype, "formenctype", void 0);
+  __decorate([
+    attr
+  ], Button.prototype, "formmethod", void 0);
+  __decorate([
+    attr({ mode: "boolean" })
+  ], Button.prototype, "formnovalidate", void 0);
+  __decorate([
+    attr
+  ], Button.prototype, "formtarget", void 0);
+  __decorate([
+    attr
+  ], Button.prototype, "type", void 0);
+  __decorate([
+    observable
+  ], Button.prototype, "defaultSlottedContent", void 0);
+  var DelegatesARIAButton = class {
+  };
+  __decorate([
+    attr({ attribute: "aria-expanded" })
+  ], DelegatesARIAButton.prototype, "ariaExpanded", void 0);
+  __decorate([
+    attr({ attribute: "aria-pressed" })
+  ], DelegatesARIAButton.prototype, "ariaPressed", void 0);
+  applyMixins(DelegatesARIAButton, ARIAGlobalStatesAndProperties);
+  applyMixins(Button, StartEnd, DelegatesARIAButton);
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/utilities/composed-parent.js
+  function composedParent(element) {
+    const parentNode = element.parentElement;
+    if (parentNode) {
+      return parentNode;
+    } else {
+      const rootNode = element.getRootNode();
+      if (rootNode.host instanceof HTMLElement) {
+        return rootNode.host;
+      }
+    }
+    return null;
+  }
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/utilities/composed-contains.js
+  function composedContains(reference, test) {
+    let current = test;
+    while (current !== null) {
+      if (current === reference) {
+        return true;
+      }
+      current = composedParent(current);
+    }
+    return false;
+  }
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/design-token/custom-property-manager.js
+  var defaultElement = document.createElement("div");
+  function isFastElement(element) {
+    return element instanceof FASTElement;
+  }
+  var QueuedStyleSheetTarget = class {
+    setProperty(name, value) {
+      DOM.queueUpdate(() => this.target.setProperty(name, value));
+    }
+    removeProperty(name) {
+      DOM.queueUpdate(() => this.target.removeProperty(name));
+    }
+  };
+  var ConstructableStyleSheetTarget = class extends QueuedStyleSheetTarget {
+    constructor(source) {
+      super();
+      const sheet = new CSSStyleSheet();
+      sheet[prependToAdoptedStyleSheetsSymbol] = true;
+      this.target = sheet.cssRules[sheet.insertRule(":host{}")].style;
+      source.$fastController.addStyles(ElementStyles.create([sheet]));
+    }
+  };
+  var DocumentStyleSheetTarget = class extends QueuedStyleSheetTarget {
+    constructor() {
+      super();
+      const sheet = new CSSStyleSheet();
+      this.target = sheet.cssRules[sheet.insertRule(":root{}")].style;
+      document.adoptedStyleSheets = [
+        ...document.adoptedStyleSheets,
+        sheet
+      ];
+    }
+  };
+  var HeadStyleElementStyleSheetTarget = class extends QueuedStyleSheetTarget {
+    constructor() {
+      super();
+      this.style = document.createElement("style");
+      document.head.appendChild(this.style);
+      const { sheet } = this.style;
+      if (sheet) {
+        const index = sheet.insertRule(":root{}", sheet.cssRules.length);
+        this.target = sheet.cssRules[index].style;
+      }
+    }
+  };
+  var StyleElementStyleSheetTarget = class {
+    constructor(target) {
+      this.store = /* @__PURE__ */ new Map();
+      this.target = null;
+      const controller = target.$fastController;
+      this.style = document.createElement("style");
+      controller.addStyles(this.style);
+      Observable.getNotifier(controller).subscribe(this, "isConnected");
+      this.handleChange(controller, "isConnected");
+    }
+    targetChanged() {
+      if (this.target !== null) {
+        for (const [key, value] of this.store.entries()) {
+          this.target.setProperty(key, value);
+        }
+      }
+    }
+    setProperty(name, value) {
+      this.store.set(name, value);
+      DOM.queueUpdate(() => {
+        if (this.target !== null) {
+          this.target.setProperty(name, value);
+        }
+      });
+    }
+    removeProperty(name) {
+      this.store.delete(name);
+      DOM.queueUpdate(() => {
+        if (this.target !== null) {
+          this.target.removeProperty(name);
+        }
+      });
+    }
+    handleChange(source, key) {
+      const { sheet } = this.style;
+      if (sheet) {
+        const index = sheet.insertRule(":host{}", sheet.cssRules.length);
+        this.target = sheet.cssRules[index].style;
+      } else {
+        this.target = null;
+      }
+    }
+  };
+  __decorate([
+    observable
+  ], StyleElementStyleSheetTarget.prototype, "target", void 0);
+  var ElementStyleSheetTarget = class {
+    constructor(source) {
+      this.target = source.style;
+    }
+    setProperty(name, value) {
+      DOM.queueUpdate(() => this.target.setProperty(name, value));
+    }
+    removeProperty(name) {
+      DOM.queueUpdate(() => this.target.removeProperty(name));
+    }
+  };
+  var RootStyleSheetTarget = class _RootStyleSheetTarget {
+    setProperty(name, value) {
+      _RootStyleSheetTarget.properties[name] = value;
+      for (const target of _RootStyleSheetTarget.roots.values()) {
+        PropertyTargetManager.getOrCreate(_RootStyleSheetTarget.normalizeRoot(target)).setProperty(name, value);
+      }
+    }
+    removeProperty(name) {
+      delete _RootStyleSheetTarget.properties[name];
+      for (const target of _RootStyleSheetTarget.roots.values()) {
+        PropertyTargetManager.getOrCreate(_RootStyleSheetTarget.normalizeRoot(target)).removeProperty(name);
+      }
+    }
+    static registerRoot(root) {
+      const { roots } = _RootStyleSheetTarget;
+      if (!roots.has(root)) {
+        roots.add(root);
+        const target = PropertyTargetManager.getOrCreate(this.normalizeRoot(root));
+        for (const key in _RootStyleSheetTarget.properties) {
+          target.setProperty(key, _RootStyleSheetTarget.properties[key]);
+        }
+      }
+    }
+    static unregisterRoot(root) {
+      const { roots } = _RootStyleSheetTarget;
+      if (roots.has(root)) {
+        roots.delete(root);
+        const target = PropertyTargetManager.getOrCreate(_RootStyleSheetTarget.normalizeRoot(root));
+        for (const key in _RootStyleSheetTarget.properties) {
+          target.removeProperty(key);
+        }
+      }
+    }
+    /**
+     * Returns the document when provided the default element,
+     * otherwise is a no-op
+     * @param root - the root to normalize
+     */
+    static normalizeRoot(root) {
+      return root === defaultElement ? document : root;
+    }
+  };
+  RootStyleSheetTarget.roots = /* @__PURE__ */ new Set();
+  RootStyleSheetTarget.properties = {};
+  var propertyTargetCache = /* @__PURE__ */ new WeakMap();
+  var propertyTargetCtor = DOM.supportsAdoptedStyleSheets ? ConstructableStyleSheetTarget : StyleElementStyleSheetTarget;
+  var PropertyTargetManager = Object.freeze({
+    getOrCreate(source) {
+      if (propertyTargetCache.has(source)) {
+        return propertyTargetCache.get(source);
+      }
+      let target;
+      if (source === defaultElement) {
+        target = new RootStyleSheetTarget();
+      } else if (source instanceof Document) {
+        target = DOM.supportsAdoptedStyleSheets ? new DocumentStyleSheetTarget() : new HeadStyleElementStyleSheetTarget();
+      } else if (isFastElement(source)) {
+        target = new propertyTargetCtor(source);
+      } else {
+        target = new ElementStyleSheetTarget(source);
+      }
+      propertyTargetCache.set(source, target);
+      return target;
+    }
+  });
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/design-token/design-token.js
+  var DesignTokenImpl = class _DesignTokenImpl extends CSSDirective {
+    constructor(configuration) {
+      super();
+      this.subscribers = /* @__PURE__ */ new WeakMap();
+      this._appliedTo = /* @__PURE__ */ new Set();
+      this.name = configuration.name;
+      if (configuration.cssCustomPropertyName !== null) {
+        this.cssCustomProperty = `--${configuration.cssCustomPropertyName}`;
+        this.cssVar = `var(${this.cssCustomProperty})`;
+      }
+      this.id = _DesignTokenImpl.uniqueId();
+      _DesignTokenImpl.tokensById.set(this.id, this);
+    }
+    get appliedTo() {
+      return [...this._appliedTo];
+    }
+    static from(nameOrConfig) {
+      return new _DesignTokenImpl({
+        name: typeof nameOrConfig === "string" ? nameOrConfig : nameOrConfig.name,
+        cssCustomPropertyName: typeof nameOrConfig === "string" ? nameOrConfig : nameOrConfig.cssCustomPropertyName === void 0 ? nameOrConfig.name : nameOrConfig.cssCustomPropertyName
+      });
+    }
+    static isCSSDesignToken(token) {
+      return typeof token.cssCustomProperty === "string";
+    }
+    static isDerivedDesignTokenValue(value) {
+      return typeof value === "function";
+    }
+    /**
+     * Gets a token by ID. Returns undefined if the token was not found.
+     * @param id - The ID of the token
+     * @returns
+     */
+    static getTokenById(id) {
+      return _DesignTokenImpl.tokensById.get(id);
+    }
+    getOrCreateSubscriberSet(target = this) {
+      return this.subscribers.get(target) || this.subscribers.set(target, /* @__PURE__ */ new Set()) && this.subscribers.get(target);
+    }
+    createCSS() {
+      return this.cssVar || "";
+    }
+    getValueFor(element) {
+      const value = DesignTokenNode.getOrCreate(element).get(this);
+      if (value !== void 0) {
+        return value;
+      }
+      throw new Error(`Value could not be retrieved for token named "${this.name}". Ensure the value is set for ${element} or an ancestor of ${element}.`);
+    }
+    setValueFor(element, value) {
+      this._appliedTo.add(element);
+      if (value instanceof _DesignTokenImpl) {
+        value = this.alias(value);
+      }
+      DesignTokenNode.getOrCreate(element).set(this, value);
+      return this;
+    }
+    deleteValueFor(element) {
+      this._appliedTo.delete(element);
+      if (DesignTokenNode.existsFor(element)) {
+        DesignTokenNode.getOrCreate(element).delete(this);
+      }
+      return this;
+    }
+    withDefault(value) {
+      this.setValueFor(defaultElement, value);
+      return this;
+    }
+    subscribe(subscriber, target) {
+      const subscriberSet = this.getOrCreateSubscriberSet(target);
+      if (target && !DesignTokenNode.existsFor(target)) {
+        DesignTokenNode.getOrCreate(target);
+      }
+      if (!subscriberSet.has(subscriber)) {
+        subscriberSet.add(subscriber);
+      }
+    }
+    unsubscribe(subscriber, target) {
+      const list = this.subscribers.get(target || this);
+      if (list && list.has(subscriber)) {
+        list.delete(subscriber);
+      }
+    }
+    /**
+     * Notifies subscribers that the value for an element has changed.
+     * @param element - The element to emit a notification for
+     */
+    notify(element) {
+      const record = Object.freeze({ token: this, target: element });
+      if (this.subscribers.has(this)) {
+        this.subscribers.get(this).forEach((sub) => sub.handleChange(record));
+      }
+      if (this.subscribers.has(element)) {
+        this.subscribers.get(element).forEach((sub) => sub.handleChange(record));
+      }
+    }
+    /**
+     * Alias the token to the provided token.
+     * @param token - the token to alias to
+     */
+    alias(token) {
+      return ((target) => token.getValueFor(target));
+    }
+  };
+  DesignTokenImpl.uniqueId = /* @__PURE__ */ (() => {
+    let id = 0;
+    return () => {
+      id++;
+      return id.toString(16);
+    };
+  })();
+  DesignTokenImpl.tokensById = /* @__PURE__ */ new Map();
+  var CustomPropertyReflector = class {
+    startReflection(token, target) {
+      token.subscribe(this, target);
+      this.handleChange({ token, target });
+    }
+    stopReflection(token, target) {
+      token.unsubscribe(this, target);
+      this.remove(token, target);
+    }
+    handleChange(record) {
+      const { token, target } = record;
+      this.add(token, target);
+    }
+    add(token, target) {
+      PropertyTargetManager.getOrCreate(target).setProperty(token.cssCustomProperty, this.resolveCSSValue(DesignTokenNode.getOrCreate(target).get(token)));
+    }
+    remove(token, target) {
+      PropertyTargetManager.getOrCreate(target).removeProperty(token.cssCustomProperty);
+    }
+    resolveCSSValue(value) {
+      return value && typeof value.createCSS === "function" ? value.createCSS() : value;
+    }
+  };
+  var DesignTokenBindingObserver = class {
+    constructor(source, token, node) {
+      this.source = source;
+      this.token = token;
+      this.node = node;
+      this.dependencies = /* @__PURE__ */ new Set();
+      this.observer = Observable.binding(source, this, false);
+      this.observer.handleChange = this.observer.call;
+      this.handleChange();
+    }
+    disconnect() {
+      this.observer.disconnect();
+    }
+    /**
+     * @internal
+     */
+    handleChange() {
+      try {
+        this.node.store.set(this.token, this.observer.observe(this.node.target, defaultExecutionContext));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+  var Store = class {
+    constructor() {
+      this.values = /* @__PURE__ */ new Map();
+    }
+    set(token, value) {
+      if (this.values.get(token) !== value) {
+        this.values.set(token, value);
+        Observable.getNotifier(this).notify(token.id);
+      }
+    }
+    get(token) {
+      Observable.track(this, token.id);
+      return this.values.get(token);
+    }
+    delete(token) {
+      this.values.delete(token);
+      Observable.getNotifier(this).notify(token.id);
+    }
+    all() {
+      return this.values.entries();
+    }
+  };
+  var nodeCache = /* @__PURE__ */ new WeakMap();
+  var childToParent = /* @__PURE__ */ new WeakMap();
+  var DesignTokenNode = class _DesignTokenNode {
+    constructor(target) {
+      this.target = target;
+      this.store = new Store();
+      this.children = [];
+      this.assignedValues = /* @__PURE__ */ new Map();
+      this.reflecting = /* @__PURE__ */ new Set();
+      this.bindingObservers = /* @__PURE__ */ new Map();
+      this.tokenValueChangeHandler = {
+        handleChange: (source, arg) => {
+          const token = DesignTokenImpl.getTokenById(arg);
+          if (token) {
+            token.notify(this.target);
+            this.updateCSSTokenReflection(source, token);
+          }
+        }
+      };
+      nodeCache.set(target, this);
+      Observable.getNotifier(this.store).subscribe(this.tokenValueChangeHandler);
+      if (target instanceof FASTElement) {
+        target.$fastController.addBehaviors([this]);
+      } else if (target.isConnected) {
+        this.bind();
+      }
+    }
+    /**
+     * Returns a DesignTokenNode for an element.
+     * Creates a new instance if one does not already exist for a node,
+     * otherwise returns the cached instance
+     *
+     * @param target - The HTML element to retrieve a DesignTokenNode for
+     */
+    static getOrCreate(target) {
+      return nodeCache.get(target) || new _DesignTokenNode(target);
+    }
+    /**
+     * Determines if a DesignTokenNode has been created for a target
+     * @param target - The element to test
+     */
+    static existsFor(target) {
+      return nodeCache.has(target);
+    }
+    /**
+     * Searches for and return the nearest parent DesignTokenNode.
+     * Null is returned if no node is found or the node provided is for a default element.
+     */
+    static findParent(node) {
+      if (!(defaultElement === node.target)) {
+        let parent = composedParent(node.target);
+        while (parent !== null) {
+          if (nodeCache.has(parent)) {
+            return nodeCache.get(parent);
+          }
+          parent = composedParent(parent);
+        }
+        return _DesignTokenNode.getOrCreate(defaultElement);
+      }
+      return null;
+    }
+    /**
+     * Finds the closest node with a value explicitly assigned for a token, otherwise null.
+     * @param token - The token to look for
+     * @param start - The node to start looking for value assignment
+     * @returns
+     */
+    static findClosestAssignedNode(token, start) {
+      let current = start;
+      do {
+        if (current.has(token)) {
+          return current;
+        }
+        current = current.parent ? current.parent : current.target !== defaultElement ? _DesignTokenNode.getOrCreate(defaultElement) : null;
+      } while (current !== null);
+      return null;
+    }
+    /**
+     * The parent DesignTokenNode, or null.
+     */
+    get parent() {
+      return childToParent.get(this) || null;
+    }
+    updateCSSTokenReflection(source, token) {
+      if (DesignTokenImpl.isCSSDesignToken(token)) {
+        const parent = this.parent;
+        const reflecting = this.isReflecting(token);
+        if (parent) {
+          const parentValue = parent.get(token);
+          const sourceValue = source.get(token);
+          if (parentValue !== sourceValue && !reflecting) {
+            this.reflectToCSS(token);
+          } else if (parentValue === sourceValue && reflecting) {
+            this.stopReflectToCSS(token);
+          }
+        } else if (!reflecting) {
+          this.reflectToCSS(token);
+        }
+      }
+    }
+    /**
+     * Checks if a token has been assigned an explicit value the node.
+     * @param token - the token to check.
+     */
+    has(token) {
+      return this.assignedValues.has(token);
+    }
+    /**
+     * Gets the value of a token for a node
+     * @param token - The token to retrieve the value for
+     * @returns
+     */
+    get(token) {
+      const value = this.store.get(token);
+      if (value !== void 0) {
+        return value;
+      }
+      const raw = this.getRaw(token);
+      if (raw !== void 0) {
+        this.hydrate(token, raw);
+        return this.get(token);
+      }
+    }
+    /**
+     * Retrieves the raw assigned value of a token from the nearest assigned node.
+     * @param token - The token to retrieve a raw value for
+     * @returns
+     */
+    getRaw(token) {
+      var _a;
+      if (this.assignedValues.has(token)) {
+        return this.assignedValues.get(token);
+      }
+      return (_a = _DesignTokenNode.findClosestAssignedNode(token, this)) === null || _a === void 0 ? void 0 : _a.getRaw(token);
+    }
+    /**
+     * Sets a token to a value for a node
+     * @param token - The token to set
+     * @param value - The value to set the token to
+     */
+    set(token, value) {
+      if (DesignTokenImpl.isDerivedDesignTokenValue(this.assignedValues.get(token))) {
+        this.tearDownBindingObserver(token);
+      }
+      this.assignedValues.set(token, value);
+      if (DesignTokenImpl.isDerivedDesignTokenValue(value)) {
+        this.setupBindingObserver(token, value);
+      } else {
+        this.store.set(token, value);
+      }
+    }
+    /**
+     * Deletes a token value for the node.
+     * @param token - The token to delete the value for
+     */
+    delete(token) {
+      this.assignedValues.delete(token);
+      this.tearDownBindingObserver(token);
+      const upstream = this.getRaw(token);
+      if (upstream) {
+        this.hydrate(token, upstream);
+      } else {
+        this.store.delete(token);
+      }
+    }
+    /**
+     * Invoked when the DesignTokenNode.target is attached to the document
+     */
+    bind() {
+      const parent = _DesignTokenNode.findParent(this);
+      if (parent) {
+        parent.appendChild(this);
+      }
+      for (const key of this.assignedValues.keys()) {
+        key.notify(this.target);
+      }
+    }
+    /**
+     * Invoked when the DesignTokenNode.target is detached from the document
+     */
+    unbind() {
+      if (this.parent) {
+        const parent = childToParent.get(this);
+        parent.removeChild(this);
+      }
+      for (const token of this.bindingObservers.keys()) {
+        this.tearDownBindingObserver(token);
+      }
+    }
+    /**
+     * Appends a child to a parent DesignTokenNode.
+     * @param child - The child to append to the node
+     */
+    appendChild(child) {
+      if (child.parent) {
+        childToParent.get(child).removeChild(child);
+      }
+      const reParent = this.children.filter((x) => child.contains(x));
+      childToParent.set(child, this);
+      this.children.push(child);
+      reParent.forEach((x) => child.appendChild(x));
+      Observable.getNotifier(this.store).subscribe(child);
+      for (const [token, value] of this.store.all()) {
+        child.hydrate(token, this.bindingObservers.has(token) ? this.getRaw(token) : value);
+        child.updateCSSTokenReflection(child.store, token);
+      }
+    }
+    /**
+     * Removes a child from a node.
+     * @param child - The child to remove.
+     */
+    removeChild(child) {
+      const childIndex = this.children.indexOf(child);
+      if (childIndex !== -1) {
+        this.children.splice(childIndex, 1);
+      }
+      Observable.getNotifier(this.store).unsubscribe(child);
+      if (child.parent !== this) {
+        return false;
+      }
+      const deleted = childToParent.delete(child);
+      for (const [token] of this.store.all()) {
+        child.hydrate(token, child.getRaw(token));
+        child.updateCSSTokenReflection(child.store, token);
+      }
+      return deleted;
+    }
+    /**
+     * Tests whether a provided node is contained by
+     * the calling node.
+     * @param test - The node to test
+     */
+    contains(test) {
+      return composedContains(this.target, test.target);
+    }
+    /**
+     * Instructs the node to reflect a design token for the provided token.
+     * @param token - The design token to reflect
+     */
+    reflectToCSS(token) {
+      if (!this.isReflecting(token)) {
+        this.reflecting.add(token);
+        _DesignTokenNode.cssCustomPropertyReflector.startReflection(token, this.target);
+      }
+    }
+    /**
+     * Stops reflecting a DesignToken to CSS
+     * @param token - The design token to stop reflecting
+     */
+    stopReflectToCSS(token) {
+      if (this.isReflecting(token)) {
+        this.reflecting.delete(token);
+        _DesignTokenNode.cssCustomPropertyReflector.stopReflection(token, this.target);
+      }
+    }
+    /**
+     * Determines if a token is being reflected to CSS for a node.
+     * @param token - The token to check for reflection
+     * @returns
+     */
+    isReflecting(token) {
+      return this.reflecting.has(token);
+    }
+    /**
+     * Handle changes to upstream tokens
+     * @param source - The parent DesignTokenNode
+     * @param property - The token ID that changed
+     */
+    handleChange(source, property) {
+      const token = DesignTokenImpl.getTokenById(property);
+      if (!token) {
+        return;
+      }
+      this.hydrate(token, this.getRaw(token));
+      this.updateCSSTokenReflection(this.store, token);
+    }
+    /**
+     * Hydrates a token with a DesignTokenValue, making retrieval available.
+     * @param token - The token to hydrate
+     * @param value - The value to hydrate
+     */
+    hydrate(token, value) {
+      if (!this.has(token)) {
+        const observer = this.bindingObservers.get(token);
+        if (DesignTokenImpl.isDerivedDesignTokenValue(value)) {
+          if (observer) {
+            if (observer.source !== value) {
+              this.tearDownBindingObserver(token);
+              this.setupBindingObserver(token, value);
+            }
+          } else {
+            this.setupBindingObserver(token, value);
+          }
+        } else {
+          if (observer) {
+            this.tearDownBindingObserver(token);
+          }
+          this.store.set(token, value);
+        }
+      }
+    }
+    /**
+     * Sets up a binding observer for a derived token value that notifies token
+     * subscribers on change.
+     *
+     * @param token - The token to notify when the binding updates
+     * @param source - The binding source
+     */
+    setupBindingObserver(token, source) {
+      const binding = new DesignTokenBindingObserver(source, token, this);
+      this.bindingObservers.set(token, binding);
+      return binding;
+    }
+    /**
+     * Tear down a binding observer for a token.
+     */
+    tearDownBindingObserver(token) {
+      if (this.bindingObservers.has(token)) {
+        this.bindingObservers.get(token).disconnect();
+        this.bindingObservers.delete(token);
+        return true;
+      }
+      return false;
+    }
+  };
+  DesignTokenNode.cssCustomPropertyReflector = new CustomPropertyReflector();
+  __decorate([
+    observable
+  ], DesignTokenNode.prototype, "children", void 0);
+  function create(nameOrConfig) {
+    return DesignTokenImpl.from(nameOrConfig);
+  }
+  var DesignToken = Object.freeze({
+    create,
+    /**
+     * Informs DesignToken that an HTMLElement for which tokens have
+     * been set has been connected to the document.
+     *
+     * The browser does not provide a reliable mechanism to observe an HTMLElement's connectedness
+     * in all scenarios, so invoking this method manually is necessary when:
+     *
+     * 1. Token values are set for an HTMLElement.
+     * 2. The HTMLElement does not inherit from FASTElement.
+     * 3. The HTMLElement is not connected to the document when token values are set.
+     *
+     * @param element - The element to notify
+     * @returns - true if notification was successful, otherwise false.
+     */
+    notifyConnection(element) {
+      if (!element.isConnected || !DesignTokenNode.existsFor(element)) {
+        return false;
+      }
+      DesignTokenNode.getOrCreate(element).bind();
+      return true;
+    },
+    /**
+     * Informs DesignToken that an HTMLElement for which tokens have
+     * been set has been disconnected to the document.
+     *
+     * The browser does not provide a reliable mechanism to observe an HTMLElement's connectedness
+     * in all scenarios, so invoking this method manually is necessary when:
+     *
+     * 1. Token values are set for an HTMLElement.
+     * 2. The HTMLElement does not inherit from FASTElement.
+     *
+     * @param element - The element to notify
+     * @returns - true if notification was successful, otherwise false.
+     */
+    notifyDisconnection(element) {
+      if (element.isConnected || !DesignTokenNode.existsFor(element)) {
+        return false;
+      }
+      DesignTokenNode.getOrCreate(element).unbind();
+      return true;
+    },
+    /**
+     * Registers and element or document as a DesignToken root.
+     * {@link CSSDesignToken | CSSDesignTokens} with default values assigned via
+     * {@link (DesignToken:interface).withDefault} will emit CSS custom properties to all
+     * registered roots.
+     * @param target - The root to register
+     */
+    registerRoot(target = defaultElement) {
+      RootStyleSheetTarget.registerRoot(target);
+    },
+    /**
+     * Unregister an element or document as a DesignToken root.
+     * @param target - The root to deregister
+     */
+    unregisterRoot(target = defaultElement) {
+      RootStyleSheetTarget.unregisterRoot(target);
+    }
+  });
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/design-system/design-system.js
+  var ElementDisambiguation = Object.freeze({
+    /**
+     * Skip defining the element but still call the provided callback passed
+     * to DesignSystemRegistrationContext.tryDefineElement
+     */
+    definitionCallbackOnly: null,
+    /**
+     * Ignore the duplicate element entirely.
+     */
+    ignoreDuplicate: Symbol()
+  });
+  var elementTypesByTag = /* @__PURE__ */ new Map();
+  var elementTagsByType = /* @__PURE__ */ new Map();
+  var rootDesignSystem = null;
+  var designSystemKey = DI.createInterface((x) => x.cachedCallback((handler) => {
+    if (rootDesignSystem === null) {
+      rootDesignSystem = new DefaultDesignSystem(null, handler);
+    }
+    return rootDesignSystem;
+  }));
+  var DesignSystem = Object.freeze({
+    /**
+     * Returns the HTML element name that the type is defined as.
+     * @param type - The type to lookup.
+     * @public
+     */
+    tagFor(type) {
+      return elementTagsByType.get(type);
+    },
+    /**
+     * Searches the DOM hierarchy for the design system that is responsible
+     * for the provided element.
+     * @param element - The element to locate the design system for.
+     * @returns The located design system.
+     * @public
+     */
+    responsibleFor(element) {
+      const owned = element.$$designSystem$$;
+      if (owned) {
+        return owned;
+      }
+      const container = DI.findResponsibleContainer(element);
+      return container.get(designSystemKey);
+    },
+    /**
+     * Gets the DesignSystem if one is explicitly defined on the provided element;
+     * otherwise creates a design system defined directly on the element.
+     * @param element - The element to get or create a design system for.
+     * @returns The design system.
+     * @public
+     */
+    getOrCreate(node) {
+      if (!node) {
+        if (rootDesignSystem === null) {
+          rootDesignSystem = DI.getOrCreateDOMContainer().get(designSystemKey);
+        }
+        return rootDesignSystem;
+      }
+      const owned = node.$$designSystem$$;
+      if (owned) {
+        return owned;
+      }
+      const container = DI.getOrCreateDOMContainer(node);
+      if (container.has(designSystemKey, false)) {
+        return container.get(designSystemKey);
+      } else {
+        const system = new DefaultDesignSystem(node, container);
+        container.register(Registration.instance(designSystemKey, system));
+        return system;
+      }
+    }
+  });
+  function extractTryDefineElementParams(params, elementDefinitionType, elementDefinitionCallback) {
+    if (typeof params === "string") {
+      return {
+        name: params,
+        type: elementDefinitionType,
+        callback: elementDefinitionCallback
+      };
+    } else {
+      return params;
+    }
+  }
+  var DefaultDesignSystem = class {
+    constructor(owner, container) {
+      this.owner = owner;
+      this.container = container;
+      this.designTokensInitialized = false;
+      this.prefix = "fast";
+      this.shadowRootMode = void 0;
+      this.disambiguate = () => ElementDisambiguation.definitionCallbackOnly;
+      if (owner !== null) {
+        owner.$$designSystem$$ = this;
+      }
+    }
+    withPrefix(prefix) {
+      this.prefix = prefix;
+      return this;
+    }
+    withShadowRootMode(mode) {
+      this.shadowRootMode = mode;
+      return this;
+    }
+    withElementDisambiguation(callback) {
+      this.disambiguate = callback;
+      return this;
+    }
+    withDesignTokenRoot(root) {
+      this.designTokenRoot = root;
+      return this;
+    }
+    register(...registrations) {
+      const container = this.container;
+      const elementDefinitionEntries = [];
+      const disambiguate = this.disambiguate;
+      const shadowRootMode = this.shadowRootMode;
+      const context = {
+        elementPrefix: this.prefix,
+        tryDefineElement(params, elementDefinitionType, elementDefinitionCallback) {
+          const extractedParams = extractTryDefineElementParams(params, elementDefinitionType, elementDefinitionCallback);
+          const { name, callback, baseClass } = extractedParams;
+          let { type } = extractedParams;
+          let elementName = name;
+          let typeFoundByName = elementTypesByTag.get(elementName);
+          let needsDefine = true;
+          while (typeFoundByName) {
+            const result = disambiguate(elementName, type, typeFoundByName);
+            switch (result) {
+              case ElementDisambiguation.ignoreDuplicate:
+                return;
+              case ElementDisambiguation.definitionCallbackOnly:
+                needsDefine = false;
+                typeFoundByName = void 0;
+                break;
+              default:
+                elementName = result;
+                typeFoundByName = elementTypesByTag.get(elementName);
+                break;
+            }
+          }
+          if (needsDefine) {
+            if (elementTagsByType.has(type) || type === FoundationElement) {
+              type = class extends type {
+              };
+            }
+            elementTypesByTag.set(elementName, type);
+            elementTagsByType.set(type, elementName);
+            if (baseClass) {
+              elementTagsByType.set(baseClass, elementName);
+            }
+          }
+          elementDefinitionEntries.push(new ElementDefinitionEntry(container, elementName, type, shadowRootMode, callback, needsDefine));
+        }
+      };
+      if (!this.designTokensInitialized) {
+        this.designTokensInitialized = true;
+        if (this.designTokenRoot !== null) {
+          DesignToken.registerRoot(this.designTokenRoot);
+        }
+      }
+      container.registerWithContext(context, ...registrations);
+      for (const entry of elementDefinitionEntries) {
+        entry.callback(entry);
+        if (entry.willDefine && entry.definition !== null) {
+          entry.definition.define();
+        }
+      }
+      return this;
+    }
+  };
+  var ElementDefinitionEntry = class {
+    constructor(container, name, type, shadowRootMode, callback, willDefine) {
+      this.container = container;
+      this.name = name;
+      this.type = type;
+      this.shadowRootMode = shadowRootMode;
+      this.callback = callback;
+      this.willDefine = willDefine;
+      this.definition = null;
+    }
+    definePresentation(presentation) {
+      ComponentPresentation.define(this.name, presentation, this.container);
+    }
+    defineElement(definition) {
+      this.definition = new FASTElementDefinition(this.type, Object.assign(Object.assign({}, definition), { name: this.name }));
+    }
+    tagFor(type) {
+      return DesignSystem.tagFor(type);
+    }
+  };
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/utilities/style/disabled.js
+  var disabledCursor = "not-allowed";
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/utilities/style/display.js
+  var hidden = `:host([hidden]){display:none}`;
+  function display(displayValue) {
+    return `${hidden}:host{display:${displayValue}}`;
+  }
+
+  // node_modules/@microsoft/fast-foundation/dist/esm/utilities/style/focus.js
+  var focusVisible = canUseFocusVisible() ? "focus-visible" : "focus";
+
+  // node_modules/@vscode/webview-ui-toolkit/dist/vscode-design-system.js
+  function provideVSCodeDesignSystem(element) {
+    return DesignSystem.getOrCreate(element).withPrefix("vscode");
+  }
+
+  // node_modules/@vscode/webview-ui-toolkit/dist/utilities/theme/applyTheme.js
+  function initThemeChangeListener(tokenMappings2) {
+    window.addEventListener("load", () => {
+      const observer = new MutationObserver(() => {
+        applyCurrentTheme(tokenMappings2);
+      });
+      observer.observe(document.body, {
+        attributes: true,
+        attributeFilter: ["class"]
+      });
+      applyCurrentTheme(tokenMappings2);
+    });
+  }
+  function applyCurrentTheme(tokenMappings2) {
+    const styles = getComputedStyle(document.body);
+    const body = document.querySelector("body");
+    if (body) {
+      const themeKind = body.getAttribute("data-vscode-theme-kind");
+      for (const [vscodeTokenName, toolkitToken] of tokenMappings2) {
+        let value = styles.getPropertyValue(vscodeTokenName).toString();
+        if (themeKind === "vscode-high-contrast") {
+          if (value.length === 0 && toolkitToken.name.includes("background")) {
+            value = "transparent";
+          }
+          if (toolkitToken.name === "button-icon-hover-background") {
+            value = "transparent";
+          }
+        } else if (themeKind === "vscode-high-contrast-light") {
+          if (value.length === 0 && toolkitToken.name.includes("background")) {
+            switch (toolkitToken.name) {
+              case "button-primary-hover-background":
+                value = "#0F4A85";
+                break;
+              case "button-secondary-hover-background":
+                value = "transparent";
+                break;
+              case "button-icon-hover-background":
+                value = "transparent";
+                break;
+            }
+          }
+        } else {
+          if (toolkitToken.name === "contrast-active-border") {
+            value = "transparent";
+          }
+        }
+        toolkitToken.setValueFor(body, value);
+      }
+    }
+  }
+
+  // node_modules/@vscode/webview-ui-toolkit/dist/utilities/design-tokens/create.js
+  var tokenMappings = /* @__PURE__ */ new Map();
+  var isThemeListenerInitialized = false;
+  function create2(name, vscodeThemeVar) {
+    const designToken = DesignToken.create(name);
+    if (vscodeThemeVar) {
+      if (vscodeThemeVar.includes("--fake-vscode-token")) {
+        const uniqueId = "id" + Math.random().toString(16).slice(2);
+        vscodeThemeVar = `${vscodeThemeVar}-${uniqueId}`;
+      }
+      tokenMappings.set(vscodeThemeVar, designToken);
+    }
+    if (!isThemeListenerInitialized) {
+      initThemeChangeListener(tokenMappings);
+      isThemeListenerInitialized = true;
+    }
+    return designToken;
+  }
+
+  // node_modules/@vscode/webview-ui-toolkit/dist/design-tokens.js
+  var background = create2("background", "--vscode-editor-background").withDefault("#1e1e1e");
+  var borderWidth = create2("border-width").withDefault(1);
+  var contrastActiveBorder = create2("contrast-active-border", "--vscode-contrastActiveBorder").withDefault("#f38518");
+  var contrastBorder = create2("contrast-border", "--vscode-contrastBorder").withDefault("#6fc3df");
+  var cornerRadius = create2("corner-radius").withDefault(0);
+  var cornerRadiusRound = create2("corner-radius-round").withDefault(2);
+  var designUnit = create2("design-unit").withDefault(4);
+  var disabledOpacity = create2("disabled-opacity").withDefault(0.4);
+  var focusBorder = create2("focus-border", "--vscode-focusBorder").withDefault("#007fd4");
+  var fontFamily = create2("font-family", "--vscode-font-family").withDefault("-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol");
+  var fontWeight = create2("font-weight", "--vscode-font-weight").withDefault("400");
+  var foreground = create2("foreground", "--vscode-foreground").withDefault("#cccccc");
+  var inputHeight = create2("input-height").withDefault("26");
+  var inputMinWidth = create2("input-min-width").withDefault("100px");
+  var typeRampBaseFontSize = create2("type-ramp-base-font-size", "--vscode-font-size").withDefault("13px");
+  var typeRampBaseLineHeight = create2("type-ramp-base-line-height").withDefault("normal");
+  var typeRampMinus1FontSize = create2("type-ramp-minus1-font-size").withDefault("11px");
+  var typeRampMinus1LineHeight = create2("type-ramp-minus1-line-height").withDefault("16px");
+  var typeRampMinus2FontSize = create2("type-ramp-minus2-font-size").withDefault("9px");
+  var typeRampMinus2LineHeight = create2("type-ramp-minus2-line-height").withDefault("16px");
+  var typeRampPlus1FontSize = create2("type-ramp-plus1-font-size").withDefault("16px");
+  var typeRampPlus1LineHeight = create2("type-ramp-plus1-line-height").withDefault("24px");
+  var scrollbarWidth = create2("scrollbarWidth").withDefault("10px");
+  var scrollbarHeight = create2("scrollbarHeight").withDefault("10px");
+  var scrollbarSliderBackground = create2("scrollbar-slider-background", "--vscode-scrollbarSlider-background").withDefault("#79797966");
+  var scrollbarSliderHoverBackground = create2("scrollbar-slider-hover-background", "--vscode-scrollbarSlider-hoverBackground").withDefault("#646464b3");
+  var scrollbarSliderActiveBackground = create2("scrollbar-slider-active-background", "--vscode-scrollbarSlider-activeBackground").withDefault("#bfbfbf66");
+  var badgeBackground = create2("badge-background", "--vscode-badge-background").withDefault("#4d4d4d");
+  var badgeForeground = create2("badge-foreground", "--vscode-badge-foreground").withDefault("#ffffff");
+  var buttonBorder = create2("button-border", "--vscode-button-border").withDefault("transparent");
+  var buttonIconBackground = create2("button-icon-background").withDefault("transparent");
+  var buttonIconCornerRadius = create2("button-icon-corner-radius").withDefault("5px");
+  var buttonIconFocusBorderOffset = create2("button-icon-outline-offset").withDefault(0);
+  var buttonIconHoverBackground = create2("button-icon-hover-background", "--fake-vscode-token").withDefault("rgba(90, 93, 94, 0.31)");
+  var buttonIconPadding = create2("button-icon-padding").withDefault("3px");
+  var buttonPrimaryBackground = create2("button-primary-background", "--vscode-button-background").withDefault("#0e639c");
+  var buttonPrimaryForeground = create2("button-primary-foreground", "--vscode-button-foreground").withDefault("#ffffff");
+  var buttonPrimaryHoverBackground = create2("button-primary-hover-background", "--vscode-button-hoverBackground").withDefault("#1177bb");
+  var buttonSecondaryBackground = create2("button-secondary-background", "--vscode-button-secondaryBackground").withDefault("#3a3d41");
+  var buttonSecondaryForeground = create2("button-secondary-foreground", "--vscode-button-secondaryForeground").withDefault("#ffffff");
+  var buttonSecondaryHoverBackground = create2("button-secondary-hover-background", "--vscode-button-secondaryHoverBackground").withDefault("#45494e");
+  var buttonPaddingHorizontal = create2("button-padding-horizontal").withDefault("11px");
+  var buttonPaddingVertical = create2("button-padding-vertical").withDefault("4px");
+  var checkboxBackground = create2("checkbox-background", "--vscode-checkbox-background").withDefault("#3c3c3c");
+  var checkboxBorder = create2("checkbox-border", "--vscode-checkbox-border").withDefault("#3c3c3c");
+  var checkboxCornerRadius = create2("checkbox-corner-radius").withDefault(3);
+  var checkboxForeground = create2("checkbox-foreground", "--vscode-checkbox-foreground").withDefault("#f0f0f0");
+  var listActiveSelectionBackground = create2("list-active-selection-background", "--vscode-list-activeSelectionBackground").withDefault("#094771");
+  var listActiveSelectionForeground = create2("list-active-selection-foreground", "--vscode-list-activeSelectionForeground").withDefault("#ffffff");
+  var listHoverBackground = create2("list-hover-background", "--vscode-list-hoverBackground").withDefault("#2a2d2e");
+  var dividerBackground = create2("divider-background", "--vscode-settings-dropdownListBorder").withDefault("#454545");
+  var dropdownBackground = create2("dropdown-background", "--vscode-dropdown-background").withDefault("#3c3c3c");
+  var dropdownBorder = create2("dropdown-border", "--vscode-dropdown-border").withDefault("#3c3c3c");
+  var dropdownForeground = create2("dropdown-foreground", "--vscode-dropdown-foreground").withDefault("#f0f0f0");
+  var dropdownListMaxHeight = create2("dropdown-list-max-height").withDefault("200px");
+  var inputBackground = create2("input-background", "--vscode-input-background").withDefault("#3c3c3c");
+  var inputForeground = create2("input-foreground", "--vscode-input-foreground").withDefault("#cccccc");
+  var inputPlaceholderForeground = create2("input-placeholder-foreground", "--vscode-input-placeholderForeground").withDefault("#cccccc");
+  var linkActiveForeground = create2("link-active-foreground", "--vscode-textLink-activeForeground").withDefault("#3794ff");
+  var linkForeground = create2("link-foreground", "--vscode-textLink-foreground").withDefault("#3794ff");
+  var progressBackground = create2("progress-background", "--vscode-progressBar-background").withDefault("#0e70c0");
+  var panelTabActiveBorder = create2("panel-tab-active-border", "--vscode-panelTitle-activeBorder").withDefault("#e7e7e7");
+  var panelTabActiveForeground = create2("panel-tab-active-foreground", "--vscode-panelTitle-activeForeground").withDefault("#e7e7e7");
+  var panelTabForeground = create2("panel-tab-foreground", "--vscode-panelTitle-inactiveForeground").withDefault("#e7e7e799");
+  var panelViewBackground = create2("panel-view-background", "--vscode-panel-background").withDefault("#1e1e1e");
+  var panelViewBorder = create2("panel-view-border", "--vscode-panel-border").withDefault("#80808059");
+  var tagCornerRadius = create2("tag-corner-radius").withDefault("2px");
+
+  // node_modules/tslib/tslib.es6.mjs
+  function __decorate2(decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+  }
+
+  // node_modules/@vscode/webview-ui-toolkit/dist/button/button.styles.js
+  var BaseButtonStyles = css`
+	${display("inline-flex")} :host {
 		outline: none;
-		font-family: ${Oo};
-		font-size: ${Do};
-		line-height: ${Po};
-		color: ${Vr};
-		background: ${St};
-		border-radius: calc(${Ao} * 1px);
+		font-family: ${fontFamily};
+		font-size: ${typeRampBaseFontSize};
+		line-height: ${typeRampBaseLineHeight};
+		color: ${buttonPrimaryForeground};
+		background: ${buttonPrimaryBackground};
+		border-radius: calc(${cornerRadiusRound} * 1px);
 		fill: currentColor;
 		cursor: pointer;
 	}
@@ -102,11 +5498,11 @@
 		display: inline-flex;
 		justify-content: center;
 		align-items: center;
-		padding: ${jo} ${Bo};
+		padding: ${buttonPaddingVertical} ${buttonPaddingHorizontal};
 		white-space: wrap;
 		outline: none;
 		text-decoration: none;
-		border: calc(${ot} * 1px) solid ${Io};
+		border: calc(${borderWidth} * 1px) solid ${buttonBorder};
 		color: inherit;
 		border-radius: inherit;
 		fill: inherit;
@@ -114,22 +5510,22 @@
 		font-family: inherit;
 	}
 	:host(:hover) {
-		background: ${Wr};
+		background: ${buttonPrimaryHoverBackground};
 	}
 	:host(:active) {
-		background: ${St};
+		background: ${buttonPrimaryBackground};
 	}
-	.control:${ee} {
-		outline: calc(${ot} * 1px) solid ${re};
-		outline-offset: calc(${ot} * 2px);
+	.control:${focusVisible} {
+		outline: calc(${borderWidth} * 1px) solid ${focusBorder};
+		outline-offset: calc(${borderWidth} * 2px);
 	}
 	.control::-moz-focus-inner {
 		border: 0;
 	}
 	:host([disabled]) {
-		opacity: ${ko};
-		background: ${St};
-		cursor: ${vo};
+		opacity: ${disabledOpacity};
+		background: ${buttonPrimaryBackground};
+		cursor: ${disabledCursor};
 	}
 	.content {
 		display: flex;
@@ -139,87 +5535,1272 @@
 	}
 	::slotted(svg),
 	::slotted(span) {
-		width: calc(${Hr} * 4px);
-		height: calc(${Hr} * 4px);
+		width: calc(${designUnit} * 4px);
+		height: calc(${designUnit} * 4px);
 	}
 	.start {
 		margin-inline-end: 8px;
 	}
-`,ts=yt`
+`;
+  var PrimaryButtonStyles = css`
 	:host([appearance='primary']) {
-		background: ${St};
-		color: ${Vr};
+		background: ${buttonPrimaryBackground};
+		color: ${buttonPrimaryForeground};
 	}
 	:host([appearance='primary']:hover) {
-		background: ${Wr};
+		background: ${buttonPrimaryHoverBackground};
 	}
 	:host([appearance='primary']:active) .control:active {
-		background: ${St};
+		background: ${buttonPrimaryBackground};
 	}
-	:host([appearance='primary']) .control:${ee} {
-		outline: calc(${ot} * 1px) solid ${re};
-		outline-offset: calc(${ot} * 2px);
+	:host([appearance='primary']) .control:${focusVisible} {
+		outline: calc(${borderWidth} * 1px) solid ${focusBorder};
+		outline-offset: calc(${borderWidth} * 2px);
 	}
 	:host([appearance='primary'][disabled]) {
-		background: ${St};
+		background: ${buttonPrimaryBackground};
 	}
-`,es=yt`
+`;
+  var SecondaryButtonStyles = css`
 	:host([appearance='secondary']) {
-		background: ${Be};
-		color: ${Fo};
+		background: ${buttonSecondaryBackground};
+		color: ${buttonSecondaryForeground};
 	}
 	:host([appearance='secondary']:hover) {
-		background: ${$o};
+		background: ${buttonSecondaryHoverBackground};
 	}
 	:host([appearance='secondary']:active) .control:active {
-		background: ${Be};
+		background: ${buttonSecondaryBackground};
 	}
-	:host([appearance='secondary']) .control:${ee} {
-		outline: calc(${ot} * 1px) solid ${re};
-		outline-offset: calc(${ot} * 2px);
+	:host([appearance='secondary']) .control:${focusVisible} {
+		outline: calc(${borderWidth} * 1px) solid ${focusBorder};
+		outline-offset: calc(${borderWidth} * 2px);
 	}
 	:host([appearance='secondary'][disabled]) {
-		background: ${Be};
+		background: ${buttonSecondaryBackground};
 	}
-`,rs=yt`
+`;
+  var IconButtonStyles = css`
 	:host([appearance='icon']) {
-		background: ${Ur};
-		border-radius: ${Lo};
-		color: ${Ro};
+		background: ${buttonIconBackground};
+		border-radius: ${buttonIconCornerRadius};
+		color: ${foreground};
 	}
 	:host([appearance='icon']:hover) {
-		background: ${zr};
-		outline: 1px dotted ${_o};
+		background: ${buttonIconHoverBackground};
+		outline: 1px dotted ${contrastActiveBorder};
 		outline-offset: -1px;
 	}
 	:host([appearance='icon']) .control {
-		padding: ${No};
+		padding: ${buttonIconPadding};
 		border: none;
 	}
 	:host([appearance='icon']:active) .control:active {
-		background: ${zr};
+		background: ${buttonIconHoverBackground};
 	}
-	:host([appearance='icon']) .control:${ee} {
-		outline: calc(${ot} * 1px) solid ${re};
-		outline-offset: ${Mo};
+	:host([appearance='icon']) .control:${focusVisible} {
+		outline: calc(${borderWidth} * 1px) solid ${focusBorder};
+		outline-offset: ${buttonIconFocusBorderOffset};
 	}
 	:host([appearance='icon'][disabled]) {
-		background: ${Ur};
+		background: ${buttonIconBackground};
 	}
-`,Uo=(r,t)=>yt`
-	${Ki}
-	${ts}
-	${es}
-	${rs}
-`;var je=class extends V{connectedCallback(){if(super.connectedCallback(),!this.appearance){let t=this.getAttribute("appearance");this.appearance=t}}attributeChangedCallback(t,e,n){t==="appearance"&&n==="icon"&&(this.getAttribute("aria-label")||(this.ariaLabel="Icon Button")),t==="aria-label"&&(this.ariaLabel=n),t==="disabled"&&(this.disabled=n!==null)}};Ho([b],je.prototype,"appearance",void 0);var qr=je.compose({baseName:"button",template:fo,styles:Uo,shadowOptions:{delegatesFocus:!0}});var{entries:Zo,setPrototypeOf:zo,isFrozen:ns,getPrototypeOf:os,getOwnPropertyDescriptor:is}=Object,{freeze:H,seal:q,create:Kr}=Object,{apply:tn,construct:en}=typeof Reflect<"u"&&Reflect;H||(H=function(t){return t});q||(q=function(t){return t});tn||(tn=function(t,e){for(var n=arguments.length,o=new Array(n>2?n-2:0),i=2;i<n;i++)o[i-2]=arguments[i];return t.apply(e,o)});en||(en=function(t){for(var e=arguments.length,n=new Array(e>1?e-1:0),o=1;o<e;o++)n[o-1]=arguments[o];return new t(...n)});var He=U(Array.prototype.forEach),ss=U(Array.prototype.lastIndexOf),Vo=U(Array.prototype.pop),ne=U(Array.prototype.push),as=U(Array.prototype.splice),ze=U(String.prototype.toLowerCase),Gr=U(String.prototype.toString),Yr=U(String.prototype.match),oe=U(String.prototype.replace),ls=U(String.prototype.indexOf),cs=U(String.prototype.trim),Q=U(Object.prototype.hasOwnProperty),j=U(RegExp.prototype.test),ie=us(TypeError);function U(r){return function(t){t instanceof RegExp&&(t.lastIndex=0);for(var e=arguments.length,n=new Array(e>1?e-1:0),o=1;o<e;o++)n[o-1]=arguments[o];return tn(r,t,n)}}function us(r){return function(){for(var t=arguments.length,e=new Array(t),n=0;n<t;n++)e[n]=arguments[n];return en(r,e)}}function v(r,t){let e=arguments.length>2&&arguments[2]!==void 0?arguments[2]:ze;zo&&zo(r,null);let n=t.length;for(;n--;){let o=t[n];if(typeof o=="string"){let i=e(o);i!==o&&(ns(t)||(t[n]=i),o=i)}r[o]=!0}return r}function fs(r){for(let t=0;t<r.length;t++)Q(r,t)||(r[t]=null);return r}function it(r){let t=Kr(null);for(let[e,n]of Zo(r))Q(r,e)&&(Array.isArray(n)?t[e]=fs(n):n&&typeof n=="object"&&n.constructor===Object?t[e]=it(n):t[e]=n);return t}function se(r,t){for(;r!==null;){let n=is(r,t);if(n){if(n.get)return U(n.get);if(typeof n.value=="function")return U(n.value)}r=os(r)}function e(){return null}return e}var Wo=H(["a","abbr","acronym","address","area","article","aside","audio","b","bdi","bdo","big","blink","blockquote","body","br","button","canvas","caption","center","cite","code","col","colgroup","content","data","datalist","dd","decorator","del","details","dfn","dialog","dir","div","dl","dt","element","em","fieldset","figcaption","figure","font","footer","form","h1","h2","h3","h4","h5","h6","head","header","hgroup","hr","html","i","img","input","ins","kbd","label","legend","li","main","map","mark","marquee","menu","menuitem","meter","nav","nobr","ol","optgroup","option","output","p","picture","pre","progress","q","rp","rt","ruby","s","samp","search","section","select","shadow","slot","small","source","spacer","span","strike","strong","style","sub","summary","sup","table","tbody","td","template","textarea","tfoot","th","thead","time","tr","track","tt","u","ul","var","video","wbr"]),Xr=H(["svg","a","altglyph","altglyphdef","altglyphitem","animatecolor","animatemotion","animatetransform","circle","clippath","defs","desc","ellipse","enterkeyhint","exportparts","filter","font","g","glyph","glyphref","hkern","image","inputmode","line","lineargradient","marker","mask","metadata","mpath","part","path","pattern","polygon","polyline","radialgradient","rect","stop","style","switch","symbol","text","textpath","title","tref","tspan","view","vkern"]),Qr=H(["feBlend","feColorMatrix","feComponentTransfer","feComposite","feConvolveMatrix","feDiffuseLighting","feDisplacementMap","feDistantLight","feDropShadow","feFlood","feFuncA","feFuncB","feFuncG","feFuncR","feGaussianBlur","feImage","feMerge","feMergeNode","feMorphology","feOffset","fePointLight","feSpecularLighting","feSpotLight","feTile","feTurbulence"]),ds=H(["animate","color-profile","cursor","discard","font-face","font-face-format","font-face-name","font-face-src","font-face-uri","foreignobject","hatch","hatchpath","mesh","meshgradient","meshpatch","meshrow","missing-glyph","script","set","solidcolor","unknown","use"]),Zr=H(["math","menclose","merror","mfenced","mfrac","mglyph","mi","mlabeledtr","mmultiscripts","mn","mo","mover","mpadded","mphantom","mroot","mrow","ms","mspace","msqrt","mstyle","msub","msup","msubsup","mtable","mtd","mtext","mtr","munder","munderover","mprescripts"]),hs=H(["maction","maligngroup","malignmark","mlongdiv","mscarries","mscarry","msgroup","mstack","msline","msrow","semantics","annotation","annotation-xml","mprescripts","none"]),qo=H(["#text"]),Go=H(["accept","action","align","alt","autocapitalize","autocomplete","autopictureinpicture","autoplay","background","bgcolor","border","capture","cellpadding","cellspacing","checked","cite","class","clear","color","cols","colspan","controls","controlslist","coords","crossorigin","datetime","decoding","default","dir","disabled","disablepictureinpicture","disableremoteplayback","download","draggable","enctype","enterkeyhint","exportparts","face","for","headers","height","hidden","high","href","hreflang","id","inert","inputmode","integrity","ismap","kind","label","lang","list","loading","loop","low","max","maxlength","media","method","min","minlength","multiple","muted","name","nonce","noshade","novalidate","nowrap","open","optimum","part","pattern","placeholder","playsinline","popover","popovertarget","popovertargetaction","poster","preload","pubdate","radiogroup","readonly","rel","required","rev","reversed","role","rows","rowspan","spellcheck","scope","selected","shape","size","sizes","slot","span","srclang","start","src","srcset","step","style","summary","tabindex","title","translate","type","usemap","valign","value","width","wrap","xmlns","slot"]),Jr=H(["accent-height","accumulate","additive","alignment-baseline","amplitude","ascent","attributename","attributetype","azimuth","basefrequency","baseline-shift","begin","bias","by","class","clip","clippathunits","clip-path","clip-rule","color","color-interpolation","color-interpolation-filters","color-profile","color-rendering","cx","cy","d","dx","dy","diffuseconstant","direction","display","divisor","dur","edgemode","elevation","end","exponent","fill","fill-opacity","fill-rule","filter","filterunits","flood-color","flood-opacity","font-family","font-size","font-size-adjust","font-stretch","font-style","font-variant","font-weight","fx","fy","g1","g2","glyph-name","glyphref","gradientunits","gradienttransform","height","href","id","image-rendering","in","in2","intercept","k","k1","k2","k3","k4","kerning","keypoints","keysplines","keytimes","lang","lengthadjust","letter-spacing","kernelmatrix","kernelunitlength","lighting-color","local","marker-end","marker-mid","marker-start","markerheight","markerunits","markerwidth","maskcontentunits","maskunits","max","mask","mask-type","media","method","mode","min","name","numoctaves","offset","operator","opacity","order","orient","orientation","origin","overflow","paint-order","path","pathlength","patterncontentunits","patterntransform","patternunits","points","preservealpha","preserveaspectratio","primitiveunits","r","rx","ry","radius","refx","refy","repeatcount","repeatdur","restart","result","rotate","scale","seed","shape-rendering","slope","specularconstant","specularexponent","spreadmethod","startoffset","stddeviation","stitchtiles","stop-color","stop-opacity","stroke-dasharray","stroke-dashoffset","stroke-linecap","stroke-linejoin","stroke-miterlimit","stroke-opacity","stroke","stroke-width","style","surfacescale","systemlanguage","tabindex","tablevalues","targetx","targety","transform","transform-origin","text-anchor","text-decoration","text-rendering","textlength","type","u1","u2","unicode","values","viewbox","visibility","version","vert-adv-y","vert-origin-x","vert-origin-y","width","word-spacing","wrap","writing-mode","xchannelselector","ychannelselector","x","x1","x2","xmlns","y","y1","y2","z","zoomandpan"]),Yo=H(["accent","accentunder","align","bevelled","close","columnsalign","columnlines","columnspan","denomalign","depth","dir","display","displaystyle","encoding","fence","frame","height","href","id","largeop","length","linethickness","lspace","lquote","mathbackground","mathcolor","mathsize","mathvariant","maxsize","minsize","movablelimits","notation","numalign","open","rowalign","rowlines","rowspacing","rowspan","rspace","rquote","scriptlevel","scriptminsize","scriptsizemultiplier","selection","separator","separators","stretchy","subscriptshift","supscriptshift","symmetric","voffset","width","xmlns"]),Ue=H(["xlink:href","xml:id","xlink:title","xml:space","xmlns:xlink"]),ps=q(/\{\{[\w\W]*|[\w\W]*\}\}/gm),ms=q(/<%[\w\W]*|[\w\W]*%>/gm),gs=q(/\$\{[\w\W]*/gm),bs=q(/^data-[\-\w.\u00B7-\uFFFF]+$/),ys=q(/^aria-[\-\w]+$/),Jo=q(/^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|matrix):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i),vs=q(/^(?:\w+script|data):/i),xs=q(/[\u0000-\u0020\u00A0\u1680\u180E\u2000-\u2029\u205F\u3000]/g),Ko=q(/^html$/i),ws=q(/^[a-z][.\w]*(-[.\w]+)+$/i),Xo=Object.freeze({__proto__:null,ARIA_ATTR:ys,ATTR_WHITESPACE:xs,CUSTOM_ELEMENT:ws,DATA_ATTR:bs,DOCTYPE_NAME:Ko,ERB_EXPR:ms,IS_ALLOWED_URI:Jo,IS_SCRIPT_OR_DATA:vs,MUSTACHE_EXPR:ps,TMPLIT_EXPR:gs}),ae={element:1,attribute:2,text:3,cdataSection:4,entityReference:5,entityNode:6,progressingInstruction:7,comment:8,document:9,documentType:10,documentFragment:11,notation:12},Ss=function(){return typeof window>"u"?null:window},Ts=function(t,e){if(typeof t!="object"||typeof t.createPolicy!="function")return null;let n=null,o="data-tt-policy-suffix";e&&e.hasAttribute(o)&&(n=e.getAttribute(o));let i="dompurify"+(n?"#"+n:"");try{return t.createPolicy(i,{createHTML(a){return a},createScriptURL(a){return a}})}catch{return console.warn("TrustedTypes policy "+i+" could not be created."),null}},Qo=function(){return{afterSanitizeAttributes:[],afterSanitizeElements:[],afterSanitizeShadowDOM:[],beforeSanitizeAttributes:[],beforeSanitizeElements:[],beforeSanitizeShadowDOM:[],uponSanitizeAttribute:[],uponSanitizeElement:[],uponSanitizeShadowNode:[]}};function ti(){let r=arguments.length>0&&arguments[0]!==void 0?arguments[0]:Ss(),t=m=>ti(m);if(t.version="3.3.0",t.removed=[],!r||!r.document||r.document.nodeType!==ae.document||!r.Element)return t.isSupported=!1,t;let{document:e}=r,n=e,o=n.currentScript,{DocumentFragment:i,HTMLTemplateElement:a,Node:l,Element:f,NodeFilter:c,NamedNodeMap:d=r.NamedNodeMap||r.MozNamedAttrMap,HTMLFormElement:x,DOMParser:k,trustedTypes:M}=r,C=f.prototype,W=se(C,"cloneNode"),Tt=se(C,"remove"),Bt=se(C,"nextSibling"),ue=se(C,"childNodes"),fe=se(C,"parentNode");if(typeof a=="function"){let m=e.createElement("template");m.content&&m.content.ownerDocument&&(e=m.content.ownerDocument)}let N,jt="",{implementation:Ve,createNodeIterator:ni,createDocumentFragment:oi,getElementsByTagName:ii}=e,{importNode:si}=n,F=Qo();t.isSupported=typeof Zo=="function"&&typeof fe=="function"&&Ve&&Ve.createHTMLDocument!==void 0;let{MUSTACHE_EXPR:We,ERB_EXPR:qe,TMPLIT_EXPR:Ge,DATA_ATTR:ai,ARIA_ATTR:li,IS_SCRIPT_OR_DATA:ci,ATTR_WHITESPACE:on,CUSTOM_ELEMENT:ui}=Xo,{IS_ALLOWED_URI:sn}=Xo,R=null,an=v({},[...Wo,...Xr,...Qr,...Zr,...qo]),P=null,ln=v({},[...Go,...Jr,...Yo,...Ue]),_=Object.seal(Kr(null,{tagNameCheck:{writable:!0,configurable:!1,enumerable:!0,value:null},attributeNameCheck:{writable:!0,configurable:!1,enumerable:!0,value:null},allowCustomizedBuiltInElements:{writable:!0,configurable:!1,enumerable:!0,value:!1}})),Ht=null,Ye=null,Ct=Object.seal(Kr(null,{tagCheck:{writable:!0,configurable:!1,enumerable:!0,value:null},attributeCheck:{writable:!0,configurable:!1,enumerable:!0,value:null}})),cn=!0,Xe=!0,un=!1,fn=!0,Et=!1,de=!0,dt=!1,Qe=!1,Ze=!1,_t=!1,he=!1,pe=!1,dn=!0,hn=!1,fi="user-content-",Je=!0,Ut=!1,At={},kt=null,pn=v({},["annotation-xml","audio","colgroup","desc","foreignobject","head","iframe","math","mi","mn","mo","ms","mtext","noembed","noframes","noscript","plaintext","script","style","svg","template","thead","title","video","xmp"]),mn=null,gn=v({},["audio","video","img","source","image","track"]),Ke=null,bn=v({},["alt","class","for","id","label","name","pattern","placeholder","role","summary","title","value","style","xmlns"]),me="http://www.w3.org/1998/Math/MathML",ge="http://www.w3.org/2000/svg",tt="http://www.w3.org/1999/xhtml",Ot=tt,tr=!1,er=null,di=v({},[me,ge,tt],Gr),be=v({},["mi","mo","mn","ms","mtext"]),ye=v({},["annotation-xml"]),hi=v({},["title","style","font","a","script"]),zt=null,pi=["application/xhtml+xml","text/html"],mi="text/html",D=null,Rt=null,gi=e.createElement("form"),yn=function(s){return s instanceof RegExp||s instanceof Function},rr=function(){let s=arguments.length>0&&arguments[0]!==void 0?arguments[0]:{};if(!(Rt&&Rt===s)){if((!s||typeof s!="object")&&(s={}),s=it(s),zt=pi.indexOf(s.PARSER_MEDIA_TYPE)===-1?mi:s.PARSER_MEDIA_TYPE,D=zt==="application/xhtml+xml"?Gr:ze,R=Q(s,"ALLOWED_TAGS")?v({},s.ALLOWED_TAGS,D):an,P=Q(s,"ALLOWED_ATTR")?v({},s.ALLOWED_ATTR,D):ln,er=Q(s,"ALLOWED_NAMESPACES")?v({},s.ALLOWED_NAMESPACES,Gr):di,Ke=Q(s,"ADD_URI_SAFE_ATTR")?v(it(bn),s.ADD_URI_SAFE_ATTR,D):bn,mn=Q(s,"ADD_DATA_URI_TAGS")?v(it(gn),s.ADD_DATA_URI_TAGS,D):gn,kt=Q(s,"FORBID_CONTENTS")?v({},s.FORBID_CONTENTS,D):pn,Ht=Q(s,"FORBID_TAGS")?v({},s.FORBID_TAGS,D):it({}),Ye=Q(s,"FORBID_ATTR")?v({},s.FORBID_ATTR,D):it({}),At=Q(s,"USE_PROFILES")?s.USE_PROFILES:!1,cn=s.ALLOW_ARIA_ATTR!==!1,Xe=s.ALLOW_DATA_ATTR!==!1,un=s.ALLOW_UNKNOWN_PROTOCOLS||!1,fn=s.ALLOW_SELF_CLOSE_IN_ATTR!==!1,Et=s.SAFE_FOR_TEMPLATES||!1,de=s.SAFE_FOR_XML!==!1,dt=s.WHOLE_DOCUMENT||!1,_t=s.RETURN_DOM||!1,he=s.RETURN_DOM_FRAGMENT||!1,pe=s.RETURN_TRUSTED_TYPE||!1,Ze=s.FORCE_BODY||!1,dn=s.SANITIZE_DOM!==!1,hn=s.SANITIZE_NAMED_PROPS||!1,Je=s.KEEP_CONTENT!==!1,Ut=s.IN_PLACE||!1,sn=s.ALLOWED_URI_REGEXP||Jo,Ot=s.NAMESPACE||tt,be=s.MATHML_TEXT_INTEGRATION_POINTS||be,ye=s.HTML_INTEGRATION_POINTS||ye,_=s.CUSTOM_ELEMENT_HANDLING||{},s.CUSTOM_ELEMENT_HANDLING&&yn(s.CUSTOM_ELEMENT_HANDLING.tagNameCheck)&&(_.tagNameCheck=s.CUSTOM_ELEMENT_HANDLING.tagNameCheck),s.CUSTOM_ELEMENT_HANDLING&&yn(s.CUSTOM_ELEMENT_HANDLING.attributeNameCheck)&&(_.attributeNameCheck=s.CUSTOM_ELEMENT_HANDLING.attributeNameCheck),s.CUSTOM_ELEMENT_HANDLING&&typeof s.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements=="boolean"&&(_.allowCustomizedBuiltInElements=s.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements),Et&&(Xe=!1),he&&(_t=!0),At&&(R=v({},qo),P=[],At.html===!0&&(v(R,Wo),v(P,Go)),At.svg===!0&&(v(R,Xr),v(P,Jr),v(P,Ue)),At.svgFilters===!0&&(v(R,Qr),v(P,Jr),v(P,Ue)),At.mathMl===!0&&(v(R,Zr),v(P,Yo),v(P,Ue))),s.ADD_TAGS&&(typeof s.ADD_TAGS=="function"?Ct.tagCheck=s.ADD_TAGS:(R===an&&(R=it(R)),v(R,s.ADD_TAGS,D))),s.ADD_ATTR&&(typeof s.ADD_ATTR=="function"?Ct.attributeCheck=s.ADD_ATTR:(P===ln&&(P=it(P)),v(P,s.ADD_ATTR,D))),s.ADD_URI_SAFE_ATTR&&v(Ke,s.ADD_URI_SAFE_ATTR,D),s.FORBID_CONTENTS&&(kt===pn&&(kt=it(kt)),v(kt,s.FORBID_CONTENTS,D)),Je&&(R["#text"]=!0),dt&&v(R,["html","head","body"]),R.table&&(v(R,["tbody"]),delete Ht.tbody),s.TRUSTED_TYPES_POLICY){if(typeof s.TRUSTED_TYPES_POLICY.createHTML!="function")throw ie('TRUSTED_TYPES_POLICY configuration option must provide a "createHTML" hook.');if(typeof s.TRUSTED_TYPES_POLICY.createScriptURL!="function")throw ie('TRUSTED_TYPES_POLICY configuration option must provide a "createScriptURL" hook.');N=s.TRUSTED_TYPES_POLICY,jt=N.createHTML("")}else N===void 0&&(N=Ts(M,o)),N!==null&&typeof jt=="string"&&(jt=N.createHTML(""));H&&H(s),Rt=s}},vn=v({},[...Xr,...Qr,...ds]),xn=v({},[...Zr,...hs]),bi=function(s){let u=fe(s);(!u||!u.tagName)&&(u={namespaceURI:Ot,tagName:"template"});let p=ze(s.tagName),T=ze(u.tagName);return er[s.namespaceURI]?s.namespaceURI===ge?u.namespaceURI===tt?p==="svg":u.namespaceURI===me?p==="svg"&&(T==="annotation-xml"||be[T]):!!vn[p]:s.namespaceURI===me?u.namespaceURI===tt?p==="math":u.namespaceURI===ge?p==="math"&&ye[T]:!!xn[p]:s.namespaceURI===tt?u.namespaceURI===ge&&!ye[T]||u.namespaceURI===me&&!be[T]?!1:!xn[p]&&(hi[p]||!vn[p]):!!(zt==="application/xhtml+xml"&&er[s.namespaceURI]):!1},Z=function(s){ne(t.removed,{element:s});try{fe(s).removeChild(s)}catch{Tt(s)}},ht=function(s,u){try{ne(t.removed,{attribute:u.getAttributeNode(s),from:u})}catch{ne(t.removed,{attribute:null,from:u})}if(u.removeAttribute(s),s==="is")if(_t||he)try{Z(u)}catch{}else try{u.setAttribute(s,"")}catch{}},wn=function(s){let u=null,p=null;if(Ze)s="<remove></remove>"+s;else{let O=Yr(s,/^[\r\n\t ]+/);p=O&&O[0]}zt==="application/xhtml+xml"&&Ot===tt&&(s='<html xmlns="http://www.w3.org/1999/xhtml"><head></head><body>'+s+"</body></html>");let T=N?N.createHTML(s):s;if(Ot===tt)try{u=new k().parseFromString(T,zt)}catch{}if(!u||!u.documentElement){u=Ve.createDocument(Ot,"template",null);try{u.documentElement.innerHTML=tr?jt:T}catch{}}let L=u.body||u.documentElement;return s&&p&&L.insertBefore(e.createTextNode(p),L.childNodes[0]||null),Ot===tt?ii.call(u,dt?"html":"body")[0]:dt?u.documentElement:L},Sn=function(s){return ni.call(s.ownerDocument||s,s,c.SHOW_ELEMENT|c.SHOW_COMMENT|c.SHOW_TEXT|c.SHOW_PROCESSING_INSTRUCTION|c.SHOW_CDATA_SECTION,null)},nr=function(s){return s instanceof x&&(typeof s.nodeName!="string"||typeof s.textContent!="string"||typeof s.removeChild!="function"||!(s.attributes instanceof d)||typeof s.removeAttribute!="function"||typeof s.setAttribute!="function"||typeof s.namespaceURI!="string"||typeof s.insertBefore!="function"||typeof s.hasChildNodes!="function")},Tn=function(s){return typeof l=="function"&&s instanceof l};function et(m,s,u){He(m,p=>{p.call(t,s,u,Rt)})}let Cn=function(s){let u=null;if(et(F.beforeSanitizeElements,s,null),nr(s))return Z(s),!0;let p=D(s.nodeName);if(et(F.uponSanitizeElement,s,{tagName:p,allowedTags:R}),de&&s.hasChildNodes()&&!Tn(s.firstElementChild)&&j(/<[/\w!]/g,s.innerHTML)&&j(/<[/\w!]/g,s.textContent)||s.nodeType===ae.progressingInstruction||de&&s.nodeType===ae.comment&&j(/<[/\w]/g,s.data))return Z(s),!0;if(!(Ct.tagCheck instanceof Function&&Ct.tagCheck(p))&&(!R[p]||Ht[p])){if(!Ht[p]&&_n(p)&&(_.tagNameCheck instanceof RegExp&&j(_.tagNameCheck,p)||_.tagNameCheck instanceof Function&&_.tagNameCheck(p)))return!1;if(Je&&!kt[p]){let T=fe(s)||s.parentNode,L=ue(s)||s.childNodes;if(L&&T){let O=L.length;for(let z=O-1;z>=0;--z){let rt=W(L[z],!0);rt.__removalCount=(s.__removalCount||0)+1,T.insertBefore(rt,Bt(s))}}}return Z(s),!0}return s instanceof f&&!bi(s)||(p==="noscript"||p==="noembed"||p==="noframes")&&j(/<\/no(script|embed|frames)/i,s.innerHTML)?(Z(s),!0):(Et&&s.nodeType===ae.text&&(u=s.textContent,He([We,qe,Ge],T=>{u=oe(u,T," ")}),s.textContent!==u&&(ne(t.removed,{element:s.cloneNode()}),s.textContent=u)),et(F.afterSanitizeElements,s,null),!1)},En=function(s,u,p){if(dn&&(u==="id"||u==="name")&&(p in e||p in gi))return!1;if(!(Xe&&!Ye[u]&&j(ai,u))){if(!(cn&&j(li,u))){if(!(Ct.attributeCheck instanceof Function&&Ct.attributeCheck(u,s))){if(!P[u]||Ye[u]){if(!(_n(s)&&(_.tagNameCheck instanceof RegExp&&j(_.tagNameCheck,s)||_.tagNameCheck instanceof Function&&_.tagNameCheck(s))&&(_.attributeNameCheck instanceof RegExp&&j(_.attributeNameCheck,u)||_.attributeNameCheck instanceof Function&&_.attributeNameCheck(u,s))||u==="is"&&_.allowCustomizedBuiltInElements&&(_.tagNameCheck instanceof RegExp&&j(_.tagNameCheck,p)||_.tagNameCheck instanceof Function&&_.tagNameCheck(p))))return!1}else if(!Ke[u]){if(!j(sn,oe(p,on,""))){if(!((u==="src"||u==="xlink:href"||u==="href")&&s!=="script"&&ls(p,"data:")===0&&mn[s])){if(!(un&&!j(ci,oe(p,on,"")))){if(p)return!1}}}}}}}return!0},_n=function(s){return s!=="annotation-xml"&&Yr(s,ui)},An=function(s){et(F.beforeSanitizeAttributes,s,null);let{attributes:u}=s;if(!u||nr(s))return;let p={attrName:"",attrValue:"",keepAttr:!0,allowedAttributes:P,forceKeepAttr:void 0},T=u.length;for(;T--;){let L=u[T],{name:O,namespaceURI:z,value:rt}=L,Dt=D(O),or=rt,I=O==="value"?or:cs(or);if(p.attrName=Dt,p.attrValue=I,p.keepAttr=!0,p.forceKeepAttr=void 0,et(F.uponSanitizeAttribute,s,p),I=p.attrValue,hn&&(Dt==="id"||Dt==="name")&&(ht(O,s),I=fi+I),de&&j(/((--!?|])>)|<\/(style|title|textarea)/i,I)){ht(O,s);continue}if(Dt==="attributename"&&Yr(I,"href")){ht(O,s);continue}if(p.forceKeepAttr)continue;if(!p.keepAttr){ht(O,s);continue}if(!fn&&j(/\/>/i,I)){ht(O,s);continue}Et&&He([We,qe,Ge],On=>{I=oe(I,On," ")});let kn=D(s.nodeName);if(!En(kn,Dt,I)){ht(O,s);continue}if(N&&typeof M=="object"&&typeof M.getAttributeType=="function"&&!z)switch(M.getAttributeType(kn,Dt)){case"TrustedHTML":{I=N.createHTML(I);break}case"TrustedScriptURL":{I=N.createScriptURL(I);break}}if(I!==or)try{z?s.setAttributeNS(z,O,I):s.setAttribute(O,I),nr(s)?Z(s):Vo(t.removed)}catch{ht(O,s)}}et(F.afterSanitizeAttributes,s,null)},yi=function m(s){let u=null,p=Sn(s);for(et(F.beforeSanitizeShadowDOM,s,null);u=p.nextNode();)et(F.uponSanitizeShadowNode,u,null),Cn(u),An(u),u.content instanceof i&&m(u.content);et(F.afterSanitizeShadowDOM,s,null)};return t.sanitize=function(m){let s=arguments.length>1&&arguments[1]!==void 0?arguments[1]:{},u=null,p=null,T=null,L=null;if(tr=!m,tr&&(m="<!-->"),typeof m!="string"&&!Tn(m))if(typeof m.toString=="function"){if(m=m.toString(),typeof m!="string")throw ie("dirty is not a string, aborting")}else throw ie("toString is not a function");if(!t.isSupported)return m;if(Qe||rr(s),t.removed=[],typeof m=="string"&&(Ut=!1),Ut){if(m.nodeName){let rt=D(m.nodeName);if(!R[rt]||Ht[rt])throw ie("root node is forbidden and cannot be sanitized in-place")}}else if(m instanceof l)u=wn("<!---->"),p=u.ownerDocument.importNode(m,!0),p.nodeType===ae.element&&p.nodeName==="BODY"||p.nodeName==="HTML"?u=p:u.appendChild(p);else{if(!_t&&!Et&&!dt&&m.indexOf("<")===-1)return N&&pe?N.createHTML(m):m;if(u=wn(m),!u)return _t?null:pe?jt:""}u&&Ze&&Z(u.firstChild);let O=Sn(Ut?m:u);for(;T=O.nextNode();)Cn(T),An(T),T.content instanceof i&&yi(T.content);if(Ut)return m;if(_t){if(he)for(L=oi.call(u.ownerDocument);u.firstChild;)L.appendChild(u.firstChild);else L=u;return(P.shadowroot||P.shadowrootmode)&&(L=si.call(n,L,!0)),L}let z=dt?u.outerHTML:u.innerHTML;return dt&&R["!doctype"]&&u.ownerDocument&&u.ownerDocument.doctype&&u.ownerDocument.doctype.name&&j(Ko,u.ownerDocument.doctype.name)&&(z="<!DOCTYPE "+u.ownerDocument.doctype.name+`>
-`+z),Et&&He([We,qe,Ge],rt=>{z=oe(z,rt," ")}),N&&pe?N.createHTML(z):z},t.setConfig=function(){let m=arguments.length>0&&arguments[0]!==void 0?arguments[0]:{};rr(m),Qe=!0},t.clearConfig=function(){Rt=null,Qe=!1},t.isValidAttribute=function(m,s,u){Rt||rr({});let p=D(m),T=D(s);return En(p,T,u)},t.addHook=function(m,s){typeof s=="function"&&ne(F[m],s)},t.removeHook=function(m,s){if(s!==void 0){let u=ss(F[m],s);return u===-1?void 0:as(F[m],u,1)[0]}return Vo(F[m])},t.removeHooks=function(m){F[m]=[]},t.removeAllHooks=function(){F=Qo()},t}var le=ti();var ce=document.getElementById("solutionsContainer"),rn=acquireVsCodeApi(),nn=0,ei=!1;wo().register(qr());window.addEventListener("DOMContentLoaded",()=>{rn.postMessage({command:"webviewReady"}),ks()});window.addEventListener("message",r=>{let t=r.data;switch(t.command){case"solutionsUpdated":Cs(t);break;case"navigatePreviousSolution":Es();break;case"navigateNextSolution":_s();break}});function Cs(r){As(r),ce&&(ce.innerHTML=r.solutions.map((t,e)=>{let n=t.citation?`<p>
+`;
+  var buttonStyles = (context, definition) => css`
+	${BaseButtonStyles}
+	${PrimaryButtonStyles}
+	${SecondaryButtonStyles}
+	${IconButtonStyles}
+`;
+
+  // node_modules/@vscode/webview-ui-toolkit/dist/button/index.js
+  var Button2 = class extends Button {
+    /**
+     * Component lifecycle method that runs when the component is inserted
+     * into the DOM.
+     *
+     * @internal
+     */
+    connectedCallback() {
+      super.connectedCallback();
+      if (!this.appearance) {
+        const appearanceValue = this.getAttribute("appearance");
+        this.appearance = appearanceValue;
+      }
+    }
+    /**
+     * Component lifecycle method that runs when an attribute of the
+     * element is changed.
+     *
+     * @param attrName - The attribute that was changed
+     * @param oldVal - The old value of the attribute
+     * @param newVal - The new value of the attribute
+     *
+     * @internal
+     */
+    attributeChangedCallback(attrName, oldVal, newVal) {
+      if (attrName === "appearance" && newVal === "icon") {
+        const ariaLabelValue = this.getAttribute("aria-label");
+        if (!ariaLabelValue) {
+          this.ariaLabel = "Icon Button";
+        }
+      }
+      if (attrName === "aria-label") {
+        this.ariaLabel = newVal;
+      }
+      if (attrName === "disabled") {
+        this.disabled = newVal !== null;
+      }
+    }
+  };
+  __decorate2([
+    attr
+  ], Button2.prototype, "appearance", void 0);
+  var vsCodeButton = Button2.compose({
+    baseName: "button",
+    template: buttonTemplate,
+    styles: buttonStyles,
+    shadowOptions: {
+      delegatesFocus: true
+    }
+  });
+
+  // node_modules/dompurify/dist/purify.es.mjs
+  var {
+    entries,
+    setPrototypeOf,
+    isFrozen,
+    getPrototypeOf,
+    getOwnPropertyDescriptor
+  } = Object;
+  var {
+    freeze,
+    seal,
+    create: create3
+  } = Object;
+  var {
+    apply,
+    construct
+  } = typeof Reflect !== "undefined" && Reflect;
+  if (!freeze) {
+    freeze = function freeze2(x) {
+      return x;
+    };
+  }
+  if (!seal) {
+    seal = function seal2(x) {
+      return x;
+    };
+  }
+  if (!apply) {
+    apply = function apply2(func, thisArg) {
+      for (var _len = arguments.length, args = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+        args[_key - 2] = arguments[_key];
+      }
+      return func.apply(thisArg, args);
+    };
+  }
+  if (!construct) {
+    construct = function construct2(Func) {
+      for (var _len2 = arguments.length, args = new Array(_len2 > 1 ? _len2 - 1 : 0), _key2 = 1; _key2 < _len2; _key2++) {
+        args[_key2 - 1] = arguments[_key2];
+      }
+      return new Func(...args);
+    };
+  }
+  var arrayForEach = unapply(Array.prototype.forEach);
+  var arrayLastIndexOf = unapply(Array.prototype.lastIndexOf);
+  var arrayPop = unapply(Array.prototype.pop);
+  var arrayPush = unapply(Array.prototype.push);
+  var arraySplice = unapply(Array.prototype.splice);
+  var stringToLowerCase = unapply(String.prototype.toLowerCase);
+  var stringToString = unapply(String.prototype.toString);
+  var stringMatch = unapply(String.prototype.match);
+  var stringReplace = unapply(String.prototype.replace);
+  var stringIndexOf = unapply(String.prototype.indexOf);
+  var stringTrim = unapply(String.prototype.trim);
+  var objectHasOwnProperty = unapply(Object.prototype.hasOwnProperty);
+  var regExpTest = unapply(RegExp.prototype.test);
+  var typeErrorCreate = unconstruct(TypeError);
+  function unapply(func) {
+    return function(thisArg) {
+      if (thisArg instanceof RegExp) {
+        thisArg.lastIndex = 0;
+      }
+      for (var _len3 = arguments.length, args = new Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
+        args[_key3 - 1] = arguments[_key3];
+      }
+      return apply(func, thisArg, args);
+    };
+  }
+  function unconstruct(Func) {
+    return function() {
+      for (var _len4 = arguments.length, args = new Array(_len4), _key4 = 0; _key4 < _len4; _key4++) {
+        args[_key4] = arguments[_key4];
+      }
+      return construct(Func, args);
+    };
+  }
+  function addToSet(set, array) {
+    let transformCaseFunc = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : stringToLowerCase;
+    if (setPrototypeOf) {
+      setPrototypeOf(set, null);
+    }
+    let l = array.length;
+    while (l--) {
+      let element = array[l];
+      if (typeof element === "string") {
+        const lcElement = transformCaseFunc(element);
+        if (lcElement !== element) {
+          if (!isFrozen(array)) {
+            array[l] = lcElement;
+          }
+          element = lcElement;
+        }
+      }
+      set[element] = true;
+    }
+    return set;
+  }
+  function cleanArray(array) {
+    for (let index = 0; index < array.length; index++) {
+      const isPropertyExist = objectHasOwnProperty(array, index);
+      if (!isPropertyExist) {
+        array[index] = null;
+      }
+    }
+    return array;
+  }
+  function clone(object) {
+    const newObject = create3(null);
+    for (const [property, value] of entries(object)) {
+      const isPropertyExist = objectHasOwnProperty(object, property);
+      if (isPropertyExist) {
+        if (Array.isArray(value)) {
+          newObject[property] = cleanArray(value);
+        } else if (value && typeof value === "object" && value.constructor === Object) {
+          newObject[property] = clone(value);
+        } else {
+          newObject[property] = value;
+        }
+      }
+    }
+    return newObject;
+  }
+  function lookupGetter(object, prop) {
+    while (object !== null) {
+      const desc = getOwnPropertyDescriptor(object, prop);
+      if (desc) {
+        if (desc.get) {
+          return unapply(desc.get);
+        }
+        if (typeof desc.value === "function") {
+          return unapply(desc.value);
+        }
+      }
+      object = getPrototypeOf(object);
+    }
+    function fallbackValue() {
+      return null;
+    }
+    return fallbackValue;
+  }
+  var html$1 = freeze(["a", "abbr", "acronym", "address", "area", "article", "aside", "audio", "b", "bdi", "bdo", "big", "blink", "blockquote", "body", "br", "button", "canvas", "caption", "center", "cite", "code", "col", "colgroup", "content", "data", "datalist", "dd", "decorator", "del", "details", "dfn", "dialog", "dir", "div", "dl", "dt", "element", "em", "fieldset", "figcaption", "figure", "font", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr", "html", "i", "img", "input", "ins", "kbd", "label", "legend", "li", "main", "map", "mark", "marquee", "menu", "menuitem", "meter", "nav", "nobr", "ol", "optgroup", "option", "output", "p", "picture", "pre", "progress", "q", "rp", "rt", "ruby", "s", "samp", "search", "section", "select", "shadow", "slot", "small", "source", "spacer", "span", "strike", "strong", "style", "sub", "summary", "sup", "table", "tbody", "td", "template", "textarea", "tfoot", "th", "thead", "time", "tr", "track", "tt", "u", "ul", "var", "video", "wbr"]);
+  var svg$1 = freeze(["svg", "a", "altglyph", "altglyphdef", "altglyphitem", "animatecolor", "animatemotion", "animatetransform", "circle", "clippath", "defs", "desc", "ellipse", "enterkeyhint", "exportparts", "filter", "font", "g", "glyph", "glyphref", "hkern", "image", "inputmode", "line", "lineargradient", "marker", "mask", "metadata", "mpath", "part", "path", "pattern", "polygon", "polyline", "radialgradient", "rect", "stop", "style", "switch", "symbol", "text", "textpath", "title", "tref", "tspan", "view", "vkern"]);
+  var svgFilters = freeze(["feBlend", "feColorMatrix", "feComponentTransfer", "feComposite", "feConvolveMatrix", "feDiffuseLighting", "feDisplacementMap", "feDistantLight", "feDropShadow", "feFlood", "feFuncA", "feFuncB", "feFuncG", "feFuncR", "feGaussianBlur", "feImage", "feMerge", "feMergeNode", "feMorphology", "feOffset", "fePointLight", "feSpecularLighting", "feSpotLight", "feTile", "feTurbulence"]);
+  var svgDisallowed = freeze(["animate", "color-profile", "cursor", "discard", "font-face", "font-face-format", "font-face-name", "font-face-src", "font-face-uri", "foreignobject", "hatch", "hatchpath", "mesh", "meshgradient", "meshpatch", "meshrow", "missing-glyph", "script", "set", "solidcolor", "unknown", "use"]);
+  var mathMl$1 = freeze(["math", "menclose", "merror", "mfenced", "mfrac", "mglyph", "mi", "mlabeledtr", "mmultiscripts", "mn", "mo", "mover", "mpadded", "mphantom", "mroot", "mrow", "ms", "mspace", "msqrt", "mstyle", "msub", "msup", "msubsup", "mtable", "mtd", "mtext", "mtr", "munder", "munderover", "mprescripts"]);
+  var mathMlDisallowed = freeze(["maction", "maligngroup", "malignmark", "mlongdiv", "mscarries", "mscarry", "msgroup", "mstack", "msline", "msrow", "semantics", "annotation", "annotation-xml", "mprescripts", "none"]);
+  var text = freeze(["#text"]);
+  var html2 = freeze(["accept", "action", "align", "alt", "autocapitalize", "autocomplete", "autopictureinpicture", "autoplay", "background", "bgcolor", "border", "capture", "cellpadding", "cellspacing", "checked", "cite", "class", "clear", "color", "cols", "colspan", "controls", "controlslist", "coords", "crossorigin", "datetime", "decoding", "default", "dir", "disabled", "disablepictureinpicture", "disableremoteplayback", "download", "draggable", "enctype", "enterkeyhint", "exportparts", "face", "for", "headers", "height", "hidden", "high", "href", "hreflang", "id", "inert", "inputmode", "integrity", "ismap", "kind", "label", "lang", "list", "loading", "loop", "low", "max", "maxlength", "media", "method", "min", "minlength", "multiple", "muted", "name", "nonce", "noshade", "novalidate", "nowrap", "open", "optimum", "part", "pattern", "placeholder", "playsinline", "popover", "popovertarget", "popovertargetaction", "poster", "preload", "pubdate", "radiogroup", "readonly", "rel", "required", "rev", "reversed", "role", "rows", "rowspan", "spellcheck", "scope", "selected", "shape", "size", "sizes", "slot", "span", "srclang", "start", "src", "srcset", "step", "style", "summary", "tabindex", "title", "translate", "type", "usemap", "valign", "value", "width", "wrap", "xmlns", "slot"]);
+  var svg = freeze(["accent-height", "accumulate", "additive", "alignment-baseline", "amplitude", "ascent", "attributename", "attributetype", "azimuth", "basefrequency", "baseline-shift", "begin", "bias", "by", "class", "clip", "clippathunits", "clip-path", "clip-rule", "color", "color-interpolation", "color-interpolation-filters", "color-profile", "color-rendering", "cx", "cy", "d", "dx", "dy", "diffuseconstant", "direction", "display", "divisor", "dur", "edgemode", "elevation", "end", "exponent", "fill", "fill-opacity", "fill-rule", "filter", "filterunits", "flood-color", "flood-opacity", "font-family", "font-size", "font-size-adjust", "font-stretch", "font-style", "font-variant", "font-weight", "fx", "fy", "g1", "g2", "glyph-name", "glyphref", "gradientunits", "gradienttransform", "height", "href", "id", "image-rendering", "in", "in2", "intercept", "k", "k1", "k2", "k3", "k4", "kerning", "keypoints", "keysplines", "keytimes", "lang", "lengthadjust", "letter-spacing", "kernelmatrix", "kernelunitlength", "lighting-color", "local", "marker-end", "marker-mid", "marker-start", "markerheight", "markerunits", "markerwidth", "maskcontentunits", "maskunits", "max", "mask", "mask-type", "media", "method", "mode", "min", "name", "numoctaves", "offset", "operator", "opacity", "order", "orient", "orientation", "origin", "overflow", "paint-order", "path", "pathlength", "patterncontentunits", "patterntransform", "patternunits", "points", "preservealpha", "preserveaspectratio", "primitiveunits", "r", "rx", "ry", "radius", "refx", "refy", "repeatcount", "repeatdur", "restart", "result", "rotate", "scale", "seed", "shape-rendering", "slope", "specularconstant", "specularexponent", "spreadmethod", "startoffset", "stddeviation", "stitchtiles", "stop-color", "stop-opacity", "stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity", "stroke", "stroke-width", "style", "surfacescale", "systemlanguage", "tabindex", "tablevalues", "targetx", "targety", "transform", "transform-origin", "text-anchor", "text-decoration", "text-rendering", "textlength", "type", "u1", "u2", "unicode", "values", "viewbox", "visibility", "version", "vert-adv-y", "vert-origin-x", "vert-origin-y", "width", "word-spacing", "wrap", "writing-mode", "xchannelselector", "ychannelselector", "x", "x1", "x2", "xmlns", "y", "y1", "y2", "z", "zoomandpan"]);
+  var mathMl = freeze(["accent", "accentunder", "align", "bevelled", "close", "columnsalign", "columnlines", "columnspan", "denomalign", "depth", "dir", "display", "displaystyle", "encoding", "fence", "frame", "height", "href", "id", "largeop", "length", "linethickness", "lspace", "lquote", "mathbackground", "mathcolor", "mathsize", "mathvariant", "maxsize", "minsize", "movablelimits", "notation", "numalign", "open", "rowalign", "rowlines", "rowspacing", "rowspan", "rspace", "rquote", "scriptlevel", "scriptminsize", "scriptsizemultiplier", "selection", "separator", "separators", "stretchy", "subscriptshift", "supscriptshift", "symmetric", "voffset", "width", "xmlns"]);
+  var xml = freeze(["xlink:href", "xml:id", "xlink:title", "xml:space", "xmlns:xlink"]);
+  var MUSTACHE_EXPR = seal(/\{\{[\w\W]*|[\w\W]*\}\}/gm);
+  var ERB_EXPR = seal(/<%[\w\W]*|[\w\W]*%>/gm);
+  var TMPLIT_EXPR = seal(/\$\{[\w\W]*/gm);
+  var DATA_ATTR = seal(/^data-[\-\w.\u00B7-\uFFFF]+$/);
+  var ARIA_ATTR = seal(/^aria-[\-\w]+$/);
+  var IS_ALLOWED_URI = seal(
+    /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|matrix):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
+    // eslint-disable-line no-useless-escape
+  );
+  var IS_SCRIPT_OR_DATA = seal(/^(?:\w+script|data):/i);
+  var ATTR_WHITESPACE = seal(
+    /[\u0000-\u0020\u00A0\u1680\u180E\u2000-\u2029\u205F\u3000]/g
+    // eslint-disable-line no-control-regex
+  );
+  var DOCTYPE_NAME = seal(/^html$/i);
+  var CUSTOM_ELEMENT = seal(/^[a-z][.\w]*(-[.\w]+)+$/i);
+  var EXPRESSIONS = /* @__PURE__ */ Object.freeze({
+    __proto__: null,
+    ARIA_ATTR,
+    ATTR_WHITESPACE,
+    CUSTOM_ELEMENT,
+    DATA_ATTR,
+    DOCTYPE_NAME,
+    ERB_EXPR,
+    IS_ALLOWED_URI,
+    IS_SCRIPT_OR_DATA,
+    MUSTACHE_EXPR,
+    TMPLIT_EXPR
+  });
+  var NODE_TYPE = {
+    element: 1,
+    attribute: 2,
+    text: 3,
+    cdataSection: 4,
+    entityReference: 5,
+    // Deprecated
+    entityNode: 6,
+    // Deprecated
+    progressingInstruction: 7,
+    comment: 8,
+    document: 9,
+    documentType: 10,
+    documentFragment: 11,
+    notation: 12
+    // Deprecated
+  };
+  var getGlobal = function getGlobal2() {
+    return typeof window === "undefined" ? null : window;
+  };
+  var _createTrustedTypesPolicy = function _createTrustedTypesPolicy2(trustedTypes, purifyHostElement) {
+    if (typeof trustedTypes !== "object" || typeof trustedTypes.createPolicy !== "function") {
+      return null;
+    }
+    let suffix = null;
+    const ATTR_NAME = "data-tt-policy-suffix";
+    if (purifyHostElement && purifyHostElement.hasAttribute(ATTR_NAME)) {
+      suffix = purifyHostElement.getAttribute(ATTR_NAME);
+    }
+    const policyName = "dompurify" + (suffix ? "#" + suffix : "");
+    try {
+      return trustedTypes.createPolicy(policyName, {
+        createHTML(html3) {
+          return html3;
+        },
+        createScriptURL(scriptUrl) {
+          return scriptUrl;
+        }
+      });
+    } catch (_) {
+      console.warn("TrustedTypes policy " + policyName + " could not be created.");
+      return null;
+    }
+  };
+  var _createHooksMap = function _createHooksMap2() {
+    return {
+      afterSanitizeAttributes: [],
+      afterSanitizeElements: [],
+      afterSanitizeShadowDOM: [],
+      beforeSanitizeAttributes: [],
+      beforeSanitizeElements: [],
+      beforeSanitizeShadowDOM: [],
+      uponSanitizeAttribute: [],
+      uponSanitizeElement: [],
+      uponSanitizeShadowNode: []
+    };
+  };
+  function createDOMPurify() {
+    let window2 = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : getGlobal();
+    const DOMPurify = (root) => createDOMPurify(root);
+    DOMPurify.version = "3.3.0";
+    DOMPurify.removed = [];
+    if (!window2 || !window2.document || window2.document.nodeType !== NODE_TYPE.document || !window2.Element) {
+      DOMPurify.isSupported = false;
+      return DOMPurify;
+    }
+    let {
+      document: document2
+    } = window2;
+    const originalDocument = document2;
+    const currentScript = originalDocument.currentScript;
+    const {
+      DocumentFragment,
+      HTMLTemplateElement,
+      Node: Node2,
+      Element,
+      NodeFilter,
+      NamedNodeMap = window2.NamedNodeMap || window2.MozNamedAttrMap,
+      HTMLFormElement: HTMLFormElement2,
+      DOMParser,
+      trustedTypes
+    } = window2;
+    const ElementPrototype = Element.prototype;
+    const cloneNode = lookupGetter(ElementPrototype, "cloneNode");
+    const remove = lookupGetter(ElementPrototype, "remove");
+    const getNextSibling = lookupGetter(ElementPrototype, "nextSibling");
+    const getChildNodes = lookupGetter(ElementPrototype, "childNodes");
+    const getParentNode = lookupGetter(ElementPrototype, "parentNode");
+    if (typeof HTMLTemplateElement === "function") {
+      const template = document2.createElement("template");
+      if (template.content && template.content.ownerDocument) {
+        document2 = template.content.ownerDocument;
+      }
+    }
+    let trustedTypesPolicy;
+    let emptyHTML = "";
+    const {
+      implementation,
+      createNodeIterator,
+      createDocumentFragment,
+      getElementsByTagName
+    } = document2;
+    const {
+      importNode
+    } = originalDocument;
+    let hooks = _createHooksMap();
+    DOMPurify.isSupported = typeof entries === "function" && typeof getParentNode === "function" && implementation && implementation.createHTMLDocument !== void 0;
+    const {
+      MUSTACHE_EXPR: MUSTACHE_EXPR2,
+      ERB_EXPR: ERB_EXPR2,
+      TMPLIT_EXPR: TMPLIT_EXPR2,
+      DATA_ATTR: DATA_ATTR2,
+      ARIA_ATTR: ARIA_ATTR2,
+      IS_SCRIPT_OR_DATA: IS_SCRIPT_OR_DATA2,
+      ATTR_WHITESPACE: ATTR_WHITESPACE2,
+      CUSTOM_ELEMENT: CUSTOM_ELEMENT2
+    } = EXPRESSIONS;
+    let {
+      IS_ALLOWED_URI: IS_ALLOWED_URI$1
+    } = EXPRESSIONS;
+    let ALLOWED_TAGS = null;
+    const DEFAULT_ALLOWED_TAGS = addToSet({}, [...html$1, ...svg$1, ...svgFilters, ...mathMl$1, ...text]);
+    let ALLOWED_ATTR = null;
+    const DEFAULT_ALLOWED_ATTR = addToSet({}, [...html2, ...svg, ...mathMl, ...xml]);
+    let CUSTOM_ELEMENT_HANDLING = Object.seal(create3(null, {
+      tagNameCheck: {
+        writable: true,
+        configurable: false,
+        enumerable: true,
+        value: null
+      },
+      attributeNameCheck: {
+        writable: true,
+        configurable: false,
+        enumerable: true,
+        value: null
+      },
+      allowCustomizedBuiltInElements: {
+        writable: true,
+        configurable: false,
+        enumerable: true,
+        value: false
+      }
+    }));
+    let FORBID_TAGS = null;
+    let FORBID_ATTR = null;
+    const EXTRA_ELEMENT_HANDLING = Object.seal(create3(null, {
+      tagCheck: {
+        writable: true,
+        configurable: false,
+        enumerable: true,
+        value: null
+      },
+      attributeCheck: {
+        writable: true,
+        configurable: false,
+        enumerable: true,
+        value: null
+      }
+    }));
+    let ALLOW_ARIA_ATTR = true;
+    let ALLOW_DATA_ATTR = true;
+    let ALLOW_UNKNOWN_PROTOCOLS = false;
+    let ALLOW_SELF_CLOSE_IN_ATTR = true;
+    let SAFE_FOR_TEMPLATES = false;
+    let SAFE_FOR_XML = true;
+    let WHOLE_DOCUMENT = false;
+    let SET_CONFIG = false;
+    let FORCE_BODY = false;
+    let RETURN_DOM = false;
+    let RETURN_DOM_FRAGMENT = false;
+    let RETURN_TRUSTED_TYPE = false;
+    let SANITIZE_DOM = true;
+    let SANITIZE_NAMED_PROPS = false;
+    const SANITIZE_NAMED_PROPS_PREFIX = "user-content-";
+    let KEEP_CONTENT = true;
+    let IN_PLACE = false;
+    let USE_PROFILES = {};
+    let FORBID_CONTENTS = null;
+    const DEFAULT_FORBID_CONTENTS = addToSet({}, ["annotation-xml", "audio", "colgroup", "desc", "foreignobject", "head", "iframe", "math", "mi", "mn", "mo", "ms", "mtext", "noembed", "noframes", "noscript", "plaintext", "script", "style", "svg", "template", "thead", "title", "video", "xmp"]);
+    let DATA_URI_TAGS = null;
+    const DEFAULT_DATA_URI_TAGS = addToSet({}, ["audio", "video", "img", "source", "image", "track"]);
+    let URI_SAFE_ATTRIBUTES = null;
+    const DEFAULT_URI_SAFE_ATTRIBUTES = addToSet({}, ["alt", "class", "for", "id", "label", "name", "pattern", "placeholder", "role", "summary", "title", "value", "style", "xmlns"]);
+    const MATHML_NAMESPACE = "http://www.w3.org/1998/Math/MathML";
+    const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+    const HTML_NAMESPACE = "http://www.w3.org/1999/xhtml";
+    let NAMESPACE = HTML_NAMESPACE;
+    let IS_EMPTY_INPUT = false;
+    let ALLOWED_NAMESPACES = null;
+    const DEFAULT_ALLOWED_NAMESPACES = addToSet({}, [MATHML_NAMESPACE, SVG_NAMESPACE, HTML_NAMESPACE], stringToString);
+    let MATHML_TEXT_INTEGRATION_POINTS = addToSet({}, ["mi", "mo", "mn", "ms", "mtext"]);
+    let HTML_INTEGRATION_POINTS = addToSet({}, ["annotation-xml"]);
+    const COMMON_SVG_AND_HTML_ELEMENTS = addToSet({}, ["title", "style", "font", "a", "script"]);
+    let PARSER_MEDIA_TYPE = null;
+    const SUPPORTED_PARSER_MEDIA_TYPES = ["application/xhtml+xml", "text/html"];
+    const DEFAULT_PARSER_MEDIA_TYPE = "text/html";
+    let transformCaseFunc = null;
+    let CONFIG = null;
+    const formElement = document2.createElement("form");
+    const isRegexOrFunction = function isRegexOrFunction2(testValue) {
+      return testValue instanceof RegExp || testValue instanceof Function;
+    };
+    const _parseConfig = function _parseConfig2() {
+      let cfg = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {};
+      if (CONFIG && CONFIG === cfg) {
+        return;
+      }
+      if (!cfg || typeof cfg !== "object") {
+        cfg = {};
+      }
+      cfg = clone(cfg);
+      PARSER_MEDIA_TYPE = // eslint-disable-next-line unicorn/prefer-includes
+      SUPPORTED_PARSER_MEDIA_TYPES.indexOf(cfg.PARSER_MEDIA_TYPE) === -1 ? DEFAULT_PARSER_MEDIA_TYPE : cfg.PARSER_MEDIA_TYPE;
+      transformCaseFunc = PARSER_MEDIA_TYPE === "application/xhtml+xml" ? stringToString : stringToLowerCase;
+      ALLOWED_TAGS = objectHasOwnProperty(cfg, "ALLOWED_TAGS") ? addToSet({}, cfg.ALLOWED_TAGS, transformCaseFunc) : DEFAULT_ALLOWED_TAGS;
+      ALLOWED_ATTR = objectHasOwnProperty(cfg, "ALLOWED_ATTR") ? addToSet({}, cfg.ALLOWED_ATTR, transformCaseFunc) : DEFAULT_ALLOWED_ATTR;
+      ALLOWED_NAMESPACES = objectHasOwnProperty(cfg, "ALLOWED_NAMESPACES") ? addToSet({}, cfg.ALLOWED_NAMESPACES, stringToString) : DEFAULT_ALLOWED_NAMESPACES;
+      URI_SAFE_ATTRIBUTES = objectHasOwnProperty(cfg, "ADD_URI_SAFE_ATTR") ? addToSet(clone(DEFAULT_URI_SAFE_ATTRIBUTES), cfg.ADD_URI_SAFE_ATTR, transformCaseFunc) : DEFAULT_URI_SAFE_ATTRIBUTES;
+      DATA_URI_TAGS = objectHasOwnProperty(cfg, "ADD_DATA_URI_TAGS") ? addToSet(clone(DEFAULT_DATA_URI_TAGS), cfg.ADD_DATA_URI_TAGS, transformCaseFunc) : DEFAULT_DATA_URI_TAGS;
+      FORBID_CONTENTS = objectHasOwnProperty(cfg, "FORBID_CONTENTS") ? addToSet({}, cfg.FORBID_CONTENTS, transformCaseFunc) : DEFAULT_FORBID_CONTENTS;
+      FORBID_TAGS = objectHasOwnProperty(cfg, "FORBID_TAGS") ? addToSet({}, cfg.FORBID_TAGS, transformCaseFunc) : clone({});
+      FORBID_ATTR = objectHasOwnProperty(cfg, "FORBID_ATTR") ? addToSet({}, cfg.FORBID_ATTR, transformCaseFunc) : clone({});
+      USE_PROFILES = objectHasOwnProperty(cfg, "USE_PROFILES") ? cfg.USE_PROFILES : false;
+      ALLOW_ARIA_ATTR = cfg.ALLOW_ARIA_ATTR !== false;
+      ALLOW_DATA_ATTR = cfg.ALLOW_DATA_ATTR !== false;
+      ALLOW_UNKNOWN_PROTOCOLS = cfg.ALLOW_UNKNOWN_PROTOCOLS || false;
+      ALLOW_SELF_CLOSE_IN_ATTR = cfg.ALLOW_SELF_CLOSE_IN_ATTR !== false;
+      SAFE_FOR_TEMPLATES = cfg.SAFE_FOR_TEMPLATES || false;
+      SAFE_FOR_XML = cfg.SAFE_FOR_XML !== false;
+      WHOLE_DOCUMENT = cfg.WHOLE_DOCUMENT || false;
+      RETURN_DOM = cfg.RETURN_DOM || false;
+      RETURN_DOM_FRAGMENT = cfg.RETURN_DOM_FRAGMENT || false;
+      RETURN_TRUSTED_TYPE = cfg.RETURN_TRUSTED_TYPE || false;
+      FORCE_BODY = cfg.FORCE_BODY || false;
+      SANITIZE_DOM = cfg.SANITIZE_DOM !== false;
+      SANITIZE_NAMED_PROPS = cfg.SANITIZE_NAMED_PROPS || false;
+      KEEP_CONTENT = cfg.KEEP_CONTENT !== false;
+      IN_PLACE = cfg.IN_PLACE || false;
+      IS_ALLOWED_URI$1 = cfg.ALLOWED_URI_REGEXP || IS_ALLOWED_URI;
+      NAMESPACE = cfg.NAMESPACE || HTML_NAMESPACE;
+      MATHML_TEXT_INTEGRATION_POINTS = cfg.MATHML_TEXT_INTEGRATION_POINTS || MATHML_TEXT_INTEGRATION_POINTS;
+      HTML_INTEGRATION_POINTS = cfg.HTML_INTEGRATION_POINTS || HTML_INTEGRATION_POINTS;
+      CUSTOM_ELEMENT_HANDLING = cfg.CUSTOM_ELEMENT_HANDLING || {};
+      if (cfg.CUSTOM_ELEMENT_HANDLING && isRegexOrFunction(cfg.CUSTOM_ELEMENT_HANDLING.tagNameCheck)) {
+        CUSTOM_ELEMENT_HANDLING.tagNameCheck = cfg.CUSTOM_ELEMENT_HANDLING.tagNameCheck;
+      }
+      if (cfg.CUSTOM_ELEMENT_HANDLING && isRegexOrFunction(cfg.CUSTOM_ELEMENT_HANDLING.attributeNameCheck)) {
+        CUSTOM_ELEMENT_HANDLING.attributeNameCheck = cfg.CUSTOM_ELEMENT_HANDLING.attributeNameCheck;
+      }
+      if (cfg.CUSTOM_ELEMENT_HANDLING && typeof cfg.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements === "boolean") {
+        CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements = cfg.CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements;
+      }
+      if (SAFE_FOR_TEMPLATES) {
+        ALLOW_DATA_ATTR = false;
+      }
+      if (RETURN_DOM_FRAGMENT) {
+        RETURN_DOM = true;
+      }
+      if (USE_PROFILES) {
+        ALLOWED_TAGS = addToSet({}, text);
+        ALLOWED_ATTR = [];
+        if (USE_PROFILES.html === true) {
+          addToSet(ALLOWED_TAGS, html$1);
+          addToSet(ALLOWED_ATTR, html2);
+        }
+        if (USE_PROFILES.svg === true) {
+          addToSet(ALLOWED_TAGS, svg$1);
+          addToSet(ALLOWED_ATTR, svg);
+          addToSet(ALLOWED_ATTR, xml);
+        }
+        if (USE_PROFILES.svgFilters === true) {
+          addToSet(ALLOWED_TAGS, svgFilters);
+          addToSet(ALLOWED_ATTR, svg);
+          addToSet(ALLOWED_ATTR, xml);
+        }
+        if (USE_PROFILES.mathMl === true) {
+          addToSet(ALLOWED_TAGS, mathMl$1);
+          addToSet(ALLOWED_ATTR, mathMl);
+          addToSet(ALLOWED_ATTR, xml);
+        }
+      }
+      if (cfg.ADD_TAGS) {
+        if (typeof cfg.ADD_TAGS === "function") {
+          EXTRA_ELEMENT_HANDLING.tagCheck = cfg.ADD_TAGS;
+        } else {
+          if (ALLOWED_TAGS === DEFAULT_ALLOWED_TAGS) {
+            ALLOWED_TAGS = clone(ALLOWED_TAGS);
+          }
+          addToSet(ALLOWED_TAGS, cfg.ADD_TAGS, transformCaseFunc);
+        }
+      }
+      if (cfg.ADD_ATTR) {
+        if (typeof cfg.ADD_ATTR === "function") {
+          EXTRA_ELEMENT_HANDLING.attributeCheck = cfg.ADD_ATTR;
+        } else {
+          if (ALLOWED_ATTR === DEFAULT_ALLOWED_ATTR) {
+            ALLOWED_ATTR = clone(ALLOWED_ATTR);
+          }
+          addToSet(ALLOWED_ATTR, cfg.ADD_ATTR, transformCaseFunc);
+        }
+      }
+      if (cfg.ADD_URI_SAFE_ATTR) {
+        addToSet(URI_SAFE_ATTRIBUTES, cfg.ADD_URI_SAFE_ATTR, transformCaseFunc);
+      }
+      if (cfg.FORBID_CONTENTS) {
+        if (FORBID_CONTENTS === DEFAULT_FORBID_CONTENTS) {
+          FORBID_CONTENTS = clone(FORBID_CONTENTS);
+        }
+        addToSet(FORBID_CONTENTS, cfg.FORBID_CONTENTS, transformCaseFunc);
+      }
+      if (KEEP_CONTENT) {
+        ALLOWED_TAGS["#text"] = true;
+      }
+      if (WHOLE_DOCUMENT) {
+        addToSet(ALLOWED_TAGS, ["html", "head", "body"]);
+      }
+      if (ALLOWED_TAGS.table) {
+        addToSet(ALLOWED_TAGS, ["tbody"]);
+        delete FORBID_TAGS.tbody;
+      }
+      if (cfg.TRUSTED_TYPES_POLICY) {
+        if (typeof cfg.TRUSTED_TYPES_POLICY.createHTML !== "function") {
+          throw typeErrorCreate('TRUSTED_TYPES_POLICY configuration option must provide a "createHTML" hook.');
+        }
+        if (typeof cfg.TRUSTED_TYPES_POLICY.createScriptURL !== "function") {
+          throw typeErrorCreate('TRUSTED_TYPES_POLICY configuration option must provide a "createScriptURL" hook.');
+        }
+        trustedTypesPolicy = cfg.TRUSTED_TYPES_POLICY;
+        emptyHTML = trustedTypesPolicy.createHTML("");
+      } else {
+        if (trustedTypesPolicy === void 0) {
+          trustedTypesPolicy = _createTrustedTypesPolicy(trustedTypes, currentScript);
+        }
+        if (trustedTypesPolicy !== null && typeof emptyHTML === "string") {
+          emptyHTML = trustedTypesPolicy.createHTML("");
+        }
+      }
+      if (freeze) {
+        freeze(cfg);
+      }
+      CONFIG = cfg;
+    };
+    const ALL_SVG_TAGS = addToSet({}, [...svg$1, ...svgFilters, ...svgDisallowed]);
+    const ALL_MATHML_TAGS = addToSet({}, [...mathMl$1, ...mathMlDisallowed]);
+    const _checkValidNamespace = function _checkValidNamespace2(element) {
+      let parent = getParentNode(element);
+      if (!parent || !parent.tagName) {
+        parent = {
+          namespaceURI: NAMESPACE,
+          tagName: "template"
+        };
+      }
+      const tagName = stringToLowerCase(element.tagName);
+      const parentTagName = stringToLowerCase(parent.tagName);
+      if (!ALLOWED_NAMESPACES[element.namespaceURI]) {
+        return false;
+      }
+      if (element.namespaceURI === SVG_NAMESPACE) {
+        if (parent.namespaceURI === HTML_NAMESPACE) {
+          return tagName === "svg";
+        }
+        if (parent.namespaceURI === MATHML_NAMESPACE) {
+          return tagName === "svg" && (parentTagName === "annotation-xml" || MATHML_TEXT_INTEGRATION_POINTS[parentTagName]);
+        }
+        return Boolean(ALL_SVG_TAGS[tagName]);
+      }
+      if (element.namespaceURI === MATHML_NAMESPACE) {
+        if (parent.namespaceURI === HTML_NAMESPACE) {
+          return tagName === "math";
+        }
+        if (parent.namespaceURI === SVG_NAMESPACE) {
+          return tagName === "math" && HTML_INTEGRATION_POINTS[parentTagName];
+        }
+        return Boolean(ALL_MATHML_TAGS[tagName]);
+      }
+      if (element.namespaceURI === HTML_NAMESPACE) {
+        if (parent.namespaceURI === SVG_NAMESPACE && !HTML_INTEGRATION_POINTS[parentTagName]) {
+          return false;
+        }
+        if (parent.namespaceURI === MATHML_NAMESPACE && !MATHML_TEXT_INTEGRATION_POINTS[parentTagName]) {
+          return false;
+        }
+        return !ALL_MATHML_TAGS[tagName] && (COMMON_SVG_AND_HTML_ELEMENTS[tagName] || !ALL_SVG_TAGS[tagName]);
+      }
+      if (PARSER_MEDIA_TYPE === "application/xhtml+xml" && ALLOWED_NAMESPACES[element.namespaceURI]) {
+        return true;
+      }
+      return false;
+    };
+    const _forceRemove = function _forceRemove2(node) {
+      arrayPush(DOMPurify.removed, {
+        element: node
+      });
+      try {
+        getParentNode(node).removeChild(node);
+      } catch (_) {
+        remove(node);
+      }
+    };
+    const _removeAttribute = function _removeAttribute2(name, element) {
+      try {
+        arrayPush(DOMPurify.removed, {
+          attribute: element.getAttributeNode(name),
+          from: element
+        });
+      } catch (_) {
+        arrayPush(DOMPurify.removed, {
+          attribute: null,
+          from: element
+        });
+      }
+      element.removeAttribute(name);
+      if (name === "is") {
+        if (RETURN_DOM || RETURN_DOM_FRAGMENT) {
+          try {
+            _forceRemove(element);
+          } catch (_) {
+          }
+        } else {
+          try {
+            element.setAttribute(name, "");
+          } catch (_) {
+          }
+        }
+      }
+    };
+    const _initDocument = function _initDocument2(dirty) {
+      let doc = null;
+      let leadingWhitespace = null;
+      if (FORCE_BODY) {
+        dirty = "<remove></remove>" + dirty;
+      } else {
+        const matches = stringMatch(dirty, /^[\r\n\t ]+/);
+        leadingWhitespace = matches && matches[0];
+      }
+      if (PARSER_MEDIA_TYPE === "application/xhtml+xml" && NAMESPACE === HTML_NAMESPACE) {
+        dirty = '<html xmlns="http://www.w3.org/1999/xhtml"><head></head><body>' + dirty + "</body></html>";
+      }
+      const dirtyPayload = trustedTypesPolicy ? trustedTypesPolicy.createHTML(dirty) : dirty;
+      if (NAMESPACE === HTML_NAMESPACE) {
+        try {
+          doc = new DOMParser().parseFromString(dirtyPayload, PARSER_MEDIA_TYPE);
+        } catch (_) {
+        }
+      }
+      if (!doc || !doc.documentElement) {
+        doc = implementation.createDocument(NAMESPACE, "template", null);
+        try {
+          doc.documentElement.innerHTML = IS_EMPTY_INPUT ? emptyHTML : dirtyPayload;
+        } catch (_) {
+        }
+      }
+      const body = doc.body || doc.documentElement;
+      if (dirty && leadingWhitespace) {
+        body.insertBefore(document2.createTextNode(leadingWhitespace), body.childNodes[0] || null);
+      }
+      if (NAMESPACE === HTML_NAMESPACE) {
+        return getElementsByTagName.call(doc, WHOLE_DOCUMENT ? "html" : "body")[0];
+      }
+      return WHOLE_DOCUMENT ? doc.documentElement : body;
+    };
+    const _createNodeIterator = function _createNodeIterator2(root) {
+      return createNodeIterator.call(
+        root.ownerDocument || root,
+        root,
+        // eslint-disable-next-line no-bitwise
+        NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_COMMENT | NodeFilter.SHOW_TEXT | NodeFilter.SHOW_PROCESSING_INSTRUCTION | NodeFilter.SHOW_CDATA_SECTION,
+        null
+      );
+    };
+    const _isClobbered = function _isClobbered2(element) {
+      return element instanceof HTMLFormElement2 && (typeof element.nodeName !== "string" || typeof element.textContent !== "string" || typeof element.removeChild !== "function" || !(element.attributes instanceof NamedNodeMap) || typeof element.removeAttribute !== "function" || typeof element.setAttribute !== "function" || typeof element.namespaceURI !== "string" || typeof element.insertBefore !== "function" || typeof element.hasChildNodes !== "function");
+    };
+    const _isNode = function _isNode2(value) {
+      return typeof Node2 === "function" && value instanceof Node2;
+    };
+    function _executeHooks(hooks2, currentNode, data) {
+      arrayForEach(hooks2, (hook) => {
+        hook.call(DOMPurify, currentNode, data, CONFIG);
+      });
+    }
+    const _sanitizeElements = function _sanitizeElements2(currentNode) {
+      let content = null;
+      _executeHooks(hooks.beforeSanitizeElements, currentNode, null);
+      if (_isClobbered(currentNode)) {
+        _forceRemove(currentNode);
+        return true;
+      }
+      const tagName = transformCaseFunc(currentNode.nodeName);
+      _executeHooks(hooks.uponSanitizeElement, currentNode, {
+        tagName,
+        allowedTags: ALLOWED_TAGS
+      });
+      if (SAFE_FOR_XML && currentNode.hasChildNodes() && !_isNode(currentNode.firstElementChild) && regExpTest(/<[/\w!]/g, currentNode.innerHTML) && regExpTest(/<[/\w!]/g, currentNode.textContent)) {
+        _forceRemove(currentNode);
+        return true;
+      }
+      if (currentNode.nodeType === NODE_TYPE.progressingInstruction) {
+        _forceRemove(currentNode);
+        return true;
+      }
+      if (SAFE_FOR_XML && currentNode.nodeType === NODE_TYPE.comment && regExpTest(/<[/\w]/g, currentNode.data)) {
+        _forceRemove(currentNode);
+        return true;
+      }
+      if (!(EXTRA_ELEMENT_HANDLING.tagCheck instanceof Function && EXTRA_ELEMENT_HANDLING.tagCheck(tagName)) && (!ALLOWED_TAGS[tagName] || FORBID_TAGS[tagName])) {
+        if (!FORBID_TAGS[tagName] && _isBasicCustomElement(tagName)) {
+          if (CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.tagNameCheck, tagName)) {
+            return false;
+          }
+          if (CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof Function && CUSTOM_ELEMENT_HANDLING.tagNameCheck(tagName)) {
+            return false;
+          }
+        }
+        if (KEEP_CONTENT && !FORBID_CONTENTS[tagName]) {
+          const parentNode = getParentNode(currentNode) || currentNode.parentNode;
+          const childNodes = getChildNodes(currentNode) || currentNode.childNodes;
+          if (childNodes && parentNode) {
+            const childCount = childNodes.length;
+            for (let i = childCount - 1; i >= 0; --i) {
+              const childClone = cloneNode(childNodes[i], true);
+              childClone.__removalCount = (currentNode.__removalCount || 0) + 1;
+              parentNode.insertBefore(childClone, getNextSibling(currentNode));
+            }
+          }
+        }
+        _forceRemove(currentNode);
+        return true;
+      }
+      if (currentNode instanceof Element && !_checkValidNamespace(currentNode)) {
+        _forceRemove(currentNode);
+        return true;
+      }
+      if ((tagName === "noscript" || tagName === "noembed" || tagName === "noframes") && regExpTest(/<\/no(script|embed|frames)/i, currentNode.innerHTML)) {
+        _forceRemove(currentNode);
+        return true;
+      }
+      if (SAFE_FOR_TEMPLATES && currentNode.nodeType === NODE_TYPE.text) {
+        content = currentNode.textContent;
+        arrayForEach([MUSTACHE_EXPR2, ERB_EXPR2, TMPLIT_EXPR2], (expr) => {
+          content = stringReplace(content, expr, " ");
+        });
+        if (currentNode.textContent !== content) {
+          arrayPush(DOMPurify.removed, {
+            element: currentNode.cloneNode()
+          });
+          currentNode.textContent = content;
+        }
+      }
+      _executeHooks(hooks.afterSanitizeElements, currentNode, null);
+      return false;
+    };
+    const _isValidAttribute = function _isValidAttribute2(lcTag, lcName, value) {
+      if (SANITIZE_DOM && (lcName === "id" || lcName === "name") && (value in document2 || value in formElement)) {
+        return false;
+      }
+      if (ALLOW_DATA_ATTR && !FORBID_ATTR[lcName] && regExpTest(DATA_ATTR2, lcName)) ;
+      else if (ALLOW_ARIA_ATTR && regExpTest(ARIA_ATTR2, lcName)) ;
+      else if (EXTRA_ELEMENT_HANDLING.attributeCheck instanceof Function && EXTRA_ELEMENT_HANDLING.attributeCheck(lcName, lcTag)) ;
+      else if (!ALLOWED_ATTR[lcName] || FORBID_ATTR[lcName]) {
+        if (
+          // First condition does a very basic check if a) it's basically a valid custom element tagname AND
+          // b) if the tagName passes whatever the user has configured for CUSTOM_ELEMENT_HANDLING.tagNameCheck
+          // and c) if the attribute name passes whatever the user has configured for CUSTOM_ELEMENT_HANDLING.attributeNameCheck
+          _isBasicCustomElement(lcTag) && (CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.tagNameCheck, lcTag) || CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof Function && CUSTOM_ELEMENT_HANDLING.tagNameCheck(lcTag)) && (CUSTOM_ELEMENT_HANDLING.attributeNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.attributeNameCheck, lcName) || CUSTOM_ELEMENT_HANDLING.attributeNameCheck instanceof Function && CUSTOM_ELEMENT_HANDLING.attributeNameCheck(lcName, lcTag)) || // Alternative, second condition checks if it's an `is`-attribute, AND
+          // the value passes whatever the user has configured for CUSTOM_ELEMENT_HANDLING.tagNameCheck
+          lcName === "is" && CUSTOM_ELEMENT_HANDLING.allowCustomizedBuiltInElements && (CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof RegExp && regExpTest(CUSTOM_ELEMENT_HANDLING.tagNameCheck, value) || CUSTOM_ELEMENT_HANDLING.tagNameCheck instanceof Function && CUSTOM_ELEMENT_HANDLING.tagNameCheck(value))
+        ) ;
+        else {
+          return false;
+        }
+      } else if (URI_SAFE_ATTRIBUTES[lcName]) ;
+      else if (regExpTest(IS_ALLOWED_URI$1, stringReplace(value, ATTR_WHITESPACE2, ""))) ;
+      else if ((lcName === "src" || lcName === "xlink:href" || lcName === "href") && lcTag !== "script" && stringIndexOf(value, "data:") === 0 && DATA_URI_TAGS[lcTag]) ;
+      else if (ALLOW_UNKNOWN_PROTOCOLS && !regExpTest(IS_SCRIPT_OR_DATA2, stringReplace(value, ATTR_WHITESPACE2, ""))) ;
+      else if (value) {
+        return false;
+      } else ;
+      return true;
+    };
+    const _isBasicCustomElement = function _isBasicCustomElement2(tagName) {
+      return tagName !== "annotation-xml" && stringMatch(tagName, CUSTOM_ELEMENT2);
+    };
+    const _sanitizeAttributes = function _sanitizeAttributes2(currentNode) {
+      _executeHooks(hooks.beforeSanitizeAttributes, currentNode, null);
+      const {
+        attributes
+      } = currentNode;
+      if (!attributes || _isClobbered(currentNode)) {
+        return;
+      }
+      const hookEvent = {
+        attrName: "",
+        attrValue: "",
+        keepAttr: true,
+        allowedAttributes: ALLOWED_ATTR,
+        forceKeepAttr: void 0
+      };
+      let l = attributes.length;
+      while (l--) {
+        const attr2 = attributes[l];
+        const {
+          name,
+          namespaceURI,
+          value: attrValue
+        } = attr2;
+        const lcName = transformCaseFunc(name);
+        const initValue = attrValue;
+        let value = name === "value" ? initValue : stringTrim(initValue);
+        hookEvent.attrName = lcName;
+        hookEvent.attrValue = value;
+        hookEvent.keepAttr = true;
+        hookEvent.forceKeepAttr = void 0;
+        _executeHooks(hooks.uponSanitizeAttribute, currentNode, hookEvent);
+        value = hookEvent.attrValue;
+        if (SANITIZE_NAMED_PROPS && (lcName === "id" || lcName === "name")) {
+          _removeAttribute(name, currentNode);
+          value = SANITIZE_NAMED_PROPS_PREFIX + value;
+        }
+        if (SAFE_FOR_XML && regExpTest(/((--!?|])>)|<\/(style|title|textarea)/i, value)) {
+          _removeAttribute(name, currentNode);
+          continue;
+        }
+        if (lcName === "attributename" && stringMatch(value, "href")) {
+          _removeAttribute(name, currentNode);
+          continue;
+        }
+        if (hookEvent.forceKeepAttr) {
+          continue;
+        }
+        if (!hookEvent.keepAttr) {
+          _removeAttribute(name, currentNode);
+          continue;
+        }
+        if (!ALLOW_SELF_CLOSE_IN_ATTR && regExpTest(/\/>/i, value)) {
+          _removeAttribute(name, currentNode);
+          continue;
+        }
+        if (SAFE_FOR_TEMPLATES) {
+          arrayForEach([MUSTACHE_EXPR2, ERB_EXPR2, TMPLIT_EXPR2], (expr) => {
+            value = stringReplace(value, expr, " ");
+          });
+        }
+        const lcTag = transformCaseFunc(currentNode.nodeName);
+        if (!_isValidAttribute(lcTag, lcName, value)) {
+          _removeAttribute(name, currentNode);
+          continue;
+        }
+        if (trustedTypesPolicy && typeof trustedTypes === "object" && typeof trustedTypes.getAttributeType === "function") {
+          if (namespaceURI) ;
+          else {
+            switch (trustedTypes.getAttributeType(lcTag, lcName)) {
+              case "TrustedHTML": {
+                value = trustedTypesPolicy.createHTML(value);
+                break;
+              }
+              case "TrustedScriptURL": {
+                value = trustedTypesPolicy.createScriptURL(value);
+                break;
+              }
+            }
+          }
+        }
+        if (value !== initValue) {
+          try {
+            if (namespaceURI) {
+              currentNode.setAttributeNS(namespaceURI, name, value);
+            } else {
+              currentNode.setAttribute(name, value);
+            }
+            if (_isClobbered(currentNode)) {
+              _forceRemove(currentNode);
+            } else {
+              arrayPop(DOMPurify.removed);
+            }
+          } catch (_) {
+            _removeAttribute(name, currentNode);
+          }
+        }
+      }
+      _executeHooks(hooks.afterSanitizeAttributes, currentNode, null);
+    };
+    const _sanitizeShadowDOM = function _sanitizeShadowDOM2(fragment) {
+      let shadowNode = null;
+      const shadowIterator = _createNodeIterator(fragment);
+      _executeHooks(hooks.beforeSanitizeShadowDOM, fragment, null);
+      while (shadowNode = shadowIterator.nextNode()) {
+        _executeHooks(hooks.uponSanitizeShadowNode, shadowNode, null);
+        _sanitizeElements(shadowNode);
+        _sanitizeAttributes(shadowNode);
+        if (shadowNode.content instanceof DocumentFragment) {
+          _sanitizeShadowDOM2(shadowNode.content);
+        }
+      }
+      _executeHooks(hooks.afterSanitizeShadowDOM, fragment, null);
+    };
+    DOMPurify.sanitize = function(dirty) {
+      let cfg = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {};
+      let body = null;
+      let importedNode = null;
+      let currentNode = null;
+      let returnNode = null;
+      IS_EMPTY_INPUT = !dirty;
+      if (IS_EMPTY_INPUT) {
+        dirty = "<!-->";
+      }
+      if (typeof dirty !== "string" && !_isNode(dirty)) {
+        if (typeof dirty.toString === "function") {
+          dirty = dirty.toString();
+          if (typeof dirty !== "string") {
+            throw typeErrorCreate("dirty is not a string, aborting");
+          }
+        } else {
+          throw typeErrorCreate("toString is not a function");
+        }
+      }
+      if (!DOMPurify.isSupported) {
+        return dirty;
+      }
+      if (!SET_CONFIG) {
+        _parseConfig(cfg);
+      }
+      DOMPurify.removed = [];
+      if (typeof dirty === "string") {
+        IN_PLACE = false;
+      }
+      if (IN_PLACE) {
+        if (dirty.nodeName) {
+          const tagName = transformCaseFunc(dirty.nodeName);
+          if (!ALLOWED_TAGS[tagName] || FORBID_TAGS[tagName]) {
+            throw typeErrorCreate("root node is forbidden and cannot be sanitized in-place");
+          }
+        }
+      } else if (dirty instanceof Node2) {
+        body = _initDocument("<!---->");
+        importedNode = body.ownerDocument.importNode(dirty, true);
+        if (importedNode.nodeType === NODE_TYPE.element && importedNode.nodeName === "BODY") {
+          body = importedNode;
+        } else if (importedNode.nodeName === "HTML") {
+          body = importedNode;
+        } else {
+          body.appendChild(importedNode);
+        }
+      } else {
+        if (!RETURN_DOM && !SAFE_FOR_TEMPLATES && !WHOLE_DOCUMENT && // eslint-disable-next-line unicorn/prefer-includes
+        dirty.indexOf("<") === -1) {
+          return trustedTypesPolicy && RETURN_TRUSTED_TYPE ? trustedTypesPolicy.createHTML(dirty) : dirty;
+        }
+        body = _initDocument(dirty);
+        if (!body) {
+          return RETURN_DOM ? null : RETURN_TRUSTED_TYPE ? emptyHTML : "";
+        }
+      }
+      if (body && FORCE_BODY) {
+        _forceRemove(body.firstChild);
+      }
+      const nodeIterator = _createNodeIterator(IN_PLACE ? dirty : body);
+      while (currentNode = nodeIterator.nextNode()) {
+        _sanitizeElements(currentNode);
+        _sanitizeAttributes(currentNode);
+        if (currentNode.content instanceof DocumentFragment) {
+          _sanitizeShadowDOM(currentNode.content);
+        }
+      }
+      if (IN_PLACE) {
+        return dirty;
+      }
+      if (RETURN_DOM) {
+        if (RETURN_DOM_FRAGMENT) {
+          returnNode = createDocumentFragment.call(body.ownerDocument);
+          while (body.firstChild) {
+            returnNode.appendChild(body.firstChild);
+          }
+        } else {
+          returnNode = body;
+        }
+        if (ALLOWED_ATTR.shadowroot || ALLOWED_ATTR.shadowrootmode) {
+          returnNode = importNode.call(originalDocument, returnNode, true);
+        }
+        return returnNode;
+      }
+      let serializedHTML = WHOLE_DOCUMENT ? body.outerHTML : body.innerHTML;
+      if (WHOLE_DOCUMENT && ALLOWED_TAGS["!doctype"] && body.ownerDocument && body.ownerDocument.doctype && body.ownerDocument.doctype.name && regExpTest(DOCTYPE_NAME, body.ownerDocument.doctype.name)) {
+        serializedHTML = "<!DOCTYPE " + body.ownerDocument.doctype.name + ">\n" + serializedHTML;
+      }
+      if (SAFE_FOR_TEMPLATES) {
+        arrayForEach([MUSTACHE_EXPR2, ERB_EXPR2, TMPLIT_EXPR2], (expr) => {
+          serializedHTML = stringReplace(serializedHTML, expr, " ");
+        });
+      }
+      return trustedTypesPolicy && RETURN_TRUSTED_TYPE ? trustedTypesPolicy.createHTML(serializedHTML) : serializedHTML;
+    };
+    DOMPurify.setConfig = function() {
+      let cfg = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {};
+      _parseConfig(cfg);
+      SET_CONFIG = true;
+    };
+    DOMPurify.clearConfig = function() {
+      CONFIG = null;
+      SET_CONFIG = false;
+    };
+    DOMPurify.isValidAttribute = function(tag, attr2, value) {
+      if (!CONFIG) {
+        _parseConfig({});
+      }
+      const lcTag = transformCaseFunc(tag);
+      const lcName = transformCaseFunc(attr2);
+      return _isValidAttribute(lcTag, lcName, value);
+    };
+    DOMPurify.addHook = function(entryPoint, hookFunction) {
+      if (typeof hookFunction !== "function") {
+        return;
+      }
+      arrayPush(hooks[entryPoint], hookFunction);
+    };
+    DOMPurify.removeHook = function(entryPoint, hookFunction) {
+      if (hookFunction !== void 0) {
+        const index = arrayLastIndexOf(hooks[entryPoint], hookFunction);
+        return index === -1 ? void 0 : arraySplice(hooks[entryPoint], index, 1)[0];
+      }
+      return arrayPop(hooks[entryPoint]);
+    };
+    DOMPurify.removeHooks = function(entryPoint) {
+      hooks[entryPoint] = [];
+    };
+    DOMPurify.removeAllHooks = function() {
+      hooks = _createHooksMap();
+    };
+    return DOMPurify;
+  }
+  var purify = createDOMPurify();
+
+  // src/extension/completions-core/vscode-node/extension/src/copilotPanel/webView/suggestionsPanelWebview.ts
+  var solutionsContainer = document.getElementById("solutionsContainer");
+  var vscode = acquireVsCodeApi();
+  var currentFocusIndex = 0;
+  var solutionEventHandlersInitialized = false;
+  provideVSCodeDesignSystem().register(vsCodeButton());
+  window.addEventListener("DOMContentLoaded", () => {
+    vscode.postMessage({ command: "webviewReady" });
+    initializeSolutionEventHandlers();
+  });
+  window.addEventListener("message", (event) => {
+    const message = event.data;
+    switch (message.command) {
+      case "solutionsUpdated":
+        handleSolutionUpdate(message);
+        break;
+      case "navigatePreviousSolution":
+        navigatePreviousSolution();
+        break;
+      case "navigateNextSolution":
+        navigateNextSolution();
+        break;
+    }
+  });
+  function handleSolutionUpdate(message) {
+    updateLoadingContainer(message);
+    if (solutionsContainer) {
+      solutionsContainer.innerHTML = message.solutions.map((solution, index) => {
+        const renderedCitation = solution.citation ? `<p>
 						<span style="vertical-align: text-bottom" aria-hidden="true">Warning</span>
-						${le.sanitize(t.citation.message)}
-						<a href="${le.sanitize(t.citation.url)}" target="_blank">Inspect source code</a>
-					  </p>`:"",o=le.sanitize(t.htmlSnippet);return`<h3 class='solutionHeading' id="solution-${e+1}-heading">Suggestion ${e+1}</h3>
-				<div class='snippetContainer' aria-labelledby="solution-${e+1}-heading" role="group" data-solution-index="${e}">${o}</div>
-				${le.sanitize(n)}
-				<vscode-button role="button" class="acceptButton" id="acceptButton${e}" appearance="secondary" data-solution-index="${e}">Accept suggestion ${e+1}</vscode-button>`}).join(""))}function Es(){let r=document.querySelectorAll(".snippetContainer pre"),t=nn-1;r[t]?.focus()}function _s(){let r=document.querySelectorAll(".snippetContainer pre"),t=(nn??-1)+1;r[t]?r[t].focus():r[0]&&r[0].focus()}function As(r){let t=document.getElementById("progress-bar"),e=document.getElementById("loadingContainer");if(!(!t||!e))if(r.percentage>=100)e.innerHTML=`${r.solutions.length} Suggestions`;else{let n=e.querySelector("label");n.textContent!=="Loading suggestions:\xA0"&&(n.textContent="Loading suggestions:\xA0"),t.value=r.percentage}}function ks(){ei||ce===null||(ce.addEventListener("focusin",r=>{let t=r.target,e=ri(t);e!==void 0&&Os(e)}),ce.addEventListener("click",r=>{let e=r.target?.closest("vscode-button[data-solution-index]");if(!(e instanceof HTMLElement))return;let n=ri(e);n!==void 0&&Rs(n)}),ei=!0)}function ri(r){let t=r?.closest("[data-solution-index]");if(!(t instanceof HTMLElement))return;let e=t.getAttribute("data-solution-index");if(e===null)return;let n=Number.parseInt(e,10);return Number.isNaN(n)?void 0:n}function Os(r){nn=r,rn.postMessage({command:"focusSolution",solutionIndex:r})}function Rs(r){rn.postMessage({command:"acceptSolution",solutionIndex:r})}})();
+						${purify.sanitize(solution.citation.message)}
+						<a href="${purify.sanitize(solution.citation.url)}" target="_blank">Inspect source code</a>
+					  </p>` : "";
+        const sanitizedSnippet = purify.sanitize(solution.htmlSnippet);
+        return `<h3 class='solutionHeading' id="solution-${index + 1}-heading">Suggestion ${index + 1}</h3>
+				<div class='snippetContainer' aria-labelledby="solution-${index + 1}-heading" role="group" data-solution-index="${index}">${sanitizedSnippet}</div>
+				${purify.sanitize(renderedCitation)}
+				<vscode-button role="button" class="acceptButton" id="acceptButton${index}" appearance="secondary" data-solution-index="${index}">Accept suggestion ${index + 1}</vscode-button>`;
+      }).join("");
+    }
+  }
+  function navigatePreviousSolution() {
+    const snippets = document.querySelectorAll(".snippetContainer pre");
+    const prevIndex = currentFocusIndex - 1;
+    snippets[prevIndex]?.focus();
+  }
+  function navigateNextSolution() {
+    const snippets = document.querySelectorAll(".snippetContainer pre");
+    const nextIndex = (currentFocusIndex ?? -1) + 1;
+    if (snippets[nextIndex]) {
+      snippets[nextIndex].focus();
+    } else if (snippets[0]) {
+      snippets[0].focus();
+    }
+  }
+  function updateLoadingContainer(message) {
+    const progressBar = document.getElementById("progress-bar");
+    const loadingContainer = document.getElementById("loadingContainer");
+    if (!progressBar || !loadingContainer) {
+      return;
+    }
+    if (message.percentage >= 100) {
+      loadingContainer.innerHTML = `${message.solutions.length} Suggestions`;
+    } else {
+      const loadingLabelElement = loadingContainer.querySelector("label");
+      if (loadingLabelElement.textContent !== "Loading suggestions:\xA0") {
+        loadingLabelElement.textContent = "Loading suggestions:\xA0";
+      }
+      progressBar.value = message.percentage;
+    }
+  }
+  function initializeSolutionEventHandlers() {
+    if (solutionEventHandlersInitialized || solutionsContainer === null) {
+      return;
+    }
+    solutionsContainer.addEventListener("focusin", (event) => {
+      const target = event.target;
+      const index = extractSolutionIndex(target);
+      if (index === void 0) {
+        return;
+      }
+      handleFocus(index);
+    });
+    solutionsContainer.addEventListener("click", (event) => {
+      const target = event.target;
+      const button = target?.closest("vscode-button[data-solution-index]");
+      if (!(button instanceof HTMLElement)) {
+        return;
+      }
+      const index = extractSolutionIndex(button);
+      if (index === void 0) {
+        return;
+      }
+      handleClick(index);
+    });
+    solutionEventHandlersInitialized = true;
+  }
+  function extractSolutionIndex(element) {
+    const solutionElement = element?.closest("[data-solution-index]");
+    if (!(solutionElement instanceof HTMLElement)) {
+      return void 0;
+    }
+    const attributeValue = solutionElement.getAttribute("data-solution-index");
+    if (attributeValue === null) {
+      return void 0;
+    }
+    const index = Number.parseInt(attributeValue, 10);
+    return Number.isNaN(index) ? void 0 : index;
+  }
+  function handleFocus(index) {
+    currentFocusIndex = index;
+    vscode.postMessage({
+      command: "focusSolution",
+      solutionIndex: index
+    });
+  }
+  function handleClick(index) {
+    vscode.postMessage({
+      command: "acceptSolution",
+      solutionIndex: index
+    });
+  }
+})();
 /*! Bundled license information:
 
 tslib/tslib.es6.js:
@@ -241,3 +6822,4 @@ tslib/tslib.es6.js:
 dompurify/dist/purify.es.mjs:
   (*! @license DOMPurify 3.3.0 | (c) Cure53 and other contributors | Released under the Apache license 2.0 and Mozilla Public License 2.0 | github.com/cure53/DOMPurify/blob/3.3.0/LICENSE *)
 */
+//# sourceMappingURL=suggestionsPanelWebview.js.map
