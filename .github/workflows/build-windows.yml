@@ -24,7 +24,7 @@ on:
 jobs:
   build-windows-x64:
     name: Build Windows (x64)
-    runs-on: namespace-profile-puku-windows-32c-64gb  # 🚀 Namespace.so AMD64 32 vCPU, 64GB RAM
+    runs-on: namespace-profile-puku-windows-16c-32gb  # 🚀 Namespace.so AMD64 16 vCPU, 32GB RAM
     if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.architecture == 'x64' }}
     env:
       VSCODE_ARCH: x64
@@ -156,7 +156,7 @@ jobs:
 
   build-windows-arm64:
     name: Build Windows (ARM64)
-    runs-on: namespace-profile-puku-windows-arm64-32c-64gb  # 🚀 Namespace.so ARM64 32 vCPU, 64GB RAM
+    runs-on: namespace-profile-puku-windows-arm64-16c-32gb  # 🚀 Namespace.so ARM64 16 vCPU, 32GB RAM
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.architecture == 'arm64' }}
     env:
       VSCODE_ARCH: arm64
