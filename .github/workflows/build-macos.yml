@@ -99,8 +99,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GYP_DEFINES: "kerberos_use_rtld=false"
 
-      - name: Build using Makefile
-        run: make build
+      - name: Build VS Code (includes extension)
+        run: |
+          cd src/vscode
+          npm run gulp vscode-darwin-arm64-min
         env:
           VSCODE_ARCH: arm64
 
@@ -205,9 +207,7 @@ jobs:
           GYP_DEFINES: "kerberos_use_rtld=false"
 
       - name: Build Extension
-        run: |
-          cd src/chat
-          npm run compile
+        run: make compile-extension
 
       - name: Build VS Code
         run: |
