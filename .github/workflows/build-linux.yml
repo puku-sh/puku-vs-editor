@@ -130,7 +130,7 @@ jobs:
             *.deb
             *.rpm
             *.tar.gz
-          retention-days: 30
+          retention-days: 1
           if-no-files-found: error
 
       - name: Upload build logs
@@ -254,7 +254,7 @@ jobs:
             *.deb
             *.rpm
             *.tar.gz
-          retention-days: 30
+          retention-days: 1
           if-no-files-found: error
 
       - name: Upload build logs
