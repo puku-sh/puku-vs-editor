@@ -63,6 +63,12 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Run linter
+        run: |
+          cd src/chat
+          npm run lint
+        continue-on-error: true
+
       - name: Compile extension
         run: |
           cd src/chat
