@@ -24,7 +24,7 @@ on:
 jobs:
   build-linux-x64:
     name: Build Linux (x64)
-    runs-on: ubuntu-22.04  # 🚀 Standard 4-core runner
+    runs-on: [self-hosted, Linux, X64]  # 🚀 Self-hosted runner
     if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.architecture == 'x64' }}
     env:
       VSCODE_ARCH: x64
