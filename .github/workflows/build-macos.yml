@@ -149,7 +149,7 @@ jobs:
 
   build-macos-x64:
     name: Build macOS (x64)
-    runs-on: namespace-profile-puku-macos-x64-32c-64gb  # 🚀 Namespace.so Intel 32 vCPU, 64GB RAM
+    runs-on: namespace-profile-puku-macos-x64-16c-32gb  # 🚀 Namespace.so Intel 16 vCPU, 32GB RAM
     if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.architecture == 'x64' || github.event.inputs.architecture == 'universal') }}
     env:
       VSCODE_ARCH: x64
