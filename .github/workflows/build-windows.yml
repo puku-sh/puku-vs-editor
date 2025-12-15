@@ -1,0 +1,273 @@
+name: Build Windows
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      architecture:
+        description: 'Build architecture'
+        required: true
+        default: 'x64'
+        type: choice
+        options:
+          - x64
+          - arm64
+  workflow_call:
+    inputs:
+      architecture:
+        description: 'Build architecture'
+        required: true
+        type: string
+
+jobs:
+  build-windows-x64:
+    name: Build Windows (x64)
+    runs-on: windows-2022
+    if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.architecture == 'x64' }}
+    env:
+      VSCODE_ARCH: x64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'src/vscode/.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: |
+            src/chat/package-lock.json
+            src/vscode/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            src/chat/node_modules
+            src/vscode/node_modules
+          key: ${{ runner.os }}-x64-node-modules-${{ hashFiles('src/chat/package-lock.json', 'src/vscode/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-x64-node-modules-
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        shell: powershell
+        run: |
+          Write-Host "=== Installing Extension Dependencies ==="
+          cd src/chat
+          $retries = 3
+          $success = $false
+          for ($i = 1; $i -le $retries; $i++) {
+            try {
+              npm ci
+              $success = $true
+              break
+            } catch {
+              if ($i -eq $retries) {
+                Write-Error "Extension npm install failed after $retries attempts"
+                exit 1
+              }
+              Write-Host "Retry $i..."
+              Start-Sleep -Seconds 2
+            }
+          }
+
+          Write-Host "=== Installing VS Code Dependencies ==="
+          cd ../vscode
+          $success = $false
+          for ($i = 1; $i -le $retries; $i++) {
+            try {
+              npm ci
+              $success = $true
+              break
+            } catch {
+              if ($i -eq $retries) {
+                Write-Error "VS Code npm install failed after $retries attempts"
+                exit 1
+              }
+              Write-Host "Retry $i..."
+              Start-Sleep -Seconds 2
+            }
+          }
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Extension
+        shell: powershell
+        run: |
+          cd src/chat
+          npm run compile
+
+      - name: Build VS Code
+        shell: powershell
+        run: |
+          cd src/vscode
+          npm run gulp vscode-win32-x64-min
+        env:
+          VSCODE_ARCH: ${{ env.VSCODE_ARCH }}
+
+      - name: Package Windows builds
+        shell: powershell
+        run: ./build-windows-optimized.ps1
+        env:
+          VSCODE_ARCH: x64
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: puku-editor-windows-x64
+          path: |
+            *.exe
+            *.zip
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload build logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-windows-x64-${{ github.run_attempt }}
+          path: |
+            src/vscode/.build/logs
+            src/chat/dist
+          if-no-files-found: ignore
+          retention-days: 7
+
+  build-windows-arm64:
+    name: Build Windows (ARM64)
+    runs-on: windows-2022
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.architecture == 'arm64' }}
+    env:
+      VSCODE_ARCH: arm64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'src/vscode/.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: |
+            src/chat/package-lock.json
+            src/vscode/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            src/chat/node_modules
+            src/vscode/node_modules
+          key: ${{ runner.os }}-arm64-node-modules-${{ hashFiles('src/chat/package-lock.json', 'src/vscode/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-arm64-node-modules-
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        shell: powershell
+        run: |
+          Write-Host "=== Installing Extension Dependencies ==="
+          cd src/chat
+          $retries = 3
+          $success = $false
+          for ($i = 1; $i -le $retries; $i++) {
+            try {
+              npm ci
+              $success = $true
+              break
+            } catch {
+              if ($i -eq $retries) {
+                Write-Error "Extension npm install failed after $retries attempts"
+                exit 1
+              }
+              Write-Host "Retry $i..."
+              Start-Sleep -Seconds 2
+            }
+          }
+
+          Write-Host "=== Installing VS Code Dependencies ==="
+          cd ../vscode
+          $success = $false
+          for ($i = 1; $i -le $retries; $i++) {
+            try {
+              npm ci --arch=arm64
+              $success = $true
+              break
+            } catch {
+              if ($i -eq $retries) {
+                Write-Error "VS Code npm install failed after $retries attempts"
+                exit 1
+              }
+              Write-Host "Retry $i..."
+              Start-Sleep -Seconds 2
+            }
+          }
+        env:
+          npm_config_arch: arm64
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Extension
+        shell: powershell
+        run: |
+          cd src/chat
+          npm run compile
+
+      - name: Build VS Code
+        shell: powershell
+        run: |
+          cd src/vscode
+          npm run gulp vscode-win32-arm64-min
+        env:
+          VSCODE_ARCH: ${{ env.VSCODE_ARCH }}
+
+      - name: Package Windows builds
+        shell: powershell
+        run: ./build-windows-optimized.ps1
+        env:
+          VSCODE_ARCH: arm64
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: puku-editor-windows-arm64
+          path: |
+            *.exe
+            *.zip
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload build logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-windows-arm64-${{ github.run_attempt }}
+          path: |
+            src/vscode/.build/logs
+            src/chat/dist
+          if-no-files-found: ignore
+          retention-days: 7
