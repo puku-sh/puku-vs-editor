@@ -24,7 +24,7 @@ on:
 jobs:
   build-linux-x64:
     name: Build Linux (x64)
-    runs-on: namespace-profile-default  # 🚀 Namespace.so runner
+    runs-on: namespace-profile-puku-linux-16c-32gb  # 🚀 Namespace.so 16 vCPU, 32GB RAM
     if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.architecture == 'x64' }}
     env:
       VSCODE_ARCH: x64
@@ -156,7 +156,7 @@ jobs:
 
   build-linux-arm64:
     name: Build Linux (ARM64)
-    runs-on: namespace-profile-default-arm64-linux  # 🚀 Namespace.so AmpereOne
+    runs-on: namespace-profile-puku-linux-arm64-16c-32gb  # 🚀 Namespace.so AmpereOne 16 vCPU, 32GB RAM
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.architecture == 'arm64' }}
     env:
       VSCODE_ARCH: arm64
