@@ -243,7 +243,11 @@ function packageTask(platform: string, arch: string, sourceFolderName: string, d
 
 		const extensions = gulp.src(['.build/extensions/**', ...platformSpecificBuiltInExtensionsExclusions], { base: '.build', dot: true });
 
-		const sources = es.merge(src, extensions)
+		// PUKU: Include Puku Editor extension from ../chat
+		const pukuExtension = gulp.src(['../chat/dist/**', '../chat/package.json', '../chat/README.md', '../chat/LICENSE.txt', '../chat/assets/**'], { base: '../chat', dot: true, allowEmpty: true })
+			.pipe(rename(function (path) { path.dirname = 'extensions/puku-editor/' + path.dirname; }));
+
+		const sources = es.merge(src, extensions, pukuExtension)
 			.pipe(filter(['**', '!**/*.{js,css}.map'], { dot: true }));
 
 		let version = packageJson.version;

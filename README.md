@@ -101,6 +101,8 @@ cd ../..
 | `make kill` | Kill all Electron processes |
 | `make clean` | Clean build artifacts |
 | `make watch-extension` | Watch mode for extension development |
+| `make dmg` | Build Puku.app (development, fast) |
+| `make dmg-production` | Build production DMG installer |
 
 **Examples:**
 ```bash
@@ -202,6 +204,51 @@ make launch          # Terminal 2: launch
 - Extension debug port: `5870`
 - Use "Show Chat Debug View" command for AI debugging
 - Check logs in Developer Tools console
+
+---
+
+## Building macOS App
+
+You can build Puku as a standalone macOS application in two ways:
+
+### Development Build (Fast)
+
+For local testing and development:
+
+```bash
+# Build Puku.app with symlinks (fast, ~5 seconds)
+make dmg
+```
+
+This creates `build/Puku.app` using symlinks to your compiled code. Great for testing changes quickly.
+
+### Production Build (Distributable)
+
+For distribution to other users:
+
+```bash
+# Build self-contained DMG installer (~2-5 minutes)
+make dmg-production
+```
+
+This creates:
+- `build-production/Puku.app` - Self-contained app bundle with all dependencies
+- `dist/Puku-{version}.dmg` - DMG installer for distribution
+
+**To install the production build:**
+
+1. Open the DMG: `open dist/Puku-*.dmg`
+2. Drag Puku.app to Applications folder
+3. Launch from Spotlight or Applications
+
+**App Features:**
+- ✅ Custom Puku icon (`puku.icns`)
+- ✅ Bundle ID: `sh.puku.editor`
+- ✅ App name: "Puku" (not "Code - OSS")
+- ✅ Puku Editor extension pre-installed
+- ✅ All built-in VS Code extensions included
+
+---
 
 ## Recent Updates
 

@@ -47,12 +47,15 @@ function withNodeDefaults(/**@type WebpackConfig & { context: string }*/extConfi
 					// * enable sources maps for end-to-end source maps
 					loader: 'ts-loader',
 					options: tsLoaderOptions
-				}, {
-					loader: path.resolve(import.meta.dirname, 'mangle-loader.js'),
-					options: {
-						configFile: path.join(extConfig.context, 'tsconfig.json')
-					},
-				},]
+				},
+				// PUKU: Disabled mangle-loader (mangling is disabled anyway, see https://github.com/microsoft/vscode/issues/204692)
+				// {
+				// 	loader: path.resolve(import.meta.dirname, 'mangle-loader.js'),
+				// 	options: {
+				// 		configFile: path.join(extConfig.context, 'tsconfig.json')
+				// 	},
+				// },
+				]
 			}]
 		},
 		externals: {
@@ -135,12 +138,13 @@ function withBrowserDefaults(/**@type WebpackConfig & { context: string }*/extCo
 							//							...(additionalOptions ? {} : { configFile: additionalOptions.configFile }),
 						}
 					},
-					{
-						loader: path.resolve(import.meta.dirname, 'mangle-loader.js'),
-						options: {
-							configFile: path.join(extConfig.context, additionalOptions?.configFile ?? 'tsconfig.json')
-						},
-					},
+					// PUKU: Disabled mangle-loader (mangling is disabled anyway, see https://github.com/microsoft/vscode/issues/204692)
+					// {
+					// 	loader: path.resolve(import.meta.dirname, 'mangle-loader.js'),
+					// 	options: {
+					// 		configFile: path.join(extConfig.context, additionalOptions?.configFile ?? 'tsconfig.json')
+					// 	},
+					// },
 				]
 			}, {
 				test: /\.wasm$/,

@@ -377,14 +377,14 @@ export default {
 
 
 // out-build/vs/base/common/errors.js
-var ErrorHandler = class {
+var $ib = class {
   constructor() {
-    this.listeners = [];
-    this.unexpectedErrorHandler = function(e) {
+    this.b = [];
+    this.a = function(e) {
       setTimeout(() => {
         if (e.stack) {
-          if (ErrorNoTelemetry.isErrorNoTelemetry(e)) {
-            throw new ErrorNoTelemetry(e.message + "\n\n" + e.stack);
+          if ($Db.isErrorNoTelemetry(e)) {
+            throw new $Db(e.message + "\n\n" + e.stack);
           }
           throw new Error(e.message + "\n\n" + e.stack);
         }
@@ -393,42 +393,42 @@ var ErrorHandler = class {
     };
   }
   addListener(listener) {
-    this.listeners.push(listener);
+    this.b.push(listener);
     return () => {
-      this._removeListener(listener);
+      this.d(listener);
     };
   }
-  emit(e) {
-    this.listeners.forEach((listener) => {
+  c(e) {
+    this.b.forEach((listener) => {
       listener(e);
     });
   }
-  _removeListener(listener) {
-    this.listeners.splice(this.listeners.indexOf(listener), 1);
+  d(listener) {
+    this.b.splice(this.b.indexOf(listener), 1);
   }
   setUnexpectedErrorHandler(newUnexpectedErrorHandler) {
-    this.unexpectedErrorHandler = newUnexpectedErrorHandler;
+    this.a = newUnexpectedErrorHandler;
   }
   getUnexpectedErrorHandler() {
-    return this.unexpectedErrorHandler;
+    return this.a;
   }
   onUnexpectedError(e) {
-    this.unexpectedErrorHandler(e);
-    this.emit(e);
+    this.a(e);
+    this.c(e);
   }
   // For external errors, we don't want the listeners to be called
   onUnexpectedExternalError(e) {
-    this.unexpectedErrorHandler(e);
+    this.a(e);
   }
 };
-var errorHandler = new ErrorHandler();
-function onUnexpectedError(e) {
-  if (!isCancellationError(e)) {
-    errorHandler.onUnexpectedError(e);
+var $jb = new $ib();
+function $nb(e) {
+  if (!$sb(e)) {
+    $jb.onUnexpectedError(e);
   }
   return void 0;
 }
-function transformErrorForSerialization(error) {
+function $pb(error) {
   if (error instanceof Error) {
     const { name, message, cause } = error;
     const stack = error.stacktrace || error.stack;
@@ -437,48 +437,48 @@ function transformErrorForSerialization(error) {
       name,
       message,
       stack,
-      noTelemetry: ErrorNoTelemetry.isErrorNoTelemetry(error),
-      cause: cause ? transformErrorForSerialization(cause) : void 0,
+      noTelemetry: $Db.isErrorNoTelemetry(error),
+      cause: cause ? $pb(cause) : void 0,
       code: error.code
     };
   }
   return error;
 }
-var canceledName = "Canceled";
-function isCancellationError(error) {
-  if (error instanceof CancellationError) {
+var $rb = "Canceled";
+function $sb(error) {
+  if (error instanceof $tb) {
     return true;
   }
-  return error instanceof Error && error.name === canceledName && error.message === canceledName;
+  return error instanceof Error && error.name === $rb && error.message === $rb;
 }
-var CancellationError = class extends Error {
+var $tb = class extends Error {
   constructor() {
-    super(canceledName);
+    super($rb);
     this.name = this.message;
   }
 };
-var PendingMigrationError = class _PendingMigrationError extends Error {
+var $ub = class _$ub extends Error {
   static {
-    this._name = "PendingMigrationError";
+    this.a = "PendingMigrationError";
   }
   static is(error) {
-    return error instanceof _PendingMigrationError || error instanceof Error && error.name === _PendingMigrationError._name;
+    return error instanceof _$ub || error instanceof Error && error.name === _$ub.a;
   }
   constructor(message) {
     super(message);
-    this.name = _PendingMigrationError._name;
+    this.name = _$ub.a;
   }
 };
-var ErrorNoTelemetry = class _ErrorNoTelemetry extends Error {
+var $Db = class _$Db extends Error {
   constructor(msg) {
     super(msg);
     this.name = "CodeExpectedError";
   }
   static fromError(err) {
-    if (err instanceof _ErrorNoTelemetry) {
+    if (err instanceof _$Db) {
       return err;
     }
-    const result = new _ErrorNoTelemetry();
+    const result = new _$Db();
     result.message = err.message;
     result.stack = err.stack;
     return result;
@@ -487,16 +487,16 @@ var ErrorNoTelemetry = class _ErrorNoTelemetry extends Error {
     return err.name === "CodeExpectedError";
   }
 };
-var BugIndicatingError = class _BugIndicatingError extends Error {
+var $Eb = class _$Eb extends Error {
   constructor(message) {
     super(message || "An unexpected bug occurred.");
-    Object.setPrototypeOf(this, _BugIndicatingError.prototype);
+    Object.setPrototypeOf(this, _$Eb.prototype);
   }
 };
 
 // out-build/vs/base/common/collections.js
 var _a;
-function groupBy(data, groupFn) {
+function $a(data, groupFn) {
   const result = /* @__PURE__ */ Object.create(null);
   for (const element of data) {
     const key = groupFn(element);
@@ -508,34 +508,34 @@ function groupBy(data, groupFn) {
   }
   return result;
 }
-var SetWithKey = class {
+var $f = class {
   static {
     _a = Symbol.toStringTag;
   }
-  constructor(values, toKey) {
-    this.toKey = toKey;
-    this._map = /* @__PURE__ */ new Map();
+  constructor(values, b) {
+    this.b = b;
+    this.a = /* @__PURE__ */ new Map();
     this[_a] = "SetWithKey";
     for (const value of values) {
       this.add(value);
     }
   }
   get size() {
-    return this._map.size;
+    return this.a.size;
   }
   add(value) {
-    const key = this.toKey(value);
-    this._map.set(key, value);
+    const key = this.b(value);
+    this.a.set(key, value);
     return this;
   }
   delete(value) {
-    return this._map.delete(this.toKey(value));
+    return this.a.delete(this.b(value));
   }
   has(value) {
-    return this._map.has(this.toKey(value));
+    return this.a.has(this.b(value));
   }
   *entries() {
-    for (const entry of this._map.values()) {
+    for (const entry of this.a.values()) {
       yield [entry, entry];
     }
   }
@@ -543,15 +543,15 @@ var SetWithKey = class {
     return this.values();
   }
   *values() {
-    for (const entry of this._map.values()) {
+    for (const entry of this.a.values()) {
       yield entry;
     }
   }
   clear() {
-    this._map.clear();
+    this.a.clear();
   }
   forEach(callbackfn, thisArg) {
-    this._map.forEach((entry) => callbackfn.call(thisArg, entry, entry, this));
+    this.a.forEach((entry) => callbackfn.call(thisArg, entry, entry, this));
   }
   [Symbol.iterator]() {
     return this.values();
@@ -559,11 +559,11 @@ var SetWithKey = class {
 };
 
 // out-build/vs/base/common/arraysFind.js
-function findLastMonotonous(array, predicate) {
-  const idx = findLastIdxMonotonous(array, predicate);
+function $Kb(array, predicate) {
+  const idx = $Lb(array, predicate);
   return idx === -1 ? void 0 : array[idx];
 }
-function findLastIdxMonotonous(array, predicate, startIdx = 0, endIdxEx = array.length) {
+function $Lb(array, predicate, startIdx = 0, endIdxEx = array.length) {
   let i = startIdx;
   let j = endIdxEx;
   while (i < j) {
@@ -576,11 +576,11 @@ function findLastIdxMonotonous(array, predicate, startIdx = 0, endIdxEx = array.
   }
   return i - 1;
 }
-function findFirstMonotonous(array, predicate) {
-  const idx = findFirstIdxMonotonousOrArrLen(array, predicate);
+function $Mb(array, predicate) {
+  const idx = $Nb(array, predicate);
   return idx === array.length ? void 0 : array[idx];
 }
-function findFirstIdxMonotonousOrArrLen(array, predicate, startIdx = 0, endIdxEx = array.length) {
+function $Nb(array, predicate, startIdx = 0, endIdxEx = array.length) {
   let i = startIdx;
   let j = endIdxEx;
   while (i < j) {
@@ -593,37 +593,37 @@ function findFirstIdxMonotonousOrArrLen(array, predicate, startIdx = 0, endIdxEx
   }
   return i;
 }
-var MonotonousArray = class _MonotonousArray {
+var $Pb = class _$Pb {
   static {
     this.assertInvariants = false;
   }
-  constructor(_array) {
-    this._array = _array;
-    this._findLastMonotonousLastIdx = 0;
+  constructor(e) {
+    this.e = e;
+    this.c = 0;
   }
   /**
    * The predicate must be monotonous, i.e. `arr.map(predicate)` must be like `[true, ..., true, false, ..., false]`!
    * For subsequent calls, current predicate must be weaker than (or equal to) the previous predicate, i.e. more entries must be `true`.
    */
   findLastMonotonous(predicate) {
-    if (_MonotonousArray.assertInvariants) {
-      if (this._prevFindLastPredicate) {
-        for (const item of this._array) {
-          if (this._prevFindLastPredicate(item) && !predicate(item)) {
+    if (_$Pb.assertInvariants) {
+      if (this.d) {
+        for (const item of this.e) {
+          if (this.d(item) && !predicate(item)) {
             throw new Error("MonotonousArray: current predicate must be weaker than (or equal to) the previous predicate.");
           }
         }
       }
-      this._prevFindLastPredicate = predicate;
+      this.d = predicate;
     }
-    const idx = findLastIdxMonotonous(this._array, predicate, this._findLastMonotonousLastIdx);
-    this._findLastMonotonousLastIdx = idx + 1;
-    return idx === -1 ? void 0 : this._array[idx];
+    const idx = $Lb(this.e, predicate, this.c);
+    this.c = idx + 1;
+    return idx === -1 ? void 0 : this.e[idx];
   }
 };
 
 // out-build/vs/base/common/arrays.js
-function equals(one, other, itemEquals = (a, b) => a === b) {
+function $Xb(one, other, itemEquals = (a, b) => a === b) {
   if (one === other) {
     return true;
   }
@@ -640,7 +640,7 @@ function equals(one, other, itemEquals = (a, b) => a === b) {
   }
   return true;
 }
-function* groupAdjacentBy(items, shouldBeGrouped) {
+function* $4b(items, shouldBeGrouped) {
   let currentGroup;
   let last;
   for (const item of items) {
@@ -658,17 +658,17 @@ function* groupAdjacentBy(items, shouldBeGrouped) {
     yield currentGroup;
   }
 }
-function forEachAdjacent(arr, f) {
+function $5b(arr, f) {
   for (let i = 0; i <= arr.length; i++) {
     f(i === 0 ? void 0 : arr[i - 1], i === arr.length ? void 0 : arr[i]);
   }
 }
-function forEachWithNeighbors(arr, f) {
+function $6b(arr, f) {
   for (let i = 0; i < arr.length; i++) {
     f(i === 0 ? void 0 : arr[i - 1], arr[i], i + 1 === arr.length ? void 0 : arr[i + 1]);
   }
 }
-function pushMany(arr, items) {
+function $pc(arr, items) {
   for (const item of items) {
     arr.push(item);
   }
@@ -695,16 +695,16 @@ var CompareResult;
   CompareResult2.lessThan = -1;
   CompareResult2.neitherLessOrGreaterThan = 0;
 })(CompareResult || (CompareResult = {}));
-function compareBy(selector, comparator) {
+function $xc(selector, comparator) {
   return (a, b) => comparator(selector(a), selector(b));
 }
-var numberComparator = (a, b) => a - b;
-function reverseOrder(comparator) {
+var $zc = (a, b) => a - b;
+function $Bc(comparator) {
   return (a, b) => -comparator(a, b);
 }
-var CallbackIterable = class _CallbackIterable {
+var $Ec = class _$Ec {
   static {
-    this.empty = new _CallbackIterable((_callback) => {
+    this.empty = new _$Ec((_callback) => {
     });
   }
   constructor(iterate) {
@@ -725,10 +725,10 @@ var CallbackIterable = class _CallbackIterable {
     return result;
   }
   filter(predicate) {
-    return new _CallbackIterable((cb) => this.iterate((item) => predicate(item) ? cb(item) : true));
+    return new _$Ec((cb) => this.iterate((item) => predicate(item) ? cb(item) : true));
   }
   map(mapFn) {
-    return new _CallbackIterable((cb) => this.iterate((item) => cb(mapFn(item))));
+    return new _$Ec((cb) => this.iterate((item) => cb(mapFn(item))));
   }
   some(predicate) {
     let result = false;
@@ -772,7 +772,7 @@ var CallbackIterable = class _CallbackIterable {
     return result;
   }
 };
-function sumBy(array, selector) {
+function $Ic(array, selector) {
   return array.reduce((acc, value) => acc + selector(value), 0);
 }
 
@@ -789,111 +789,111 @@ var ResourceMapEntry = class {
 function isEntries(arg) {
   return Array.isArray(arg);
 }
-var ResourceMap = class _ResourceMap {
+var $Pc = class _$Pc {
   static {
-    this.defaultToKey = (resource) => resource.toString();
+    this.c = (resource) => resource.toString();
   }
   constructor(arg, toKey) {
     this[_a2] = "ResourceMap";
-    if (arg instanceof _ResourceMap) {
-      this.map = new Map(arg.map);
-      this.toKey = toKey ?? _ResourceMap.defaultToKey;
+    if (arg instanceof _$Pc) {
+      this.d = new Map(arg.d);
+      this.e = toKey ?? _$Pc.c;
     } else if (isEntries(arg)) {
-      this.map = /* @__PURE__ */ new Map();
-      this.toKey = toKey ?? _ResourceMap.defaultToKey;
+      this.d = /* @__PURE__ */ new Map();
+      this.e = toKey ?? _$Pc.c;
       for (const [resource, value] of arg) {
         this.set(resource, value);
       }
     } else {
-      this.map = /* @__PURE__ */ new Map();
-      this.toKey = arg ?? _ResourceMap.defaultToKey;
+      this.d = /* @__PURE__ */ new Map();
+      this.e = arg ?? _$Pc.c;
     }
   }
   set(resource, value) {
-    this.map.set(this.toKey(resource), new ResourceMapEntry(resource, value));
+    this.d.set(this.e(resource), new ResourceMapEntry(resource, value));
     return this;
   }
   get(resource) {
-    return this.map.get(this.toKey(resource))?.value;
+    return this.d.get(this.e(resource))?.value;
   }
   has(resource) {
-    return this.map.has(this.toKey(resource));
+    return this.d.has(this.e(resource));
   }
   get size() {
-    return this.map.size;
+    return this.d.size;
   }
   clear() {
-    this.map.clear();
+    this.d.clear();
   }
   delete(resource) {
-    return this.map.delete(this.toKey(resource));
+    return this.d.delete(this.e(resource));
   }
   forEach(clb, thisArg) {
     if (typeof thisArg !== "undefined") {
       clb = clb.bind(thisArg);
     }
-    for (const [_, entry] of this.map) {
+    for (const [_, entry] of this.d) {
       clb(entry.value, entry.uri, this);
     }
   }
   *values() {
-    for (const entry of this.map.values()) {
+    for (const entry of this.d.values()) {
       yield entry.value;
     }
   }
   *keys() {
-    for (const entry of this.map.values()) {
+    for (const entry of this.d.values()) {
       yield entry.uri;
     }
   }
   *entries() {
-    for (const entry of this.map.values()) {
+    for (const entry of this.d.values()) {
       yield [entry.uri, entry.value];
     }
   }
   *[(_a2 = Symbol.toStringTag, Symbol.iterator)]() {
-    for (const [, entry] of this.map) {
+    for (const [, entry] of this.d) {
       yield [entry.uri, entry.value];
     }
   }
 };
-var ResourceSet = class {
+var $Qc = class {
   constructor(entriesOrKey, toKey) {
     this[_b] = "ResourceSet";
     if (!entriesOrKey || typeof entriesOrKey === "function") {
-      this._map = new ResourceMap(entriesOrKey);
+      this.c = new $Pc(entriesOrKey);
     } else {
-      this._map = new ResourceMap(toKey);
+      this.c = new $Pc(toKey);
       entriesOrKey.forEach(this.add, this);
     }
   }
   get size() {
-    return this._map.size;
+    return this.c.size;
   }
   add(value) {
-    this._map.set(value, value);
+    this.c.set(value, value);
     return this;
   }
   clear() {
-    this._map.clear();
+    this.c.clear();
   }
   delete(value) {
-    return this._map.delete(value);
+    return this.c.delete(value);
   }
   forEach(callbackfn, thisArg) {
-    this._map.forEach((_value, key) => callbackfn.call(thisArg, key, key, this));
+    this.c.forEach((_value, key) => callbackfn.call(thisArg, key, key, this));
   }
   has(value) {
-    return this._map.has(value);
+    return this.c.has(value);
   }
   entries() {
-    return this._map.entries();
+    return this.c.entries();
   }
   keys() {
-    return this._map.keys();
+    return this.c.keys();
   }
   values() {
-    return this._map.keys();
+    return this.c.keys();
   }
   [(_b = Symbol.toStringTag, Symbol.iterator)]() {
     return this.keys();
@@ -905,72 +905,72 @@ var Touch;
   Touch2[Touch2["AsOld"] = 1] = "AsOld";
   Touch2[Touch2["AsNew"] = 2] = "AsNew";
 })(Touch || (Touch = {}));
-var LinkedMap = class {
+var $Rc = class {
   constructor() {
     this[_c] = "LinkedMap";
-    this._map = /* @__PURE__ */ new Map();
-    this._head = void 0;
-    this._tail = void 0;
-    this._size = 0;
-    this._state = 0;
+    this.c = /* @__PURE__ */ new Map();
+    this.d = void 0;
+    this.e = void 0;
+    this.f = 0;
+    this.g = 0;
   }
   clear() {
-    this._map.clear();
-    this._head = void 0;
-    this._tail = void 0;
-    this._size = 0;
-    this._state++;
+    this.c.clear();
+    this.d = void 0;
+    this.e = void 0;
+    this.f = 0;
+    this.g++;
   }
   isEmpty() {
-    return !this._head && !this._tail;
+    return !this.d && !this.e;
   }
   get size() {
-    return this._size;
+    return this.f;
   }
   get first() {
-    return this._head?.value;
+    return this.d?.value;
   }
   get last() {
-    return this._tail?.value;
+    return this.e?.value;
   }
   has(key) {
-    return this._map.has(key);
+    return this.c.has(key);
   }
   get(key, touch = 0) {
-    const item = this._map.get(key);
+    const item = this.c.get(key);
     if (!item) {
       return void 0;
     }
     if (touch !== 0) {
-      this.touch(item, touch);
+      this.n(item, touch);
     }
     return item.value;
   }
   set(key, value, touch = 0) {
-    let item = this._map.get(key);
+    let item = this.c.get(key);
     if (item) {
       item.value = value;
       if (touch !== 0) {
-        this.touch(item, touch);
+        this.n(item, touch);
       }
     } else {
       item = { key, value, next: void 0, previous: void 0 };
       switch (touch) {
         case 0:
-          this.addItemLast(item);
+          this.l(item);
           break;
         case 1:
-          this.addItemFirst(item);
+          this.k(item);
           break;
         case 2:
-          this.addItemLast(item);
+          this.l(item);
           break;
         default:
-          this.addItemLast(item);
+          this.l(item);
           break;
       }
-      this._map.set(key, item);
-      this._size++;
+      this.c.set(key, item);
+      this.f++;
     }
     return this;
   }
@@ -978,38 +978,38 @@ var LinkedMap = class {
     return !!this.remove(key);
   }
   remove(key) {
-    const item = this._map.get(key);
+    const item = this.c.get(key);
     if (!item) {
       return void 0;
     }
-    this._map.delete(key);
-    this.removeItem(item);
-    this._size--;
+    this.c.delete(key);
+    this.m(item);
+    this.f--;
     return item.value;
   }
   shift() {
-    if (!this._head && !this._tail) {
+    if (!this.d && !this.e) {
       return void 0;
     }
-    if (!this._head || !this._tail) {
+    if (!this.d || !this.e) {
       throw new Error("Invalid list");
     }
-    const item = this._head;
-    this._map.delete(item.key);
-    this.removeItem(item);
-    this._size--;
+    const item = this.d;
+    this.c.delete(item.key);
+    this.m(item);
+    this.f--;
     return item.value;
   }
   forEach(callbackfn, thisArg) {
-    const state = this._state;
-    let current = this._head;
+    const state = this.g;
+    let current = this.d;
     while (current) {
       if (thisArg) {
         callbackfn.bind(thisArg)(current.value, current.key, this);
       } else {
         callbackfn(current.value, current.key, this);
       }
-      if (this._state !== state) {
+      if (this.g !== state) {
         throw new Error(`LinkedMap got modified during iteration.`);
       }
       current = current.next;
@@ -1017,14 +1017,14 @@ var LinkedMap = class {
   }
   keys() {
     const map = this;
-    const state = this._state;
-    let current = this._head;
+    const state = this.g;
+    let current = this.d;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map._state !== state) {
+        if (map.g !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -1040,14 +1040,14 @@ var LinkedMap = class {
   }
   values() {
     const map = this;
-    const state = this._state;
-    let current = this._head;
+    const state = this.g;
+    let current = this.d;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map._state !== state) {
+        if (map.g !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -1063,14 +1063,14 @@ var LinkedMap = class {
   }
   entries() {
     const map = this;
-    const state = this._state;
-    let current = this._head;
+    const state = this.g;
+    let current = this.d;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map._state !== state) {
+        if (map.g !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -1087,7 +1087,7 @@ var LinkedMap = class {
   [(_c = Symbol.toStringTag, Symbol.iterator)]() {
     return this.entries();
   }
-  trimOld(newSize) {
+  h(newSize) {
     if (newSize >= this.size) {
       return;
     }
@@ -1095,21 +1095,21 @@ var LinkedMap = class {
       this.clear();
       return;
     }
-    let current = this._head;
+    let current = this.d;
     let currentSize = this.size;
     while (current && currentSize > newSize) {
-      this._map.delete(current.key);
+      this.c.delete(current.key);
       current = current.next;
       currentSize--;
     }
-    this._head = current;
-    this._size = currentSize;
+    this.d = current;
+    this.f = currentSize;
     if (current) {
       current.previous = void 0;
     }
-    this._state++;
+    this.g++;
   }
-  trimNew(newSize) {
+  j(newSize) {
     if (newSize >= this.size) {
       return;
     }
@@ -1117,60 +1117,60 @@ var LinkedMap = class {
       this.clear();
       return;
     }
-    let current = this._tail;
+    let current = this.e;
     let currentSize = this.size;
     while (current && currentSize > newSize) {
-      this._map.delete(current.key);
+      this.c.delete(current.key);
       current = current.previous;
       currentSize--;
     }
-    this._tail = current;
-    this._size = currentSize;
+    this.e = current;
+    this.f = currentSize;
     if (current) {
       current.next = void 0;
     }
-    this._state++;
+    this.g++;
   }
-  addItemFirst(item) {
-    if (!this._head && !this._tail) {
-      this._tail = item;
-    } else if (!this._head) {
+  k(item) {
+    if (!this.d && !this.e) {
+      this.e = item;
+    } else if (!this.d) {
       throw new Error("Invalid list");
     } else {
-      item.next = this._head;
-      this._head.previous = item;
+      item.next = this.d;
+      this.d.previous = item;
     }
-    this._head = item;
-    this._state++;
+    this.d = item;
+    this.g++;
   }
-  addItemLast(item) {
-    if (!this._head && !this._tail) {
-      this._head = item;
-    } else if (!this._tail) {
+  l(item) {
+    if (!this.d && !this.e) {
+      this.d = item;
+    } else if (!this.e) {
       throw new Error("Invalid list");
     } else {
-      item.previous = this._tail;
-      this._tail.next = item;
+      item.previous = this.e;
+      this.e.next = item;
     }
-    this._tail = item;
-    this._state++;
+    this.e = item;
+    this.g++;
   }
-  removeItem(item) {
-    if (item === this._head && item === this._tail) {
-      this._head = void 0;
-      this._tail = void 0;
-    } else if (item === this._head) {
+  m(item) {
+    if (item === this.d && item === this.e) {
+      this.d = void 0;
+      this.e = void 0;
+    } else if (item === this.d) {
       if (!item.next) {
         throw new Error("Invalid list");
       }
       item.next.previous = void 0;
-      this._head = item.next;
-    } else if (item === this._tail) {
+      this.d = item.next;
+    } else if (item === this.e) {
       if (!item.previous) {
         throw new Error("Invalid list");
       }
       item.previous.next = void 0;
-      this._tail = item.previous;
+      this.e = item.previous;
     } else {
       const next = item.next;
       const previous = item.previous;
@@ -1182,51 +1182,51 @@ var LinkedMap = class {
     }
     item.next = void 0;
     item.previous = void 0;
-    this._state++;
+    this.g++;
   }
-  touch(item, touch) {
-    if (!this._head || !this._tail) {
+  n(item, touch) {
+    if (!this.d || !this.e) {
       throw new Error("Invalid list");
     }
     if (touch !== 1 && touch !== 2) {
       return;
     }
     if (touch === 1) {
-      if (item === this._head) {
+      if (item === this.d) {
         return;
       }
       const next = item.next;
       const previous = item.previous;
-      if (item === this._tail) {
+      if (item === this.e) {
         previous.next = void 0;
-        this._tail = previous;
+        this.e = previous;
       } else {
         next.previous = previous;
         previous.next = next;
       }
       item.previous = void 0;
-      item.next = this._head;
-      this._head.previous = item;
-      this._head = item;
-      this._state++;
+      item.next = this.d;
+      this.d.previous = item;
+      this.d = item;
+      this.g++;
     } else if (touch === 2) {
-      if (item === this._tail) {
+      if (item === this.e) {
         return;
       }
       const next = item.next;
       const previous = item.previous;
-      if (item === this._head) {
+      if (item === this.d) {
         next.previous = void 0;
-        this._head = next;
+        this.d = next;
       } else {
         next.previous = previous;
         previous.next = next;
       }
       item.next = void 0;
-      item.previous = this._tail;
-      this._tail.next = item;
-      this._tail = item;
-      this._state++;
+      item.previous = this.e;
+      this.e.next = item;
+      this.e = item;
+      this.g++;
     }
   }
   toJSON() {
@@ -1243,25 +1243,25 @@ var LinkedMap = class {
     }
   }
 };
-var Cache = class extends LinkedMap {
+var Cache = class extends $Rc {
   constructor(limit, ratio = 1) {
     super();
-    this._limit = limit;
-    this._ratio = Math.min(Math.max(0, ratio), 1);
+    this.o = limit;
+    this.p = Math.min(Math.max(0, ratio), 1);
   }
   get limit() {
-    return this._limit;
+    return this.o;
   }
   set limit(limit) {
-    this._limit = limit;
-    this.checkTrim();
+    this.o = limit;
+    this.q();
   }
   get ratio() {
-    return this._ratio;
+    return this.p;
   }
   set ratio(ratio) {
-    this._ratio = Math.min(Math.max(0, ratio), 1);
-    this.checkTrim();
+    this.p = Math.min(Math.max(0, ratio), 1);
+    this.q();
   }
   get(key, touch = 2) {
     return super.get(key, touch);
@@ -1282,56 +1282,56 @@ var Cache = class extends LinkedMap {
     );
     return this;
   }
-  checkTrim() {
-    if (this.size > this._limit) {
-      this.trim(Math.round(this._limit * this._ratio));
+  q() {
+    if (this.size > this.o) {
+      this.r(Math.round(this.o * this.p));
     }
   }
 };
-var LRUCache = class extends Cache {
+var $Sc = class extends Cache {
   constructor(limit, ratio = 1) {
     super(limit, ratio);
   }
-  trim(newSize) {
-    this.trimOld(newSize);
+  r(newSize) {
+    this.h(newSize);
   }
   set(key, value) {
     super.set(key, value);
-    this.checkTrim();
+    this.q();
     return this;
   }
 };
-var SetMap = class {
+var $Wc = class {
   constructor() {
-    this.map = /* @__PURE__ */ new Map();
+    this.c = /* @__PURE__ */ new Map();
   }
   add(key, value) {
-    let values = this.map.get(key);
+    let values = this.c.get(key);
     if (!values) {
       values = /* @__PURE__ */ new Set();
-      this.map.set(key, values);
+      this.c.set(key, values);
     }
     values.add(value);
   }
   delete(key, value) {
-    const values = this.map.get(key);
+    const values = this.c.get(key);
     if (!values) {
       return;
     }
     values.delete(value);
     if (values.size === 0) {
-      this.map.delete(key);
+      this.c.delete(key);
     }
   }
   forEach(key, fn) {
-    const values = this.map.get(key);
+    const values = this.c.get(key);
     if (!values) {
       return;
     }
     values.forEach(fn);
   }
   get(key) {
-    const values = this.map.get(key);
+    const values = this.c.get(key);
     if (!values) {
       return /* @__PURE__ */ new Set();
     }
@@ -1340,23 +1340,23 @@ var SetMap = class {
 };
 
 // out-build/vs/base/common/assert.js
-function assertNever(value, message = "Unreachable") {
+function $1c(value, message = "Unreachable") {
   throw new Error(message);
 }
-function assert(condition, messageOrError = "unexpected state") {
+function $3c(condition, messageOrError = "unexpected state") {
   if (!condition) {
-    const errorToThrow = typeof messageOrError === "string" ? new BugIndicatingError(`Assertion Failed: ${messageOrError}`) : messageOrError;
+    const errorToThrow = typeof messageOrError === "string" ? new $Eb(`Assertion Failed: ${messageOrError}`) : messageOrError;
     throw errorToThrow;
   }
 }
-function assertFn(condition) {
+function $5c(condition) {
   if (!condition()) {
     debugger;
     condition();
-    onUnexpectedError(new BugIndicatingError("Assertion Failed"));
+    $nb(new $Eb("Assertion Failed"));
   }
 }
-function checkAdjacentItems(items, predicate) {
+function $6c(items, predicate) {
   let i = 0;
   while (i < items.length - 1) {
     const a = items[i];
@@ -1370,10 +1370,10 @@ function checkAdjacentItems(items, predicate) {
 }
 
 // out-build/vs/base/common/types.js
-function isString(str) {
+function $7c(str) {
   return typeof str === "string";
 }
-function isIterable(obj) {
+function $ad(obj) {
   return !!obj && typeof obj[Symbol.iterator] === "function";
 }
 
@@ -1472,7 +1472,7 @@ var Iterable;
   Iterable2.flatMap = flatMap;
   function* concat(...iterables) {
     for (const item of iterables) {
-      if (isIterable(item)) {
+      if ($ad(item)) {
         yield* item;
       } else {
         yield item;
@@ -1552,49 +1552,49 @@ var Iterable;
 // out-build/vs/base/common/lifecycle.js
 var TRACK_DISPOSABLES = false;
 var disposableTracker = null;
-var DisposableTracker = class _DisposableTracker {
+var $ud = class _$ud {
   constructor() {
-    this.livingDisposables = /* @__PURE__ */ new Map();
+    this.b = /* @__PURE__ */ new Map();
   }
   static {
-    this.idx = 0;
+    this.a = 0;
   }
-  getDisposableData(d) {
-    let val = this.livingDisposables.get(d);
+  c(d) {
+    let val = this.b.get(d);
     if (!val) {
-      val = { parent: null, source: null, isSingleton: false, value: d, idx: _DisposableTracker.idx++ };
-      this.livingDisposables.set(d, val);
+      val = { parent: null, source: null, isSingleton: false, value: d, idx: _$ud.a++ };
+      this.b.set(d, val);
     }
     return val;
   }
   trackDisposable(d) {
-    const data = this.getDisposableData(d);
+    const data = this.c(d);
     if (!data.source) {
       data.source = new Error().stack;
     }
   }
   setParent(child, parent) {
-    const data = this.getDisposableData(child);
+    const data = this.c(child);
     data.parent = parent;
   }
   markAsDisposed(x) {
-    this.livingDisposables.delete(x);
+    this.b.delete(x);
   }
   markAsSingleton(disposable) {
-    this.getDisposableData(disposable).isSingleton = true;
+    this.c(disposable).isSingleton = true;
   }
-  getRootParent(data, cache) {
+  f(data, cache) {
     const cacheValue = cache.get(data);
     if (cacheValue) {
       return cacheValue;
     }
-    const result = data.parent ? this.getRootParent(this.getDisposableData(data.parent), cache) : data;
+    const result = data.parent ? this.f(this.c(data.parent), cache) : data;
     cache.set(data, result);
     return result;
   }
   getTrackedDisposables() {
     const rootParentCache = /* @__PURE__ */ new Map();
-    const leaking = [...this.livingDisposables.entries()].filter(([, v]) => v.source !== null && !this.getRootParent(v, rootParentCache).isSingleton).flatMap(([k]) => k);
+    const leaking = [...this.b.entries()].filter(([, v]) => v.source !== null && !this.f(v, rootParentCache).isSingleton).flatMap(([k]) => k);
     return leaking;
   }
   computeLeakingDisposables(maxReported = 10, preComputedLeaks) {
@@ -1603,7 +1603,7 @@ var DisposableTracker = class _DisposableTracker {
       uncoveredLeakingObjs = preComputedLeaks;
     } else {
       const rootParentCache = /* @__PURE__ */ new Map();
-      const leakingObjects = [...this.livingDisposables.values()].filter((info) => info.source !== null && !this.getRootParent(info, rootParentCache).isSingleton);
+      const leakingObjects = [...this.b.values()].filter((info) => info.source !== null && !this.f(info, rootParentCache).isSingleton);
       if (leakingObjects.length === 0) {
         return;
       }
@@ -1628,14 +1628,14 @@ var DisposableTracker = class _DisposableTracker {
       removePrefix(lines, ["Error", /^trackDisposable \(.*\)$/, /^DisposableTracker.trackDisposable \(.*\)$/]);
       return lines.reverse();
     }
-    const stackTraceStarts = new SetMap();
+    const stackTraceStarts = new $Wc();
     for (const leaking of uncoveredLeakingObjs) {
       const stackTracePath = getStackTracePath(leaking);
       for (let i2 = 0; i2 <= stackTracePath.length; i2++) {
         stackTraceStarts.add(stackTracePath.slice(0, i2).join("\n"), leaking);
       }
     }
-    uncoveredLeakingObjs.sort(compareBy((l) => l.idx, numberComparator));
+    uncoveredLeakingObjs.sort($xc((l) => l.idx, $zc));
     let message = "";
     let i = 0;
     for (const leaking of uncoveredLeakingObjs.slice(0, maxReported)) {
@@ -1647,7 +1647,7 @@ var DisposableTracker = class _DisposableTracker {
         const starts = stackTraceStarts.get(stackTracePath.slice(0, i2 + 1).join("\n"));
         line = `(shared with ${starts.size}/${uncoveredLeakingObjs.length} leaks) at ${line}`;
         const prevStarts = stackTraceStarts.get(stackTracePath.slice(0, i2).join("\n"));
-        const continuations = groupBy([...prevStarts].map((d) => getStackTracePath(d)[i2]), (v) => v);
+        const continuations = $a([...prevStarts].map((d) => getStackTracePath(d)[i2]), (v) => v);
         delete continuations[stackTracePath[i2]];
         for (const [cont, set] of Object.entries(continuations)) {
           if (set) {
@@ -1676,12 +1676,12 @@ ${stackTraceFormattedLines.join("\n")}
     return { leaks: uncoveredLeakingObjs, details: message };
   }
 };
-function setDisposableTracker(tracker) {
+function $vd(tracker) {
   disposableTracker = tracker;
 }
 if (TRACK_DISPOSABLES) {
   const __is_disposable_tracked__ = "__is_disposable_tracked__";
-  setDisposableTracker(new class {
+  $vd(new class {
     trackDisposable(x) {
       const stack = new Error("Potentially leaked disposable").stack;
       setTimeout(() => {
@@ -1691,7 +1691,7 @@ if (TRACK_DISPOSABLES) {
       }, 3e3);
     }
     setParent(child, parent) {
-      if (child && child !== Disposable.None) {
+      if (child && child !== $Fd.None) {
         try {
           child[__is_disposable_tracked__] = true;
         } catch {
@@ -1699,7 +1699,7 @@ if (TRACK_DISPOSABLES) {
       }
     }
     markAsDisposed(disposable) {
-      if (disposable && disposable !== Disposable.None) {
+      if (disposable && disposable !== $Fd.None) {
         try {
           disposable[__is_disposable_tracked__] = true;
         } catch {
@@ -1710,11 +1710,11 @@ if (TRACK_DISPOSABLES) {
     }
   }());
 }
-function trackDisposable(x) {
+function $wd(x) {
   disposableTracker?.trackDisposable(x);
   return x;
 }
-function markAsDisposed(disposable) {
+function $xd(disposable) {
   disposableTracker?.markAsDisposed(disposable);
 }
 function setParentOfDisposable(child, parent) {
@@ -1728,7 +1728,7 @@ function setParentOfDisposables(children, parent) {
     disposableTracker.setParent(child, parent);
   }
 }
-function dispose(arg) {
+function $Ad(arg) {
   if (Iterable.is(arg)) {
     const errors = [];
     for (const d of arg) {
@@ -1751,40 +1751,40 @@ function dispose(arg) {
     return arg;
   }
 }
-function combinedDisposable(...disposables) {
-  const parent = toDisposable(() => dispose(disposables));
+function $Cd(...disposables) {
+  const parent = $Dd(() => $Ad(disposables));
   setParentOfDisposables(disposables, parent);
   return parent;
 }
 var FunctionDisposable = class {
   constructor(fn) {
-    this._isDisposed = false;
-    this._fn = fn;
-    trackDisposable(this);
+    this.a = false;
+    this.b = fn;
+    $wd(this);
   }
   dispose() {
-    if (this._isDisposed) {
+    if (this.a) {
       return;
     }
-    if (!this._fn) {
+    if (!this.b) {
       throw new Error(`Unbound disposable context: Need to use an arrow function to preserve the value of this`);
     }
-    this._isDisposed = true;
-    markAsDisposed(this);
-    this._fn();
+    this.a = true;
+    $xd(this);
+    this.b();
   }
 };
-function toDisposable(fn) {
+function $Dd(fn) {
   return new FunctionDisposable(fn);
 }
-var DisposableStore = class _DisposableStore {
+var $Ed = class _$Ed {
   static {
     this.DISABLE_DISPOSED_WARNING = false;
   }
   constructor() {
-    this._toDispose = /* @__PURE__ */ new Set();
-    this._isDisposed = false;
-    trackDisposable(this);
+    this.f = /* @__PURE__ */ new Set();
+    this.g = false;
+    $wd(this);
   }
   /**
    * Dispose of all registered disposables and mark this object as disposed.
@@ -1792,49 +1792,49 @@ var DisposableStore = class _DisposableStore {
    * Any future disposables added to this object will be disposed of on `add`.
    */
   dispose() {
-    if (this._isDisposed) {
+    if (this.g) {
       return;
     }
-    markAsDisposed(this);
-    this._isDisposed = true;
+    $xd(this);
+    this.g = true;
     this.clear();
   }
   /**
    * @return `true` if this object has been disposed of.
    */
   get isDisposed() {
-    return this._isDisposed;
+    return this.g;
   }
   /**
    * Dispose of all registered disposables but do not mark this object as disposed.
    */
   clear() {
-    if (this._toDispose.size === 0) {
+    if (this.f.size === 0) {
       return;
     }
     try {
-      dispose(this._toDispose);
+      $Ad(this.f);
     } finally {
-      this._toDispose.clear();
+      this.f.clear();
     }
   }
   /**
    * Add a new {@link IDisposable disposable} to the collection.
    */
   add(o) {
-    if (!o || o === Disposable.None) {
+    if (!o || o === $Fd.None) {
       return o;
     }
     if (o === this) {
       throw new Error("Cannot register a disposable on itself!");
     }
     setParentOfDisposable(o, this);
-    if (this._isDisposed) {
-      if (!_DisposableStore.DISABLE_DISPOSED_WARNING) {
+    if (this.g) {
+      if (!_$Ed.DISABLE_DISPOSED_WARNING) {
         console.warn(new Error("Trying to add a disposable to a DisposableStore that has already been disposed of. The added object will be leaked!").stack);
       }
     } else {
-      this._toDispose.add(o);
+      this.f.add(o);
     }
     return o;
   }
@@ -1849,7 +1849,7 @@ var DisposableStore = class _DisposableStore {
     if (o === this) {
       throw new Error("Cannot dispose a disposable on itself!");
     }
-    this._toDispose.delete(o);
+    this.f.delete(o);
     o.dispose();
   }
   /**
@@ -1859,39 +1859,39 @@ var DisposableStore = class _DisposableStore {
     if (!o) {
       return;
     }
-    if (this._toDispose.has(o)) {
-      this._toDispose.delete(o);
+    if (this.f.has(o)) {
+      this.f.delete(o);
       setParentOfDisposable(o, null);
     }
   }
   assertNotDisposed() {
-    if (this._isDisposed) {
-      onUnexpectedError(new BugIndicatingError("Object disposed"));
+    if (this.g) {
+      $nb(new $Eb("Object disposed"));
     }
   }
 };
-var Disposable = class {
+var $Fd = class {
   static {
     this.None = Object.freeze({ dispose() {
     } });
   }
   constructor() {
-    this._store = new DisposableStore();
-    trackDisposable(this);
-    setParentOfDisposable(this._store, this);
+    this.B = new $Ed();
+    $wd(this);
+    setParentOfDisposable(this.B, this);
   }
   dispose() {
-    markAsDisposed(this);
-    this._store.dispose();
+    $xd(this);
+    this.B.dispose();
   }
   /**
    * Adds `o` to the collection of disposables managed by this object.
    */
-  _register(o) {
+  D(o) {
     if (o === this) {
       throw new Error("Cannot register a disposable on itself!");
     }
-    return this._store.add(o);
+    return this.B.add(o);
   }
 };
 
@@ -1906,106 +1906,106 @@ var Node = class _Node {
     this.prev = _Node.Undefined;
   }
 };
-var LinkedList = class {
+var $Qd = class {
   constructor() {
-    this._first = Node.Undefined;
-    this._last = Node.Undefined;
-    this._size = 0;
+    this.a = Node.Undefined;
+    this.b = Node.Undefined;
+    this.c = 0;
   }
   get size() {
-    return this._size;
+    return this.c;
   }
   isEmpty() {
-    return this._first === Node.Undefined;
+    return this.a === Node.Undefined;
   }
   clear() {
-    let node = this._first;
+    let node = this.a;
     while (node !== Node.Undefined) {
       const next = node.next;
       node.prev = Node.Undefined;
       node.next = Node.Undefined;
       node = next;
     }
-    this._first = Node.Undefined;
-    this._last = Node.Undefined;
-    this._size = 0;
+    this.a = Node.Undefined;
+    this.b = Node.Undefined;
+    this.c = 0;
   }
   unshift(element) {
-    return this._insert(element, false);
+    return this.d(element, false);
   }
   push(element) {
-    return this._insert(element, true);
+    return this.d(element, true);
   }
-  _insert(element, atTheEnd) {
+  d(element, atTheEnd) {
     const newNode = new Node(element);
-    if (this._first === Node.Undefined) {
-      this._first = newNode;
-      this._last = newNode;
+    if (this.a === Node.Undefined) {
+      this.a = newNode;
+      this.b = newNode;
     } else if (atTheEnd) {
-      const oldLast = this._last;
-      this._last = newNode;
+      const oldLast = this.b;
+      this.b = newNode;
       newNode.prev = oldLast;
       oldLast.next = newNode;
     } else {
-      const oldFirst = this._first;
-      this._first = newNode;
+      const oldFirst = this.a;
+      this.a = newNode;
       newNode.next = oldFirst;
       oldFirst.prev = newNode;
     }
-    this._size += 1;
+    this.c += 1;
     let didRemove = false;
     return () => {
       if (!didRemove) {
         didRemove = true;
-        this._remove(newNode);
+        this.e(newNode);
       }
     };
   }
   shift() {
-    if (this._first === Node.Undefined) {
+    if (this.a === Node.Undefined) {
       return void 0;
     } else {
-      const res = this._first.element;
-      this._remove(this._first);
+      const res = this.a.element;
+      this.e(this.a);
       return res;
     }
   }
   pop() {
-    if (this._last === Node.Undefined) {
+    if (this.b === Node.Undefined) {
       return void 0;
     } else {
-      const res = this._last.element;
-      this._remove(this._last);
+      const res = this.b.element;
+      this.e(this.b);
       return res;
     }
   }
   peek() {
-    if (this._last === Node.Undefined) {
+    if (this.b === Node.Undefined) {
       return void 0;
     } else {
-      const res = this._last.element;
+      const res = this.b.element;
       return res;
     }
   }
-  _remove(node) {
+  e(node) {
     if (node.prev !== Node.Undefined && node.next !== Node.Undefined) {
       const anchor = node.prev;
       anchor.next = node.next;
       node.next.prev = anchor;
     } else if (node.prev === Node.Undefined && node.next === Node.Undefined) {
-      this._first = Node.Undefined;
-      this._last = Node.Undefined;
+      this.a = Node.Undefined;
+      this.b = Node.Undefined;
     } else if (node.next === Node.Undefined) {
-      this._last = this._last.prev;
-      this._last.next = Node.Undefined;
+      this.b = this.b.prev;
+      this.b.next = Node.Undefined;
     } else if (node.prev === Node.Undefined) {
-      this._first = this._first.next;
-      this._first.prev = Node.Undefined;
+      this.a = this.a.next;
+      this.a.prev = Node.Undefined;
     }
-    this._size -= 1;
+    this.c -= 1;
   }
   *[Symbol.iterator]() {
-    let node = this._first;
+    let node = this.a;
     while (node !== Node.Undefined) {
       yield node.element;
       node = node.next;
@@ -2015,27 +2015,27 @@ var LinkedList = class {
 
 // out-build/vs/base/common/stopwatch.js
 var performanceNow = globalThis.performance.now.bind(globalThis.performance);
-var StopWatch = class _StopWatch {
+var $kf = class _$kf {
   static create(highResolution) {
-    return new _StopWatch(highResolution);
+    return new _$kf(highResolution);
   }
   constructor(highResolution) {
-    this._now = highResolution === false ? Date.now : performanceNow;
-    this._startTime = this._now();
-    this._stopTime = -1;
+    this.c = highResolution === false ? Date.now : performanceNow;
+    this.a = this.c();
+    this.b = -1;
   }
   stop() {
-    this._stopTime = this._now();
+    this.b = this.c();
   }
   reset() {
-    this._startTime = this._now();
-    this._stopTime = -1;
+    this.a = this.c();
+    this.b = -1;
   }
   elapsed() {
-    if (this._stopTime !== -1) {
-      return this._stopTime - this._startTime;
+    if (this.b !== -1) {
+      return this.b - this.a;
     }
-    return this._now() - this._startTime;
+    return this.c() - this.a;
   }
 };
 
@@ -2044,7 +2044,7 @@ var _enableDisposeWithListenerWarning = false;
 var _enableSnapshotPotentialLeakWarning = false;
 var Event;
 (function(Event2) {
-  Event2.None = () => Disposable.None;
+  Event2.None = () => $Fd.None;
   function _addLeakageTraceLogic(options) {
     if (_enableSnapshotPotentialLeakWarning) {
       const { onDidAddListener: origListenerDidAdd } = options;
@@ -2109,7 +2109,7 @@ var Event;
   Event2.signal = signal;
   function any(...events) {
     return (listener, thisArgs = null, disposables) => {
-      const disposable = combinedDisposable(...events.map((event) => event((e) => listener.call(thisArgs, e))));
+      const disposable = $Cd(...events.map((event) => event((e) => listener.call(thisArgs, e))));
       return addAndReturnDisposable(disposable, disposables);
     };
   }
@@ -2135,7 +2135,7 @@ var Event;
     if (!disposable) {
       _addLeakageTraceLogic(options);
     }
-    const emitter = new Emitter(options);
+    const emitter = new $qf(options);
     disposable?.add(emitter);
     return emitter.event;
   }
@@ -2198,7 +2198,7 @@ var Event;
     if (!disposable) {
       _addLeakageTraceLogic(options);
     }
-    const emitter = new Emitter(options);
+    const emitter = new $qf(options);
     disposable?.add(emitter);
     return emitter.event;
   }
@@ -2213,11 +2213,11 @@ var Event;
     }, delay, void 0, true, void 0, disposable);
   }
   Event2.accumulate = accumulate;
-  function latch(event, equals3 = (a, b) => a === b, disposable) {
+  function latch(event, equals = (a, b) => a === b, disposable) {
     let firstCall = true;
     let cache;
     return filter(event, (value) => {
-      const shouldEmit = firstCall || !equals3(value, cache);
+      const shouldEmit = firstCall || !equals(value, cache);
       firstCall = false;
       cache = value;
       return shouldEmit;
@@ -2247,7 +2247,7 @@ var Event;
       buffer2?.forEach((e) => emitter.fire(e));
       buffer2 = null;
     };
-    const emitter = new Emitter({
+    const emitter = new $qf({
       onWillAddFirstListener() {
         if (!listener) {
           listener = event((e) => emitter.fire(e));
@@ -2294,36 +2294,36 @@ var Event;
   const HaltChainable = Symbol("HaltChainable");
   class ChainableSynthesis {
     constructor() {
-      this.steps = [];
+      this.f = [];
     }
     map(fn) {
-      this.steps.push(fn);
+      this.f.push(fn);
       return this;
     }
     forEach(fn) {
-      this.steps.push((v) => {
+      this.f.push((v) => {
         fn(v);
         return v;
       });
       return this;
     }
     filter(fn) {
-      this.steps.push((v) => fn(v) ? v : HaltChainable);
+      this.f.push((v) => fn(v) ? v : HaltChainable);
       return this;
     }
     reduce(merge, initial) {
       let last = initial;
-      this.steps.push((v) => {
+      this.f.push((v) => {
         last = merge(last, v);
         return last;
       });
       return this;
     }
-    latch(equals3 = (a, b) => a === b) {
+    latch(equals = (a, b) => a === b) {
       let firstCall = true;
       let cache;
-      this.steps.push((value) => {
-        const shouldEmit = firstCall || !equals3(value, cache);
+      this.f.push((value) => {
+        const shouldEmit = firstCall || !equals(value, cache);
         firstCall = false;
         cache = value;
         return shouldEmit ? value : HaltChainable;
@@ -2331,7 +2331,7 @@ var Event;
       return this;
     }
     evaluate(value) {
-      for (const step of this.steps) {
+      for (const step of this.f) {
         value = step(value);
         if (value === HaltChainable) {
           break;
@@ -2344,7 +2344,7 @@ var Event;
     const fn = (...args) => result.fire(map2(...args));
     const onFirstListenerAdd = () => emitter.on(eventName, fn);
     const onLastListenerRemove = () => emitter.removeListener(eventName, fn);
-    const result = new Emitter({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
+    const result = new $qf({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
     return result.event;
   }
   Event2.fromNodeEventEmitter = fromNodeEventEmitter;
@@ -2352,15 +2352,15 @@ var Event;
     const fn = (...args) => result.fire(map2(...args));
     const onFirstListenerAdd = () => emitter.addEventListener(eventName, fn);
     const onLastListenerRemove = () => emitter.removeEventListener(eventName, fn);
-    const result = new Emitter({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
+    const result = new $qf({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
     return result.event;
   }
   Event2.fromDOMEventEmitter = fromDOMEventEmitter;
   function toPromise(event, disposables) {
     let cancelRef;
     let listener;
-    const promise = new Promise((resolve2) => {
-      listener = once(event)(resolve2);
+    const promise = new Promise((resolve) => {
+      listener = once(event)(resolve);
       addToDisposables(listener, disposables);
       cancelRef = () => {
         disposeAndRemove(listener, disposables);
@@ -2385,8 +2385,8 @@ var Event;
   class EmitterObserver {
     constructor(_observable, store) {
       this._observable = _observable;
-      this._counter = 0;
-      this._hasChanged = false;
+      this.f = 0;
+      this.g = false;
       const options = {
         onWillAddFirstListener: () => {
           _observable.addObserver(this);
@@ -2399,25 +2399,25 @@ var Event;
       if (!store) {
         _addLeakageTraceLogic(options);
       }
-      this.emitter = new Emitter(options);
+      this.emitter = new $qf(options);
       if (store) {
         store.add(this.emitter);
       }
     }
     beginUpdate(_observable) {
-      this._counter++;
+      this.f++;
     }
     handlePossibleChange(_observable) {
     }
     handleChange(_observable, _change) {
-      this._hasChanged = true;
+      this.g = true;
     }
     endUpdate(_observable) {
-      this._counter--;
-      if (this._counter === 0) {
+      this.f--;
+      if (this.f === 0) {
         this._observable.reportChanges();
-        if (this._hasChanged) {
-          this._hasChanged = false;
+        if (this.g) {
+          this.g = false;
           this.emitter.fire(this._observable.get());
         }
       }
@@ -2465,81 +2465,81 @@ var Event;
   }
   Event2.fromObservableLight = fromObservableLight;
 })(Event || (Event = {}));
-var EventProfiling = class _EventProfiling {
+var $mf = class _$mf {
   static {
     this.all = /* @__PURE__ */ new Set();
   }
   static {
-    this._idPool = 0;
+    this.f = 0;
   }
   constructor(name) {
     this.listenerCount = 0;
     this.invocationCount = 0;
     this.elapsedOverall = 0;
     this.durations = [];
-    this.name = `${name}_${_EventProfiling._idPool++}`;
-    _EventProfiling.all.add(this);
+    this.name = `${name}_${_$mf.f++}`;
+    _$mf.all.add(this);
   }
   start(listenerCount) {
-    this._stopWatch = new StopWatch();
+    this.g = new $kf();
     this.listenerCount = listenerCount;
   }
   stop() {
-    if (this._stopWatch) {
-      const elapsed = this._stopWatch.elapsed();
+    if (this.g) {
+      const elapsed = this.g.elapsed();
       this.durations.push(elapsed);
       this.elapsedOverall += elapsed;
       this.invocationCount += 1;
-      this._stopWatch = void 0;
+      this.g = void 0;
     }
   }
 };
 var _globalLeakWarningThreshold = -1;
 var LeakageMonitor = class _LeakageMonitor {
   static {
-    this._idPool = 1;
+    this.f = 1;
   }
-  constructor(_errorHandler, threshold, name = (_LeakageMonitor._idPool++).toString(16).padStart(3, "0")) {
-    this._errorHandler = _errorHandler;
+  constructor(j, threshold, name = (_LeakageMonitor.f++).toString(16).padStart(3, "0")) {
+    this.j = j;
     this.threshold = threshold;
     this.name = name;
-    this._warnCountdown = 0;
+    this.h = 0;
   }
   dispose() {
-    this._stacks?.clear();
+    this.g?.clear();
   }
   check(stack, listenerCount) {
     const threshold = this.threshold;
     if (threshold <= 0 || listenerCount < threshold) {
       return void 0;
     }
-    if (!this._stacks) {
-      this._stacks = /* @__PURE__ */ new Map();
+    if (!this.g) {
+      this.g = /* @__PURE__ */ new Map();
     }
-    const count = this._stacks.get(stack.value) || 0;
-    this._stacks.set(stack.value, count + 1);
-    this._warnCountdown -= 1;
-    if (this._warnCountdown <= 0) {
-      this._warnCountdown = threshold * 0.5;
+    const count = this.g.get(stack.value) || 0;
+    this.g.set(stack.value, count + 1);
+    this.h -= 1;
+    if (this.h <= 0) {
+      this.h = threshold * 0.5;
       const [topStack, topCount] = this.getMostFrequentStack();
       const message = `[${this.name}] potential listener LEAK detected, having ${listenerCount} listeners already. MOST frequent listener (${topCount}):`;
       console.warn(message);
       console.warn(topStack);
-      const error = new ListenerLeakError(message, topStack);
-      this._errorHandler(error);
+      const error = new $of(message, topStack);
+      this.j(error);
     }
     return () => {
-      const count2 = this._stacks.get(stack.value) || 0;
-      this._stacks.set(stack.value, count2 - 1);
+      const count2 = this.g.get(stack.value) || 0;
+      this.g.set(stack.value, count2 - 1);
     };
   }
   getMostFrequentStack() {
-    if (!this._stacks) {
+    if (!this.g) {
       return void 0;
     }
     let topStack;
     let topCount = 0;
-    for (const [stack, count] of this._stacks) {
+    for (const [stack, count] of this.g) {
       if (!topStack || topCount < count) {
         topStack = [stack, count];
         topCount = count;
@@ -2560,14 +2560,14 @@ var Stacktrace = class _Stacktrace {
     console.warn(this.value.split("\n").slice(2).join("\n"));
   }
 };
-var ListenerLeakError = class extends Error {
+var $of = class extends Error {
   constructor(message, stack) {
     super(message);
     this.name = "ListenerLeakError";
     this.stack = stack;
   }
 };
-var ListenerRefusalError = class extends Error {
+var $pf = class extends Error {
   constructor(message, stack) {
     super(message);
     this.name = "ListenerRefusalError";
@@ -2594,32 +2594,32 @@ var forEachListener = (listeners, fn) => {
     }
   }
 };
-var Emitter = class {
+var $qf = class {
   constructor(options) {
-    this._size = 0;
-    this._options = options;
-    this._leakageMon = _globalLeakWarningThreshold > 0 || this._options?.leakWarningThreshold ? new LeakageMonitor(options?.onListenerError ?? onUnexpectedError, this._options?.leakWarningThreshold ?? _globalLeakWarningThreshold) : void 0;
-    this._perfMon = this._options?._profName ? new EventProfiling(this._options._profName) : void 0;
-    this._deliveryQueue = this._options?.deliveryQueue;
+    this.A = 0;
+    this.g = options;
+    this.j = _globalLeakWarningThreshold > 0 || this.g?.leakWarningThreshold ? new LeakageMonitor(options?.onListenerError ?? $nb, this.g?.leakWarningThreshold ?? _globalLeakWarningThreshold) : void 0;
+    this.m = this.g?._profName ? new $mf(this.g._profName) : void 0;
+    this.z = this.g?.deliveryQueue;
   }
   dispose() {
-    if (!this._disposed) {
-      this._disposed = true;
-      if (this._deliveryQueue?.current === this) {
-        this._deliveryQueue.reset();
+    if (!this.q) {
+      this.q = true;
+      if (this.z?.current === this) {
+        this.z.reset();
       }
-      if (this._listeners) {
+      if (this.w) {
         if (_enableDisposeWithListenerWarning) {
-          const listeners = this._listeners;
+          const listeners = this.w;
           queueMicrotask(() => {
             forEachListener(listeners, (l) => l.stack?.print());
           });
         }
-        this._listeners = void 0;
-        this._size = 0;
+        this.w = void 0;
+        this.A = 0;
       }
-      this._options?.onDidRemoveLastListener?.();
-      this._leakageMon?.dispose();
+      this.g?.onDidRemoveLastListener?.();
+      this.j?.dispose();
     }
   }
   /**
@@ -2627,18 +2627,18 @@ var Emitter = class {
    * to events from this Emitter
    */
   get event() {
-    this._event ??= (callback, thisArgs, disposables) => {
-      if (this._leakageMon && this._size > this._leakageMon.threshold ** 2) {
-        const message = `[${this._leakageMon.name}] REFUSES to accept new listeners because it exceeded its threshold by far (${this._size} vs ${this._leakageMon.threshold})`;
+    this.u ??= (callback, thisArgs, disposables) => {
+      if (this.j && this.A > this.j.threshold ** 2) {
+        const message = `[${this.j.name}] REFUSES to accept new listeners because it exceeded its threshold by far (${this.A} vs ${this.j.threshold})`;
         console.warn(message);
-        const tuple = this._leakageMon.getMostFrequentStack() ?? ["UNKNOWN stack", -1];
-        const error = new ListenerRefusalError(`${message}. HINT: Stack shows most frequent listener (${tuple[1]}-times)`, tuple[0]);
-        const errorHandler2 = this._options?.onListenerError || onUnexpectedError;
-        errorHandler2(error);
-        return Disposable.None;
+        const tuple = this.j.getMostFrequentStack() ?? ["UNKNOWN stack", -1];
+        const error = new $pf(`${message}. HINT: Stack shows most frequent listener (${tuple[1]}-times)`, tuple[0]);
+        const errorHandler = this.g?.onListenerError || $nb;
+        errorHandler(error);
+        return $Fd.None;
       }
-      if (this._disposed) {
-        return Disposable.None;
+      if (this.q) {
+        return $Fd.None;
       }
       if (thisArgs) {
         callback = callback.bind(thisArgs);
@@ -2646,91 +2646,91 @@ var Emitter = class {
       const contained = new UniqueContainer(callback);
       let removeMonitor;
       let stack;
-      if (this._leakageMon && this._size >= Math.ceil(this._leakageMon.threshold * 0.2)) {
+      if (this.j && this.A >= Math.ceil(this.j.threshold * 0.2)) {
         contained.stack = Stacktrace.create();
-        removeMonitor = this._leakageMon.check(contained.stack, this._size + 1);
+        removeMonitor = this.j.check(contained.stack, this.A + 1);
       }
       if (_enableDisposeWithListenerWarning) {
         contained.stack = stack ?? Stacktrace.create();
       }
-      if (!this._listeners) {
-        this._options?.onWillAddFirstListener?.(this);
-        this._listeners = contained;
-        this._options?.onDidAddFirstListener?.(this);
-      } else if (this._listeners instanceof UniqueContainer) {
-        this._deliveryQueue ??= new EventDeliveryQueuePrivate();
-        this._listeners = [this._listeners, contained];
+      if (!this.w) {
+        this.g?.onWillAddFirstListener?.(this);
+        this.w = contained;
+        this.g?.onDidAddFirstListener?.(this);
+      } else if (this.w instanceof UniqueContainer) {
+        this.z ??= new EventDeliveryQueuePrivate();
+        this.w = [this.w, contained];
       } else {
-        this._listeners.push(contained);
+        this.w.push(contained);
       }
-      this._options?.onDidAddListener?.(this);
-      this._size++;
-      const result = toDisposable(() => {
+      this.g?.onDidAddListener?.(this);
+      this.A++;
+      const result = $Dd(() => {
         removeMonitor?.();
-        this._removeListener(contained);
+        this.B(contained);
       });
       addToDisposables(result, disposables);
       return result;
     };
-    return this._event;
+    return this.u;
   }
-  _removeListener(listener) {
-    this._options?.onWillRemoveListener?.(this);
-    if (!this._listeners) {
+  B(listener) {
+    this.g?.onWillRemoveListener?.(this);
+    if (!this.w) {
       return;
     }
-    if (this._size === 1) {
-      this._listeners = void 0;
-      this._options?.onDidRemoveLastListener?.(this);
-      this._size = 0;
+    if (this.A === 1) {
+      this.w = void 0;
+      this.g?.onDidRemoveLastListener?.(this);
+      this.A = 0;
       return;
     }
-    const listeners = this._listeners;
+    const listeners = this.w;
     const index = listeners.indexOf(listener);
     if (index === -1) {
-      console.log("disposed?", this._disposed);
-      console.log("size?", this._size);
-      console.log("arr?", JSON.stringify(this._listeners));
+      console.log("disposed?", this.q);
+      console.log("size?", this.A);
+      console.log("arr?", JSON.stringify(this.w));
       throw new Error("Attempted to dispose unknown listener");
     }
-    this._size--;
+    this.A--;
     listeners[index] = void 0;
-    const adjustDeliveryQueue = this._deliveryQueue.current === this;
-    if (this._size * compactionThreshold <= listeners.length) {
+    const adjustDeliveryQueue = this.z.current === this;
+    if (this.A * compactionThreshold <= listeners.length) {
       let n = 0;
       for (let i = 0; i < listeners.length; i++) {
         if (listeners[i]) {
           listeners[n++] = listeners[i];
-        } else if (adjustDeliveryQueue && n < this._deliveryQueue.end) {
-          this._deliveryQueue.end--;
-          if (n < this._deliveryQueue.i) {
-            this._deliveryQueue.i--;
+        } else if (adjustDeliveryQueue && n < this.z.end) {
+          this.z.end--;
+          if (n < this.z.i) {
+            this.z.i--;
           }
         }
       }
       listeners.length = n;
     }
   }
-  _deliver(listener, value) {
+  C(listener, value) {
     if (!listener) {
       return;
     }
-    const errorHandler2 = this._options?.onListenerError || onUnexpectedError;
-    if (!errorHandler2) {
+    const errorHandler = this.g?.onListenerError || $nb;
+    if (!errorHandler) {
       listener.value(value);
       return;
     }
     try {
       listener.value(value);
     } catch (e) {
-      errorHandler2(e);
+      errorHandler(e);
     }
   }
   /** Delivers items in the queue. Assumes the queue is ready to go. */
-  _deliverQueue(dq) {
-    const listeners = dq.current._listeners;
+  D(dq) {
+    const listeners = dq.current.w;
     while (dq.i < dq.end) {
-      this._deliver(listeners[dq.i++], dq.value);
+      this.C(listeners[dq.i++], dq.value);
     }
     dq.reset();
   }
@@ -2739,23 +2739,23 @@ var Emitter = class {
    * subscribers
    */
   fire(event) {
-    if (this._deliveryQueue?.current) {
-      this._deliverQueue(this._deliveryQueue);
-      this._perfMon?.stop();
+    if (this.z?.current) {
+      this.D(this.z);
+      this.m?.stop();
     }
-    this._perfMon?.start(this._size);
-    if (!this._listeners) {
-    } else if (this._listeners instanceof UniqueContainer) {
-      this._deliver(this._listeners, event);
+    this.m?.start(this.A);
+    if (!this.w) {
+    } else if (this.w instanceof UniqueContainer) {
+      this.C(this.w, event);
     } else {
-      const dq = this._deliveryQueue;
-      dq.enqueue(this, event, this._listeners.length);
-      this._deliverQueue(dq);
+      const dq = this.z;
+      dq.enqueue(this, event, this.w.length);
+      this.D(dq);
     }
-    this._perfMon?.stop();
+    this.m?.stop();
   }
   hasListeners() {
-    return this._size > 0;
+    return this.A > 0;
   }
 };
 var EventDeliveryQueuePrivate = class {
@@ -2776,14 +2776,14 @@ var EventDeliveryQueuePrivate = class {
   }
 };
 function addToDisposables(result, disposables) {
-  if (disposables instanceof DisposableStore) {
+  if (disposables instanceof $Ed) {
     disposables.add(result);
   } else if (Array.isArray(disposables)) {
     disposables.push(result);
   }
 }
 function disposeAndRemove(result, disposables) {
-  if (disposables instanceof DisposableStore) {
+  if (disposables instanceof $Ed) {
     disposables.delete(result);
   } else if (Array.isArray(disposables)) {
     const index = disposables.indexOf(result);
@@ -2795,15 +2795,15 @@ function disposeAndRemove(result, disposables) {
 }
 
 // out-build/vs/nls.messages.js
-function getNLSMessages() {
+function $g() {
   return globalThis._VSCODE_NLS_MESSAGES;
 }
-function getNLSLanguage() {
+function $h() {
   return globalThis._VSCODE_NLS_LANGUAGE;
 }
 
 // out-build/vs/nls.js
-var isPseudo = getNLSLanguage() === "pseudo" || typeof document !== "undefined" && document.location && typeof document.location.hash === "string" && document.location.hash.indexOf("pseudo=true") >= 0;
+var isPseudo = $h() === "pseudo" || typeof document !== "undefined" && document.location && typeof document.location.hash === "string" && document.location.hash.indexOf("pseudo=true") >= 0;
 function _format(message, args) {
   let result;
   if (args.length === 0) {
@@ -2833,7 +2833,7 @@ function localize(data, message, ...args) {
   return _format(message, args);
 }
 function lookupMessage(index, fallback) {
-  const message = getNLSMessages()?.[index];
+  const message = $g()?.[index];
   if (typeof message !== "string") {
     if (typeof fallback === "string") {
       return fallback;
@@ -2844,7 +2844,7 @@ function lookupMessage(index, fallback) {
 }
 
 // out-build/vs/base/common/platform.js
-var LANGUAGE_DEFAULT = "en";
+var $k = "en";
 var _isWindows = false;
 var _isMacintosh = false;
 var _isLinux = false;
@@ -2856,8 +2856,8 @@ var _isIOS = false;
 var _isCI = false;
 var _isMobile = false;
 var _locale = void 0;
-var _language = LANGUAGE_DEFAULT;
-var _platformLocale = LANGUAGE_DEFAULT;
+var _language = $k;
+var _platformLocale = $k;
 var _translationsConfigFile = void 0;
 var _userAgent = void 0;
 var $globalThis = globalThis;
@@ -2876,15 +2876,15 @@ if (typeof nodeProcess === "object") {
   _isLinuxSnap = _isLinux && !!nodeProcess.env["SNAP"] && !!nodeProcess.env["SNAP_REVISION"];
   _isElectron = isElectronProcess;
   _isCI = !!nodeProcess.env["CI"] || !!nodeProcess.env["BUILD_ARTIFACTSTAGINGDIRECTORY"] || !!nodeProcess.env["GITHUB_WORKSPACE"];
-  _locale = LANGUAGE_DEFAULT;
-  _language = LANGUAGE_DEFAULT;
+  _locale = $k;
+  _language = $k;
   const rawNlsConfig = nodeProcess.env["VSCODE_NLS_CONFIG"];
   if (rawNlsConfig) {
     try {
       const nlsConfig = JSON.parse(rawNlsConfig);
       _locale = nlsConfig.userLocale;
       _platformLocale = nlsConfig.osLocale;
-      _language = nlsConfig.resolvedLanguage || LANGUAGE_DEFAULT;
+      _language = nlsConfig.resolvedLanguage || $k;
       _translationsConfigFile = nlsConfig.languagePack?.translationsConfigFile;
     } catch (e) {
     }
@@ -2898,7 +2898,7 @@ if (typeof nodeProcess === "object") {
   _isLinux = _userAgent.indexOf("Linux") >= 0;
   _isMobile = _userAgent?.indexOf("Mobi") >= 0;
   _isWeb = true;
-  _language = getNLSLanguage() || LANGUAGE_DEFAULT;
+  _language = $h() || $k;
   _locale = navigator.language.toLowerCase();
   _platformLocale = _locale;
 } else {
@@ -2919,39 +2919,39 @@ if (_isMacintosh) {
 } else if (_isLinux) {
   _platform = 2;
 }
-var isWindows = _isWindows;
-var isMacintosh = _isMacintosh;
-var isLinux = _isLinux;
-var isNative = _isNative;
-var isWeb = _isWeb;
-var isWebWorker = _isWeb && typeof $globalThis.importScripts === "function";
-var webWorkerOrigin = isWebWorker ? $globalThis.origin : void 0;
-var userAgent = _userAgent;
-var language = _language;
+var $m = _isWindows;
+var $n = _isMacintosh;
+var $o = _isLinux;
+var $q = _isNative;
+var $s = _isWeb;
+var $t = _isWeb && typeof $globalThis.importScripts === "function";
+var $u = $t ? $globalThis.origin : void 0;
+var $z = _userAgent;
+var $A = _language;
 var Language;
 (function(Language2) {
   function value() {
-    return language;
+    return $A;
   }
   Language2.value = value;
   function isDefaultVariant() {
-    if (language.length === 2) {
-      return language === "en";
-    } else if (language.length >= 3) {
-      return language[0] === "e" && language[1] === "n" && language[2] === "-";
+    if ($A.length === 2) {
+      return $A === "en";
+    } else if ($A.length >= 3) {
+      return $A[0] === "e" && $A[1] === "n" && $A[2] === "-";
     } else {
       return false;
     }
   }
   Language2.isDefaultVariant = isDefaultVariant;
   function isDefault() {
-    return language === "en";
+    return $A === "en";
   }
   Language2.isDefault = isDefault;
 })(Language || (Language = {}));
-var setTimeout0IsFaster = typeof $globalThis.postMessage === "function" && !$globalThis.importScripts;
-var setTimeout0 = (() => {
-  if (setTimeout0IsFaster) {
+var $E = typeof $globalThis.postMessage === "function" && !$globalThis.importScripts;
+var $F = (() => {
+  if ($E) {
     const pending = [];
     $globalThis.addEventListener("message", (e) => {
       if (e.data && e.data.vscodeScheduleAsyncWork) {
@@ -2983,11 +2983,11 @@ var OperatingSystem;
   OperatingSystem2[OperatingSystem2["Macintosh"] = 2] = "Macintosh";
   OperatingSystem2[OperatingSystem2["Linux"] = 3] = "Linux";
 })(OperatingSystem || (OperatingSystem = {}));
-var isChrome = !!(userAgent && userAgent.indexOf("Chrome") >= 0);
-var isFirefox = !!(userAgent && userAgent.indexOf("Firefox") >= 0);
-var isSafari = !!(!isChrome && (userAgent && userAgent.indexOf("Safari") >= 0));
-var isEdge = !!(userAgent && userAgent.indexOf("Edg/") >= 0);
-var isAndroid = !!(userAgent && userAgent.indexOf("Android") >= 0);
+var $I = !!($z && $z.indexOf("Chrome") >= 0);
+var $J = !!($z && $z.indexOf("Firefox") >= 0);
+var $K = !!(!$I && ($z && $z.indexOf("Safari") >= 0));
+var $L = !!($z && $z.indexOf("Edg/") >= 0);
+var $M = !!($z && $z.indexOf("Android") >= 0);
 
 // out-build/vs/base/common/cancellation.js
 var shortcutEvent = Object.freeze(function(callback, context) {
@@ -3022,92 +3022,92 @@ var CancellationToken;
 })(CancellationToken || (CancellationToken = {}));
 var MutableToken = class {
   constructor() {
-    this._isCancelled = false;
-    this._emitter = null;
+    this.a = false;
+    this.b = null;
   }
   cancel() {
-    if (!this._isCancelled) {
-      this._isCancelled = true;
-      if (this._emitter) {
-        this._emitter.fire(void 0);
+    if (!this.a) {
+      this.a = true;
+      if (this.b) {
+        this.b.fire(void 0);
         this.dispose();
       }
     }
   }
   get isCancellationRequested() {
-    return this._isCancelled;
+    return this.a;
   }
   get onCancellationRequested() {
-    if (this._isCancelled) {
+    if (this.a) {
       return shortcutEvent;
     }
-    if (!this._emitter) {
-      this._emitter = new Emitter();
+    if (!this.b) {
+      this.b = new $qf();
     }
-    return this._emitter.event;
+    return this.b.event;
   }
   dispose() {
-    if (this._emitter) {
-      this._emitter.dispose();
-      this._emitter = null;
+    if (this.b) {
+      this.b.dispose();
+      this.b = null;
     }
   }
 };
-var CancellationTokenSource = class {
+var $Cf = class {
   constructor(parent) {
-    this._token = void 0;
-    this._parentListener = void 0;
-    this._parentListener = parent && parent.onCancellationRequested(this.cancel, this);
+    this.f = void 0;
+    this.g = void 0;
+    this.g = parent && parent.onCancellationRequested(this.cancel, this);
   }
   get token() {
-    if (!this._token) {
-      this._token = new MutableToken();
+    if (!this.f) {
+      this.f = new MutableToken();
     }
-    return this._token;
+    return this.f;
   }
   cancel() {
-    if (!this._token) {
-      this._token = CancellationToken.Cancelled;
-    } else if (this._token instanceof MutableToken) {
-      this._token.cancel();
+    if (!this.f) {
+      this.f = CancellationToken.Cancelled;
+    } else if (this.f instanceof MutableToken) {
+      this.f.cancel();
     }
   }
   dispose(cancel = false) {
     if (cancel) {
       this.cancel();
     }
-    this._parentListener?.dispose();
-    if (!this._token) {
-      this._token = CancellationToken.None;
-    } else if (this._token instanceof MutableToken) {
-      this._token.dispose();
+    this.g?.dispose();
+    if (!this.f) {
+      this.f = CancellationToken.None;
+    } else if (this.f instanceof MutableToken) {
+      this.f.dispose();
     }
   }
 };
 
 // out-build/vs/base/common/cache.js
-function identity(t) {
+function $Gf(t) {
   return t;
 }
-var LRUCachedFunction = class {
+var $Hf = class {
   constructor(arg1, arg2) {
-    this.lastCache = void 0;
-    this.lastArgKey = void 0;
+    this.a = void 0;
+    this.b = void 0;
     if (typeof arg1 === "function") {
-      this._fn = arg1;
-      this._computeKey = identity;
+      this.c = arg1;
+      this.d = $Gf;
     } else {
-      this._fn = arg2;
-      this._computeKey = arg1.getCacheKey;
+      this.c = arg2;
+      this.d = arg1.getCacheKey;
     }
   }
   get(arg) {
-    const key = this._computeKey(arg);
-    if (this.lastArgKey !== key) {
-      this.lastArgKey = key;
-      this.lastCache = this._fn(arg);
+    const key = this.d(arg);
+    if (this.b !== key) {
+      this.b = key;
+      this.a = this.c(arg);
     }
-    return this.lastCache;
+    return this.a;
   }
 };
 
@@ -3118,16 +3118,16 @@ var LazyValueState;
   LazyValueState2[LazyValueState2["Running"] = 1] = "Running";
   LazyValueState2[LazyValueState2["Completed"] = 2] = "Completed";
 })(LazyValueState || (LazyValueState = {}));
-var Lazy = class {
-  constructor(executor) {
-    this.executor = executor;
-    this._state = LazyValueState.Uninitialized;
+var $Kf = class {
+  constructor(d) {
+    this.d = d;
+    this.a = LazyValueState.Uninitialized;
   }
   /**
    * True if the lazy value has been resolved.
    */
   get hasValue() {
-    return this._state === LazyValueState.Completed;
+    return this.a === LazyValueState.Completed;
   }
   /**
    * Get the wrapped value.
@@ -3136,46 +3136,46 @@ var Lazy = class {
    * resolved once. `getValue` will re-throw exceptions that are hit while resolving the value
    */
   get value() {
-    if (this._state === LazyValueState.Uninitialized) {
-      this._state = LazyValueState.Running;
+    if (this.a === LazyValueState.Uninitialized) {
+      this.a = LazyValueState.Running;
       try {
-        this._value = this.executor();
+        this.b = this.d();
       } catch (err) {
-        this._error = err;
+        this.c = err;
       } finally {
-        this._state = LazyValueState.Completed;
+        this.a = LazyValueState.Completed;
       }
-    } else if (this._state === LazyValueState.Running) {
+    } else if (this.a === LazyValueState.Running) {
       throw new Error("Cannot read the value of a lazy that is being initialized");
     }
-    if (this._error) {
-      throw this._error;
+    if (this.c) {
+      throw this.c;
     }
-    return this._value;
+    return this.b;
   }
   /**
    * Get the wrapped value without forcing evaluation.
    */
   get rawValue() {
-    return this._value;
+    return this.b;
   }
 };
 
 // out-build/vs/base/common/strings.js
-function escapeRegExpCharacters(value) {
+function $Sf(value) {
   return value.replace(/[\\\{\}\*\+\?\|\^\$\.\[\]\(\)]/g, "\\$&");
 }
-function regExpLeadsToEndlessLoop(regexp) {
+function $2f(regexp) {
   if (regexp.source === "^" || regexp.source === "^$" || regexp.source === "$" || regexp.source === "^\\s*$") {
     return false;
   }
   const match = regexp.exec("");
   return !!(match && regexp.lastIndex === 0);
 }
-function splitLines(str) {
+function $4f(str) {
   return str.split(/\r\n|\r|\n/);
 }
-function firstNonWhitespaceIndex(str) {
+function $7f(str) {
   for (let i = 0, len = str.length; i < len; i++) {
     const chCode = str.charCodeAt(i);
     if (chCode !== 32 && chCode !== 9) {
@@ -3184,7 +3184,7 @@ function firstNonWhitespaceIndex(str) {
   }
   return -1;
 }
-function lastNonWhitespaceIndex(str, startIndex = str.length - 1) {
+function $9f(str, startIndex = str.length - 1) {
   for (let i = startIndex; i >= 0; i--) {
     const chCode = str.charCodeAt(i);
     if (chCode !== 32 && chCode !== 9) {
@@ -3193,7 +3193,7 @@ function lastNonWhitespaceIndex(str, startIndex = str.length - 1) {
   }
   return -1;
 }
-function compare(a, b) {
+function $_f(a, b) {
   if (a < b) {
     return -1;
   } else if (a > b) {
@@ -3202,7 +3202,7 @@ function compare(a, b) {
     return 0;
   }
 }
-function compareSubstring(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
+function $ag(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   for (; aStart < aEnd && bStart < bEnd; aStart++, bStart++) {
     const codeA = a.charCodeAt(aStart);
     const codeB = b.charCodeAt(bStart);
@@ -3221,7 +3221,7 @@ function compareSubstring(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = 
   }
   return 0;
 }
-function compareSubstringIgnoreCase(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
+function $cg(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   for (; aStart < aEnd && bStart < bEnd; aStart++, bStart++) {
     let codeA = a.charCodeAt(aStart);
     let codeB = b.charCodeAt(bStart);
@@ -3229,12 +3229,12 @@ function compareSubstringIgnoreCase(a, b, aStart = 0, aEnd = a.length, bStart = 
       continue;
     }
     if (codeA >= 128 || codeB >= 128) {
-      return compareSubstring(a.toLowerCase(), b.toLowerCase(), aStart, aEnd, bStart, bEnd);
+      return $ag(a.toLowerCase(), b.toLowerCase(), aStart, aEnd, bStart, bEnd);
     }
-    if (isLowerAsciiLetter(codeA)) {
+    if ($eg(codeA)) {
       codeA -= 32;
     }
-    if (isLowerAsciiLetter(codeB)) {
+    if ($eg(codeB)) {
       codeB -= 32;
     }
     const diff = codeA - codeB;
@@ -3252,20 +3252,20 @@ function compareSubstringIgnoreCase(a, b, aStart = 0, aEnd = a.length, bStart = 
   }
   return 0;
 }
-function isLowerAsciiLetter(code) {
+function $eg(code) {
   return code >= 97 && code <= 122;
 }
-function isUpperAsciiLetter(code) {
+function $fg(code) {
   return code >= 65 && code <= 90;
 }
-function equalsIgnoreCase(a, b) {
-  return a.length === b.length && compareSubstringIgnoreCase(a, b) === 0;
+function $gg(a, b) {
+  return a.length === b.length && $cg(a, b) === 0;
 }
-function startsWithIgnoreCase(str, candidate) {
+function $ig(str, candidate) {
   const len = candidate.length;
-  return len <= str.length && compareSubstringIgnoreCase(str, candidate, 0, len) === 0;
+  return len <= str.length && $cg(str, candidate, 0, len) === 0;
 }
-function commonPrefixLength(a, b) {
+function $kg(a, b) {
   const len = Math.min(a.length, b.length);
   let i;
   for (i = 0; i < len; i++) {
@@ -3275,7 +3275,7 @@ function commonPrefixLength(a, b) {
   }
   return len;
 }
-function commonSuffixLength(a, b) {
+function $lg(a, b) {
   const len = Math.min(a.length, b.length);
   let i;
   const aLastIndex = a.length - 1;
@@ -3287,27 +3287,27 @@ function commonSuffixLength(a, b) {
   }
   return len;
 }
-function isHighSurrogate(charCode) {
+function $mg(charCode) {
   return 55296 <= charCode && charCode <= 56319;
 }
-function isLowSurrogate(charCode) {
+function $ng(charCode) {
   return 56320 <= charCode && charCode <= 57343;
 }
-function computeCodePoint(highSurrogate, lowSurrogate) {
+function $og(highSurrogate, lowSurrogate) {
   return (highSurrogate - 55296 << 10) + (lowSurrogate - 56320) + 65536;
 }
-function getNextCodePoint(str, len, offset) {
+function $pg(str, len, offset) {
   const charCode = str.charCodeAt(offset);
-  if (isHighSurrogate(charCode) && offset + 1 < len) {
+  if ($mg(charCode) && offset + 1 < len) {
     const nextCharCode = str.charCodeAt(offset + 1);
-    if (isLowSurrogate(nextCharCode)) {
-      return computeCodePoint(charCode, nextCharCode);
+    if ($ng(nextCharCode)) {
+      return $og(charCode, nextCharCode);
     }
   }
   return charCode;
 }
 var IS_BASIC_ASCII = /^[\t\n\r\x20-\x7E]*$/;
-function isBasicASCII(str) {
+function $xg(str) {
   return IS_BASIC_ASCII.test(str);
 }
 var CSI_SEQUENCE = /(?:\x1b\[|\x9b)[=?>!]?[\d;:]*["$#'* ]?[a-zA-Z@^`{}|~]/;
@@ -3318,7 +3318,7 @@ var CONTROL_SEQUENCES = new RegExp("(?:" + [
   OSC_SEQUENCE.source,
   ESC_SEQUENCE.source
 ].join("|") + ")", "g");
-var UTF8_BOM_CHARACTER = String.fromCharCode(
+var $Gg = String.fromCharCode(
   65279
   /* CharCode.UTF8_BOM */
 );
@@ -3342,16 +3342,16 @@ var GraphemeBreakType;
 })(GraphemeBreakType || (GraphemeBreakType = {}));
 var GraphemeBreakTree = class _GraphemeBreakTree {
   static {
-    this._INSTANCE = null;
+    this.c = null;
   }
   static getInstance() {
-    if (!_GraphemeBreakTree._INSTANCE) {
-      _GraphemeBreakTree._INSTANCE = new _GraphemeBreakTree();
+    if (!_GraphemeBreakTree.c) {
+      _GraphemeBreakTree.c = new _GraphemeBreakTree();
     }
-    return _GraphemeBreakTree._INSTANCE;
+    return _GraphemeBreakTree.c;
   }
   constructor() {
-    this._data = getGraphemeBreakRawData();
+    this.d = getGraphemeBreakRawData();
   }
   getGraphemeBreakType(codePoint) {
     if (codePoint < 32) {
@@ -3366,7 +3366,7 @@ var GraphemeBreakTree = class _GraphemeBreakTree {
     if (codePoint < 127) {
       return 0;
     }
-    const data = this._data;
+    const data = this.d;
     const nodeCount = data.length / 3;
     let nodeIndex = 1;
     while (nodeIndex <= nodeCount) {
@@ -3391,14 +3391,14 @@ var CodePoint;
   CodePoint2[CodePoint2["enclosingKeyCap"] = 8419] = "enclosingKeyCap";
   CodePoint2[CodePoint2["space"] = 32] = "space";
 })(CodePoint || (CodePoint = {}));
-var AmbiguousCharacters = class _AmbiguousCharacters {
+var $Rg = class _$Rg {
   static {
-    this.ambiguousCharacterData = new Lazy(() => {
+    this.c = new $Kf(() => {
       return JSON.parse('{"_common":[8232,32,8233,32,5760,32,8192,32,8193,32,8194,32,8195,32,8196,32,8197,32,8198,32,8200,32,8201,32,8202,32,8287,32,8199,32,8239,32,2042,95,65101,95,65102,95,65103,95,8208,45,8209,45,8210,45,65112,45,1748,45,8259,45,727,45,8722,45,10134,45,11450,45,1549,44,1643,44,184,44,42233,44,894,59,2307,58,2691,58,1417,58,1795,58,1796,58,5868,58,65072,58,6147,58,6153,58,8282,58,1475,58,760,58,42889,58,8758,58,720,58,42237,58,451,33,11601,33,660,63,577,63,2429,63,5038,63,42731,63,119149,46,8228,46,1793,46,1794,46,42510,46,68176,46,1632,46,1776,46,42232,46,1373,96,65287,96,8219,96,1523,96,8242,96,1370,96,8175,96,65344,96,900,96,8189,96,8125,96,8127,96,8190,96,697,96,884,96,712,96,714,96,715,96,756,96,699,96,701,96,700,96,702,96,42892,96,1497,96,2036,96,2037,96,5194,96,5836,96,94033,96,94034,96,65339,91,10088,40,10098,40,12308,40,64830,40,65341,93,10089,41,10099,41,12309,41,64831,41,10100,123,119060,123,10101,125,65342,94,8270,42,1645,42,8727,42,66335,42,5941,47,8257,47,8725,47,8260,47,9585,47,10187,47,10744,47,119354,47,12755,47,12339,47,11462,47,20031,47,12035,47,65340,92,65128,92,8726,92,10189,92,10741,92,10745,92,119311,92,119355,92,12756,92,20022,92,12034,92,42872,38,708,94,710,94,5869,43,10133,43,66203,43,8249,60,10094,60,706,60,119350,60,5176,60,5810,60,5120,61,11840,61,12448,61,42239,61,8250,62,10095,62,707,62,119351,62,5171,62,94015,62,8275,126,732,126,8128,126,8764,126,65372,124,65293,45,118002,50,120784,50,120794,50,120804,50,120814,50,120824,50,130034,50,42842,50,423,50,1000,50,42564,50,5311,50,42735,50,119302,51,118003,51,120785,51,120795,51,120805,51,120815,51,120825,51,130035,51,42923,51,540,51,439,51,42858,51,11468,51,1248,51,94011,51,71882,51,118004,52,120786,52,120796,52,120806,52,120816,52,120826,52,130036,52,5070,52,71855,52,118005,53,120787,53,120797,53,120807,53,120817,53,120827,53,130037,53,444,53,71867,53,118006,54,120788,54,120798,54,120808,54,120818,54,120828,54,130038,54,11474,54,5102,54,71893,54,119314,55,118007,55,120789,55,120799,55,120809,55,120819,55,120829,55,130039,55,66770,55,71878,55,2819,56,2538,56,2666,56,125131,56,118008,56,120790,56,120800,56,120810,56,120820,56,120830,56,130040,56,547,56,546,56,66330,56,2663,57,2920,57,2541,57,3437,57,118009,57,120791,57,120801,57,120811,57,120821,57,120831,57,130041,57,42862,57,11466,57,71884,57,71852,57,71894,57,9082,97,65345,97,119834,97,119886,97,119938,97,119990,97,120042,97,120094,97,120146,97,120198,97,120250,97,120302,97,120354,97,120406,97,120458,97,593,97,945,97,120514,97,120572,97,120630,97,120688,97,120746,97,65313,65,117974,65,119808,65,119860,65,119912,65,119964,65,120016,65,120068,65,120120,65,120172,65,120224,65,120276,65,120328,65,120380,65,120432,65,913,65,120488,65,120546,65,120604,65,120662,65,120720,65,5034,65,5573,65,42222,65,94016,65,66208,65,119835,98,119887,98,119939,98,119991,98,120043,98,120095,98,120147,98,120199,98,120251,98,120303,98,120355,98,120407,98,120459,98,388,98,5071,98,5234,98,5551,98,65314,66,8492,66,117975,66,119809,66,119861,66,119913,66,120017,66,120069,66,120121,66,120173,66,120225,66,120277,66,120329,66,120381,66,120433,66,42932,66,914,66,120489,66,120547,66,120605,66,120663,66,120721,66,5108,66,5623,66,42192,66,66178,66,66209,66,66305,66,65347,99,8573,99,119836,99,119888,99,119940,99,119992,99,120044,99,120096,99,120148,99,120200,99,120252,99,120304,99,120356,99,120408,99,120460,99,7428,99,1010,99,11429,99,43951,99,66621,99,128844,67,71913,67,71922,67,65315,67,8557,67,8450,67,8493,67,117976,67,119810,67,119862,67,119914,67,119966,67,120018,67,120174,67,120226,67,120278,67,120330,67,120382,67,120434,67,1017,67,11428,67,5087,67,42202,67,66210,67,66306,67,66581,67,66844,67,8574,100,8518,100,119837,100,119889,100,119941,100,119993,100,120045,100,120097,100,120149,100,120201,100,120253,100,120305,100,120357,100,120409,100,120461,100,1281,100,5095,100,5231,100,42194,100,8558,68,8517,68,117977,68,119811,68,119863,68,119915,68,119967,68,120019,68,120071,68,120123,68,120175,68,120227,68,120279,68,120331,68,120383,68,120435,68,5024,68,5598,68,5610,68,42195,68,8494,101,65349,101,8495,101,8519,101,119838,101,119890,101,119942,101,120046,101,120098,101,120150,101,120202,101,120254,101,120306,101,120358,101,120410,101,120462,101,43826,101,1213,101,8959,69,65317,69,8496,69,117978,69,119812,69,119864,69,119916,69,120020,69,120072,69,120124,69,120176,69,120228,69,120280,69,120332,69,120384,69,120436,69,917,69,120492,69,120550,69,120608,69,120666,69,120724,69,11577,69,5036,69,42224,69,71846,69,71854,69,66182,69,119839,102,119891,102,119943,102,119995,102,120047,102,120099,102,120151,102,120203,102,120255,102,120307,102,120359,102,120411,102,120463,102,43829,102,42905,102,383,102,7837,102,1412,102,119315,70,8497,70,117979,70,119813,70,119865,70,119917,70,120021,70,120073,70,120125,70,120177,70,120229,70,120281,70,120333,70,120385,70,120437,70,42904,70,988,70,120778,70,5556,70,42205,70,71874,70,71842,70,66183,70,66213,70,66853,70,65351,103,8458,103,119840,103,119892,103,119944,103,120048,103,120100,103,120152,103,120204,103,120256,103,120308,103,120360,103,120412,103,120464,103,609,103,7555,103,397,103,1409,103,117980,71,119814,71,119866,71,119918,71,119970,71,120022,71,120074,71,120126,71,120178,71,120230,71,120282,71,120334,71,120386,71,120438,71,1292,71,5056,71,5107,71,42198,71,65352,104,8462,104,119841,104,119945,104,119997,104,120049,104,120101,104,120153,104,120205,104,120257,104,120309,104,120361,104,120413,104,120465,104,1211,104,1392,104,5058,104,65320,72,8459,72,8460,72,8461,72,117981,72,119815,72,119867,72,119919,72,120023,72,120179,72,120231,72,120283,72,120335,72,120387,72,120439,72,919,72,120494,72,120552,72,120610,72,120668,72,120726,72,11406,72,5051,72,5500,72,42215,72,66255,72,731,105,9075,105,65353,105,8560,105,8505,105,8520,105,119842,105,119894,105,119946,105,119998,105,120050,105,120102,105,120154,105,120206,105,120258,105,120310,105,120362,105,120414,105,120466,105,120484,105,618,105,617,105,953,105,8126,105,890,105,120522,105,120580,105,120638,105,120696,105,120754,105,1110,105,42567,105,1231,105,43893,105,5029,105,71875,105,65354,106,8521,106,119843,106,119895,106,119947,106,119999,106,120051,106,120103,106,120155,106,120207,106,120259,106,120311,106,120363,106,120415,106,120467,106,1011,106,1112,106,65322,74,117983,74,119817,74,119869,74,119921,74,119973,74,120025,74,120077,74,120129,74,120181,74,120233,74,120285,74,120337,74,120389,74,120441,74,42930,74,895,74,1032,74,5035,74,5261,74,42201,74,119844,107,119896,107,119948,107,120000,107,120052,107,120104,107,120156,107,120208,107,120260,107,120312,107,120364,107,120416,107,120468,107,8490,75,65323,75,117984,75,119818,75,119870,75,119922,75,119974,75,120026,75,120078,75,120130,75,120182,75,120234,75,120286,75,120338,75,120390,75,120442,75,922,75,120497,75,120555,75,120613,75,120671,75,120729,75,11412,75,5094,75,5845,75,42199,75,66840,75,1472,108,8739,73,9213,73,65512,73,1633,108,1777,73,66336,108,125127,108,118001,108,120783,73,120793,73,120803,73,120813,73,120823,73,130033,73,65321,73,8544,73,8464,73,8465,73,117982,108,119816,73,119868,73,119920,73,120024,73,120128,73,120180,73,120232,73,120284,73,120336,73,120388,73,120440,73,65356,108,8572,73,8467,108,119845,108,119897,108,119949,108,120001,108,120053,108,120105,73,120157,73,120209,73,120261,73,120313,73,120365,73,120417,73,120469,73,448,73,120496,73,120554,73,120612,73,120670,73,120728,73,11410,73,1030,73,1216,73,1493,108,1503,108,1575,108,126464,108,126592,108,65166,108,65165,108,1994,108,11599,73,5825,73,42226,73,93992,73,66186,124,66313,124,119338,76,8556,76,8466,76,117985,76,119819,76,119871,76,119923,76,120027,76,120079,76,120131,76,120183,76,120235,76,120287,76,120339,76,120391,76,120443,76,11472,76,5086,76,5290,76,42209,76,93974,76,71843,76,71858,76,66587,76,66854,76,65325,77,8559,77,8499,77,117986,77,119820,77,119872,77,119924,77,120028,77,120080,77,120132,77,120184,77,120236,77,120288,77,120340,77,120392,77,120444,77,924,77,120499,77,120557,77,120615,77,120673,77,120731,77,1018,77,11416,77,5047,77,5616,77,5846,77,42207,77,66224,77,66321,77,119847,110,119899,110,119951,110,120003,110,120055,110,120107,110,120159,110,120211,110,120263,110,120315,110,120367,110,120419,110,120471,110,1400,110,1404,110,65326,78,8469,78,117987,78,119821,78,119873,78,119925,78,119977,78,120029,78,120081,78,120185,78,120237,78,120289,78,120341,78,120393,78,120445,78,925,78,120500,78,120558,78,120616,78,120674,78,120732,78,11418,78,42208,78,66835,78,3074,111,3202,111,3330,111,3458,111,2406,111,2662,111,2790,111,3046,111,3174,111,3302,111,3430,111,3664,111,3792,111,4160,111,1637,111,1781,111,65359,111,8500,111,119848,111,119900,111,119952,111,120056,111,120108,111,120160,111,120212,111,120264,111,120316,111,120368,111,120420,111,120472,111,7439,111,7441,111,43837,111,959,111,120528,111,120586,111,120644,111,120702,111,120760,111,963,111,120532,111,120590,111,120648,111,120706,111,120764,111,11423,111,4351,111,1413,111,1505,111,1607,111,126500,111,126564,111,126596,111,65259,111,65260,111,65258,111,65257,111,1726,111,64428,111,64429,111,64427,111,64426,111,1729,111,64424,111,64425,111,64423,111,64422,111,1749,111,3360,111,4125,111,66794,111,71880,111,71895,111,66604,111,1984,79,2534,79,2918,79,12295,79,70864,79,71904,79,118000,79,120782,79,120792,79,120802,79,120812,79,120822,79,130032,79,65327,79,117988,79,119822,79,119874,79,119926,79,119978,79,120030,79,120082,79,120134,79,120186,79,120238,79,120290,79,120342,79,120394,79,120446,79,927,79,120502,79,120560,79,120618,79,120676,79,120734,79,11422,79,1365,79,11604,79,4816,79,2848,79,66754,79,42227,79,71861,79,66194,79,66219,79,66564,79,66838,79,9076,112,65360,112,119849,112,119901,112,119953,112,120005,112,120057,112,120109,112,120161,112,120213,112,120265,112,120317,112,120369,112,120421,112,120473,112,961,112,120530,112,120544,112,120588,112,120602,112,120646,112,120660,112,120704,112,120718,112,120762,112,120776,112,11427,112,65328,80,8473,80,117989,80,119823,80,119875,80,119927,80,119979,80,120031,80,120083,80,120187,80,120239,80,120291,80,120343,80,120395,80,120447,80,929,80,120504,80,120562,80,120620,80,120678,80,120736,80,11426,80,5090,80,5229,80,42193,80,66197,80,119850,113,119902,113,119954,113,120006,113,120058,113,120110,113,120162,113,120214,113,120266,113,120318,113,120370,113,120422,113,120474,113,1307,113,1379,113,1382,113,8474,81,117990,81,119824,81,119876,81,119928,81,119980,81,120032,81,120084,81,120188,81,120240,81,120292,81,120344,81,120396,81,120448,81,11605,81,119851,114,119903,114,119955,114,120007,114,120059,114,120111,114,120163,114,120215,114,120267,114,120319,114,120371,114,120423,114,120475,114,43847,114,43848,114,7462,114,11397,114,43905,114,119318,82,8475,82,8476,82,8477,82,117991,82,119825,82,119877,82,119929,82,120033,82,120189,82,120241,82,120293,82,120345,82,120397,82,120449,82,422,82,5025,82,5074,82,66740,82,5511,82,42211,82,94005,82,65363,115,119852,115,119904,115,119956,115,120008,115,120060,115,120112,115,120164,115,120216,115,120268,115,120320,115,120372,115,120424,115,120476,115,42801,115,445,115,1109,115,43946,115,71873,115,66632,115,65331,83,117992,83,119826,83,119878,83,119930,83,119982,83,120034,83,120086,83,120138,83,120190,83,120242,83,120294,83,120346,83,120398,83,120450,83,1029,83,1359,83,5077,83,5082,83,42210,83,94010,83,66198,83,66592,83,119853,116,119905,116,119957,116,120009,116,120061,116,120113,116,120165,116,120217,116,120269,116,120321,116,120373,116,120425,116,120477,116,8868,84,10201,84,128872,84,65332,84,117993,84,119827,84,119879,84,119931,84,119983,84,120035,84,120087,84,120139,84,120191,84,120243,84,120295,84,120347,84,120399,84,120451,84,932,84,120507,84,120565,84,120623,84,120681,84,120739,84,11430,84,5026,84,42196,84,93962,84,71868,84,66199,84,66225,84,66325,84,119854,117,119906,117,119958,117,120010,117,120062,117,120114,117,120166,117,120218,117,120270,117,120322,117,120374,117,120426,117,120478,117,42911,117,7452,117,43854,117,43858,117,651,117,965,117,120534,117,120592,117,120650,117,120708,117,120766,117,1405,117,66806,117,71896,117,8746,85,8899,85,117994,85,119828,85,119880,85,119932,85,119984,85,120036,85,120088,85,120140,85,120192,85,120244,85,120296,85,120348,85,120400,85,120452,85,1357,85,4608,85,66766,85,5196,85,42228,85,94018,85,71864,85,8744,118,8897,118,65366,118,8564,118,119855,118,119907,118,119959,118,120011,118,120063,118,120115,118,120167,118,120219,118,120271,118,120323,118,120375,118,120427,118,120479,118,7456,118,957,118,120526,118,120584,118,120642,118,120700,118,120758,118,1141,118,1496,118,71430,118,43945,118,71872,118,119309,86,1639,86,1783,86,8548,86,117995,86,119829,86,119881,86,119933,86,119985,86,120037,86,120089,86,120141,86,120193,86,120245,86,120297,86,120349,86,120401,86,120453,86,1140,86,11576,86,5081,86,5167,86,42719,86,42214,86,93960,86,71840,86,66845,86,623,119,119856,119,119908,119,119960,119,120012,119,120064,119,120116,119,120168,119,120220,119,120272,119,120324,119,120376,119,120428,119,120480,119,7457,119,1121,119,1309,119,1377,119,71434,119,71438,119,71439,119,43907,119,71910,87,71919,87,117996,87,119830,87,119882,87,119934,87,119986,87,120038,87,120090,87,120142,87,120194,87,120246,87,120298,87,120350,87,120402,87,120454,87,1308,87,5043,87,5076,87,42218,87,5742,120,10539,120,10540,120,10799,120,65368,120,8569,120,119857,120,119909,120,119961,120,120013,120,120065,120,120117,120,120169,120,120221,120,120273,120,120325,120,120377,120,120429,120,120481,120,5441,120,5501,120,5741,88,9587,88,66338,88,71916,88,65336,88,8553,88,117997,88,119831,88,119883,88,119935,88,119987,88,120039,88,120091,88,120143,88,120195,88,120247,88,120299,88,120351,88,120403,88,120455,88,42931,88,935,88,120510,88,120568,88,120626,88,120684,88,120742,88,11436,88,11613,88,5815,88,42219,88,66192,88,66228,88,66327,88,66855,88,611,121,7564,121,65369,121,119858,121,119910,121,119962,121,120014,121,120066,121,120118,121,120170,121,120222,121,120274,121,120326,121,120378,121,120430,121,120482,121,655,121,7935,121,43866,121,947,121,8509,121,120516,121,120574,121,120632,121,120690,121,120748,121,1199,121,4327,121,71900,121,65337,89,117998,89,119832,89,119884,89,119936,89,119988,89,120040,89,120092,89,120144,89,120196,89,120248,89,120300,89,120352,89,120404,89,120456,89,933,89,978,89,120508,89,120566,89,120624,89,120682,89,120740,89,11432,89,1198,89,5033,89,5053,89,42220,89,94019,89,71844,89,66226,89,119859,122,119911,122,119963,122,120015,122,120067,122,120119,122,120171,122,120223,122,120275,122,120327,122,120379,122,120431,122,120483,122,7458,122,43923,122,71876,122,71909,90,66293,90,65338,90,8484,90,8488,90,117999,90,119833,90,119885,90,119937,90,119989,90,120041,90,120197,90,120249,90,120301,90,120353,90,120405,90,120457,90,918,90,120493,90,120551,90,120609,90,120667,90,120725,90,5059,90,42204,90,71849,90,65282,34,65283,35,65284,36,65285,37,65286,38,65290,42,65291,43,65294,46,65295,47,65296,48,65298,50,65299,51,65300,52,65301,53,65302,54,65303,55,65304,56,65305,57,65308,60,65309,61,65310,62,65312,64,65316,68,65318,70,65319,71,65324,76,65329,81,65330,82,65333,85,65334,86,65335,87,65343,95,65346,98,65348,100,65350,102,65355,107,65357,109,65358,110,65361,113,65362,114,65364,116,65365,117,65367,119,65370,122,65371,123,65373,125,119846,109],"_default":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8216,96,8217,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"cs":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"de":[65374,126,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"es":[8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"fr":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"it":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"ja":[8211,45,8218,44,65281,33,8216,96,8245,96,180,96,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65292,44,65297,49,65307,59],"ko":[8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"pl":[65374,126,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"pt-BR":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"qps-ploc":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"ru":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,305,105,921,73,1009,112,215,120,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"tr":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"zh-hans":[160,32,65374,126,8218,44,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65297,49],"zh-hant":[8211,45,65374,126,8218,44,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89]}');
     });
   }
   static {
-    this.cache = new LRUCachedFunction((localesStr) => {
+    this.d = new $Hf((localesStr) => {
       const locales = localesStr.split(",");
       function arrayToMap(arr) {
         const result = /* @__PURE__ */ new Map();
@@ -3426,7 +3426,7 @@ var AmbiguousCharacters = class _AmbiguousCharacters {
         }
         return result;
       }
-      const data = this.ambiguousCharacterData.value;
+      const data = this.c.value;
       let filteredLocales = locales.filter((l) => !l.startsWith("_") && Object.hasOwn(data, l));
       if (filteredLocales.length === 0) {
         filteredLocales = ["_default"];
@@ -3438,23 +3438,23 @@ var AmbiguousCharacters = class _AmbiguousCharacters {
       }
       const commonMap = arrayToMap(data["_common"]);
       const map = mergeMaps(commonMap, languageSpecificMap);
-      return new _AmbiguousCharacters(map);
+      return new _$Rg(map);
     });
   }
   static getInstance(locales) {
-    return _AmbiguousCharacters.cache.get(Array.from(locales).join(","));
+    return _$Rg.d.get(Array.from(locales).join(","));
   }
   static {
-    this._locales = new Lazy(() => Object.keys(_AmbiguousCharacters.ambiguousCharacterData.value).filter((k) => !k.startsWith("_")));
+    this.e = new $Kf(() => Object.keys(_$Rg.c.value).filter((k) => !k.startsWith("_")));
   }
   static getLocales() {
-    return _AmbiguousCharacters._locales.value;
+    return _$Rg.e.value;
   }
-  constructor(confusableDictionary) {
-    this.confusableDictionary = confusableDictionary;
+  constructor(f) {
+    this.f = f;
   }
   isAmbiguous(codePoint) {
-    return this.confusableDictionary.has(codePoint);
+    return this.f.has(codePoint);
   }
   containsAmbiguousCharacter(str) {
     for (let i = 0; i < str.length; i++) {
@@ -3470,39 +3470,39 @@ var AmbiguousCharacters = class _AmbiguousCharacters {
    * or undefined if such code point does note exist.
    */
   getPrimaryConfusable(codePoint) {
-    return this.confusableDictionary.get(codePoint);
+    return this.f.get(codePoint);
   }
   getConfusableCodePoints() {
-    return new Set(this.confusableDictionary.keys());
+    return new Set(this.f.keys());
   }
 };
-var InvisibleCharacters = class _InvisibleCharacters {
-  static getRawData() {
+var $Sg = class _$Sg {
+  static c() {
     return JSON.parse('{"_common":[11,12,13,127,847,1564,4447,4448,6068,6069,6155,6156,6157,6158,7355,7356,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8204,8205,8206,8207,8234,8235,8236,8237,8238,8239,8287,8288,8289,8290,8291,8292,8293,8294,8295,8296,8297,8298,8299,8300,8301,8302,8303,10240,12644,65024,65025,65026,65027,65028,65029,65030,65031,65032,65033,65034,65035,65036,65037,65038,65039,65279,65440,65520,65521,65522,65523,65524,65525,65526,65527,65528,65532,78844,119155,119156,119157,119158,119159,119160,119161,119162,917504,917505,917506,917507,917508,917509,917510,917511,917512,917513,917514,917515,917516,917517,917518,917519,917520,917521,917522,917523,917524,917525,917526,917527,917528,917529,917530,917531,917532,917533,917534,917535,917536,917537,917538,917539,917540,917541,917542,917543,917544,917545,917546,917547,917548,917549,917550,917551,917552,917553,917554,917555,917556,917557,917558,917559,917560,917561,917562,917563,917564,917565,917566,917567,917568,917569,917570,917571,917572,917573,917574,917575,917576,917577,917578,917579,917580,917581,917582,917583,917584,917585,917586,917587,917588,917589,917590,917591,917592,917593,917594,917595,917596,917597,917598,917599,917600,917601,917602,917603,917604,917605,917606,917607,917608,917609,917610,917611,917612,917613,917614,917615,917616,917617,917618,917619,917620,917621,917622,917623,917624,917625,917626,917627,917628,917629,917630,917631,917760,917761,917762,917763,917764,917765,917766,917767,917768,917769,917770,917771,917772,917773,917774,917775,917776,917777,917778,917779,917780,917781,917782,917783,917784,917785,917786,917787,917788,917789,917790,917791,917792,917793,917794,917795,917796,917797,917798,917799,917800,917801,917802,917803,917804,917805,917806,917807,917808,917809,917810,917811,917812,917813,917814,917815,917816,917817,917818,917819,917820,917821,917822,917823,917824,917825,917826,917827,917828,917829,917830,917831,917832,917833,917834,917835,917836,917837,917838,917839,917840,917841,917842,917843,917844,917845,917846,917847,917848,917849,917850,917851,917852,917853,917854,917855,917856,917857,917858,917859,917860,917861,917862,917863,917864,917865,917866,917867,917868,917869,917870,917871,917872,917873,917874,917875,917876,917877,917878,917879,917880,917881,917882,917883,917884,917885,917886,917887,917888,917889,917890,917891,917892,917893,917894,917895,917896,917897,917898,917899,917900,917901,917902,917903,917904,917905,917906,917907,917908,917909,917910,917911,917912,917913,917914,917915,917916,917917,917918,917919,917920,917921,917922,917923,917924,917925,917926,917927,917928,917929,917930,917931,917932,917933,917934,917935,917936,917937,917938,917939,917940,917941,917942,917943,917944,917945,917946,917947,917948,917949,917950,917951,917952,917953,917954,917955,917956,917957,917958,917959,917960,917961,917962,917963,917964,917965,917966,917967,917968,917969,917970,917971,917972,917973,917974,917975,917976,917977,917978,917979,917980,917981,917982,917983,917984,917985,917986,917987,917988,917989,917990,917991,917992,917993,917994,917995,917996,917997,917998,917999],"cs":[173,8203,12288],"de":[173,8203,12288],"es":[8203,12288],"fr":[173,8203,12288],"it":[160,173,12288],"ja":[173],"ko":[173,12288],"pl":[173,8203,12288],"pt-BR":[173,8203,12288],"qps-ploc":[160,173,8203,12288],"ru":[173,12288],"tr":[160,173,8203,12288],"zh-hans":[160,173,8203,12288],"zh-hant":[173,12288]}');
   }
   static {
-    this._data = void 0;
+    this.d = void 0;
   }
-  static getData() {
-    if (!this._data) {
-      this._data = new Set([...Object.values(_InvisibleCharacters.getRawData())].flat());
+  static e() {
+    if (!this.d) {
+      this.d = new Set([...Object.values(_$Sg.c())].flat());
     }
-    return this._data;
+    return this.d;
   }
   static isInvisibleCharacter(codePoint) {
-    return _InvisibleCharacters.getData().has(codePoint);
+    return _$Sg.e().has(codePoint);
   }
   static containsInvisibleCharacter(str) {
     for (let i = 0; i < str.length; i++) {
       const codePoint = str.codePointAt(i);
-      if (typeof codePoint === "number" && (_InvisibleCharacters.isInvisibleCharacter(codePoint) || codePoint === 32)) {
+      if (typeof codePoint === "number" && (_$Sg.isInvisibleCharacter(codePoint) || codePoint === 32)) {
         return true;
       }
     }
     return false;
   }
   static get codePoints() {
-    return _InvisibleCharacters.getData();
+    return _$Sg.e();
   }
 };
 
@@ -3563,37 +3563,37 @@ var UnsubscribeEventMessage = class {
 };
 var WebWorkerProtocol = class {
   constructor(handler) {
-    this._workerId = -1;
-    this._handler = handler;
-    this._lastSentReq = 0;
-    this._pendingReplies = /* @__PURE__ */ Object.create(null);
-    this._pendingEmitters = /* @__PURE__ */ new Map();
-    this._pendingEvents = /* @__PURE__ */ new Map();
+    this.a = -1;
+    this.g = handler;
+    this.b = 0;
+    this.c = /* @__PURE__ */ Object.create(null);
+    this.d = /* @__PURE__ */ new Map();
+    this.f = /* @__PURE__ */ new Map();
   }
   setWorkerId(workerId) {
-    this._workerId = workerId;
+    this.a = workerId;
   }
   async sendMessage(channel, method, args) {
-    const req = String(++this._lastSentReq);
-    return new Promise((resolve2, reject) => {
-      this._pendingReplies[req] = {
-        resolve: resolve2,
+    const req = String(++this.b);
+    return new Promise((resolve, reject) => {
+      this.c[req] = {
+        resolve,
         reject
       };
-      this._send(new RequestMessage(this._workerId, req, channel, method, args));
+      this.o(new RequestMessage(this.a, req, channel, method, args));
     });
   }
   listen(channel, eventName, arg) {
     let req = null;
-    const emitter = new Emitter({
+    const emitter = new $qf({
       onWillAddFirstListener: () => {
-        req = String(++this._lastSentReq);
-        this._pendingEmitters.set(req, emitter);
-        this._send(new SubscribeEventMessage(this._workerId, req, channel, eventName, arg));
+        req = String(++this.b);
+        this.d.set(req, emitter);
+        this.o(new SubscribeEventMessage(this.a, req, channel, eventName, arg));
       },
       onDidRemoveLastListener: () => {
-        this._pendingEmitters.delete(req);
-        this._send(new UnsubscribeEventMessage(this._workerId, req));
+        this.d.delete(req);
+        this.o(new UnsubscribeEventMessage(this.a, req));
         req = null;
       }
     });
@@ -3603,10 +3603,10 @@ var WebWorkerProtocol = class {
     if (!message || !message.vsWorker) {
       return;
     }
-    if (this._workerId !== -1 && message.vsWorker !== this._workerId) {
+    if (this.a !== -1 && message.vsWorker !== this.a) {
       return;
     }
-    this._handleMessage(message);
+    this.h(message);
   }
   createProxyToRemoteChannel(channel, sendMessageBarrier) {
     const handler = {
@@ -3630,27 +3630,27 @@ var WebWorkerProtocol = class {
     };
     return new Proxy(/* @__PURE__ */ Object.create(null), handler);
   }
-  _handleMessage(msg) {
+  h(msg) {
     switch (msg.type) {
       case 1:
-        return this._handleReplyMessage(msg);
+        return this.j(msg);
       case 0:
-        return this._handleRequestMessage(msg);
+        return this.k(msg);
       case 2:
-        return this._handleSubscribeEventMessage(msg);
+        return this.l(msg);
       case 3:
-        return this._handleEventMessage(msg);
+        return this.m(msg);
       case 4:
-        return this._handleUnsubscribeEventMessage(msg);
+        return this.n(msg);
     }
   }
-  _handleReplyMessage(replyMessage) {
-    if (!this._pendingReplies[replyMessage.seq]) {
+  j(replyMessage) {
+    if (!this.c[replyMessage.seq]) {
       console.warn("Got reply to unknown seq");
       return;
     }
-    const reply = this._pendingReplies[replyMessage.seq];
-    delete this._pendingReplies[replyMessage.seq];
+    const reply = this.c[replyMessage.seq];
+    delete this.c[replyMessage.seq];
     if (replyMessage.err) {
       let err = replyMessage.err;
       if (replyMessage.err.$isError) {
@@ -3665,41 +3665,41 @@ var WebWorkerProtocol = class {
     }
     reply.resolve(replyMessage.res);
   }
-  _handleRequestMessage(requestMessage) {
+  k(requestMessage) {
     const req = requestMessage.req;
-    const result = this._handler.handleMessage(requestMessage.channel, requestMessage.method, requestMessage.args);
+    const result = this.g.handleMessage(requestMessage.channel, requestMessage.method, requestMessage.args);
     result.then((r) => {
-      this._send(new ReplyMessage(this._workerId, req, r, void 0));
+      this.o(new ReplyMessage(this.a, req, r, void 0));
     }, (e) => {
       if (e.detail instanceof Error) {
-        e.detail = transformErrorForSerialization(e.detail);
+        e.detail = $pb(e.detail);
       }
-      this._send(new ReplyMessage(this._workerId, req, void 0, transformErrorForSerialization(e)));
+      this.o(new ReplyMessage(this.a, req, void 0, $pb(e)));
     });
   }
-  _handleSubscribeEventMessage(msg) {
+  l(msg) {
     const req = msg.req;
-    const disposable = this._handler.handleEvent(msg.channel, msg.eventName, msg.arg)((event) => {
-      this._send(new EventMessage(this._workerId, req, event));
+    const disposable = this.g.handleEvent(msg.channel, msg.eventName, msg.arg)((event) => {
+      this.o(new EventMessage(this.a, req, event));
     });
-    this._pendingEvents.set(req, disposable);
+    this.f.set(req, disposable);
   }
-  _handleEventMessage(msg) {
-    if (!this._pendingEmitters.has(msg.req)) {
+  m(msg) {
+    if (!this.d.has(msg.req)) {
       console.warn("Got event for unknown req");
       return;
     }
-    this._pendingEmitters.get(msg.req).fire(msg.event);
+    this.d.get(msg.req).fire(msg.event);
   }
-  _handleUnsubscribeEventMessage(msg) {
-    if (!this._pendingEvents.has(msg.req)) {
+  n(msg) {
+    if (!this.f.has(msg.req)) {
       console.warn("Got unsubscribe for unknown req");
       return;
     }
-    this._pendingEvents.get(msg.req).dispose();
-    this._pendingEvents.delete(msg.req);
+    this.f.get(msg.req).dispose();
+    this.f.delete(msg.req);
   }
-  _send(msg) {
+  o(msg) {
     const transfer = [];
     if (msg.type === 0) {
       for (let i = 0; i < msg.args.length; i++) {
@@ -3713,36 +3713,36 @@ var WebWorkerProtocol = class {
         transfer.push(msg.res);
       }
     }
-    this._handler.sendMessage(msg, transfer);
+    this.g.sendMessage(msg, transfer);
   }
 };
 function propertyIsEvent(name) {
-  return name[0] === "o" && name[1] === "n" && isUpperAsciiLetter(name.charCodeAt(2));
+  return name[0] === "o" && name[1] === "n" && $fg(name.charCodeAt(2));
 }
 function propertyIsDynamicEvent(name) {
-  return /^onDynamic/.test(name) && isUpperAsciiLetter(name.charCodeAt(9));
+  return /^onDynamic/.test(name) && $fg(name.charCodeAt(9));
 }
-var WebWorkerServer = class {
+var $1$ = class {
   constructor(postMessage, requestHandlerFactory) {
-    this._localChannels = /* @__PURE__ */ new Map();
-    this._remoteChannels = /* @__PURE__ */ new Map();
-    this._protocol = new WebWorkerProtocol({
+    this.b = /* @__PURE__ */ new Map();
+    this.c = /* @__PURE__ */ new Map();
+    this.a = new WebWorkerProtocol({
       sendMessage: (msg, transfer) => {
         postMessage(msg, transfer);
       },
-      handleMessage: (channel, method, args) => this._handleMessage(channel, method, args),
-      handleEvent: (channel, eventName, arg) => this._handleEvent(channel, eventName, arg)
+      handleMessage: (channel, method, args) => this.d(channel, method, args),
+      handleEvent: (channel, eventName, arg) => this.f(channel, eventName, arg)
     });
     this.requestHandler = requestHandlerFactory(this);
   }
   onmessage(msg) {
-    this._protocol.handleMessage(msg);
+    this.a.handleMessage(msg);
   }
-  _handleMessage(channel, method, args) {
+  d(channel, method, args) {
     if (channel === DEFAULT_CHANNEL && method === INITIALIZE) {
-      return this.initialize(args[0]);
+      return this.g(args[0]);
     }
-    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this._localChannels.get(channel);
+    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this.b.get(channel);
     if (!requestHandler) {
       return Promise.reject(new Error(`Missing channel ${channel} on worker thread`));
     }
@@ -3756,8 +3756,8 @@ var WebWorkerServer = class {
       return Promise.reject(e);
     }
   }
-  _handleEvent(channel, eventName, arg) {
-    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this._localChannels.get(channel);
+  f(channel, eventName, arg) {
+    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this.b.get(channel);
     if (!requestHandler) {
       throw new Error(`Missing channel ${channel} on worker thread`);
     }
@@ -3782,43 +3782,43 @@ var WebWorkerServer = class {
     throw new Error(`Malformed event name ${eventName}`);
   }
   setChannel(channel, handler) {
-    this._localChannels.set(channel, handler);
+    this.b.set(channel, handler);
   }
   getChannel(channel) {
-    if (!this._remoteChannels.has(channel)) {
-      const inst = this._protocol.createProxyToRemoteChannel(channel);
-      this._remoteChannels.set(channel, inst);
+    if (!this.c.has(channel)) {
+      const inst = this.a.createProxyToRemoteChannel(channel);
+      this.c.set(channel, inst);
     }
-    return this._remoteChannels.get(channel);
+    return this.c.get(channel);
   }
-  async initialize(workerId) {
-    this._protocol.setWorkerId(workerId);
+  async g(workerId) {
+    this.a.setWorkerId(workerId);
   }
 };
 
 // out-build/vs/base/common/worker/webWorkerBootstrap.js
 var initialized = false;
-function initialize(factory) {
+function $2$(factory) {
   if (initialized) {
     throw new Error("WebWorker already initialized!");
   }
   initialized = true;
-  const webWorkerServer = new WebWorkerServer((msg) => globalThis.postMessage(msg), (workerServer) => factory(workerServer));
+  const webWorkerServer = new $1$((msg) => globalThis.postMessage(msg), (workerServer) => factory(workerServer));
   globalThis.onmessage = (e) => {
     webWorkerServer.onmessage(e.data);
   };
   return webWorkerServer;
 }
-function bootstrapWebWorker(factory) {
+function $3$(factory) {
   globalThis.onmessage = (_e) => {
     if (!initialized) {
-      initialize(factory);
+      $2$(factory);
     }
   };
 }
 
 // out-build/vs/base/common/diff/diffChange.js
-var DiffChange = class {
+var $KD = class {
   /**
    * Constructs a new DiffChange with the given sequence information
    * and content.
@@ -3845,19 +3845,19 @@ var DiffChange = class {
 
 // out-build/vs/base/common/buffer.js
 var hasBuffer = typeof Buffer !== "undefined";
-var indexOfTable = new Lazy(() => new Uint8Array(256));
+var indexOfTable = new $Kf(() => new Uint8Array(256));
 var textEncoder;
 var textDecoder;
-var VSBuffer = class _VSBuffer {
+var $2i = class _$2i {
   /**
    * When running in a nodejs context, the backing store for the returned `VSBuffer` instance
    * might use a nodejs Buffer allocated from node's Buffer pool, which is not transferrable.
    */
   static alloc(byteLength) {
     if (hasBuffer) {
-      return new _VSBuffer(Buffer.allocUnsafe(byteLength));
+      return new _$2i(Buffer.allocUnsafe(byteLength));
     } else {
-      return new _VSBuffer(new Uint8Array(byteLength));
+      return new _$2i(new Uint8Array(byteLength));
     }
   }
   /**
@@ -3869,7 +3869,7 @@ var VSBuffer = class _VSBuffer {
     if (hasBuffer && !Buffer.isBuffer(actual)) {
       actual = Buffer.from(actual.buffer, actual.byteOffset, actual.byteLength);
     }
-    return new _VSBuffer(actual);
+    return new _$2i(actual);
   }
   /**
    * When running in a nodejs context, the backing store for the returned `VSBuffer` instance
@@ -3878,12 +3878,12 @@ var VSBuffer = class _VSBuffer {
   static fromString(source, options) {
     const dontUseNodeBuffer = options?.dontUseNodeBuffer || false;
     if (!dontUseNodeBuffer && hasBuffer) {
-      return new _VSBuffer(Buffer.from(source));
+      return new _$2i(Buffer.from(source));
     } else {
       if (!textEncoder) {
         textEncoder = new TextEncoder();
       }
-      return new _VSBuffer(textEncoder.encode(source));
+      return new _$2i(textEncoder.encode(source));
     }
   }
   /**
@@ -3891,7 +3891,7 @@ var VSBuffer = class _VSBuffer {
    * might use a nodejs Buffer allocated from node's Buffer pool, which is not transferrable.
    */
   static fromByteArray(source) {
-    const result = _VSBuffer.alloc(source.length);
+    const result = _$2i.alloc(source.length);
     for (let i = 0, len = source.length; i < len; i++) {
       result.buffer[i] = source[i];
     }
@@ -3908,7 +3908,7 @@ var VSBuffer = class _VSBuffer {
         totalLength += buffers[i].byteLength;
       }
     }
-    const ret = _VSBuffer.alloc(totalLength);
+    const ret = _$2i.alloc(totalLength);
     let offset = 0;
     for (let i = 0, len = buffers.length; i < len; i++) {
       const element = buffers[i];
@@ -3929,7 +3929,7 @@ var VSBuffer = class _VSBuffer {
    * might use a nodejs Buffer allocated from node's Buffer pool, which is not transferrable.
    */
   clone() {
-    const result = _VSBuffer.alloc(this.byteLength);
+    const result = _$2i.alloc(this.byteLength);
     result.set(this);
     return result;
   }
@@ -3944,10 +3944,10 @@ var VSBuffer = class _VSBuffer {
     }
   }
   slice(start, end) {
-    return new _VSBuffer(this.buffer.subarray(start, end));
+    return new _$2i(this.buffer.subarray(start, end));
   }
   set(array, offset) {
-    if (array instanceof _VSBuffer) {
+    if (array instanceof _$2i) {
       this.buffer.set(array.buffer, offset);
     } else if (array instanceof Uint8Array) {
       this.buffer.set(array, offset);
@@ -3960,25 +3960,25 @@ var VSBuffer = class _VSBuffer {
     }
   }
   readUInt32BE(offset) {
-    return readUInt32BE(this.buffer, offset);
+    return $6i(this.buffer, offset);
   }
   writeUInt32BE(value, offset) {
-    writeUInt32BE(this.buffer, value, offset);
+    $7i(this.buffer, value, offset);
   }
   readUInt32LE(offset) {
-    return readUInt32LE(this.buffer, offset);
+    return $8i(this.buffer, offset);
   }
   writeUInt32LE(value, offset) {
-    writeUInt32LE(this.buffer, value, offset);
+    $9i(this.buffer, value, offset);
   }
   readUInt8(offset) {
-    return readUInt8(this.buffer, offset);
+    return $0i(this.buffer, offset);
   }
   writeUInt8(value, offset) {
-    writeUInt8(this.buffer, value, offset);
+    $$i(this.buffer, value, offset);
   }
   indexOf(subarray, offset = 0) {
-    return binaryIndexOf(this.buffer, subarray instanceof _VSBuffer ? subarray.buffer : subarray, offset);
+    return $3i(this.buffer, subarray instanceof _$2i ? subarray.buffer : subarray, offset);
   }
   equals(other) {
     if (this === other) {
@@ -3990,7 +3990,7 @@ var VSBuffer = class _VSBuffer {
     return this.buffer.every((value, index) => value === other.buffer[index]);
   }
 };
-function binaryIndexOf(haystack, needle, offset = 0) {
+function $3i(haystack, needle, offset = 0) {
   const needleLen = needle.byteLength;
   const haystackLen = haystack.byteLength;
   if (needleLen === 0) {
@@ -4025,10 +4025,10 @@ function binaryIndexOf(haystack, needle, offset = 0) {
   }
   return result;
 }
-function readUInt32BE(source, offset) {
+function $6i(source, offset) {
   return source[offset] * 2 ** 24 + source[offset + 1] * 2 ** 16 + source[offset + 2] * 2 ** 8 + source[offset + 3];
 }
-function writeUInt32BE(destination, value, offset) {
+function $7i(destination, value, offset) {
   destination[offset + 3] = value;
   value = value >>> 8;
   destination[offset + 2] = value;
@@ -4037,10 +4037,10 @@ function writeUInt32BE(destination, value, offset) {
   value = value >>> 8;
   destination[offset] = value;
 }
-function readUInt32LE(source, offset) {
+function $8i(source, offset) {
   return source[offset + 0] << 0 >>> 0 | source[offset + 1] << 8 >>> 0 | source[offset + 2] << 16 >>> 0 | source[offset + 3] << 24 >>> 0;
 }
-function writeUInt32LE(destination, value, offset) {
+function $9i(destination, value, offset) {
   destination[offset + 0] = value & 255;
   value = value >>> 8;
   destination[offset + 1] = value & 255;
@@ -4049,14 +4049,14 @@ function writeUInt32LE(destination, value, offset) {
   value = value >>> 8;
   destination[offset + 3] = value & 255;
 }
-function readUInt8(source, offset) {
+function $0i(source, offset) {
   return source[offset];
 }
-function writeUInt8(destination, value, offset) {
+function $$i(destination, value, offset) {
   destination[offset] = value;
 }
 var hexChars = "0123456789abcdef";
-function encodeHex({ buffer }) {
+function $kj({ buffer }) {
   let result = "";
   for (let i = 0; i < buffer.length; i++) {
     const byte = buffer[i];
@@ -4067,13 +4067,13 @@ function encodeHex({ buffer }) {
 }
 
 // out-build/vs/base/common/hash.js
-function numberHash(val, initialHashVal) {
+function $zn(val, initialHashVal) {
   return (initialHashVal << 5) - initialHashVal + val | 0;
 }
-function stringHash(s, hashVal) {
-  hashVal = numberHash(149417, hashVal);
+function $An(s, hashVal) {
+  hashVal = $zn(149417, hashVal);
   for (let i = 0, length = s.length; i < length; i++) {
-    hashVal = numberHash(s.charCodeAt(i), hashVal);
+    hashVal = $zn(s.charCodeAt(i), hashVal);
   }
   return hashVal;
 }
@@ -4089,39 +4089,39 @@ function leftRotate(value, bits, totalBits = 32) {
 }
 function toHexString(bufferOrValue, bitsize = 32) {
   if (bufferOrValue instanceof ArrayBuffer) {
-    return encodeHex(VSBuffer.wrap(new Uint8Array(bufferOrValue)));
+    return $kj($2i.wrap(new Uint8Array(bufferOrValue)));
   }
   return (bufferOrValue >>> 0).toString(16).padStart(bitsize / 4, "0");
 }
-var StringSHA1 = class _StringSHA1 {
+var $Cn = class _$Cn {
   static {
-    this._bigBlock32 = new DataView(new ArrayBuffer(320));
+    this.g = new DataView(new ArrayBuffer(320));
   }
   // 80 * 4 = 320
   constructor() {
-    this._h0 = 1732584193;
-    this._h1 = 4023233417;
-    this._h2 = 2562383102;
-    this._h3 = 271733878;
-    this._h4 = 3285377520;
-    this._buff = new Uint8Array(
+    this.h = 1732584193;
+    this.l = 4023233417;
+    this.m = 2562383102;
+    this.n = 271733878;
+    this.o = 3285377520;
+    this.p = new Uint8Array(
       64 + 3
       /* to fit any utf-8 */
     );
-    this._buffDV = new DataView(this._buff.buffer);
-    this._buffLen = 0;
-    this._totalLen = 0;
-    this._leftoverHighSurrogate = 0;
-    this._finished = false;
+    this.q = new DataView(this.p.buffer);
+    this.r = 0;
+    this.t = 0;
+    this.u = 0;
+    this.v = false;
   }
   update(str) {
     const strLen = str.length;
     if (strLen === 0) {
       return;
     }
-    const buff = this._buff;
-    let buffLen = this._buffLen;
-    let leftoverHighSurrogate = this._leftoverHighSurrogate;
+    const buff = this.p;
+    let buffLen = this.r;
+    let leftoverHighSurrogate = this.u;
     let charCode;
     let offset;
     if (leftoverHighSurrogate !== 0) {
@@ -4134,12 +4134,12 @@ var StringSHA1 = class _StringSHA1 {
     }
     while (true) {
       let codePoint = charCode;
-      if (isHighSurrogate(charCode)) {
+      if ($mg(charCode)) {
         if (offset + 1 < strLen) {
           const nextCharCode = str.charCodeAt(offset + 1);
-          if (isLowSurrogate(nextCharCode)) {
+          if ($ng(nextCharCode)) {
             offset++;
-            codePoint = computeCodePoint(charCode, nextCharCode);
+            codePoint = $og(charCode, nextCharCode);
           } else {
             codePoint = 65533;
           }
@@ -4147,10 +4147,10 @@ var StringSHA1 = class _StringSHA1 {
           leftoverHighSurrogate = charCode;
           break;
         }
-      } else if (isLowSurrogate(charCode)) {
+      } else if ($ng(charCode)) {
         codePoint = 65533;
       }
-      buffLen = this._push(buff, buffLen, codePoint);
+      buffLen = this.w(buff, buffLen, codePoint);
       offset++;
       if (offset < strLen) {
         charCode = str.charCodeAt(offset);
@@ -4158,10 +4158,10 @@ var StringSHA1 = class _StringSHA1 {
         break;
       }
     }
-    this._buffLen = buffLen;
-    this._leftoverHighSurrogate = leftoverHighSurrogate;
+    this.r = buffLen;
+    this.u = leftoverHighSurrogate;
   }
-  _push(buff, buffLen, codePoint) {
+  w(buff, buffLen, codePoint) {
     if (codePoint < 128) {
       buff[buffLen++] = codePoint;
     } else if (codePoint < 2048) {
@@ -4178,9 +4178,9 @@ var StringSHA1 = class _StringSHA1 {
       buff[buffLen++] = 128 | (codePoint & 63) >>> 0;
     }
     if (buffLen >= 64) {
-      this._step();
+      this.y();
       buffLen -= 64;
-      this._totalLen += 64;
+      this.t += 64;
       buff[0] = buff[64 + 0];
       buff[1] = buff[64 + 1];
       buff[2] = buff[64 + 2];
@@ -4188,48 +4188,48 @@ var StringSHA1 = class _StringSHA1 {
     return buffLen;
   }
   digest() {
-    if (!this._finished) {
-      this._finished = true;
-      if (this._leftoverHighSurrogate) {
-        this._leftoverHighSurrogate = 0;
-        this._buffLen = this._push(
-          this._buff,
-          this._buffLen,
+    if (!this.v) {
+      this.v = true;
+      if (this.u) {
+        this.u = 0;
+        this.r = this.w(
+          this.p,
+          this.r,
           65533
           /* SHA1Constant.UNICODE_REPLACEMENT */
         );
       }
-      this._totalLen += this._buffLen;
-      this._wrapUp();
+      this.t += this.r;
+      this.x();
     }
-    return toHexString(this._h0) + toHexString(this._h1) + toHexString(this._h2) + toHexString(this._h3) + toHexString(this._h4);
+    return toHexString(this.h) + toHexString(this.l) + toHexString(this.m) + toHexString(this.n) + toHexString(this.o);
   }
-  _wrapUp() {
-    this._buff[this._buffLen++] = 128;
-    this._buff.subarray(this._buffLen).fill(0);
-    if (this._buffLen > 56) {
-      this._step();
-      this._buff.fill(0);
+  x() {
+    this.p[this.r++] = 128;
+    this.p.subarray(this.r).fill(0);
+    if (this.r > 56) {
+      this.y();
+      this.p.fill(0);
     }
-    const ml = 8 * this._totalLen;
-    this._buffDV.setUint32(56, Math.floor(ml / 4294967296), false);
-    this._buffDV.setUint32(60, ml % 4294967296, false);
-    this._step();
+    const ml = 8 * this.t;
+    this.q.setUint32(56, Math.floor(ml / 4294967296), false);
+    this.q.setUint32(60, ml % 4294967296, false);
+    this.y();
   }
-  _step() {
-    const bigBlock32 = _StringSHA1._bigBlock32;
-    const data = this._buffDV;
+  y() {
+    const bigBlock32 = _$Cn.g;
+    const data = this.q;
     for (let j = 0; j < 64; j += 4) {
       bigBlock32.setUint32(j, data.getUint32(j, false), false);
     }
     for (let j = 64; j < 320; j += 4) {
       bigBlock32.setUint32(j, leftRotate(bigBlock32.getUint32(j - 12, false) ^ bigBlock32.getUint32(j - 32, false) ^ bigBlock32.getUint32(j - 56, false) ^ bigBlock32.getUint32(j - 64, false), 1), false);
     }
-    let a = this._h0;
-    let b = this._h1;
-    let c = this._h2;
-    let d = this._h3;
-    let e = this._h4;
+    let a = this.h;
+    let b = this.l;
+    let c = this.m;
+    let d = this.n;
+    let e = this.o;
     let f, k;
     let temp;
     for (let j = 0; j < 80; j++) {
@@ -4253,21 +4253,21 @@ var StringSHA1 = class _StringSHA1 {
       b = a;
       a = temp;
     }
-    this._h0 = this._h0 + a & 4294967295;
-    this._h1 = this._h1 + b & 4294967295;
-    this._h2 = this._h2 + c & 4294967295;
-    this._h3 = this._h3 + d & 4294967295;
-    this._h4 = this._h4 + e & 4294967295;
+    this.h = this.h + a & 4294967295;
+    this.l = this.l + b & 4294967295;
+    this.m = this.m + c & 4294967295;
+    this.n = this.n + d & 4294967295;
+    this.o = this.o + e & 4294967295;
   }
 };
 
 // out-build/vs/base/common/diff/diff.js
-var StringDiffSequence = class {
-  constructor(source) {
-    this.source = source;
+var $LD = class {
+  constructor(a) {
+    this.a = a;
   }
   getElements() {
-    const source = this.source;
+    const source = this.a;
     const characters = new Int32Array(source.length);
     for (let i = 0, len = source.length; i < len; i++) {
       characters[i] = source.charCodeAt(i);
@@ -4275,8 +4275,8 @@ var StringDiffSequence = class {
     return characters;
   }
 };
-function stringDiff(original, modified, pretty) {
-  return new LcsDiff(new StringDiffSequence(original), new StringDiffSequence(modified)).ComputeDiff(pretty).changes;
+function $MD(original, modified, pretty) {
+  return new $ND(new $LD(original), new $LD(modified)).ComputeDiff(pretty).changes;
 }
 var Debug = class {
   static Assert(condition, message) {
@@ -4321,23 +4321,23 @@ var DiffChangeHelper = class {
    * Constructs a new DiffChangeHelper for the given DiffSequences.
    */
   constructor() {
-    this.m_changes = [];
-    this.m_originalStart = 1073741824;
-    this.m_modifiedStart = 1073741824;
-    this.m_originalCount = 0;
-    this.m_modifiedCount = 0;
+    this.a = [];
+    this.b = 1073741824;
+    this.c = 1073741824;
+    this.d = 0;
+    this.e = 0;
   }
   /**
    * Marks the beginning of the next change in the set of differences.
    */
   MarkNextChange() {
-    if (this.m_originalCount > 0 || this.m_modifiedCount > 0) {
-      this.m_changes.push(new DiffChange(this.m_originalStart, this.m_originalCount, this.m_modifiedStart, this.m_modifiedCount));
+    if (this.d > 0 || this.e > 0) {
+      this.a.push(new $KD(this.b, this.d, this.c, this.e));
     }
-    this.m_originalCount = 0;
-    this.m_modifiedCount = 0;
-    this.m_originalStart = 1073741824;
-    this.m_modifiedStart = 1073741824;
+    this.d = 0;
+    this.e = 0;
+    this.b = 1073741824;
+    this.c = 1073741824;
   }
   /**
    * Adds the original element at the given position to the elements
@@ -4347,9 +4347,9 @@ var DiffChangeHelper = class {
    * @param modifiedIndex The index of the modified element that provides corresponding position in the modified sequence.
    */
   AddOriginalElement(originalIndex, modifiedIndex) {
-    this.m_originalStart = Math.min(this.m_originalStart, originalIndex);
-    this.m_modifiedStart = Math.min(this.m_modifiedStart, modifiedIndex);
-    this.m_originalCount++;
+    this.b = Math.min(this.b, originalIndex);
+    this.c = Math.min(this.c, modifiedIndex);
+    this.d++;
   }
   /**
    * Adds the modified element at the given position to the elements
@@ -4359,57 +4359,57 @@ var DiffChangeHelper = class {
    * @param modifiedIndex The index of the modified element to add.
    */
   AddModifiedElement(originalIndex, modifiedIndex) {
-    this.m_originalStart = Math.min(this.m_originalStart, originalIndex);
-    this.m_modifiedStart = Math.min(this.m_modifiedStart, modifiedIndex);
-    this.m_modifiedCount++;
+    this.b = Math.min(this.b, originalIndex);
+    this.c = Math.min(this.c, modifiedIndex);
+    this.e++;
   }
   /**
    * Retrieves all of the changes marked by the class.
    */
   getChanges() {
-    if (this.m_originalCount > 0 || this.m_modifiedCount > 0) {
+    if (this.d > 0 || this.e > 0) {
       this.MarkNextChange();
     }
-    return this.m_changes;
+    return this.a;
   }
   /**
    * Retrieves all of the changes marked by the class in the reverse order
    */
   getReverseChanges() {
-    if (this.m_originalCount > 0 || this.m_modifiedCount > 0) {
+    if (this.d > 0 || this.e > 0) {
       this.MarkNextChange();
     }
-    this.m_changes.reverse();
-    return this.m_changes;
+    this.a.reverse();
+    return this.a;
   }
 };
-var LcsDiff = class _LcsDiff {
+var $ND = class _$ND {
   /**
    * Constructs the DiffFinder
    */
   constructor(originalSequence, modifiedSequence, continueProcessingPredicate = null) {
-    this.ContinueProcessingPredicate = continueProcessingPredicate;
-    this._originalSequence = originalSequence;
-    this._modifiedSequence = modifiedSequence;
-    const [originalStringElements, originalElementsOrHash, originalHasStrings] = _LcsDiff._getElements(originalSequence);
-    const [modifiedStringElements, modifiedElementsOrHash, modifiedHasStrings] = _LcsDiff._getElements(modifiedSequence);
-    this._hasStrings = originalHasStrings && modifiedHasStrings;
-    this._originalStringElements = originalStringElements;
-    this._originalElementsOrHash = originalElementsOrHash;
-    this._modifiedStringElements = modifiedStringElements;
-    this._modifiedElementsOrHash = modifiedElementsOrHash;
-    this.m_forwardHistory = [];
-    this.m_reverseHistory = [];
+    this.a = continueProcessingPredicate;
+    this.b = originalSequence;
+    this.c = modifiedSequence;
+    const [originalStringElements, originalElementsOrHash, originalHasStrings] = _$ND.p(originalSequence);
+    const [modifiedStringElements, modifiedElementsOrHash, modifiedHasStrings] = _$ND.p(modifiedSequence);
+    this.d = originalHasStrings && modifiedHasStrings;
+    this.e = originalStringElements;
+    this.f = originalElementsOrHash;
+    this.g = modifiedStringElements;
+    this.h = modifiedElementsOrHash;
+    this.m = [];
+    this.n = [];
   }
-  static _isStringArray(arr) {
+  static o(arr) {
     return arr.length > 0 && typeof arr[0] === "string";
   }
-  static _getElements(sequence) {
+  static p(sequence) {
     const elements = sequence.getElements();
-    if (_LcsDiff._isStringArray(elements)) {
+    if (_$ND.o(elements)) {
       const hashes = new Int32Array(elements.length);
       for (let i = 0, len = elements.length; i < len; i++) {
-        hashes[i] = stringHash(elements[i], 0);
+        hashes[i] = $An(elements[i], 0);
       }
       return [elements, hashes, true];
     }
@@ -4418,51 +4418,51 @@ var LcsDiff = class _LcsDiff {
     }
     return [[], new Int32Array(elements), false];
   }
-  ElementsAreEqual(originalIndex, newIndex) {
-    if (this._originalElementsOrHash[originalIndex] !== this._modifiedElementsOrHash[newIndex]) {
+  q(originalIndex, newIndex) {
+    if (this.f[originalIndex] !== this.h[newIndex]) {
       return false;
     }
-    return this._hasStrings ? this._originalStringElements[originalIndex] === this._modifiedStringElements[newIndex] : true;
+    return this.d ? this.e[originalIndex] === this.g[newIndex] : true;
   }
-  ElementsAreStrictEqual(originalIndex, newIndex) {
-    if (!this.ElementsAreEqual(originalIndex, newIndex)) {
+  r(originalIndex, newIndex) {
+    if (!this.q(originalIndex, newIndex)) {
       return false;
     }
-    const originalElement = _LcsDiff._getStrictElement(this._originalSequence, originalIndex);
-    const modifiedElement = _LcsDiff._getStrictElement(this._modifiedSequence, newIndex);
+    const originalElement = _$ND.s(this.b, originalIndex);
+    const modifiedElement = _$ND.s(this.c, newIndex);
     return originalElement === modifiedElement;
   }
-  static _getStrictElement(sequence, index) {
+  static s(sequence, index) {
     if (typeof sequence.getStrictElement === "function") {
       return sequence.getStrictElement(index);
     }
     return null;
   }
-  OriginalElementsAreEqual(index1, index2) {
-    if (this._originalElementsOrHash[index1] !== this._originalElementsOrHash[index2]) {
+  u(index1, index2) {
+    if (this.f[index1] !== this.f[index2]) {
       return false;
     }
-    return this._hasStrings ? this._originalStringElements[index1] === this._originalStringElements[index2] : true;
+    return this.d ? this.e[index1] === this.e[index2] : true;
   }
-  ModifiedElementsAreEqual(index1, index2) {
-    if (this._modifiedElementsOrHash[index1] !== this._modifiedElementsOrHash[index2]) {
+  v(index1, index2) {
+    if (this.h[index1] !== this.h[index2]) {
       return false;
     }
-    return this._hasStrings ? this._modifiedStringElements[index1] === this._modifiedStringElements[index2] : true;
+    return this.d ? this.g[index1] === this.g[index2] : true;
   }
   ComputeDiff(pretty) {
-    return this._ComputeDiff(0, this._originalElementsOrHash.length - 1, 0, this._modifiedElementsOrHash.length - 1, pretty);
+    return this.w(0, this.f.length - 1, 0, this.h.length - 1, pretty);
   }
   /**
    * Computes the differences between the original and modified input
    * sequences on the bounded range.
    * @returns An array of the differences between the two input sequences.
    */
-  _ComputeDiff(originalStart, originalEnd, modifiedStart, modifiedEnd, pretty) {
+  w(originalStart, originalEnd, modifiedStart, modifiedEnd, pretty) {
     const quitEarlyArr = [false];
-    let changes = this.ComputeDiffRecursive(originalStart, originalEnd, modifiedStart, modifiedEnd, quitEarlyArr);
+    let changes = this.x(originalStart, originalEnd, modifiedStart, modifiedEnd, quitEarlyArr);
     if (pretty) {
-      changes = this.PrettifyChanges(changes);
+      changes = this.A(changes);
     }
     return {
       quitEarly: quitEarlyArr[0],
@@ -4474,13 +4474,13 @@ var LcsDiff = class _LcsDiff {
    * recursively.
    * @returns An array of the differences between the two input sequences.
    */
-  ComputeDiffRecursive(originalStart, originalEnd, modifiedStart, modifiedEnd, quitEarlyArr) {
+  x(originalStart, originalEnd, modifiedStart, modifiedEnd, quitEarlyArr) {
     quitEarlyArr[0] = false;
-    while (originalStart <= originalEnd && modifiedStart <= modifiedEnd && this.ElementsAreEqual(originalStart, modifiedStart)) {
+    while (originalStart <= originalEnd && modifiedStart <= modifiedEnd && this.q(originalStart, modifiedStart)) {
       originalStart++;
       modifiedStart++;
     }
-    while (originalEnd >= originalStart && modifiedEnd >= modifiedStart && this.ElementsAreEqual(originalEnd, modifiedEnd)) {
+    while (originalEnd >= originalStart && modifiedEnd >= modifiedStart && this.q(originalEnd, modifiedEnd)) {
       originalEnd--;
       modifiedEnd--;
     }
@@ -4489,12 +4489,12 @@ var LcsDiff = class _LcsDiff {
       if (modifiedStart <= modifiedEnd) {
         Debug.Assert(originalStart === originalEnd + 1, "originalStart should only be one more than originalEnd");
         changes = [
-          new DiffChange(originalStart, 0, modifiedStart, modifiedEnd - modifiedStart + 1)
+          new $KD(originalStart, 0, modifiedStart, modifiedEnd - modifiedStart + 1)
         ];
       } else if (originalStart <= originalEnd) {
         Debug.Assert(modifiedStart === modifiedEnd + 1, "modifiedStart should only be one more than modifiedEnd");
         changes = [
-          new DiffChange(originalStart, originalEnd - originalStart + 1, modifiedStart, 0)
+          new $KD(originalStart, originalEnd - originalStart + 1, modifiedStart, 0)
         ];
       } else {
         Debug.Assert(originalStart === originalEnd + 1, "originalStart should only be one more than originalEnd");
@@ -4505,28 +4505,28 @@ var LcsDiff = class _LcsDiff {
     }
     const midOriginalArr = [0];
     const midModifiedArr = [0];
-    const result = this.ComputeRecursionPoint(originalStart, originalEnd, modifiedStart, modifiedEnd, midOriginalArr, midModifiedArr, quitEarlyArr);
+    const result = this.z(originalStart, originalEnd, modifiedStart, modifiedEnd, midOriginalArr, midModifiedArr, quitEarlyArr);
     const midOriginal = midOriginalArr[0];
     const midModified = midModifiedArr[0];
     if (result !== null) {
       return result;
     } else if (!quitEarlyArr[0]) {
-      const leftChanges = this.ComputeDiffRecursive(originalStart, midOriginal, modifiedStart, midModified, quitEarlyArr);
+      const leftChanges = this.x(originalStart, midOriginal, modifiedStart, midModified, quitEarlyArr);
       let rightChanges = [];
       if (!quitEarlyArr[0]) {
-        rightChanges = this.ComputeDiffRecursive(midOriginal + 1, originalEnd, midModified + 1, modifiedEnd, quitEarlyArr);
+        rightChanges = this.x(midOriginal + 1, originalEnd, midModified + 1, modifiedEnd, quitEarlyArr);
       } else {
         rightChanges = [
-          new DiffChange(midOriginal + 1, originalEnd - (midOriginal + 1) + 1, midModified + 1, modifiedEnd - (midModified + 1) + 1)
+          new $KD(midOriginal + 1, originalEnd - (midOriginal + 1) + 1, midModified + 1, modifiedEnd - (midModified + 1) + 1)
         ];
       }
-      return this.ConcatenateChanges(leftChanges, rightChanges);
+      return this.I(leftChanges, rightChanges);
     }
     return [
-      new DiffChange(originalStart, originalEnd - originalStart + 1, modifiedStart, modifiedEnd - modifiedStart + 1)
+      new $KD(originalStart, originalEnd - originalStart + 1, modifiedStart, modifiedEnd - modifiedStart + 1)
     ];
   }
-  WALKTRACE(diagonalForwardBase, diagonalForwardStart, diagonalForwardEnd, diagonalForwardOffset, diagonalReverseBase, diagonalReverseStart, diagonalReverseEnd, diagonalReverseOffset, forwardPoints, reversePoints, originalIndex, originalEnd, midOriginalArr, modifiedIndex, modifiedEnd, midModifiedArr, deltaIsEven, quitEarlyArr) {
+  y(diagonalForwardBase, diagonalForwardStart, diagonalForwardEnd, diagonalForwardOffset, diagonalReverseBase, diagonalReverseStart, diagonalReverseEnd, diagonalReverseOffset, forwardPoints, reversePoints, originalIndex, originalEnd, midOriginalArr, modifiedIndex, modifiedEnd, midModifiedArr, deltaIsEven, quitEarlyArr) {
     let forwardChanges = null;
     let reverseChanges = null;
     let changeHelper = new DiffChangeHelper();
@@ -4534,7 +4534,7 @@ var LcsDiff = class _LcsDiff {
     let diagonalMax = diagonalForwardEnd;
     let diagonalRelative = midOriginalArr[0] - midModifiedArr[0] - diagonalForwardOffset;
     let lastOriginalIndex = -1073741824;
-    let historyIndex = this.m_forwardHistory.length - 1;
+    let historyIndex = this.m.length - 1;
     do {
       const diagonal = diagonalRelative + diagonalForwardBase;
       if (diagonal === diagonalMin || diagonal < diagonalMax && forwardPoints[diagonal - 1] < forwardPoints[diagonal + 1]) {
@@ -4557,7 +4557,7 @@ var LcsDiff = class _LcsDiff {
         diagonalRelative = diagonal - 1 - diagonalForwardBase;
       }
       if (historyIndex >= 0) {
-        forwardPoints = this.m_forwardHistory[historyIndex];
+        forwardPoints = this.m[historyIndex];
         diagonalForwardBase = forwardPoints[0];
         diagonalMin = 1;
         diagonalMax = forwardPoints.length - 1;
@@ -4573,7 +4573,7 @@ var LcsDiff = class _LcsDiff {
         modifiedStartPoint = Math.max(modifiedStartPoint, lastForwardChange.getModifiedEnd());
       }
       reverseChanges = [
-        new DiffChange(originalStartPoint, originalEnd - originalStartPoint + 1, modifiedStartPoint, modifiedEnd - modifiedStartPoint + 1)
+        new $KD(originalStartPoint, originalEnd - originalStartPoint + 1, modifiedStartPoint, modifiedEnd - modifiedStartPoint + 1)
       ];
     } else {
       changeHelper = new DiffChangeHelper();
@@ -4581,7 +4581,7 @@ var LcsDiff = class _LcsDiff {
       diagonalMax = diagonalReverseEnd;
       diagonalRelative = midOriginalArr[0] - midModifiedArr[0] - diagonalReverseOffset;
       lastOriginalIndex = 1073741824;
-      historyIndex = deltaIsEven ? this.m_reverseHistory.length - 1 : this.m_reverseHistory.length - 2;
+      historyIndex = deltaIsEven ? this.n.length - 1 : this.n.length - 2;
       do {
         const diagonal = diagonalRelative + diagonalReverseBase;
         if (diagonal === diagonalMin || diagonal < diagonalMax && reversePoints[diagonal - 1] >= reversePoints[diagonal + 1]) {
@@ -4604,7 +4604,7 @@ var LcsDiff = class _LcsDiff {
           diagonalRelative = diagonal - 1 - diagonalReverseBase;
         }
         if (historyIndex >= 0) {
-          reversePoints = this.m_reverseHistory[historyIndex];
+          reversePoints = this.n[historyIndex];
           diagonalReverseBase = reversePoints[0];
           diagonalMin = 1;
           diagonalMax = reversePoints.length - 1;
@@ -4612,7 +4612,7 @@ var LcsDiff = class _LcsDiff {
       } while (--historyIndex >= -1);
       reverseChanges = changeHelper.getChanges();
     }
-    return this.ConcatenateChanges(forwardChanges, reverseChanges);
+    return this.I(forwardChanges, reverseChanges);
   }
   /**
    * Given the range to compute the diff on, this method finds the point:
@@ -4630,7 +4630,7 @@ var LcsDiff = class _LcsDiff {
    * @param midModified The middle point of the modified sequence range
    * @returns The diff changes, if available, otherwise null
    */
-  ComputeRecursionPoint(originalStart, originalEnd, modifiedStart, modifiedEnd, midOriginalArr, midModifiedArr, quitEarlyArr) {
+  z(originalStart, originalEnd, modifiedStart, modifiedEnd, midOriginalArr, midModifiedArr, quitEarlyArr) {
     let originalIndex = 0, modifiedIndex = 0;
     let diagonalForwardStart = 0, diagonalForwardEnd = 0;
     let diagonalReverseStart = 0, diagonalReverseEnd = 0;
@@ -4638,8 +4638,8 @@ var LcsDiff = class _LcsDiff {
     modifiedStart--;
     midOriginalArr[0] = 0;
     midModifiedArr[0] = 0;
-    this.m_forwardHistory = [];
-    this.m_reverseHistory = [];
+    this.m = [];
+    this.n = [];
     const maxDifferences = originalEnd - originalStart + (modifiedEnd - modifiedStart);
     const numDiagonals = maxDifferences + 1;
     const forwardPoints = new Int32Array(numDiagonals);
@@ -4656,8 +4656,8 @@ var LcsDiff = class _LcsDiff {
     for (let numDifferences = 1; numDifferences <= maxDifferences / 2 + 1; numDifferences++) {
       let furthestOriginalIndex = 0;
       let furthestModifiedIndex = 0;
-      diagonalForwardStart = this.ClipDiagonalBound(diagonalForwardBase - numDifferences, numDifferences, diagonalForwardBase, numDiagonals);
-      diagonalForwardEnd = this.ClipDiagonalBound(diagonalForwardBase + numDifferences, numDifferences, diagonalForwardBase, numDiagonals);
+      diagonalForwardStart = this.K(diagonalForwardBase - numDifferences, numDifferences, diagonalForwardBase, numDiagonals);
+      diagonalForwardEnd = this.K(diagonalForwardBase + numDifferences, numDifferences, diagonalForwardBase, numDiagonals);
       for (let diagonal = diagonalForwardStart; diagonal <= diagonalForwardEnd; diagonal += 2) {
         if (diagonal === diagonalForwardStart || diagonal < diagonalForwardEnd && forwardPoints[diagonal - 1] < forwardPoints[diagonal + 1]) {
           originalIndex = forwardPoints[diagonal + 1];
@@ -4666,7 +4666,7 @@ var LcsDiff = class _LcsDiff {
         }
         modifiedIndex = originalIndex - (diagonal - diagonalForwardBase) - diagonalForwardOffset;
         const tempOriginalIndex = originalIndex;
-        while (originalIndex < originalEnd && modifiedIndex < modifiedEnd && this.ElementsAreEqual(originalIndex + 1, modifiedIndex + 1)) {
+        while (originalIndex < originalEnd && modifiedIndex < modifiedEnd && this.q(originalIndex + 1, modifiedIndex + 1)) {
           originalIndex++;
           modifiedIndex++;
         }
@@ -4680,7 +4680,7 @@ var LcsDiff = class _LcsDiff {
             midOriginalArr[0] = originalIndex;
             midModifiedArr[0] = modifiedIndex;
             if (tempOriginalIndex <= reversePoints[diagonal] && 1447 > 0 && numDifferences <= 1447 + 1) {
-              return this.WALKTRACE(diagonalForwardBase, diagonalForwardStart, diagonalForwardEnd, diagonalForwardOffset, diagonalReverseBase, diagonalReverseStart, diagonalReverseEnd, diagonalReverseOffset, forwardPoints, reversePoints, originalIndex, originalEnd, midOriginalArr, modifiedIndex, modifiedEnd, midModifiedArr, deltaIsEven, quitEarlyArr);
+              return this.y(diagonalForwardBase, diagonalForwardStart, diagonalForwardEnd, diagonalForwardOffset, diagonalReverseBase, diagonalReverseStart, diagonalReverseEnd, diagonalReverseOffset, forwardPoints, reversePoints, originalIndex, originalEnd, midOriginalArr, modifiedIndex, modifiedEnd, midModifiedArr, deltaIsEven, quitEarlyArr);
             } else {
               return null;
             }
@@ -4688,22 +4688,22 @@ var LcsDiff = class _LcsDiff {
         }
       }
       const matchLengthOfLongest = (furthestOriginalIndex - originalStart + (furthestModifiedIndex - modifiedStart) - numDifferences) / 2;
-      if (this.ContinueProcessingPredicate !== null && !this.ContinueProcessingPredicate(furthestOriginalIndex, matchLengthOfLongest)) {
+      if (this.a !== null && !this.a(furthestOriginalIndex, matchLengthOfLongest)) {
         quitEarlyArr[0] = true;
         midOriginalArr[0] = furthestOriginalIndex;
         midModifiedArr[0] = furthestModifiedIndex;
         if (matchLengthOfLongest > 0 && 1447 > 0 && numDifferences <= 1447 + 1) {
-          return this.WALKTRACE(diagonalForwardBase, diagonalForwardStart, diagonalForwardEnd, diagonalForwardOffset, diagonalReverseBase, diagonalReverseStart, diagonalReverseEnd, diagonalReverseOffset, forwardPoints, reversePoints, originalIndex, originalEnd, midOriginalArr, modifiedIndex, modifiedEnd, midModifiedArr, deltaIsEven, quitEarlyArr);
+          return this.y(diagonalForwardBase, diagonalForwardStart, diagonalForwardEnd, diagonalForwardOffset, diagonalReverseBase, diagonalReverseStart, diagonalReverseEnd, diagonalReverseOffset, forwardPoints, reversePoints, originalIndex, originalEnd, midOriginalArr, modifiedIndex, modifiedEnd, midModifiedArr, deltaIsEven, quitEarlyArr);
         } else {
           originalStart++;
           modifiedStart++;
           return [
-            new DiffChange(originalStart, originalEnd - originalStart + 1, modifiedStart, modifiedEnd - modifiedStart + 1)
+            new $KD(originalStart, originalEnd - originalStart + 1, modifiedStart, modifiedEnd - modifiedStart + 1)
           ];
         }
       }
-      diagonalReverseStart = this.ClipDiagonalBound(diagonalReverseBase - numDifferences, numDifferences, diagonalReverseBase, numDiagonals);
-      diagonalReverseEnd = this.ClipDiagonalBound(diagonalReverseBase + numDifferences, numDifferences, diagonalReverseBase, numDiagonals);
+      diagonalReverseStart = this.K(diagonalReverseBase - numDifferences, numDifferences, diagonalReverseBase, numDiagonals);
+      diagonalReverseEnd = this.K(diagonalReverseBase + numDifferences, numDifferences, diagonalReverseBase, numDiagonals);
       for (let diagonal = diagonalReverseStart; diagonal <= diagonalReverseEnd; diagonal += 2) {
         if (diagonal === diagonalReverseStart || diagonal < diagonalReverseEnd && reversePoints[diagonal - 1] >= reversePoints[diagonal + 1]) {
           originalIndex = reversePoints[diagonal + 1] - 1;
@@ -4712,7 +4712,7 @@ var LcsDiff = class _LcsDiff {
         }
         modifiedIndex = originalIndex - (diagonal - diagonalReverseBase) - diagonalReverseOffset;
         const tempOriginalIndex = originalIndex;
-        while (originalIndex > originalStart && modifiedIndex > modifiedStart && this.ElementsAreEqual(originalIndex, modifiedIndex)) {
+        while (originalIndex > originalStart && modifiedIndex > modifiedStart && this.q(originalIndex, modifiedIndex)) {
           originalIndex--;
           modifiedIndex--;
         }
@@ -4722,7 +4722,7 @@ var LcsDiff = class _LcsDiff {
             midOriginalArr[0] = originalIndex;
             midModifiedArr[0] = modifiedIndex;
             if (tempOriginalIndex >= forwardPoints[diagonal] && 1447 > 0 && numDifferences <= 1447 + 1) {
-              return this.WALKTRACE(diagonalForwardBase, diagonalForwardStart, diagonalForwardEnd, diagonalForwardOffset, diagonalReverseBase, diagonalReverseStart, diagonalReverseEnd, diagonalReverseOffset, forwardPoints, reversePoints, originalIndex, originalEnd, midOriginalArr, modifiedIndex, modifiedEnd, midModifiedArr, deltaIsEven, quitEarlyArr);
+              return this.y(diagonalForwardBase, diagonalForwardStart, diagonalForwardEnd, diagonalForwardOffset, diagonalReverseBase, diagonalReverseStart, diagonalReverseEnd, diagonalReverseOffset, forwardPoints, reversePoints, originalIndex, originalEnd, midOriginalArr, modifiedIndex, modifiedEnd, midModifiedArr, deltaIsEven, quitEarlyArr);
             } else {
               return null;
             }
@@ -4733,14 +4733,14 @@ var LcsDiff = class _LcsDiff {
         let temp = new Int32Array(diagonalForwardEnd - diagonalForwardStart + 2);
         temp[0] = diagonalForwardBase - diagonalForwardStart + 1;
         MyArray.Copy2(forwardPoints, diagonalForwardStart, temp, 1, diagonalForwardEnd - diagonalForwardStart + 1);
-        this.m_forwardHistory.push(temp);
+        this.m.push(temp);
         temp = new Int32Array(diagonalReverseEnd - diagonalReverseStart + 2);
         temp[0] = diagonalReverseBase - diagonalReverseStart + 1;
         MyArray.Copy2(reversePoints, diagonalReverseStart, temp, 1, diagonalReverseEnd - diagonalReverseStart + 1);
-        this.m_reverseHistory.push(temp);
+        this.n.push(temp);
       }
     }
-    return this.WALKTRACE(diagonalForwardBase, diagonalForwardStart, diagonalForwardEnd, diagonalForwardOffset, diagonalReverseBase, diagonalReverseStart, diagonalReverseEnd, diagonalReverseOffset, forwardPoints, reversePoints, originalIndex, originalEnd, midOriginalArr, modifiedIndex, modifiedEnd, midModifiedArr, deltaIsEven, quitEarlyArr);
+    return this.y(diagonalForwardBase, diagonalForwardStart, diagonalForwardEnd, diagonalForwardOffset, diagonalReverseBase, diagonalReverseStart, diagonalReverseEnd, diagonalReverseOffset, forwardPoints, reversePoints, originalIndex, originalEnd, midOriginalArr, modifiedIndex, modifiedEnd, midModifiedArr, deltaIsEven, quitEarlyArr);
   }
   /**
    * Shifts the given changes to provide a more intuitive diff.
@@ -4750,16 +4750,16 @@ var LcsDiff = class _LcsDiff {
    * @param changes The list of changes to shift
    * @returns The shifted changes
    */
-  PrettifyChanges(changes) {
+  A(changes) {
     for (let i = 0; i < changes.length; i++) {
       const change = changes[i];
-      const originalStop = i < changes.length - 1 ? changes[i + 1].originalStart : this._originalElementsOrHash.length;
-      const modifiedStop = i < changes.length - 1 ? changes[i + 1].modifiedStart : this._modifiedElementsOrHash.length;
+      const originalStop = i < changes.length - 1 ? changes[i + 1].originalStart : this.f.length;
+      const modifiedStop = i < changes.length - 1 ? changes[i + 1].modifiedStart : this.h.length;
       const checkOriginal = change.originalLength > 0;
       const checkModified = change.modifiedLength > 0;
-      while (change.originalStart + change.originalLength < originalStop && change.modifiedStart + change.modifiedLength < modifiedStop && (!checkOriginal || this.OriginalElementsAreEqual(change.originalStart, change.originalStart + change.originalLength)) && (!checkModified || this.ModifiedElementsAreEqual(change.modifiedStart, change.modifiedStart + change.modifiedLength))) {
-        const startStrictEqual = this.ElementsAreStrictEqual(change.originalStart, change.modifiedStart);
-        const endStrictEqual = this.ElementsAreStrictEqual(change.originalStart + change.originalLength, change.modifiedStart + change.modifiedLength);
+      while (change.originalStart + change.originalLength < originalStop && change.modifiedStart + change.modifiedLength < modifiedStop && (!checkOriginal || this.u(change.originalStart, change.originalStart + change.originalLength)) && (!checkModified || this.v(change.modifiedStart, change.modifiedStart + change.modifiedLength))) {
+        const startStrictEqual = this.r(change.originalStart, change.modifiedStart);
+        const endStrictEqual = this.r(change.originalStart + change.originalLength, change.modifiedStart + change.modifiedLength);
         if (endStrictEqual && !startStrictEqual) {
           break;
         }
@@ -4767,7 +4767,7 @@ var LcsDiff = class _LcsDiff {
         change.modifiedStart++;
       }
       const mergedChangeArr = [null];
-      if (i < changes.length - 1 && this.ChangesOverlap(changes[i], changes[i + 1], mergedChangeArr)) {
+      if (i < changes.length - 1 && this.J(changes[i], changes[i + 1], mergedChangeArr)) {
         changes[i] = mergedChangeArr[0];
         changes.splice(i + 1, 1);
         i--;
@@ -4786,21 +4786,21 @@ var LcsDiff = class _LcsDiff {
       const checkOriginal = change.originalLength > 0;
       const checkModified = change.modifiedLength > 0;
       let bestDelta = 0;
-      let bestScore = this._boundaryScore(change.originalStart, change.originalLength, change.modifiedStart, change.modifiedLength);
+      let bestScore = this.H(change.originalStart, change.originalLength, change.modifiedStart, change.modifiedLength);
       for (let delta = 1; ; delta++) {
         const originalStart = change.originalStart - delta;
         const modifiedStart = change.modifiedStart - delta;
         if (originalStart < originalStop || modifiedStart < modifiedStop) {
           break;
         }
-        if (checkOriginal && !this.OriginalElementsAreEqual(originalStart, originalStart + change.originalLength)) {
+        if (checkOriginal && !this.u(originalStart, originalStart + change.originalLength)) {
           break;
         }
-        if (checkModified && !this.ModifiedElementsAreEqual(modifiedStart, modifiedStart + change.modifiedLength)) {
+        if (checkModified && !this.v(modifiedStart, modifiedStart + change.modifiedLength)) {
           break;
         }
         const touchingPreviousChange = originalStart === originalStop && modifiedStart === modifiedStop;
-        const score2 = (touchingPreviousChange ? 5 : 0) + this._boundaryScore(originalStart, change.originalLength, modifiedStart, change.modifiedLength);
+        const score2 = (touchingPreviousChange ? 5 : 0) + this.H(originalStart, change.originalLength, modifiedStart, change.modifiedLength);
         if (score2 > bestScore) {
           bestScore = score2;
           bestDelta = delta;
@@ -4809,14 +4809,14 @@ var LcsDiff = class _LcsDiff {
       change.originalStart -= bestDelta;
       change.modifiedStart -= bestDelta;
       const mergedChangeArr = [null];
-      if (i > 0 && this.ChangesOverlap(changes[i - 1], changes[i], mergedChangeArr)) {
+      if (i > 0 && this.J(changes[i - 1], changes[i], mergedChangeArr)) {
         changes[i - 1] = mergedChangeArr[0];
         changes.splice(i, 1);
         i++;
         continue;
       }
     }
-    if (this._hasStrings) {
+    if (this.d) {
       for (let i = 1, len = changes.length; i < len; i++) {
         const aChange = changes[i - 1];
         const bChange = changes[i];
@@ -4828,7 +4828,7 @@ var LcsDiff = class _LcsDiff {
         const bModifiedEnd = bChange.modifiedStart + bChange.modifiedLength;
         const abModifiedLength = bModifiedEnd - aModifiedStart;
         if (matchedLength < 5 && abOriginalLength < 20 && abModifiedLength < 20) {
-          const t = this._findBetterContiguousSequence(aOriginalStart, abOriginalLength, aModifiedStart, abModifiedLength, matchedLength);
+          const t = this.B(aOriginalStart, abOriginalLength, aModifiedStart, abModifiedLength, matchedLength);
           if (t) {
             const [originalMatchStart, modifiedMatchStart] = t;
             if (originalMatchStart !== aChange.originalStart + aChange.originalLength || modifiedMatchStart !== aChange.modifiedStart + aChange.modifiedLength) {
@@ -4845,7 +4845,7 @@ var LcsDiff = class _LcsDiff {
     }
     return changes;
   }
-  _findBetterContiguousSequence(originalStart, originalLength, modifiedStart, modifiedLength, desiredLength) {
+  B(originalStart, originalLength, modifiedStart, modifiedLength, desiredLength) {
     if (originalLength < desiredLength || modifiedLength < desiredLength) {
       return null;
     }
@@ -4856,7 +4856,7 @@ var LcsDiff = class _LcsDiff {
     let bestModifiedStart = 0;
     for (let i = originalStart; i < originalMax; i++) {
       for (let j = modifiedStart; j < modifiedMax; j++) {
-        const score2 = this._contiguousSequenceScore(i, j, desiredLength);
+        const score2 = this.C(i, j, desiredLength);
         if (score2 > 0 && score2 > bestScore) {
           bestScore = score2;
           bestOriginalStart = i;
@@ -4869,55 +4869,55 @@ var LcsDiff = class _LcsDiff {
     }
     return null;
   }
-  _contiguousSequenceScore(originalStart, modifiedStart, length) {
+  C(originalStart, modifiedStart, length) {
     let score2 = 0;
     for (let l = 0; l < length; l++) {
-      if (!this.ElementsAreEqual(originalStart + l, modifiedStart + l)) {
+      if (!this.q(originalStart + l, modifiedStart + l)) {
         return 0;
       }
-      score2 += this._originalStringElements[originalStart + l].length;
+      score2 += this.e[originalStart + l].length;
     }
     return score2;
   }
-  _OriginalIsBoundary(index) {
-    if (index <= 0 || index >= this._originalElementsOrHash.length - 1) {
+  D(index) {
+    if (index <= 0 || index >= this.f.length - 1) {
       return true;
     }
-    return this._hasStrings && /^\s*$/.test(this._originalStringElements[index]);
+    return this.d && /^\s*$/.test(this.e[index]);
   }
-  _OriginalRegionIsBoundary(originalStart, originalLength) {
-    if (this._OriginalIsBoundary(originalStart) || this._OriginalIsBoundary(originalStart - 1)) {
+  E(originalStart, originalLength) {
+    if (this.D(originalStart) || this.D(originalStart - 1)) {
       return true;
     }
     if (originalLength > 0) {
       const originalEnd = originalStart + originalLength;
-      if (this._OriginalIsBoundary(originalEnd - 1) || this._OriginalIsBoundary(originalEnd)) {
+      if (this.D(originalEnd - 1) || this.D(originalEnd)) {
         return true;
       }
     }
     return false;
   }
-  _ModifiedIsBoundary(index) {
-    if (index <= 0 || index >= this._modifiedElementsOrHash.length - 1) {
+  F(index) {
+    if (index <= 0 || index >= this.h.length - 1) {
       return true;
     }
-    return this._hasStrings && /^\s*$/.test(this._modifiedStringElements[index]);
+    return this.d && /^\s*$/.test(this.g[index]);
   }
-  _ModifiedRegionIsBoundary(modifiedStart, modifiedLength) {
-    if (this._ModifiedIsBoundary(modifiedStart) || this._ModifiedIsBoundary(modifiedStart - 1)) {
+  G(modifiedStart, modifiedLength) {
+    if (this.F(modifiedStart) || this.F(modifiedStart - 1)) {
       return true;
     }
     if (modifiedLength > 0) {
       const modifiedEnd = modifiedStart + modifiedLength;
-      if (this._ModifiedIsBoundary(modifiedEnd - 1) || this._ModifiedIsBoundary(modifiedEnd)) {
+      if (this.F(modifiedEnd - 1) || this.F(modifiedEnd)) {
         return true;
       }
     }
     return false;
   }
-  _boundaryScore(originalStart, originalLength, modifiedStart, modifiedLength) {
-    const originalScore = this._OriginalRegionIsBoundary(originalStart, originalLength) ? 1 : 0;
-    const modifiedScore = this._ModifiedRegionIsBoundary(modifiedStart, modifiedLength) ? 1 : 0;
+  H(originalStart, originalLength, modifiedStart, modifiedLength) {
+    const originalScore = this.E(originalStart, originalLength) ? 1 : 0;
+    const modifiedScore = this.G(modifiedStart, modifiedLength) ? 1 : 0;
     return originalScore + modifiedScore;
   }
   /**
@@ -4927,11 +4927,11 @@ var LcsDiff = class _LcsDiff {
    * @param The right changes
    * @returns The concatenated list
    */
-  ConcatenateChanges(left, right) {
+  I(left, right) {
     const mergedChangeArr = [];
     if (left.length === 0 || right.length === 0) {
       return right.length > 0 ? right : left;
-    } else if (this.ChangesOverlap(left[left.length - 1], right[0], mergedChangeArr)) {
+    } else if (this.J(left[left.length - 1], right[0], mergedChangeArr)) {
       const result = new Array(left.length + right.length - 1);
       MyArray.Copy(left, 0, result, 0, left.length - 1);
       result[left.length - 1] = mergedChangeArr[0];
@@ -4952,7 +4952,7 @@ var LcsDiff = class _LcsDiff {
    * @param mergedChange The merged change if the two overlap, null otherwise
    * @returns True if the two changes overlap
    */
-  ChangesOverlap(left, right, mergedChangeArr) {
+  J(left, right, mergedChangeArr) {
     Debug.Assert(left.originalStart <= right.originalStart, "Left change is not less than or equal to right change");
     Debug.Assert(left.modifiedStart <= right.modifiedStart, "Left change is not less than or equal to right change");
     if (left.originalStart + left.originalLength >= right.originalStart || left.modifiedStart + left.modifiedLength >= right.modifiedStart) {
@@ -4966,7 +4966,7 @@ var LcsDiff = class _LcsDiff {
       if (left.modifiedStart + left.modifiedLength >= right.modifiedStart) {
         modifiedLength = right.modifiedStart + right.modifiedLength - left.modifiedStart;
       }
-      mergedChangeArr[0] = new DiffChange(originalStart, originalLength, modifiedStart, modifiedLength);
+      mergedChangeArr[0] = new $KD(originalStart, originalLength, modifiedStart, modifiedLength);
       return true;
     } else {
       mergedChangeArr[0] = null;
@@ -4985,7 +4985,7 @@ var LcsDiff = class _LcsDiff {
    * @param numDiagonals The total number of diagonals.
    * @returns The clipped diagonal index.
    */
-  ClipDiagonalBound(diagonal, numDifferences, diagonalBaseIndex, numDiagonals) {
+  K(diagonal, numDifferences, diagonalBaseIndex, numDiagonals) {
     if (diagonal >= 0 && diagonal < numDiagonals) {
       return diagonal;
     }
@@ -5004,7 +5004,7 @@ var LcsDiff = class _LcsDiff {
 var precomputedEqualityArray = new Uint32Array(65536);
 
 // out-build/vs/editor/common/core/position.js
-var Position = class _Position {
+var $GD = class _$GD {
   constructor(lineNumber, column) {
     this.lineNumber = lineNumber;
     this.column = column;
@@ -5019,7 +5019,7 @@ var Position = class _Position {
     if (newLineNumber === this.lineNumber && newColumn === this.column) {
       return this;
     } else {
-      return new _Position(newLineNumber, newColumn);
+      return new _$GD(newLineNumber, newColumn);
     }
   }
   /**
@@ -5035,7 +5035,7 @@ var Position = class _Position {
    * Test if this position equals other position
    */
   equals(other) {
-    return _Position.equals(this, other);
+    return _$GD.equals(this, other);
   }
   /**
    * Test if position `a` equals position `b`
@@ -5051,7 +5051,7 @@ var Position = class _Position {
    * If the two positions are equal, the result will be false.
    */
   isBefore(other) {
-    return _Position.isBefore(this, other);
+    return _$GD.isBefore(this, other);
   }
   /**
    * Test if position `a` is before position `b`.
@@ -5071,7 +5071,7 @@ var Position = class _Position {
    * If the two positions are equal, the result will be true.
    */
   isBeforeOrEqual(other) {
-    return _Position.isBeforeOrEqual(this, other);
+    return _$GD.isBeforeOrEqual(this, other);
   }
   /**
    * Test if position `a` is before position `b`.
@@ -5103,7 +5103,7 @@ var Position = class _Position {
    * Clone this position.
    */
   clone() {
-    return new _Position(this.lineNumber, this.column);
+    return new _$GD(this.lineNumber, this.column);
   }
   /**
    * Convert to a human-readable representation.
@@ -5116,7 +5116,7 @@ var Position = class _Position {
    * Create a `Position` from an `IPosition`.
    */
   static lift(pos) {
-    return new _Position(pos.lineNumber, pos.column);
+    return new _$GD(pos.lineNumber, pos.column);
   }
   /**
    * Test if `obj` is an `IPosition`.
@@ -5133,7 +5133,7 @@ var Position = class _Position {
 };
 
 // out-build/vs/editor/common/core/range.js
-var Range = class _Range {
+var $HD = class _$HD {
   constructor(startLineNumber, startColumn, endLineNumber, endColumn) {
     if (startLineNumber > endLineNumber || startLineNumber === endLineNumber && startColumn > endColumn) {
       this.startLineNumber = endLineNumber;
@@ -5151,7 +5151,7 @@ var Range = class _Range {
    * Test if this range is empty.
    */
   isEmpty() {
-    return _Range.isEmpty(this);
+    return _$HD.isEmpty(this);
   }
   /**
    * Test if `range` is empty.
@@ -5163,7 +5163,7 @@ var Range = class _Range {
    * Test if position is in this range. If the position is at the edges, will return true.
    */
   containsPosition(position) {
-    return _Range.containsPosition(this, position);
+    return _$HD.containsPosition(this, position);
   }
   /**
    * Test if `position` is in `range`. If the position is at the edges, will return true.
@@ -5200,7 +5200,7 @@ var Range = class _Range {
    * Test if range is in this range. If the range is equal to this range, will return true.
    */
   containsRange(range) {
-    return _Range.containsRange(this, range);
+    return _$HD.containsRange(this, range);
   }
   /**
    * Test if `otherRange` is in `range`. If the ranges are equal, will return true.
@@ -5224,7 +5224,7 @@ var Range = class _Range {
    * Test if `range` is strictly in this range. `range` must start after and end before this range for the result to be true.
    */
   strictContainsRange(range) {
-    return _Range.strictContainsRange(this, range);
+    return _$HD.strictContainsRange(this, range);
   }
   /**
    * Test if `otherRange` is strictly in `range` (must start after, and end before). If the ranges are equal, will return false.
@@ -5249,7 +5249,7 @@ var Range = class _Range {
    * The smallest position will be used as the start point, and the largest one as the end point.
    */
   plusRange(range) {
-    return _Range.plusRange(this, range);
+    return _$HD.plusRange(this, range);
   }
   /**
    * A reunion of the two ranges.
@@ -5280,13 +5280,13 @@ var Range = class _Range {
       endLineNumber = a.endLineNumber;
       endColumn = a.endColumn;
     }
-    return new _Range(startLineNumber, startColumn, endLineNumber, endColumn);
+    return new _$HD(startLineNumber, startColumn, endLineNumber, endColumn);
   }
   /**
    * A intersection of the two ranges.
    */
   intersectRanges(range) {
-    return _Range.intersectRanges(this, range);
+    return _$HD.intersectRanges(this, range);
   }
   /**
    * A intersection of the two ranges.
@@ -5318,13 +5318,13 @@ var Range = class _Range {
     if (resultStartLineNumber === resultEndLineNumber && resultStartColumn > resultEndColumn) {
       return null;
     }
-    return new _Range(resultStartLineNumber, resultStartColumn, resultEndLineNumber, resultEndColumn);
+    return new _$HD(resultStartLineNumber, resultStartColumn, resultEndLineNumber, resultEndColumn);
   }
   /**
    * Test if this range equals other.
    */
   equalsRange(other) {
-    return _Range.equalsRange(this, other);
+    return _$HD.equalsRange(this, other);
   }
   /**
    * Test if range `a` equals `b`.
@@ -5339,25 +5339,25 @@ var Range = class _Range {
    * Return the end position (which will be after or equal to the start position)
    */
   getEndPosition() {
-    return _Range.getEndPosition(this);
+    return _$HD.getEndPosition(this);
   }
   /**
    * Return the end position (which will be after or equal to the start position)
    */
   static getEndPosition(range) {
-    return new Position(range.endLineNumber, range.endColumn);
+    return new $GD(range.endLineNumber, range.endColumn);
   }
   /**
    * Return the start position (which will be before or equal to the end position)
    */
   getStartPosition() {
-    return _Range.getStartPosition(this);
+    return _$HD.getStartPosition(this);
   }
   /**
    * Return the start position (which will be before or equal to the end position)
    */
   static getStartPosition(range) {
-    return new Position(range.startLineNumber, range.startColumn);
+    return new $GD(range.startLineNumber, range.startColumn);
   }
   /**
    * Transform to a user presentable string representation.
@@ -5369,56 +5369,56 @@ var Range = class _Range {
    * Create a new range using this range's start position, and using endLineNumber and endColumn as the end position.
    */
   setEndPosition(endLineNumber, endColumn) {
-    return new _Range(this.startLineNumber, this.startColumn, endLineNumber, endColumn);
+    return new _$HD(this.startLineNumber, this.startColumn, endLineNumber, endColumn);
   }
   /**
    * Create a new range using this range's end position, and using startLineNumber and startColumn as the start position.
    */
   setStartPosition(startLineNumber, startColumn) {
-    return new _Range(startLineNumber, startColumn, this.endLineNumber, this.endColumn);
+    return new _$HD(startLineNumber, startColumn, this.endLineNumber, this.endColumn);
   }
   /**
    * Create a new empty range using this range's start position.
    */
   collapseToStart() {
-    return _Range.collapseToStart(this);
+    return _$HD.collapseToStart(this);
   }
   /**
    * Create a new empty range using this range's start position.
    */
   static collapseToStart(range) {
-    return new _Range(range.startLineNumber, range.startColumn, range.startLineNumber, range.startColumn);
+    return new _$HD(range.startLineNumber, range.startColumn, range.startLineNumber, range.startColumn);
   }
   /**
    * Create a new empty range using this range's end position.
    */
   collapseToEnd() {
-    return _Range.collapseToEnd(this);
+    return _$HD.collapseToEnd(this);
   }
   /**
    * Create a new empty range using this range's end position.
    */
   static collapseToEnd(range) {
-    return new _Range(range.endLineNumber, range.endColumn, range.endLineNumber, range.endColumn);
+    return new _$HD(range.endLineNumber, range.endColumn, range.endLineNumber, range.endColumn);
   }
   /**
    * Moves the range by the given amount of lines.
    */
   delta(lineCount) {
-    return new _Range(this.startLineNumber + lineCount, this.startColumn, this.endLineNumber + lineCount, this.endColumn);
+    return new _$HD(this.startLineNumber + lineCount, this.startColumn, this.endLineNumber + lineCount, this.endColumn);
   }
   isSingleLine() {
     return this.startLineNumber === this.endLineNumber;
   }
   // ---
   static fromPositions(start, end = start) {
-    return new _Range(start.lineNumber, start.column, end.lineNumber, end.column);
+    return new _$HD(start.lineNumber, start.column, end.lineNumber, end.column);
   }
   static lift(range) {
     if (!range) {
       return null;
     }
-    return new _Range(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn);
+    return new _$HD(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn);
   }
   /**
    * Test if `obj` is an `IRange`.
@@ -5528,7 +5528,7 @@ var Constants;
   Constants2[Constants2["MAX_UINT_32"] = 4294967295] = "MAX_UINT_32";
   Constants2[Constants2["UNICODE_SUPPLEMENTARY_PLANE_BEGIN"] = 65536] = "UNICODE_SUPPLEMENTARY_PLANE_BEGIN";
 })(Constants || (Constants = {}));
-function toUint8(v) {
+function $Lf(v) {
   if (v < 0) {
     return 0;
   }
@@ -5537,7 +5537,7 @@ function toUint8(v) {
   }
   return v | 0;
 }
-function toUint32(v) {
+function $Mf(v) {
   if (v < 0) {
     return 0;
   }
@@ -5548,36 +5548,36 @@ function toUint32(v) {
 }
 
 // out-build/vs/editor/common/core/characterClassifier.js
-var CharacterClassifier = class _CharacterClassifier {
+var $sE = class _$sE {
   constructor(_defaultValue) {
-    const defaultValue = toUint8(_defaultValue);
-    this._defaultValue = defaultValue;
-    this._asciiMap = _CharacterClassifier._createAsciiMap(defaultValue);
-    this._map = /* @__PURE__ */ new Map();
+    const defaultValue = $Lf(_defaultValue);
+    this.c = defaultValue;
+    this.a = _$sE.d(defaultValue);
+    this.b = /* @__PURE__ */ new Map();
   }
-  static _createAsciiMap(defaultValue) {
+  static d(defaultValue) {
     const asciiMap = new Uint8Array(256);
     asciiMap.fill(defaultValue);
     return asciiMap;
   }
   set(charCode, _value) {
-    const value = toUint8(_value);
+    const value = $Lf(_value);
     if (charCode >= 0 && charCode < 256) {
-      this._asciiMap[charCode] = value;
+      this.a[charCode] = value;
     } else {
-      this._map.set(charCode, value);
+      this.b.set(charCode, value);
     }
   }
   get(charCode) {
     if (charCode >= 0 && charCode < 256) {
-      return this._asciiMap[charCode];
+      return this.a[charCode];
     } else {
-      return this._map.get(charCode) || this._defaultValue;
+      return this.b.get(charCode) || this.c;
     }
   }
   clear() {
-    this._asciiMap.fill(this._defaultValue);
-    this._map.clear();
+    this.a.fill(this.c);
+    this.b.clear();
   }
 };
 var Boolean2;
@@ -5611,18 +5611,18 @@ var Uint8Matrix = class {
     for (let i = 0, len = rows * cols; i < len; i++) {
       data[i] = defaultValue;
     }
-    this._data = data;
+    this.a = data;
     this.rows = rows;
     this.cols = cols;
   }
   get(row, col) {
-    return this._data[row * this.cols + col];
+    return this.a[row * this.cols + col];
   }
   set(row, col, value) {
-    this._data[row * this.cols + col] = value;
+    this.a[row * this.cols + col] = value;
   }
 };
-var StateMachine = class {
+var $xfb = class {
   constructor(edges) {
     let maxCharCode = 0;
     let maxState = 0;
@@ -5650,20 +5650,20 @@ var StateMachine = class {
       const [from, chCode, to] = edges[i];
       states.set(from, chCode, to);
     }
-    this._states = states;
-    this._maxCharCode = maxCharCode;
+    this.a = states;
+    this.b = maxCharCode;
   }
   nextState(currentState, chCode) {
-    if (chCode < 0 || chCode >= this._maxCharCode) {
+    if (chCode < 0 || chCode >= this.b) {
       return 0;
     }
-    return this._states.get(currentState, chCode);
+    return this.a.get(currentState, chCode);
   }
 };
 var _stateMachine = null;
 function getStateMachine() {
   if (_stateMachine === null) {
-    _stateMachine = new StateMachine([
+    _stateMachine = new $xfb([
       [
         1,
         104,
@@ -5809,7 +5809,7 @@ var CharacterClass;
 var _classifier = null;
 function getClassifier() {
   if (_classifier === null) {
-    _classifier = new CharacterClassifier(
+    _classifier = new $sE(
       0
       /* CharacterClass.None */
     );
@@ -5832,8 +5832,8 @@ function getClassifier() {
   }
   return _classifier;
 }
-var LinkComputer = class _LinkComputer {
-  static _createLink(classifier, line, lineNumber, linkBeginIndex, linkEndIndex) {
+var $yfb = class _$yfb {
+  static a(classifier, line, lineNumber, linkBeginIndex, linkEndIndex) {
     let lastIncludedCharIndex = linkEndIndex - 1;
     do {
       const chCode = line.charCodeAt(lastIncludedCharIndex);
@@ -5926,7 +5926,7 @@ var LinkComputer = class _LinkComputer {
               chClass = classifier.get(chCode);
           }
           if (chClass === 1) {
-            result.push(_LinkComputer._createLink(classifier, line, i, linkBeginIndex, j));
+            result.push(_$yfb.a(classifier, line, i, linkBeginIndex, j));
             resetStateMachine = true;
           }
         } else if (state === 12) {
@@ -5959,23 +5959,23 @@ var LinkComputer = class _LinkComputer {
         j++;
       }
       if (state === 13) {
-        result.push(_LinkComputer._createLink(classifier, line, i, linkBeginIndex, len));
+        result.push(_$yfb.a(classifier, line, i, linkBeginIndex, len));
       }
     }
     return result;
   }
 };
-function computeLinks(model) {
+function $zfb(model) {
   if (!model || typeof model.getLineCount !== "function" || typeof model.getLineContent !== "function") {
     return [];
   }
-  return LinkComputer.computeLinks(model);
+  return $yfb.computeLinks(model);
 }
 
 // out-build/vs/editor/common/languages/supports/inplaceReplaceSupport.js
-var BasicInplaceReplace = class _BasicInplaceReplace {
+var $Afb = class _$Afb {
   constructor() {
-    this._defaultValueSet = [
+    this.c = [
       ["true", "false"],
       ["True", "False"],
       ["Private", "Public", "Friend", "ReadOnly", "Partial", "Protected", "WriteOnly"],
@@ -5983,11 +5983,11 @@ var BasicInplaceReplace = class _BasicInplaceReplace {
     ];
   }
   static {
-    this.INSTANCE = new _BasicInplaceReplace();
+    this.INSTANCE = new _$Afb();
   }
   navigateValueSet(range1, text1, range2, text2, up) {
     if (range1 && text1) {
-      const result = this.doNavigateValueSet(text1, up);
+      const result = this.a(text1, up);
       if (result) {
         return {
           range: range1,
@@ -5996,7 +5996,7 @@ var BasicInplaceReplace = class _BasicInplaceReplace {
       }
     }
     if (range2 && text2) {
-      const result = this.doNavigateValueSet(text2, up);
+      const result = this.a(text2, up);
       if (result) {
         return {
           range: range2,
@@ -6006,14 +6006,14 @@ var BasicInplaceReplace = class _BasicInplaceReplace {
     }
     return null;
   }
-  doNavigateValueSet(text, up) {
-    const numberResult = this.numberReplace(text, up);
+  a(text, up) {
+    const numberResult = this.b(text, up);
     if (numberResult !== null) {
       return numberResult;
     }
-    return this.textReplace(text, up);
+    return this.d(text, up);
   }
-  numberReplace(value, up) {
+  b(value, up) {
     const precision = Math.pow(10, value.length - (value.lastIndexOf(".") + 1));
     let n1 = Number(value);
     const n2 = parseFloat(value);
@@ -6028,17 +6028,17 @@ var BasicInplaceReplace = class _BasicInplaceReplace {
     }
     return null;
   }
-  textReplace(value, up) {
-    return this.valueSetsReplace(this._defaultValueSet, value, up);
+  d(value, up) {
+    return this.e(this.c, value, up);
   }
-  valueSetsReplace(valueSets, value, up) {
+  e(valueSets, value, up) {
     let result = null;
     for (let i = 0, len = valueSets.length; result === null && i < len; i++) {
-      result = this.valueSetReplace(valueSets[i], value, up);
+      result = this.f(valueSets[i], value, up);
     }
     return result;
   }
-  valueSetReplace(valueSet, value, up) {
+  f(valueSet, value, up) {
     let idx = valueSet.indexOf(value);
     if (idx >= 0) {
       idx += up ? 1 : -1;
@@ -6408,18 +6408,18 @@ var KeyCodeStrMap = class {
 var uiMap = new KeyCodeStrMap();
 var userSettingsUSMap = new KeyCodeStrMap();
 var userSettingsGeneralMap = new KeyCodeStrMap();
-var EVENT_KEY_CODE_MAP = new Array(230);
-var NATIVE_WINDOWS_KEY_CODE_TO_KEY_CODE = {};
+var $Gx = new Array(230);
+var $Hx = {};
 var scanCodeIntToStr = [];
 var scanCodeStrToInt = /* @__PURE__ */ Object.create(null);
 var scanCodeLowerCaseStrToInt = /* @__PURE__ */ Object.create(null);
-var IMMUTABLE_CODE_TO_KEY_CODE = [];
-var IMMUTABLE_KEY_CODE_TO_CODE = [];
+var $Jx = [];
+var $Kx = [];
 for (let i = 0; i <= 193; i++) {
-  IMMUTABLE_CODE_TO_KEY_CODE[i] = -1;
+  $Jx[i] = -1;
 }
 for (let i = 0; i <= 132; i++) {
-  IMMUTABLE_KEY_CODE_TO_CODE[i] = -1;
+  $Kx[i] = -1;
 }
 (function() {
   const empty = "";
@@ -6668,9 +6668,9 @@ for (let i = 0; i <= 132; i++) {
       scanCodeStrToInt[scanCodeStr] = scanCode;
       scanCodeLowerCaseStrToInt[scanCodeStr.toLowerCase()] = scanCode;
       if (immutable) {
-        IMMUTABLE_CODE_TO_KEY_CODE[scanCode] = keyCode;
-        if (keyCode !== 0 && keyCode !== 3 && !isModifierKey(keyCode)) {
-          IMMUTABLE_KEY_CODE_TO_CODE[keyCode] = scanCode;
+        $Jx[scanCode] = keyCode;
+        if (keyCode !== 0 && keyCode !== 3 && !$Mx(keyCode)) {
+          $Kx[keyCode] = scanCode;
         }
       }
     }
@@ -6684,13 +6684,13 @@ for (let i = 0; i <= 132; i++) {
       userSettingsGeneralMap.define(keyCode, generalUserSettingsLabel || usUserSettingsLabel || keyCodeStr);
     }
     if (eventKeyCode) {
-      EVENT_KEY_CODE_MAP[eventKeyCode] = keyCode;
+      $Gx[eventKeyCode] = keyCode;
     }
     if (vkey) {
-      NATIVE_WINDOWS_KEY_CODE_TO_KEY_CODE[vkey] = keyCode;
+      $Hx[vkey] = keyCode;
     }
   }
-  IMMUTABLE_KEY_CODE_TO_CODE[
+  $Kx[
     3
     /* KeyCode.Enter */
   ] = 46;
@@ -6736,17 +6736,17 @@ var KeyCodeUtils;
   KeyCodeUtils2.toElectronAccelerator = toElectronAccelerator;
 })(KeyCodeUtils || (KeyCodeUtils = {}));
 var KeyMod;
-(function(KeyMod3) {
-  KeyMod3[KeyMod3["CtrlCmd"] = 2048] = "CtrlCmd";
-  KeyMod3[KeyMod3["Shift"] = 1024] = "Shift";
-  KeyMod3[KeyMod3["Alt"] = 512] = "Alt";
-  KeyMod3[KeyMod3["WinCtrl"] = 256] = "WinCtrl";
+(function(KeyMod2) {
+  KeyMod2[KeyMod2["CtrlCmd"] = 2048] = "CtrlCmd";
+  KeyMod2[KeyMod2["Shift"] = 1024] = "Shift";
+  KeyMod2[KeyMod2["Alt"] = 512] = "Alt";
+  KeyMod2[KeyMod2["WinCtrl"] = 256] = "WinCtrl";
 })(KeyMod || (KeyMod = {}));
-function KeyChord(firstPart, secondPart) {
+function $Lx(firstPart, secondPart) {
   const chordPart = (secondPart & 65535) << 16 >>> 0;
   return (firstPart | chordPart) >>> 0;
 }
-function isModifierKey(keyCode) {
+function $Mx(keyCode) {
   return keyCode === 5 || keyCode === 4 || keyCode === 6 || keyCode === 57;
 }
 
@@ -6788,7 +6788,7 @@ if (typeof vscodeGlobal !== "undefined" && typeof vscodeGlobal.process !== "unde
   safeProcess = {
     // Supported
     get platform() {
-      return isWindows ? "win32" : isMacintosh ? "darwin" : "linux";
+      return $m ? "win32" : $n ? "darwin" : "linux";
     },
     get arch() {
       return void 0;
@@ -6802,10 +6802,10 @@ if (typeof vscodeGlobal !== "undefined" && typeof vscodeGlobal.process !== "unde
     }
   };
 }
-var cwd = safeProcess.cwd;
-var env = safeProcess.env;
-var platform = safeProcess.platform;
-var arch = safeProcess.arch;
+var $2 = safeProcess.cwd;
+var $3 = safeProcess.env;
+var $4 = safeProcess.platform;
+var $5 = safeProcess.arch;
 
 // out-build/vs/base/common/path.js
 var CHAR_UPPERCASE_A = 65;
@@ -6843,7 +6843,7 @@ function validateString(value, name) {
     throw new ErrorInvalidArgType(name, "string", value);
   }
 }
-var platformIsWin32 = platform === "win32";
+var platformIsWin32 = $4 === "win32";
 function isPathSeparator(code) {
   return code === CHAR_FORWARD_SLASH || code === CHAR_BACKWARD_SLASH;
 }
@@ -6853,7 +6853,7 @@ function isPosixPathSeparator(code) {
 function isWindowsDeviceRoot(code) {
   return code >= CHAR_UPPERCASE_A && code <= CHAR_UPPERCASE_Z || code >= CHAR_LOWERCASE_A && code <= CHAR_LOWERCASE_Z;
 }
-function normalizeString(path, allowAboveRoot, separator, isPathSeparator3) {
+function normalizeString(path, allowAboveRoot, separator, isPathSeparator2) {
   let res = "";
   let lastSegmentLength = 0;
   let lastSlash = -1;
@@ -6862,12 +6862,12 @@ function normalizeString(path, allowAboveRoot, separator, isPathSeparator3) {
   for (let i = 0; i <= path.length; ++i) {
     if (i < path.length) {
       code = path.charCodeAt(i);
-    } else if (isPathSeparator3(code)) {
+    } else if (isPathSeparator2(code)) {
       break;
     } else {
       code = CHAR_FORWARD_SLASH;
     }
-    if (isPathSeparator3(code)) {
+    if (isPathSeparator2(code)) {
       if (lastSlash === i - 1 || dots === 1) {
       } else if (dots === 2) {
         if (res.length < 2 || lastSegmentLength !== 2 || res.charCodeAt(res.length - 1) !== CHAR_DOT || res.charCodeAt(res.length - 2) !== CHAR_DOT) {
@@ -6925,7 +6925,7 @@ function _format2(sep2, pathObject) {
   }
   return dir === pathObject.root ? `${dir}${base}` : `${dir}${sep2}${base}`;
 }
-var win32 = {
+var $6 = {
   // path.resolve([from ...], to)
   resolve(...pathSegments) {
     let resolvedDevice = "";
@@ -6940,9 +6940,9 @@ var win32 = {
           continue;
         }
       } else if (resolvedDevice.length === 0) {
-        path = cwd();
+        path = $2();
       } else {
-        path = env[`=${resolvedDevice}`] || cwd();
+        path = $3[`=${resolvedDevice}`] || $2();
         if (path === void 0 || path.slice(0, 2).toLowerCase() !== resolvedDevice.toLowerCase() && path.charCodeAt(2) === CHAR_BACKWARD_SLASH) {
           path = `${resolvedDevice}\\`;
         }
@@ -6950,15 +6950,15 @@ var win32 = {
       const len = path.length;
       let rootEnd = 0;
       let device = "";
-      let isAbsolute2 = false;
+      let isAbsolute = false;
       const code = path.charCodeAt(0);
       if (len === 1) {
         if (isPathSeparator(code)) {
           rootEnd = 1;
-          isAbsolute2 = true;
+          isAbsolute = true;
         }
       } else if (isPathSeparator(code)) {
-        isAbsolute2 = true;
+        isAbsolute = true;
         if (isPathSeparator(path.charCodeAt(1))) {
           let j = 2;
           let last = j;
@@ -6989,7 +6989,7 @@ var win32 = {
         device = path.slice(0, 2);
         rootEnd = 2;
         if (len > 2 && isPathSeparator(path.charCodeAt(2))) {
-          isAbsolute2 = true;
+          isAbsolute = true;
           rootEnd = 3;
         }
       }
@@ -7008,8 +7008,8 @@ var win32 = {
         }
       } else {
         resolvedTail = `${path.slice(rootEnd)}\\${resolvedTail}`;
-        resolvedAbsolute = isAbsolute2;
-        if (isAbsolute2 && resolvedDevice.length > 0) {
+        resolvedAbsolute = isAbsolute;
+        if (isAbsolute && resolvedDevice.length > 0) {
           break;
         }
       }
@@ -7025,13 +7025,13 @@ var win32 = {
     }
     let rootEnd = 0;
     let device;
-    let isAbsolute2 = false;
+    let isAbsolute = false;
     const code = path.charCodeAt(0);
     if (len === 1) {
       return isPosixPathSeparator(code) ? "\\" : path;
     }
     if (isPathSeparator(code)) {
-      isAbsolute2 = true;
+      isAbsolute = true;
       if (isPathSeparator(path.charCodeAt(1))) {
         let j = 2;
         let last = j;
@@ -7065,18 +7065,18 @@ var win32 = {
       device = path.slice(0, 2);
       rootEnd = 2;
       if (len > 2 && isPathSeparator(path.charCodeAt(2))) {
-        isAbsolute2 = true;
+        isAbsolute = true;
         rootEnd = 3;
       }
     }
-    let tail = rootEnd < len ? normalizeString(path.slice(rootEnd), !isAbsolute2, "\\", isPathSeparator) : "";
-    if (tail.length === 0 && !isAbsolute2) {
+    let tail = rootEnd < len ? normalizeString(path.slice(rootEnd), !isAbsolute, "\\", isPathSeparator) : "";
+    if (tail.length === 0 && !isAbsolute) {
       tail = ".";
     }
     if (tail.length > 0 && isPathSeparator(path.charCodeAt(len - 1))) {
       tail += "\\";
     }
-    if (!isAbsolute2 && device === void 0 && path.includes(":")) {
+    if (!isAbsolute && device === void 0 && path.includes(":")) {
       if (tail.length >= 2 && isWindowsDeviceRoot(tail.charCodeAt(0)) && tail.charCodeAt(1) === CHAR_COLON) {
         return `.\\${tail}`;
       }
@@ -7088,9 +7088,9 @@ var win32 = {
       } while ((index = path.indexOf(":", index + 1)) !== -1);
     }
     if (device === void 0) {
-      return isAbsolute2 ? `\\${tail}` : tail;
+      return isAbsolute ? `\\${tail}` : tail;
     }
-    return isAbsolute2 ? `${device}\\${tail}` : `${device}${tail}`;
+    return isAbsolute ? `${device}\\${tail}` : `${device}${tail}`;
   },
   isAbsolute(path) {
     validateString(path, "path");
@@ -7146,7 +7146,7 @@ var win32 = {
         joined = `\\${joined.slice(slashCount)}`;
       }
     }
-    return win32.normalize(joined);
+    return $6.normalize(joined);
   },
   // It will solve the relative path from `from` to `to`, for instance:
   //  from = 'C:\\orandea\\test\\aaa'
@@ -7158,8 +7158,8 @@ var win32 = {
     if (from === to) {
       return "";
     }
-    const fromOrig = win32.resolve(from);
-    const toOrig = win32.resolve(to);
+    const fromOrig = $6.resolve(from);
+    const toOrig = $6.resolve(to);
     if (fromOrig === toOrig) {
       return "";
     }
@@ -7271,7 +7271,7 @@ var win32 = {
     if (typeof path !== "string" || path.length === 0) {
       return path;
     }
-    const resolvedPath = win32.resolve(path);
+    const resolvedPath = $6.resolve(path);
     if (resolvedPath.length <= 2) {
       return path;
     }
@@ -7573,13 +7573,13 @@ var posixCwd = (() => {
   if (platformIsWin32) {
     const regexp = /\\/g;
     return () => {
-      const cwd2 = cwd().replace(regexp, "/");
-      return cwd2.slice(cwd2.indexOf("/"));
+      const cwd = $2().replace(regexp, "/");
+      return cwd.slice(cwd.indexOf("/"));
     };
   }
-  return () => cwd();
+  return () => $2();
 })();
-var posix = {
+var $7 = {
   // path.resolve([from ...], to)
   resolve(...pathSegments) {
     let resolvedPath = "";
@@ -7594,9 +7594,9 @@ var posix = {
       resolvedAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     }
     if (!resolvedAbsolute) {
-      const cwd2 = posixCwd();
-      resolvedPath = `${cwd2}/${resolvedPath}`;
-      resolvedAbsolute = cwd2.charCodeAt(0) === CHAR_FORWARD_SLASH;
+      const cwd = posixCwd();
+      resolvedPath = `${cwd}/${resolvedPath}`;
+      resolvedAbsolute = cwd.charCodeAt(0) === CHAR_FORWARD_SLASH;
     }
     resolvedPath = normalizeString(resolvedPath, !resolvedAbsolute, "/", isPosixPathSeparator);
     if (resolvedAbsolute) {
@@ -7609,11 +7609,11 @@ var posix = {
     if (path.length === 0) {
       return ".";
     }
-    const isAbsolute2 = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+    const isAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     const trailingSeparator = path.charCodeAt(path.length - 1) === CHAR_FORWARD_SLASH;
-    path = normalizeString(path, !isAbsolute2, "/", isPosixPathSeparator);
+    path = normalizeString(path, !isAbsolute, "/", isPosixPathSeparator);
     if (path.length === 0) {
-      if (isAbsolute2) {
+      if (isAbsolute) {
         return "/";
       }
       return trailingSeparator ? "./" : ".";
@@ -7621,7 +7621,7 @@ var posix = {
     if (trailingSeparator) {
       path += "/";
     }
-    return isAbsolute2 ? `/${path}` : path;
+    return isAbsolute ? `/${path}` : path;
   },
   isAbsolute(path) {
     validateString(path, "path");
@@ -7642,7 +7642,7 @@ var posix = {
     if (path.length === 0) {
       return ".";
     }
-    return posix.normalize(path.join("/"));
+    return $7.normalize(path.join("/"));
   },
   relative(from, to) {
     validateString(from, "from");
@@ -7650,8 +7650,8 @@ var posix = {
     if (from === to) {
       return "";
     }
-    from = posix.resolve(from);
-    to = posix.resolve(to);
+    from = $7.resolve(from);
+    to = $7.resolve(to);
     if (from === to) {
       return "";
     }
@@ -7830,9 +7830,9 @@ var posix = {
     if (path.length === 0) {
       return ret;
     }
-    const isAbsolute2 = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+    const isAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     let start;
-    if (isAbsolute2) {
+    if (isAbsolute) {
       ret.root = "/";
       start = 1;
     } else {
@@ -7868,7 +7868,7 @@ var posix = {
       }
     }
     if (end !== -1) {
-      const start2 = startPart === 0 && isAbsolute2 ? 1 : startPart;
+      const start2 = startPart === 0 && isAbsolute ? 1 : startPart;
       if (startDot === -1 || // We saw a non-dot character immediately before the dot
       preDotState === 0 || // The (right-most) trimmed path component is exactly '..'
       preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
@@ -7881,7 +7881,7 @@ var posix = {
     }
     if (startPart > 0) {
       ret.dir = path.slice(0, startPart - 1);
-    } else if (isAbsolute2) {
+    } else if (isAbsolute) {
       ret.dir = "/";
     }
     return ret;
@@ -7891,21 +7891,21 @@ var posix = {
   win32: null,
   posix: null
 };
-posix.win32 = win32.win32 = win32;
-posix.posix = win32.posix = posix;
-var normalize = platformIsWin32 ? win32.normalize : posix.normalize;
-var isAbsolute = platformIsWin32 ? win32.isAbsolute : posix.isAbsolute;
-var join = platformIsWin32 ? win32.join : posix.join;
-var resolve = platformIsWin32 ? win32.resolve : posix.resolve;
-var relative = platformIsWin32 ? win32.relative : posix.relative;
-var dirname = platformIsWin32 ? win32.dirname : posix.dirname;
-var basename = platformIsWin32 ? win32.basename : posix.basename;
-var extname = platformIsWin32 ? win32.extname : posix.extname;
-var format = platformIsWin32 ? win32.format : posix.format;
-var parse = platformIsWin32 ? win32.parse : posix.parse;
-var toNamespacedPath = platformIsWin32 ? win32.toNamespacedPath : posix.toNamespacedPath;
-var sep = platformIsWin32 ? win32.sep : posix.sep;
-var delimiter = platformIsWin32 ? win32.delimiter : posix.delimiter;
+$7.win32 = $6.win32 = $6;
+$7.posix = $6.posix = $7;
+var $8 = platformIsWin32 ? $6.normalize : $7.normalize;
+var $9 = platformIsWin32 ? $6.isAbsolute : $7.isAbsolute;
+var $0 = platformIsWin32 ? $6.join : $7.join;
+var $$ = platformIsWin32 ? $6.resolve : $7.resolve;
+var $_ = platformIsWin32 ? $6.relative : $7.relative;
+var $ab = platformIsWin32 ? $6.dirname : $7.dirname;
+var $bb = platformIsWin32 ? $6.basename : $7.basename;
+var $cb = platformIsWin32 ? $6.extname : $7.extname;
+var $db = platformIsWin32 ? $6.format : $7.format;
+var $eb = platformIsWin32 ? $6.parse : $7.parse;
+var $fb = platformIsWin32 ? $6.toNamespacedPath : $7.toNamespacedPath;
+var sep = platformIsWin32 ? $6.sep : $7.sep;
+var $hb = platformIsWin32 ? $6.delimiter : $7.delimiter;
 
 // out-build/vs/base/common/uri.js
 var _schemePattern = /^\w[\w\d+.-]*$/;
@@ -8008,7 +8008,7 @@ var URI = class _URI {
    * with URIs that represent files on disk (`file` scheme).
    */
   get fsPath() {
-    return uriToFsPath(this, false);
+    return $Lc(this, false);
   }
   // ---- modify to new -------------------------
   with(change) {
@@ -8083,7 +8083,7 @@ var URI = class _URI {
    */
   static file(path) {
     let authority = _empty;
-    if (isWindows) {
+    if ($m) {
       path = path.replace(/\\/g, _slash);
     }
     if (path[0] === _slash && path[1] === _slash) {
@@ -8121,10 +8121,10 @@ var URI = class _URI {
       throw new Error(`[UriError]: cannot call joinPath on URI without path`);
     }
     let newPath;
-    if (isWindows && uri.scheme === "file") {
-      newPath = _URI.file(win32.join(uriToFsPath(uri, true), ...pathFragment)).path;
+    if ($m && uri.scheme === "file") {
+      newPath = _URI.file($6.join($Lc(uri, true), ...pathFragment)).path;
     } else {
-      newPath = posix.join(uri.path, ...pathFragment);
+      newPath = $7.join(uri.path, ...pathFragment);
     }
     return uri.with({ path: newPath });
   }
@@ -8162,7 +8162,7 @@ var URI = class _URI {
     return `URI(${this.toString()})`;
   }
 };
-var _pathSepMarker = isWindows ? 1 : void 0;
+var _pathSepMarker = $m ? 1 : void 0;
 var Uri = class extends URI {
   constructor() {
     super(...arguments);
@@ -8171,7 +8171,7 @@ var Uri = class extends URI {
   }
   get fsPath() {
     if (!this._fsPath) {
-      this._fsPath = uriToFsPath(this, false);
+      this._fsPath = $Lc(this, false);
     }
     return this._fsPath;
   }
@@ -8346,7 +8346,7 @@ function encodeURIComponentMinimal(path) {
   }
   return res !== void 0 ? res : path;
 }
-function uriToFsPath(uri, keepDriveLetterCasing) {
+function $Lc(uri, keepDriveLetterCasing) {
   let value;
   if (uri.authority && uri.path.length > 1 && uri.scheme === "file") {
     value = `//${uri.authority}${uri.path}`;
@@ -8359,7 +8359,7 @@ function uriToFsPath(uri, keepDriveLetterCasing) {
   } else {
     value = uri.path;
   }
-  if (isWindows) {
+  if ($m) {
     value = value.replace(/\//g, "\\");
   }
   return value;
@@ -8449,7 +8449,7 @@ var SelectionDirection;
   SelectionDirection3[SelectionDirection3["LTR"] = 0] = "LTR";
   SelectionDirection3[SelectionDirection3["RTL"] = 1] = "RTL";
 })(SelectionDirection || (SelectionDirection = {}));
-var Selection = class _Selection extends Range {
+var $JD = class _$JD extends $HD {
   constructor(selectionStartLineNumber, selectionStartColumn, positionLineNumber, positionColumn) {
     super(selectionStartLineNumber, selectionStartColumn, positionLineNumber, positionColumn);
     this.selectionStartLineNumber = selectionStartLineNumber;
@@ -8467,7 +8467,7 @@ var Selection = class _Selection extends Range {
    * Test if equals other selection.
    */
   equalsSelection(other) {
-    return _Selection.selectionsEqual(this, other);
+    return _$JD.selectionsEqual(this, other);
   }
   /**
    * Test if the two selections are equal.
@@ -8489,53 +8489,53 @@ var Selection = class _Selection extends Range {
    */
   setEndPosition(endLineNumber, endColumn) {
     if (this.getDirection() === 0) {
-      return new _Selection(this.startLineNumber, this.startColumn, endLineNumber, endColumn);
+      return new _$JD(this.startLineNumber, this.startColumn, endLineNumber, endColumn);
     }
-    return new _Selection(endLineNumber, endColumn, this.startLineNumber, this.startColumn);
+    return new _$JD(endLineNumber, endColumn, this.startLineNumber, this.startColumn);
   }
   /**
    * Get the position at `positionLineNumber` and `positionColumn`.
    */
   getPosition() {
-    return new Position(this.positionLineNumber, this.positionColumn);
+    return new $GD(this.positionLineNumber, this.positionColumn);
   }
   /**
    * Get the position at the start of the selection.
   */
   getSelectionStart() {
-    return new Position(this.selectionStartLineNumber, this.selectionStartColumn);
+    return new $GD(this.selectionStartLineNumber, this.selectionStartColumn);
   }
   /**
    * Create a new selection with a different `selectionStartLineNumber` and `selectionStartColumn`.
    */
   setStartPosition(startLineNumber, startColumn) {
     if (this.getDirection() === 0) {
-      return new _Selection(startLineNumber, startColumn, this.endLineNumber, this.endColumn);
+      return new _$JD(startLineNumber, startColumn, this.endLineNumber, this.endColumn);
     }
-    return new _Selection(this.endLineNumber, this.endColumn, startLineNumber, startColumn);
+    return new _$JD(this.endLineNumber, this.endColumn, startLineNumber, startColumn);
   }
   // ----
   /**
    * Create a `Selection` from one or two positions
    */
   static fromPositions(start, end = start) {
-    return new _Selection(start.lineNumber, start.column, end.lineNumber, end.column);
+    return new _$JD(start.lineNumber, start.column, end.lineNumber, end.column);
   }
   /**
    * Creates a `Selection` from a range, given a direction.
    */
   static fromRange(range, direction) {
     if (direction === 0) {
-      return new _Selection(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn);
+      return new _$JD(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn);
     } else {
-      return new _Selection(range.endLineNumber, range.endColumn, range.startLineNumber, range.startColumn);
+      return new _$JD(range.endLineNumber, range.endColumn, range.startLineNumber, range.startColumn);
     }
   }
   /**
    * Create a `Selection` from an `ISelection`.
    */
   static liftSelection(sel) {
-    return new _Selection(sel.selectionStartLineNumber, sel.selectionStartColumn, sel.positionLineNumber, sel.positionColumn);
+    return new _$JD(sel.selectionStartLineNumber, sel.selectionStartColumn, sel.positionLineNumber, sel.positionColumn);
   }
   /**
    * `a` equals `b`.
@@ -8568,16 +8568,16 @@ var Selection = class _Selection extends Range {
    */
   static createWithDirection(startLineNumber, startColumn, endLineNumber, endColumn, direction) {
     if (direction === 0) {
-      return new _Selection(startLineNumber, startColumn, endLineNumber, endColumn);
+      return new _$JD(startLineNumber, startColumn, endLineNumber, endColumn);
     }
-    return new _Selection(endLineNumber, endColumn, startLineNumber, startColumn);
+    return new _$JD(endLineNumber, endColumn, startLineNumber, startColumn);
   }
 };
 
 // out-build/vs/base/common/codiconsUtil.js
 var _codiconFontCharacters = /* @__PURE__ */ Object.create(null);
-function register(id2, fontCharacter) {
-  if (isString(fontCharacter)) {
+function $1j(id2, fontCharacter) {
+  if ($7c(fontCharacter)) {
     const val = _codiconFontCharacters[fontCharacter];
     if (val === void 0) {
       throw new Error(`${id2} references an unknown codicon: ${fontCharacter}`);
@@ -8589,717 +8589,717 @@ function register(id2, fontCharacter) {
 }
 
 // out-build/vs/base/common/codiconsLibrary.js
-var codiconsLibrary = {
-  add: register("add", 6e4),
-  plus: register("plus", 6e4),
-  gistNew: register("gist-new", 6e4),
-  repoCreate: register("repo-create", 6e4),
-  lightbulb: register("lightbulb", 60001),
-  lightBulb: register("light-bulb", 60001),
-  repo: register("repo", 60002),
-  repoDelete: register("repo-delete", 60002),
-  gistFork: register("gist-fork", 60003),
-  repoForked: register("repo-forked", 60003),
-  gitPullRequest: register("git-pull-request", 60004),
-  gitPullRequestAbandoned: register("git-pull-request-abandoned", 60004),
-  recordKeys: register("record-keys", 60005),
-  keyboard: register("keyboard", 60005),
-  tag: register("tag", 60006),
-  gitPullRequestLabel: register("git-pull-request-label", 60006),
-  tagAdd: register("tag-add", 60006),
-  tagRemove: register("tag-remove", 60006),
-  person: register("person", 60007),
-  personFollow: register("person-follow", 60007),
-  personOutline: register("person-outline", 60007),
-  personFilled: register("person-filled", 60007),
-  sourceControl: register("source-control", 60008),
-  mirror: register("mirror", 60009),
-  mirrorPublic: register("mirror-public", 60009),
-  star: register("star", 60010),
-  starAdd: register("star-add", 60010),
-  starDelete: register("star-delete", 60010),
-  starEmpty: register("star-empty", 60010),
-  comment: register("comment", 60011),
-  commentAdd: register("comment-add", 60011),
-  alert: register("alert", 60012),
-  warning: register("warning", 60012),
-  search: register("search", 60013),
-  searchSave: register("search-save", 60013),
-  logOut: register("log-out", 60014),
-  signOut: register("sign-out", 60014),
-  logIn: register("log-in", 60015),
-  signIn: register("sign-in", 60015),
-  eye: register("eye", 60016),
-  eyeUnwatch: register("eye-unwatch", 60016),
-  eyeWatch: register("eye-watch", 60016),
-  circleFilled: register("circle-filled", 60017),
-  primitiveDot: register("primitive-dot", 60017),
-  closeDirty: register("close-dirty", 60017),
-  debugBreakpoint: register("debug-breakpoint", 60017),
-  debugBreakpointDisabled: register("debug-breakpoint-disabled", 60017),
-  debugHint: register("debug-hint", 60017),
-  terminalDecorationSuccess: register("terminal-decoration-success", 60017),
-  primitiveSquare: register("primitive-square", 60018),
-  edit: register("edit", 60019),
-  pencil: register("pencil", 60019),
-  info: register("info", 60020),
-  issueOpened: register("issue-opened", 60020),
-  gistPrivate: register("gist-private", 60021),
-  gitForkPrivate: register("git-fork-private", 60021),
-  lock: register("lock", 60021),
-  mirrorPrivate: register("mirror-private", 60021),
-  close: register("close", 60022),
-  removeClose: register("remove-close", 60022),
-  x: register("x", 60022),
-  repoSync: register("repo-sync", 60023),
-  sync: register("sync", 60023),
-  clone: register("clone", 60024),
-  desktopDownload: register("desktop-download", 60024),
-  beaker: register("beaker", 60025),
-  microscope: register("microscope", 60025),
-  vm: register("vm", 60026),
-  deviceDesktop: register("device-desktop", 60026),
-  file: register("file", 60027),
-  more: register("more", 60028),
-  ellipsis: register("ellipsis", 60028),
-  kebabHorizontal: register("kebab-horizontal", 60028),
-  mailReply: register("mail-reply", 60029),
-  reply: register("reply", 60029),
-  organization: register("organization", 60030),
-  organizationFilled: register("organization-filled", 60030),
-  organizationOutline: register("organization-outline", 60030),
-  newFile: register("new-file", 60031),
-  fileAdd: register("file-add", 60031),
-  newFolder: register("new-folder", 60032),
-  fileDirectoryCreate: register("file-directory-create", 60032),
-  trash: register("trash", 60033),
-  trashcan: register("trashcan", 60033),
-  history: register("history", 60034),
-  clock: register("clock", 60034),
-  folder: register("folder", 60035),
-  fileDirectory: register("file-directory", 60035),
-  symbolFolder: register("symbol-folder", 60035),
-  logoGithub: register("logo-github", 60036),
-  markGithub: register("mark-github", 60036),
-  github: register("github", 60036),
-  terminal: register("terminal", 60037),
-  console: register("console", 60037),
-  repl: register("repl", 60037),
-  zap: register("zap", 60038),
-  symbolEvent: register("symbol-event", 60038),
-  error: register("error", 60039),
-  stop: register("stop", 60039),
-  variable: register("variable", 60040),
-  symbolVariable: register("symbol-variable", 60040),
-  array: register("array", 60042),
-  symbolArray: register("symbol-array", 60042),
-  symbolModule: register("symbol-module", 60043),
-  symbolPackage: register("symbol-package", 60043),
-  symbolNamespace: register("symbol-namespace", 60043),
-  symbolObject: register("symbol-object", 60043),
-  symbolMethod: register("symbol-method", 60044),
-  symbolFunction: register("symbol-function", 60044),
-  symbolConstructor: register("symbol-constructor", 60044),
-  symbolBoolean: register("symbol-boolean", 60047),
-  symbolNull: register("symbol-null", 60047),
-  symbolNumeric: register("symbol-numeric", 60048),
-  symbolNumber: register("symbol-number", 60048),
-  symbolStructure: register("symbol-structure", 60049),
-  symbolStruct: register("symbol-struct", 60049),
-  symbolParameter: register("symbol-parameter", 60050),
-  symbolTypeParameter: register("symbol-type-parameter", 60050),
-  symbolKey: register("symbol-key", 60051),
-  symbolText: register("symbol-text", 60051),
-  symbolReference: register("symbol-reference", 60052),
-  goToFile: register("go-to-file", 60052),
-  symbolEnum: register("symbol-enum", 60053),
-  symbolValue: register("symbol-value", 60053),
-  symbolRuler: register("symbol-ruler", 60054),
-  symbolUnit: register("symbol-unit", 60054),
-  activateBreakpoints: register("activate-breakpoints", 60055),
-  archive: register("archive", 60056),
-  arrowBoth: register("arrow-both", 60057),
-  arrowDown: register("arrow-down", 60058),
-  arrowLeft: register("arrow-left", 60059),
-  arrowRight: register("arrow-right", 60060),
-  arrowSmallDown: register("arrow-small-down", 60061),
-  arrowSmallLeft: register("arrow-small-left", 60062),
-  arrowSmallRight: register("arrow-small-right", 60063),
-  arrowSmallUp: register("arrow-small-up", 60064),
-  arrowUp: register("arrow-up", 60065),
-  bell: register("bell", 60066),
-  bold: register("bold", 60067),
-  book: register("book", 60068),
-  bookmark: register("bookmark", 60069),
-  debugBreakpointConditionalUnverified: register("debug-breakpoint-conditional-unverified", 60070),
-  debugBreakpointConditional: register("debug-breakpoint-conditional", 60071),
-  debugBreakpointConditionalDisabled: register("debug-breakpoint-conditional-disabled", 60071),
-  debugBreakpointDataUnverified: register("debug-breakpoint-data-unverified", 60072),
-  debugBreakpointData: register("debug-breakpoint-data", 60073),
-  debugBreakpointDataDisabled: register("debug-breakpoint-data-disabled", 60073),
-  debugBreakpointLogUnverified: register("debug-breakpoint-log-unverified", 60074),
-  debugBreakpointLog: register("debug-breakpoint-log", 60075),
-  debugBreakpointLogDisabled: register("debug-breakpoint-log-disabled", 60075),
-  briefcase: register("briefcase", 60076),
-  broadcast: register("broadcast", 60077),
-  browser: register("browser", 60078),
-  bug: register("bug", 60079),
-  calendar: register("calendar", 60080),
-  caseSensitive: register("case-sensitive", 60081),
-  check: register("check", 60082),
-  checklist: register("checklist", 60083),
-  chevronDown: register("chevron-down", 60084),
-  chevronLeft: register("chevron-left", 60085),
-  chevronRight: register("chevron-right", 60086),
-  chevronUp: register("chevron-up", 60087),
-  chromeClose: register("chrome-close", 60088),
-  chromeMaximize: register("chrome-maximize", 60089),
-  chromeMinimize: register("chrome-minimize", 60090),
-  chromeRestore: register("chrome-restore", 60091),
-  circleOutline: register("circle-outline", 60092),
-  circle: register("circle", 60092),
-  debugBreakpointUnverified: register("debug-breakpoint-unverified", 60092),
-  terminalDecorationIncomplete: register("terminal-decoration-incomplete", 60092),
-  circleSlash: register("circle-slash", 60093),
-  circuitBoard: register("circuit-board", 60094),
-  clearAll: register("clear-all", 60095),
-  clippy: register("clippy", 60096),
-  closeAll: register("close-all", 60097),
-  cloudDownload: register("cloud-download", 60098),
-  cloudUpload: register("cloud-upload", 60099),
-  code: register("code", 60100),
-  collapseAll: register("collapse-all", 60101),
-  colorMode: register("color-mode", 60102),
-  commentDiscussion: register("comment-discussion", 60103),
-  creditCard: register("credit-card", 60105),
-  dash: register("dash", 60108),
-  dashboard: register("dashboard", 60109),
-  database: register("database", 60110),
-  debugContinue: register("debug-continue", 60111),
-  debugDisconnect: register("debug-disconnect", 60112),
-  debugPause: register("debug-pause", 60113),
-  debugRestart: register("debug-restart", 60114),
-  debugStart: register("debug-start", 60115),
-  debugStepInto: register("debug-step-into", 60116),
-  debugStepOut: register("debug-step-out", 60117),
-  debugStepOver: register("debug-step-over", 60118),
-  debugStop: register("debug-stop", 60119),
-  debug: register("debug", 60120),
-  deviceCameraVideo: register("device-camera-video", 60121),
-  deviceCamera: register("device-camera", 60122),
-  deviceMobile: register("device-mobile", 60123),
-  diffAdded: register("diff-added", 60124),
-  diffIgnored: register("diff-ignored", 60125),
-  diffModified: register("diff-modified", 60126),
-  diffRemoved: register("diff-removed", 60127),
-  diffRenamed: register("diff-renamed", 60128),
-  diff: register("diff", 60129),
-  diffSidebyside: register("diff-sidebyside", 60129),
-  discard: register("discard", 60130),
-  editorLayout: register("editor-layout", 60131),
-  emptyWindow: register("empty-window", 60132),
-  exclude: register("exclude", 60133),
-  extensions: register("extensions", 60134),
-  eyeClosed: register("eye-closed", 60135),
-  fileBinary: register("file-binary", 60136),
-  fileCode: register("file-code", 60137),
-  fileMedia: register("file-media", 60138),
-  filePdf: register("file-pdf", 60139),
-  fileSubmodule: register("file-submodule", 60140),
-  fileSymlinkDirectory: register("file-symlink-directory", 60141),
-  fileSymlinkFile: register("file-symlink-file", 60142),
-  fileZip: register("file-zip", 60143),
-  files: register("files", 60144),
-  filter: register("filter", 60145),
-  flame: register("flame", 60146),
-  foldDown: register("fold-down", 60147),
-  foldUp: register("fold-up", 60148),
-  fold: register("fold", 60149),
-  folderActive: register("folder-active", 60150),
-  folderOpened: register("folder-opened", 60151),
-  gear: register("gear", 60152),
-  gift: register("gift", 60153),
-  gistSecret: register("gist-secret", 60154),
-  gist: register("gist", 60155),
-  gitCommit: register("git-commit", 60156),
-  gitCompare: register("git-compare", 60157),
-  compareChanges: register("compare-changes", 60157),
-  gitMerge: register("git-merge", 60158),
-  githubAction: register("github-action", 60159),
-  githubAlt: register("github-alt", 60160),
-  globe: register("globe", 60161),
-  grabber: register("grabber", 60162),
-  graph: register("graph", 60163),
-  gripper: register("gripper", 60164),
-  heart: register("heart", 60165),
-  home: register("home", 60166),
-  horizontalRule: register("horizontal-rule", 60167),
-  hubot: register("hubot", 60168),
-  inbox: register("inbox", 60169),
-  issueReopened: register("issue-reopened", 60171),
-  issues: register("issues", 60172),
-  italic: register("italic", 60173),
-  jersey: register("jersey", 60174),
-  json: register("json", 60175),
-  kebabVertical: register("kebab-vertical", 60176),
-  key: register("key", 60177),
-  law: register("law", 60178),
-  lightbulbAutofix: register("lightbulb-autofix", 60179),
-  linkExternal: register("link-external", 60180),
-  link: register("link", 60181),
-  listOrdered: register("list-ordered", 60182),
-  listUnordered: register("list-unordered", 60183),
-  liveShare: register("live-share", 60184),
-  loading: register("loading", 60185),
-  location: register("location", 60186),
-  mailRead: register("mail-read", 60187),
-  mail: register("mail", 60188),
-  markdown: register("markdown", 60189),
-  megaphone: register("megaphone", 60190),
-  mention: register("mention", 60191),
-  milestone: register("milestone", 60192),
-  gitPullRequestMilestone: register("git-pull-request-milestone", 60192),
-  mortarBoard: register("mortar-board", 60193),
-  move: register("move", 60194),
-  multipleWindows: register("multiple-windows", 60195),
-  mute: register("mute", 60196),
-  noNewline: register("no-newline", 60197),
-  note: register("note", 60198),
-  octoface: register("octoface", 60199),
-  openPreview: register("open-preview", 60200),
-  package: register("package", 60201),
-  paintcan: register("paintcan", 60202),
-  pin: register("pin", 60203),
-  play: register("play", 60204),
-  run: register("run", 60204),
-  plug: register("plug", 60205),
-  preserveCase: register("preserve-case", 60206),
-  preview: register("preview", 60207),
-  project: register("project", 60208),
-  pulse: register("pulse", 60209),
-  question: register("question", 60210),
-  quote: register("quote", 60211),
-  radioTower: register("radio-tower", 60212),
-  reactions: register("reactions", 60213),
-  references: register("references", 60214),
-  refresh: register("refresh", 60215),
-  regex: register("regex", 60216),
-  remoteExplorer: register("remote-explorer", 60217),
-  remote: register("remote", 60218),
-  remove: register("remove", 60219),
-  replaceAll: register("replace-all", 60220),
-  replace: register("replace", 60221),
-  repoClone: register("repo-clone", 60222),
-  repoForcePush: register("repo-force-push", 60223),
-  repoPull: register("repo-pull", 60224),
-  repoPush: register("repo-push", 60225),
-  report: register("report", 60226),
-  requestChanges: register("request-changes", 60227),
-  rocket: register("rocket", 60228),
-  rootFolderOpened: register("root-folder-opened", 60229),
-  rootFolder: register("root-folder", 60230),
-  rss: register("rss", 60231),
-  ruby: register("ruby", 60232),
-  saveAll: register("save-all", 60233),
-  saveAs: register("save-as", 60234),
-  save: register("save", 60235),
-  screenFull: register("screen-full", 60236),
-  screenNormal: register("screen-normal", 60237),
-  searchStop: register("search-stop", 60238),
-  server: register("server", 60240),
-  settingsGear: register("settings-gear", 60241),
-  settings: register("settings", 60242),
-  shield: register("shield", 60243),
-  smiley: register("smiley", 60244),
-  sortPrecedence: register("sort-precedence", 60245),
-  splitHorizontal: register("split-horizontal", 60246),
-  splitVertical: register("split-vertical", 60247),
-  squirrel: register("squirrel", 60248),
-  starFull: register("star-full", 60249),
-  starHalf: register("star-half", 60250),
-  symbolClass: register("symbol-class", 60251),
-  symbolColor: register("symbol-color", 60252),
-  symbolConstant: register("symbol-constant", 60253),
-  symbolEnumMember: register("symbol-enum-member", 60254),
-  symbolField: register("symbol-field", 60255),
-  symbolFile: register("symbol-file", 60256),
-  symbolInterface: register("symbol-interface", 60257),
-  symbolKeyword: register("symbol-keyword", 60258),
-  symbolMisc: register("symbol-misc", 60259),
-  symbolOperator: register("symbol-operator", 60260),
-  symbolProperty: register("symbol-property", 60261),
-  wrench: register("wrench", 60261),
-  wrenchSubaction: register("wrench-subaction", 60261),
-  symbolSnippet: register("symbol-snippet", 60262),
-  tasklist: register("tasklist", 60263),
-  telescope: register("telescope", 60264),
-  textSize: register("text-size", 60265),
-  threeBars: register("three-bars", 60266),
-  thumbsdown: register("thumbsdown", 60267),
-  thumbsup: register("thumbsup", 60268),
-  tools: register("tools", 60269),
-  triangleDown: register("triangle-down", 60270),
-  triangleLeft: register("triangle-left", 60271),
-  triangleRight: register("triangle-right", 60272),
-  triangleUp: register("triangle-up", 60273),
-  twitter: register("twitter", 60274),
-  unfold: register("unfold", 60275),
-  unlock: register("unlock", 60276),
-  unmute: register("unmute", 60277),
-  unverified: register("unverified", 60278),
-  verified: register("verified", 60279),
-  versions: register("versions", 60280),
-  vmActive: register("vm-active", 60281),
-  vmOutline: register("vm-outline", 60282),
-  vmRunning: register("vm-running", 60283),
-  watch: register("watch", 60284),
-  whitespace: register("whitespace", 60285),
-  wholeWord: register("whole-word", 60286),
-  window: register("window", 60287),
-  wordWrap: register("word-wrap", 60288),
-  zoomIn: register("zoom-in", 60289),
-  zoomOut: register("zoom-out", 60290),
-  listFilter: register("list-filter", 60291),
-  listFlat: register("list-flat", 60292),
-  listSelection: register("list-selection", 60293),
-  selection: register("selection", 60293),
-  listTree: register("list-tree", 60294),
-  debugBreakpointFunctionUnverified: register("debug-breakpoint-function-unverified", 60295),
-  debugBreakpointFunction: register("debug-breakpoint-function", 60296),
-  debugBreakpointFunctionDisabled: register("debug-breakpoint-function-disabled", 60296),
-  debugStackframeActive: register("debug-stackframe-active", 60297),
-  circleSmallFilled: register("circle-small-filled", 60298),
-  debugStackframeDot: register("debug-stackframe-dot", 60298),
-  terminalDecorationMark: register("terminal-decoration-mark", 60298),
-  debugStackframe: register("debug-stackframe", 60299),
-  debugStackframeFocused: register("debug-stackframe-focused", 60299),
-  debugBreakpointUnsupported: register("debug-breakpoint-unsupported", 60300),
-  symbolString: register("symbol-string", 60301),
-  debugReverseContinue: register("debug-reverse-continue", 60302),
-  debugStepBack: register("debug-step-back", 60303),
-  debugRestartFrame: register("debug-restart-frame", 60304),
-  debugAlt: register("debug-alt", 60305),
-  callIncoming: register("call-incoming", 60306),
-  callOutgoing: register("call-outgoing", 60307),
-  menu: register("menu", 60308),
-  expandAll: register("expand-all", 60309),
-  feedback: register("feedback", 60310),
-  gitPullRequestReviewer: register("git-pull-request-reviewer", 60310),
-  groupByRefType: register("group-by-ref-type", 60311),
-  ungroupByRefType: register("ungroup-by-ref-type", 60312),
-  account: register("account", 60313),
-  gitPullRequestAssignee: register("git-pull-request-assignee", 60313),
-  bellDot: register("bell-dot", 60314),
-  debugConsole: register("debug-console", 60315),
-  library: register("library", 60316),
-  output: register("output", 60317),
-  runAll: register("run-all", 60318),
-  syncIgnored: register("sync-ignored", 60319),
-  pinned: register("pinned", 60320),
-  githubInverted: register("github-inverted", 60321),
-  serverProcess: register("server-process", 60322),
-  serverEnvironment: register("server-environment", 60323),
-  pass: register("pass", 60324),
-  issueClosed: register("issue-closed", 60324),
-  stopCircle: register("stop-circle", 60325),
-  playCircle: register("play-circle", 60326),
-  record: register("record", 60327),
-  debugAltSmall: register("debug-alt-small", 60328),
-  vmConnect: register("vm-connect", 60329),
-  cloud: register("cloud", 60330),
-  merge: register("merge", 60331),
-  export: register("export", 60332),
-  graphLeft: register("graph-left", 60333),
-  magnet: register("magnet", 60334),
-  notebook: register("notebook", 60335),
-  redo: register("redo", 60336),
-  checkAll: register("check-all", 60337),
-  pinnedDirty: register("pinned-dirty", 60338),
-  passFilled: register("pass-filled", 60339),
-  circleLargeFilled: register("circle-large-filled", 60340),
-  circleLarge: register("circle-large", 60341),
-  circleLargeOutline: register("circle-large-outline", 60341),
-  combine: register("combine", 60342),
-  gather: register("gather", 60342),
-  table: register("table", 60343),
-  variableGroup: register("variable-group", 60344),
-  typeHierarchy: register("type-hierarchy", 60345),
-  typeHierarchySub: register("type-hierarchy-sub", 60346),
-  typeHierarchySuper: register("type-hierarchy-super", 60347),
-  gitPullRequestCreate: register("git-pull-request-create", 60348),
-  runAbove: register("run-above", 60349),
-  runBelow: register("run-below", 60350),
-  notebookTemplate: register("notebook-template", 60351),
-  debugRerun: register("debug-rerun", 60352),
-  workspaceTrusted: register("workspace-trusted", 60353),
-  workspaceUntrusted: register("workspace-untrusted", 60354),
-  workspaceUnknown: register("workspace-unknown", 60355),
-  terminalCmd: register("terminal-cmd", 60356),
-  terminalDebian: register("terminal-debian", 60357),
-  terminalLinux: register("terminal-linux", 60358),
-  terminalPowershell: register("terminal-powershell", 60359),
-  terminalTmux: register("terminal-tmux", 60360),
-  terminalUbuntu: register("terminal-ubuntu", 60361),
-  terminalBash: register("terminal-bash", 60362),
-  arrowSwap: register("arrow-swap", 60363),
-  copy: register("copy", 60364),
-  personAdd: register("person-add", 60365),
-  filterFilled: register("filter-filled", 60366),
-  wand: register("wand", 60367),
-  debugLineByLine: register("debug-line-by-line", 60368),
-  inspect: register("inspect", 60369),
-  layers: register("layers", 60370),
-  layersDot: register("layers-dot", 60371),
-  layersActive: register("layers-active", 60372),
-  compass: register("compass", 60373),
-  compassDot: register("compass-dot", 60374),
-  compassActive: register("compass-active", 60375),
-  azure: register("azure", 60376),
-  issueDraft: register("issue-draft", 60377),
-  gitPullRequestClosed: register("git-pull-request-closed", 60378),
-  gitPullRequestDraft: register("git-pull-request-draft", 60379),
-  debugAll: register("debug-all", 60380),
-  debugCoverage: register("debug-coverage", 60381),
-  runErrors: register("run-errors", 60382),
-  folderLibrary: register("folder-library", 60383),
-  debugContinueSmall: register("debug-continue-small", 60384),
-  beakerStop: register("beaker-stop", 60385),
-  graphLine: register("graph-line", 60386),
-  graphScatter: register("graph-scatter", 60387),
-  pieChart: register("pie-chart", 60388),
-  bracket: register("bracket", 60175),
-  bracketDot: register("bracket-dot", 60389),
-  bracketError: register("bracket-error", 60390),
-  lockSmall: register("lock-small", 60391),
-  azureDevops: register("azure-devops", 60392),
-  verifiedFilled: register("verified-filled", 60393),
-  newline: register("newline", 60394),
-  layout: register("layout", 60395),
-  layoutActivitybarLeft: register("layout-activitybar-left", 60396),
-  layoutActivitybarRight: register("layout-activitybar-right", 60397),
-  layoutPanelLeft: register("layout-panel-left", 60398),
-  layoutPanelCenter: register("layout-panel-center", 60399),
-  layoutPanelJustify: register("layout-panel-justify", 60400),
-  layoutPanelRight: register("layout-panel-right", 60401),
-  layoutPanel: register("layout-panel", 60402),
-  layoutSidebarLeft: register("layout-sidebar-left", 60403),
-  layoutSidebarRight: register("layout-sidebar-right", 60404),
-  layoutStatusbar: register("layout-statusbar", 60405),
-  layoutMenubar: register("layout-menubar", 60406),
-  layoutCentered: register("layout-centered", 60407),
-  target: register("target", 60408),
-  indent: register("indent", 60409),
-  recordSmall: register("record-small", 60410),
-  errorSmall: register("error-small", 60411),
-  terminalDecorationError: register("terminal-decoration-error", 60411),
-  arrowCircleDown: register("arrow-circle-down", 60412),
-  arrowCircleLeft: register("arrow-circle-left", 60413),
-  arrowCircleRight: register("arrow-circle-right", 60414),
-  arrowCircleUp: register("arrow-circle-up", 60415),
-  layoutSidebarRightOff: register("layout-sidebar-right-off", 60416),
-  layoutPanelOff: register("layout-panel-off", 60417),
-  layoutSidebarLeftOff: register("layout-sidebar-left-off", 60418),
-  blank: register("blank", 60419),
-  heartFilled: register("heart-filled", 60420),
-  map: register("map", 60421),
-  mapHorizontal: register("map-horizontal", 60421),
-  foldHorizontal: register("fold-horizontal", 60421),
-  mapFilled: register("map-filled", 60422),
-  mapHorizontalFilled: register("map-horizontal-filled", 60422),
-  foldHorizontalFilled: register("fold-horizontal-filled", 60422),
-  circleSmall: register("circle-small", 60423),
-  bellSlash: register("bell-slash", 60424),
-  bellSlashDot: register("bell-slash-dot", 60425),
-  commentUnresolved: register("comment-unresolved", 60426),
-  gitPullRequestGoToChanges: register("git-pull-request-go-to-changes", 60427),
-  gitPullRequestNewChanges: register("git-pull-request-new-changes", 60428),
-  searchFuzzy: register("search-fuzzy", 60429),
-  commentDraft: register("comment-draft", 60430),
-  send: register("send", 60431),
-  sparkle: register("sparkle", 60432),
-  insert: register("insert", 60433),
-  mic: register("mic", 60434),
-  thumbsdownFilled: register("thumbsdown-filled", 60435),
-  thumbsupFilled: register("thumbsup-filled", 60436),
-  coffee: register("coffee", 60437),
-  snake: register("snake", 60438),
-  game: register("game", 60439),
-  vr: register("vr", 60440),
-  chip: register("chip", 60441),
-  piano: register("piano", 60442),
-  music: register("music", 60443),
-  micFilled: register("mic-filled", 60444),
-  repoFetch: register("repo-fetch", 60445),
-  copilot: register("copilot", 60446),
-  lightbulbSparkle: register("lightbulb-sparkle", 60447),
-  robot: register("robot", 60448),
-  sparkleFilled: register("sparkle-filled", 60449),
-  diffSingle: register("diff-single", 60450),
-  diffMultiple: register("diff-multiple", 60451),
-  surroundWith: register("surround-with", 60452),
-  share: register("share", 60453),
-  gitStash: register("git-stash", 60454),
-  gitStashApply: register("git-stash-apply", 60455),
-  gitStashPop: register("git-stash-pop", 60456),
-  vscode: register("vscode", 60457),
-  vscodeInsiders: register("vscode-insiders", 60458),
-  codeOss: register("code-oss", 60459),
-  runCoverage: register("run-coverage", 60460),
-  runAllCoverage: register("run-all-coverage", 60461),
-  coverage: register("coverage", 60462),
-  githubProject: register("github-project", 60463),
-  mapVertical: register("map-vertical", 60464),
-  foldVertical: register("fold-vertical", 60464),
-  mapVerticalFilled: register("map-vertical-filled", 60465),
-  foldVerticalFilled: register("fold-vertical-filled", 60465),
-  goToSearch: register("go-to-search", 60466),
-  percentage: register("percentage", 60467),
-  sortPercentage: register("sort-percentage", 60467),
-  attach: register("attach", 60468),
-  goToEditingSession: register("go-to-editing-session", 60469),
-  editSession: register("edit-session", 60470),
-  codeReview: register("code-review", 60471),
-  copilotWarning: register("copilot-warning", 60472),
-  python: register("python", 60473),
-  copilotLarge: register("copilot-large", 60474),
-  copilotWarningLarge: register("copilot-warning-large", 60475),
-  keyboardTab: register("keyboard-tab", 60476),
-  copilotBlocked: register("copilot-blocked", 60477),
-  copilotNotConnected: register("copilot-not-connected", 60478),
-  flag: register("flag", 60479),
-  lightbulbEmpty: register("lightbulb-empty", 60480),
-  symbolMethodArrow: register("symbol-method-arrow", 60481),
-  copilotUnavailable: register("copilot-unavailable", 60482),
-  repoPinned: register("repo-pinned", 60483),
-  keyboardTabAbove: register("keyboard-tab-above", 60484),
-  keyboardTabBelow: register("keyboard-tab-below", 60485),
-  gitPullRequestDone: register("git-pull-request-done", 60486),
-  mcp: register("mcp", 60487),
-  extensionsLarge: register("extensions-large", 60488),
-  layoutPanelDock: register("layout-panel-dock", 60489),
-  layoutSidebarLeftDock: register("layout-sidebar-left-dock", 60490),
-  layoutSidebarRightDock: register("layout-sidebar-right-dock", 60491),
-  copilotInProgress: register("copilot-in-progress", 60492),
-  copilotError: register("copilot-error", 60493),
-  copilotSuccess: register("copilot-success", 60494),
-  chatSparkle: register("chat-sparkle", 60495),
-  searchSparkle: register("search-sparkle", 60496),
-  editSparkle: register("edit-sparkle", 60497),
-  copilotSnooze: register("copilot-snooze", 60498),
-  sendToRemoteAgent: register("send-to-remote-agent", 60499),
-  commentDiscussionSparkle: register("comment-discussion-sparkle", 60500),
-  chatSparkleWarning: register("chat-sparkle-warning", 60501),
-  chatSparkleError: register("chat-sparkle-error", 60502),
-  collection: register("collection", 60503),
-  newCollection: register("new-collection", 60504),
-  thinking: register("thinking", 60505),
-  build: register("build", 60506),
-  commentDiscussionQuote: register("comment-discussion-quote", 60507),
-  cursor: register("cursor", 60508),
-  eraser: register("eraser", 60509),
-  fileText: register("file-text", 60510),
-  gitLens: register("git-lens", 60511),
-  quotes: register("quotes", 60512),
-  rename: register("rename", 60513),
-  runWithDeps: register("run-with-deps", 60514),
-  debugConnected: register("debug-connected", 60515),
-  strikethrough: register("strikethrough", 60516),
-  openInProduct: register("open-in-product", 60517),
-  indexZero: register("index-zero", 60518),
-  agent: register("agent", 60519),
-  editCode: register("edit-code", 60520),
-  repoSelected: register("repo-selected", 60521),
-  skip: register("skip", 60522),
-  mergeInto: register("merge-into", 60523),
-  gitBranchChanges: register("git-branch-changes", 60524),
-  gitBranchStagedChanges: register("git-branch-staged-changes", 60525),
-  gitBranchConflicts: register("git-branch-conflicts", 60526),
-  gitBranch: register("git-branch", 60527),
-  gitBranchCreate: register("git-branch-create", 60527),
-  gitBranchDelete: register("git-branch-delete", 60527),
-  searchLarge: register("search-large", 60528),
-  terminalGitBash: register("terminal-git-bash", 60529),
-  windowActive: register("window-active", 60530),
-  forward: register("forward", 60531),
-  download: register("download", 60532)
+var $3j = {
+  add: $1j("add", 6e4),
+  plus: $1j("plus", 6e4),
+  gistNew: $1j("gist-new", 6e4),
+  repoCreate: $1j("repo-create", 6e4),
+  lightbulb: $1j("lightbulb", 60001),
+  lightBulb: $1j("light-bulb", 60001),
+  repo: $1j("repo", 60002),
+  repoDelete: $1j("repo-delete", 60002),
+  gistFork: $1j("gist-fork", 60003),
+  repoForked: $1j("repo-forked", 60003),
+  gitPullRequest: $1j("git-pull-request", 60004),
+  gitPullRequestAbandoned: $1j("git-pull-request-abandoned", 60004),
+  recordKeys: $1j("record-keys", 60005),
+  keyboard: $1j("keyboard", 60005),
+  tag: $1j("tag", 60006),
+  gitPullRequestLabel: $1j("git-pull-request-label", 60006),
+  tagAdd: $1j("tag-add", 60006),
+  tagRemove: $1j("tag-remove", 60006),
+  person: $1j("person", 60007),
+  personFollow: $1j("person-follow", 60007),
+  personOutline: $1j("person-outline", 60007),
+  personFilled: $1j("person-filled", 60007),
+  sourceControl: $1j("source-control", 60008),
+  mirror: $1j("mirror", 60009),
+  mirrorPublic: $1j("mirror-public", 60009),
+  star: $1j("star", 60010),
+  starAdd: $1j("star-add", 60010),
+  starDelete: $1j("star-delete", 60010),
+  starEmpty: $1j("star-empty", 60010),
+  comment: $1j("comment", 60011),
+  commentAdd: $1j("comment-add", 60011),
+  alert: $1j("alert", 60012),
+  warning: $1j("warning", 60012),
+  search: $1j("search", 60013),
+  searchSave: $1j("search-save", 60013),
+  logOut: $1j("log-out", 60014),
+  signOut: $1j("sign-out", 60014),
+  logIn: $1j("log-in", 60015),
+  signIn: $1j("sign-in", 60015),
+  eye: $1j("eye", 60016),
+  eyeUnwatch: $1j("eye-unwatch", 60016),
+  eyeWatch: $1j("eye-watch", 60016),
+  circleFilled: $1j("circle-filled", 60017),
+  primitiveDot: $1j("primitive-dot", 60017),
+  closeDirty: $1j("close-dirty", 60017),
+  debugBreakpoint: $1j("debug-breakpoint", 60017),
+  debugBreakpointDisabled: $1j("debug-breakpoint-disabled", 60017),
+  debugHint: $1j("debug-hint", 60017),
+  terminalDecorationSuccess: $1j("terminal-decoration-success", 60017),
+  primitiveSquare: $1j("primitive-square", 60018),
+  edit: $1j("edit", 60019),
+  pencil: $1j("pencil", 60019),
+  info: $1j("info", 60020),
+  issueOpened: $1j("issue-opened", 60020),
+  gistPrivate: $1j("gist-private", 60021),
+  gitForkPrivate: $1j("git-fork-private", 60021),
+  lock: $1j("lock", 60021),
+  mirrorPrivate: $1j("mirror-private", 60021),
+  close: $1j("close", 60022),
+  removeClose: $1j("remove-close", 60022),
+  x: $1j("x", 60022),
+  repoSync: $1j("repo-sync", 60023),
+  sync: $1j("sync", 60023),
+  clone: $1j("clone", 60024),
+  desktopDownload: $1j("desktop-download", 60024),
+  beaker: $1j("beaker", 60025),
+  microscope: $1j("microscope", 60025),
+  vm: $1j("vm", 60026),
+  deviceDesktop: $1j("device-desktop", 60026),
+  file: $1j("file", 60027),
+  more: $1j("more", 60028),
+  ellipsis: $1j("ellipsis", 60028),
+  kebabHorizontal: $1j("kebab-horizontal", 60028),
+  mailReply: $1j("mail-reply", 60029),
+  reply: $1j("reply", 60029),
+  organization: $1j("organization", 60030),
+  organizationFilled: $1j("organization-filled", 60030),
+  organizationOutline: $1j("organization-outline", 60030),
+  newFile: $1j("new-file", 60031),
+  fileAdd: $1j("file-add", 60031),
+  newFolder: $1j("new-folder", 60032),
+  fileDirectoryCreate: $1j("file-directory-create", 60032),
+  trash: $1j("trash", 60033),
+  trashcan: $1j("trashcan", 60033),
+  history: $1j("history", 60034),
+  clock: $1j("clock", 60034),
+  folder: $1j("folder", 60035),
+  fileDirectory: $1j("file-directory", 60035),
+  symbolFolder: $1j("symbol-folder", 60035),
+  logoGithub: $1j("logo-github", 60036),
+  markGithub: $1j("mark-github", 60036),
+  github: $1j("github", 60036),
+  terminal: $1j("terminal", 60037),
+  console: $1j("console", 60037),
+  repl: $1j("repl", 60037),
+  zap: $1j("zap", 60038),
+  symbolEvent: $1j("symbol-event", 60038),
+  error: $1j("error", 60039),
+  stop: $1j("stop", 60039),
+  variable: $1j("variable", 60040),
+  symbolVariable: $1j("symbol-variable", 60040),
+  array: $1j("array", 60042),
+  symbolArray: $1j("symbol-array", 60042),
+  symbolModule: $1j("symbol-module", 60043),
+  symbolPackage: $1j("symbol-package", 60043),
+  symbolNamespace: $1j("symbol-namespace", 60043),
+  symbolObject: $1j("symbol-object", 60043),
+  symbolMethod: $1j("symbol-method", 60044),
+  symbolFunction: $1j("symbol-function", 60044),
+  symbolConstructor: $1j("symbol-constructor", 60044),
+  symbolBoolean: $1j("symbol-boolean", 60047),
+  symbolNull: $1j("symbol-null", 60047),
+  symbolNumeric: $1j("symbol-numeric", 60048),
+  symbolNumber: $1j("symbol-number", 60048),
+  symbolStructure: $1j("symbol-structure", 60049),
+  symbolStruct: $1j("symbol-struct", 60049),
+  symbolParameter: $1j("symbol-parameter", 60050),
+  symbolTypeParameter: $1j("symbol-type-parameter", 60050),
+  symbolKey: $1j("symbol-key", 60051),
+  symbolText: $1j("symbol-text", 60051),
+  symbolReference: $1j("symbol-reference", 60052),
+  goToFile: $1j("go-to-file", 60052),
+  symbolEnum: $1j("symbol-enum", 60053),
+  symbolValue: $1j("symbol-value", 60053),
+  symbolRuler: $1j("symbol-ruler", 60054),
+  symbolUnit: $1j("symbol-unit", 60054),
+  activateBreakpoints: $1j("activate-breakpoints", 60055),
+  archive: $1j("archive", 60056),
+  arrowBoth: $1j("arrow-both", 60057),
+  arrowDown: $1j("arrow-down", 60058),
+  arrowLeft: $1j("arrow-left", 60059),
+  arrowRight: $1j("arrow-right", 60060),
+  arrowSmallDown: $1j("arrow-small-down", 60061),
+  arrowSmallLeft: $1j("arrow-small-left", 60062),
+  arrowSmallRight: $1j("arrow-small-right", 60063),
+  arrowSmallUp: $1j("arrow-small-up", 60064),
+  arrowUp: $1j("arrow-up", 60065),
+  bell: $1j("bell", 60066),
+  bold: $1j("bold", 60067),
+  book: $1j("book", 60068),
+  bookmark: $1j("bookmark", 60069),
+  debugBreakpointConditionalUnverified: $1j("debug-breakpoint-conditional-unverified", 60070),
+  debugBreakpointConditional: $1j("debug-breakpoint-conditional", 60071),
+  debugBreakpointConditionalDisabled: $1j("debug-breakpoint-conditional-disabled", 60071),
+  debugBreakpointDataUnverified: $1j("debug-breakpoint-data-unverified", 60072),
+  debugBreakpointData: $1j("debug-breakpoint-data", 60073),
+  debugBreakpointDataDisabled: $1j("debug-breakpoint-data-disabled", 60073),
+  debugBreakpointLogUnverified: $1j("debug-breakpoint-log-unverified", 60074),
+  debugBreakpointLog: $1j("debug-breakpoint-log", 60075),
+  debugBreakpointLogDisabled: $1j("debug-breakpoint-log-disabled", 60075),
+  briefcase: $1j("briefcase", 60076),
+  broadcast: $1j("broadcast", 60077),
+  browser: $1j("browser", 60078),
+  bug: $1j("bug", 60079),
+  calendar: $1j("calendar", 60080),
+  caseSensitive: $1j("case-sensitive", 60081),
+  check: $1j("check", 60082),
+  checklist: $1j("checklist", 60083),
+  chevronDown: $1j("chevron-down", 60084),
+  chevronLeft: $1j("chevron-left", 60085),
+  chevronRight: $1j("chevron-right", 60086),
+  chevronUp: $1j("chevron-up", 60087),
+  chromeClose: $1j("chrome-close", 60088),
+  chromeMaximize: $1j("chrome-maximize", 60089),
+  chromeMinimize: $1j("chrome-minimize", 60090),
+  chromeRestore: $1j("chrome-restore", 60091),
+  circleOutline: $1j("circle-outline", 60092),
+  circle: $1j("circle", 60092),
+  debugBreakpointUnverified: $1j("debug-breakpoint-unverified", 60092),
+  terminalDecorationIncomplete: $1j("terminal-decoration-incomplete", 60092),
+  circleSlash: $1j("circle-slash", 60093),
+  circuitBoard: $1j("circuit-board", 60094),
+  clearAll: $1j("clear-all", 60095),
+  clippy: $1j("clippy", 60096),
+  closeAll: $1j("close-all", 60097),
+  cloudDownload: $1j("cloud-download", 60098),
+  cloudUpload: $1j("cloud-upload", 60099),
+  code: $1j("code", 60100),
+  collapseAll: $1j("collapse-all", 60101),
+  colorMode: $1j("color-mode", 60102),
+  commentDiscussion: $1j("comment-discussion", 60103),
+  creditCard: $1j("credit-card", 60105),
+  dash: $1j("dash", 60108),
+  dashboard: $1j("dashboard", 60109),
+  database: $1j("database", 60110),
+  debugContinue: $1j("debug-continue", 60111),
+  debugDisconnect: $1j("debug-disconnect", 60112),
+  debugPause: $1j("debug-pause", 60113),
+  debugRestart: $1j("debug-restart", 60114),
+  debugStart: $1j("debug-start", 60115),
+  debugStepInto: $1j("debug-step-into", 60116),
+  debugStepOut: $1j("debug-step-out", 60117),
+  debugStepOver: $1j("debug-step-over", 60118),
+  debugStop: $1j("debug-stop", 60119),
+  debug: $1j("debug", 60120),
+  deviceCameraVideo: $1j("device-camera-video", 60121),
+  deviceCamera: $1j("device-camera", 60122),
+  deviceMobile: $1j("device-mobile", 60123),
+  diffAdded: $1j("diff-added", 60124),
+  diffIgnored: $1j("diff-ignored", 60125),
+  diffModified: $1j("diff-modified", 60126),
+  diffRemoved: $1j("diff-removed", 60127),
+  diffRenamed: $1j("diff-renamed", 60128),
+  diff: $1j("diff", 60129),
+  diffSidebyside: $1j("diff-sidebyside", 60129),
+  discard: $1j("discard", 60130),
+  editorLayout: $1j("editor-layout", 60131),
+  emptyWindow: $1j("empty-window", 60132),
+  exclude: $1j("exclude", 60133),
+  extensions: $1j("extensions", 60134),
+  eyeClosed: $1j("eye-closed", 60135),
+  fileBinary: $1j("file-binary", 60136),
+  fileCode: $1j("file-code", 60137),
+  fileMedia: $1j("file-media", 60138),
+  filePdf: $1j("file-pdf", 60139),
+  fileSubmodule: $1j("file-submodule", 60140),
+  fileSymlinkDirectory: $1j("file-symlink-directory", 60141),
+  fileSymlinkFile: $1j("file-symlink-file", 60142),
+  fileZip: $1j("file-zip", 60143),
+  files: $1j("files", 60144),
+  filter: $1j("filter", 60145),
+  flame: $1j("flame", 60146),
+  foldDown: $1j("fold-down", 60147),
+  foldUp: $1j("fold-up", 60148),
+  fold: $1j("fold", 60149),
+  folderActive: $1j("folder-active", 60150),
+  folderOpened: $1j("folder-opened", 60151),
+  gear: $1j("gear", 60152),
+  gift: $1j("gift", 60153),
+  gistSecret: $1j("gist-secret", 60154),
+  gist: $1j("gist", 60155),
+  gitCommit: $1j("git-commit", 60156),
+  gitCompare: $1j("git-compare", 60157),
+  compareChanges: $1j("compare-changes", 60157),
+  gitMerge: $1j("git-merge", 60158),
+  githubAction: $1j("github-action", 60159),
+  githubAlt: $1j("github-alt", 60160),
+  globe: $1j("globe", 60161),
+  grabber: $1j("grabber", 60162),
+  graph: $1j("graph", 60163),
+  gripper: $1j("gripper", 60164),
+  heart: $1j("heart", 60165),
+  home: $1j("home", 60166),
+  horizontalRule: $1j("horizontal-rule", 60167),
+  hubot: $1j("hubot", 60168),
+  inbox: $1j("inbox", 60169),
+  issueReopened: $1j("issue-reopened", 60171),
+  issues: $1j("issues", 60172),
+  italic: $1j("italic", 60173),
+  jersey: $1j("jersey", 60174),
+  json: $1j("json", 60175),
+  kebabVertical: $1j("kebab-vertical", 60176),
+  key: $1j("key", 60177),
+  law: $1j("law", 60178),
+  lightbulbAutofix: $1j("lightbulb-autofix", 60179),
+  linkExternal: $1j("link-external", 60180),
+  link: $1j("link", 60181),
+  listOrdered: $1j("list-ordered", 60182),
+  listUnordered: $1j("list-unordered", 60183),
+  liveShare: $1j("live-share", 60184),
+  loading: $1j("loading", 60185),
+  location: $1j("location", 60186),
+  mailRead: $1j("mail-read", 60187),
+  mail: $1j("mail", 60188),
+  markdown: $1j("markdown", 60189),
+  megaphone: $1j("megaphone", 60190),
+  mention: $1j("mention", 60191),
+  milestone: $1j("milestone", 60192),
+  gitPullRequestMilestone: $1j("git-pull-request-milestone", 60192),
+  mortarBoard: $1j("mortar-board", 60193),
+  move: $1j("move", 60194),
+  multipleWindows: $1j("multiple-windows", 60195),
+  mute: $1j("mute", 60196),
+  noNewline: $1j("no-newline", 60197),
+  note: $1j("note", 60198),
+  octoface: $1j("octoface", 60199),
+  openPreview: $1j("open-preview", 60200),
+  package: $1j("package", 60201),
+  paintcan: $1j("paintcan", 60202),
+  pin: $1j("pin", 60203),
+  play: $1j("play", 60204),
+  run: $1j("run", 60204),
+  plug: $1j("plug", 60205),
+  preserveCase: $1j("preserve-case", 60206),
+  preview: $1j("preview", 60207),
+  project: $1j("project", 60208),
+  pulse: $1j("pulse", 60209),
+  question: $1j("question", 60210),
+  quote: $1j("quote", 60211),
+  radioTower: $1j("radio-tower", 60212),
+  reactions: $1j("reactions", 60213),
+  references: $1j("references", 60214),
+  refresh: $1j("refresh", 60215),
+  regex: $1j("regex", 60216),
+  remoteExplorer: $1j("remote-explorer", 60217),
+  remote: $1j("remote", 60218),
+  remove: $1j("remove", 60219),
+  replaceAll: $1j("replace-all", 60220),
+  replace: $1j("replace", 60221),
+  repoClone: $1j("repo-clone", 60222),
+  repoForcePush: $1j("repo-force-push", 60223),
+  repoPull: $1j("repo-pull", 60224),
+  repoPush: $1j("repo-push", 60225),
+  report: $1j("report", 60226),
+  requestChanges: $1j("request-changes", 60227),
+  rocket: $1j("rocket", 60228),
+  rootFolderOpened: $1j("root-folder-opened", 60229),
+  rootFolder: $1j("root-folder", 60230),
+  rss: $1j("rss", 60231),
+  ruby: $1j("ruby", 60232),
+  saveAll: $1j("save-all", 60233),
+  saveAs: $1j("save-as", 60234),
+  save: $1j("save", 60235),
+  screenFull: $1j("screen-full", 60236),
+  screenNormal: $1j("screen-normal", 60237),
+  searchStop: $1j("search-stop", 60238),
+  server: $1j("server", 60240),
+  settingsGear: $1j("settings-gear", 60241),
+  settings: $1j("settings", 60242),
+  shield: $1j("shield", 60243),
+  smiley: $1j("smiley", 60244),
+  sortPrecedence: $1j("sort-precedence", 60245),
+  splitHorizontal: $1j("split-horizontal", 60246),
+  splitVertical: $1j("split-vertical", 60247),
+  squirrel: $1j("squirrel", 60248),
+  starFull: $1j("star-full", 60249),
+  starHalf: $1j("star-half", 60250),
+  symbolClass: $1j("symbol-class", 60251),
+  symbolColor: $1j("symbol-color", 60252),
+  symbolConstant: $1j("symbol-constant", 60253),
+  symbolEnumMember: $1j("symbol-enum-member", 60254),
+  symbolField: $1j("symbol-field", 60255),
+  symbolFile: $1j("symbol-file", 60256),
+  symbolInterface: $1j("symbol-interface", 60257),
+  symbolKeyword: $1j("symbol-keyword", 60258),
+  symbolMisc: $1j("symbol-misc", 60259),
+  symbolOperator: $1j("symbol-operator", 60260),
+  symbolProperty: $1j("symbol-property", 60261),
+  wrench: $1j("wrench", 60261),
+  wrenchSubaction: $1j("wrench-subaction", 60261),
+  symbolSnippet: $1j("symbol-snippet", 60262),
+  tasklist: $1j("tasklist", 60263),
+  telescope: $1j("telescope", 60264),
+  textSize: $1j("text-size", 60265),
+  threeBars: $1j("three-bars", 60266),
+  thumbsdown: $1j("thumbsdown", 60267),
+  thumbsup: $1j("thumbsup", 60268),
+  tools: $1j("tools", 60269),
+  triangleDown: $1j("triangle-down", 60270),
+  triangleLeft: $1j("triangle-left", 60271),
+  triangleRight: $1j("triangle-right", 60272),
+  triangleUp: $1j("triangle-up", 60273),
+  twitter: $1j("twitter", 60274),
+  unfold: $1j("unfold", 60275),
+  unlock: $1j("unlock", 60276),
+  unmute: $1j("unmute", 60277),
+  unverified: $1j("unverified", 60278),
+  verified: $1j("verified", 60279),
+  versions: $1j("versions", 60280),
+  vmActive: $1j("vm-active", 60281),
+  vmOutline: $1j("vm-outline", 60282),
+  vmRunning: $1j("vm-running", 60283),
+  watch: $1j("watch", 60284),
+  whitespace: $1j("whitespace", 60285),
+  wholeWord: $1j("whole-word", 60286),
+  window: $1j("window", 60287),
+  wordWrap: $1j("word-wrap", 60288),
+  zoomIn: $1j("zoom-in", 60289),
+  zoomOut: $1j("zoom-out", 60290),
+  listFilter: $1j("list-filter", 60291),
+  listFlat: $1j("list-flat", 60292),
+  listSelection: $1j("list-selection", 60293),
+  selection: $1j("selection", 60293),
+  listTree: $1j("list-tree", 60294),
+  debugBreakpointFunctionUnverified: $1j("debug-breakpoint-function-unverified", 60295),
+  debugBreakpointFunction: $1j("debug-breakpoint-function", 60296),
+  debugBreakpointFunctionDisabled: $1j("debug-breakpoint-function-disabled", 60296),
+  debugStackframeActive: $1j("debug-stackframe-active", 60297),
+  circleSmallFilled: $1j("circle-small-filled", 60298),
+  debugStackframeDot: $1j("debug-stackframe-dot", 60298),
+  terminalDecorationMark: $1j("terminal-decoration-mark", 60298),
+  debugStackframe: $1j("debug-stackframe", 60299),
+  debugStackframeFocused: $1j("debug-stackframe-focused", 60299),
+  debugBreakpointUnsupported: $1j("debug-breakpoint-unsupported", 60300),
+  symbolString: $1j("symbol-string", 60301),
+  debugReverseContinue: $1j("debug-reverse-continue", 60302),
+  debugStepBack: $1j("debug-step-back", 60303),
+  debugRestartFrame: $1j("debug-restart-frame", 60304),
+  debugAlt: $1j("debug-alt", 60305),
+  callIncoming: $1j("call-incoming", 60306),
+  callOutgoing: $1j("call-outgoing", 60307),
+  menu: $1j("menu", 60308),
+  expandAll: $1j("expand-all", 60309),
+  feedback: $1j("feedback", 60310),
+  gitPullRequestReviewer: $1j("git-pull-request-reviewer", 60310),
+  groupByRefType: $1j("group-by-ref-type", 60311),
+  ungroupByRefType: $1j("ungroup-by-ref-type", 60312),
+  account: $1j("account", 60313),
+  gitPullRequestAssignee: $1j("git-pull-request-assignee", 60313),
+  bellDot: $1j("bell-dot", 60314),
+  debugConsole: $1j("debug-console", 60315),
+  library: $1j("library", 60316),
+  output: $1j("output", 60317),
+  runAll: $1j("run-all", 60318),
+  syncIgnored: $1j("sync-ignored", 60319),
+  pinned: $1j("pinned", 60320),
+  githubInverted: $1j("github-inverted", 60321),
+  serverProcess: $1j("server-process", 60322),
+  serverEnvironment: $1j("server-environment", 60323),
+  pass: $1j("pass", 60324),
+  issueClosed: $1j("issue-closed", 60324),
+  stopCircle: $1j("stop-circle", 60325),
+  playCircle: $1j("play-circle", 60326),
+  record: $1j("record", 60327),
+  debugAltSmall: $1j("debug-alt-small", 60328),
+  vmConnect: $1j("vm-connect", 60329),
+  cloud: $1j("cloud", 60330),
+  merge: $1j("merge", 60331),
+  export: $1j("export", 60332),
+  graphLeft: $1j("graph-left", 60333),
+  magnet: $1j("magnet", 60334),
+  notebook: $1j("notebook", 60335),
+  redo: $1j("redo", 60336),
+  checkAll: $1j("check-all", 60337),
+  pinnedDirty: $1j("pinned-dirty", 60338),
+  passFilled: $1j("pass-filled", 60339),
+  circleLargeFilled: $1j("circle-large-filled", 60340),
+  circleLarge: $1j("circle-large", 60341),
+  circleLargeOutline: $1j("circle-large-outline", 60341),
+  combine: $1j("combine", 60342),
+  gather: $1j("gather", 60342),
+  table: $1j("table", 60343),
+  variableGroup: $1j("variable-group", 60344),
+  typeHierarchy: $1j("type-hierarchy", 60345),
+  typeHierarchySub: $1j("type-hierarchy-sub", 60346),
+  typeHierarchySuper: $1j("type-hierarchy-super", 60347),
+  gitPullRequestCreate: $1j("git-pull-request-create", 60348),
+  runAbove: $1j("run-above", 60349),
+  runBelow: $1j("run-below", 60350),
+  notebookTemplate: $1j("notebook-template", 60351),
+  debugRerun: $1j("debug-rerun", 60352),
+  workspaceTrusted: $1j("workspace-trusted", 60353),
+  workspaceUntrusted: $1j("workspace-untrusted", 60354),
+  workspaceUnknown: $1j("workspace-unknown", 60355),
+  terminalCmd: $1j("terminal-cmd", 60356),
+  terminalDebian: $1j("terminal-debian", 60357),
+  terminalLinux: $1j("terminal-linux", 60358),
+  terminalPowershell: $1j("terminal-powershell", 60359),
+  terminalTmux: $1j("terminal-tmux", 60360),
+  terminalUbuntu: $1j("terminal-ubuntu", 60361),
+  terminalBash: $1j("terminal-bash", 60362),
+  arrowSwap: $1j("arrow-swap", 60363),
+  copy: $1j("copy", 60364),
+  personAdd: $1j("person-add", 60365),
+  filterFilled: $1j("filter-filled", 60366),
+  wand: $1j("wand", 60367),
+  debugLineByLine: $1j("debug-line-by-line", 60368),
+  inspect: $1j("inspect", 60369),
+  layers: $1j("layers", 60370),
+  layersDot: $1j("layers-dot", 60371),
+  layersActive: $1j("layers-active", 60372),
+  compass: $1j("compass", 60373),
+  compassDot: $1j("compass-dot", 60374),
+  compassActive: $1j("compass-active", 60375),
+  azure: $1j("azure", 60376),
+  issueDraft: $1j("issue-draft", 60377),
+  gitPullRequestClosed: $1j("git-pull-request-closed", 60378),
+  gitPullRequestDraft: $1j("git-pull-request-draft", 60379),
+  debugAll: $1j("debug-all", 60380),
+  debugCoverage: $1j("debug-coverage", 60381),
+  runErrors: $1j("run-errors", 60382),
+  folderLibrary: $1j("folder-library", 60383),
+  debugContinueSmall: $1j("debug-continue-small", 60384),
+  beakerStop: $1j("beaker-stop", 60385),
+  graphLine: $1j("graph-line", 60386),
+  graphScatter: $1j("graph-scatter", 60387),
+  pieChart: $1j("pie-chart", 60388),
+  bracket: $1j("bracket", 60175),
+  bracketDot: $1j("bracket-dot", 60389),
+  bracketError: $1j("bracket-error", 60390),
+  lockSmall: $1j("lock-small", 60391),
+  azureDevops: $1j("azure-devops", 60392),
+  verifiedFilled: $1j("verified-filled", 60393),
+  newline: $1j("newline", 60394),
+  layout: $1j("layout", 60395),
+  layoutActivitybarLeft: $1j("layout-activitybar-left", 60396),
+  layoutActivitybarRight: $1j("layout-activitybar-right", 60397),
+  layoutPanelLeft: $1j("layout-panel-left", 60398),
+  layoutPanelCenter: $1j("layout-panel-center", 60399),
+  layoutPanelJustify: $1j("layout-panel-justify", 60400),
+  layoutPanelRight: $1j("layout-panel-right", 60401),
+  layoutPanel: $1j("layout-panel", 60402),
+  layoutSidebarLeft: $1j("layout-sidebar-left", 60403),
+  layoutSidebarRight: $1j("layout-sidebar-right", 60404),
+  layoutStatusbar: $1j("layout-statusbar", 60405),
+  layoutMenubar: $1j("layout-menubar", 60406),
+  layoutCentered: $1j("layout-centered", 60407),
+  target: $1j("target", 60408),
+  indent: $1j("indent", 60409),
+  recordSmall: $1j("record-small", 60410),
+  errorSmall: $1j("error-small", 60411),
+  terminalDecorationError: $1j("terminal-decoration-error", 60411),
+  arrowCircleDown: $1j("arrow-circle-down", 60412),
+  arrowCircleLeft: $1j("arrow-circle-left", 60413),
+  arrowCircleRight: $1j("arrow-circle-right", 60414),
+  arrowCircleUp: $1j("arrow-circle-up", 60415),
+  layoutSidebarRightOff: $1j("layout-sidebar-right-off", 60416),
+  layoutPanelOff: $1j("layout-panel-off", 60417),
+  layoutSidebarLeftOff: $1j("layout-sidebar-left-off", 60418),
+  blank: $1j("blank", 60419),
+  heartFilled: $1j("heart-filled", 60420),
+  map: $1j("map", 60421),
+  mapHorizontal: $1j("map-horizontal", 60421),
+  foldHorizontal: $1j("fold-horizontal", 60421),
+  mapFilled: $1j("map-filled", 60422),
+  mapHorizontalFilled: $1j("map-horizontal-filled", 60422),
+  foldHorizontalFilled: $1j("fold-horizontal-filled", 60422),
+  circleSmall: $1j("circle-small", 60423),
+  bellSlash: $1j("bell-slash", 60424),
+  bellSlashDot: $1j("bell-slash-dot", 60425),
+  commentUnresolved: $1j("comment-unresolved", 60426),
+  gitPullRequestGoToChanges: $1j("git-pull-request-go-to-changes", 60427),
+  gitPullRequestNewChanges: $1j("git-pull-request-new-changes", 60428),
+  searchFuzzy: $1j("search-fuzzy", 60429),
+  commentDraft: $1j("comment-draft", 60430),
+  send: $1j("send", 60431),
+  sparkle: $1j("sparkle", 60432),
+  insert: $1j("insert", 60433),
+  mic: $1j("mic", 60434),
+  thumbsdownFilled: $1j("thumbsdown-filled", 60435),
+  thumbsupFilled: $1j("thumbsup-filled", 60436),
+  coffee: $1j("coffee", 60437),
+  snake: $1j("snake", 60438),
+  game: $1j("game", 60439),
+  vr: $1j("vr", 60440),
+  chip: $1j("chip", 60441),
+  piano: $1j("piano", 60442),
+  music: $1j("music", 60443),
+  micFilled: $1j("mic-filled", 60444),
+  repoFetch: $1j("repo-fetch", 60445),
+  copilot: $1j("copilot", 60446),
+  lightbulbSparkle: $1j("lightbulb-sparkle", 60447),
+  robot: $1j("robot", 60448),
+  sparkleFilled: $1j("sparkle-filled", 60449),
+  diffSingle: $1j("diff-single", 60450),
+  diffMultiple: $1j("diff-multiple", 60451),
+  surroundWith: $1j("surround-with", 60452),
+  share: $1j("share", 60453),
+  gitStash: $1j("git-stash", 60454),
+  gitStashApply: $1j("git-stash-apply", 60455),
+  gitStashPop: $1j("git-stash-pop", 60456),
+  vscode: $1j("vscode", 60457),
+  vscodeInsiders: $1j("vscode-insiders", 60458),
+  codeOss: $1j("code-oss", 60459),
+  runCoverage: $1j("run-coverage", 60460),
+  runAllCoverage: $1j("run-all-coverage", 60461),
+  coverage: $1j("coverage", 60462),
+  githubProject: $1j("github-project", 60463),
+  mapVertical: $1j("map-vertical", 60464),
+  foldVertical: $1j("fold-vertical", 60464),
+  mapVerticalFilled: $1j("map-vertical-filled", 60465),
+  foldVerticalFilled: $1j("fold-vertical-filled", 60465),
+  goToSearch: $1j("go-to-search", 60466),
+  percentage: $1j("percentage", 60467),
+  sortPercentage: $1j("sort-percentage", 60467),
+  attach: $1j("attach", 60468),
+  goToEditingSession: $1j("go-to-editing-session", 60469),
+  editSession: $1j("edit-session", 60470),
+  codeReview: $1j("code-review", 60471),
+  copilotWarning: $1j("copilot-warning", 60472),
+  python: $1j("python", 60473),
+  copilotLarge: $1j("copilot-large", 60474),
+  copilotWarningLarge: $1j("copilot-warning-large", 60475),
+  keyboardTab: $1j("keyboard-tab", 60476),
+  copilotBlocked: $1j("copilot-blocked", 60477),
+  copilotNotConnected: $1j("copilot-not-connected", 60478),
+  flag: $1j("flag", 60479),
+  lightbulbEmpty: $1j("lightbulb-empty", 60480),
+  symbolMethodArrow: $1j("symbol-method-arrow", 60481),
+  copilotUnavailable: $1j("copilot-unavailable", 60482),
+  repoPinned: $1j("repo-pinned", 60483),
+  keyboardTabAbove: $1j("keyboard-tab-above", 60484),
+  keyboardTabBelow: $1j("keyboard-tab-below", 60485),
+  gitPullRequestDone: $1j("git-pull-request-done", 60486),
+  mcp: $1j("mcp", 60487),
+  extensionsLarge: $1j("extensions-large", 60488),
+  layoutPanelDock: $1j("layout-panel-dock", 60489),
+  layoutSidebarLeftDock: $1j("layout-sidebar-left-dock", 60490),
+  layoutSidebarRightDock: $1j("layout-sidebar-right-dock", 60491),
+  copilotInProgress: $1j("copilot-in-progress", 60492),
+  copilotError: $1j("copilot-error", 60493),
+  copilotSuccess: $1j("copilot-success", 60494),
+  chatSparkle: $1j("chat-sparkle", 60495),
+  searchSparkle: $1j("search-sparkle", 60496),
+  editSparkle: $1j("edit-sparkle", 60497),
+  copilotSnooze: $1j("copilot-snooze", 60498),
+  sendToRemoteAgent: $1j("send-to-remote-agent", 60499),
+  commentDiscussionSparkle: $1j("comment-discussion-sparkle", 60500),
+  chatSparkleWarning: $1j("chat-sparkle-warning", 60501),
+  chatSparkleError: $1j("chat-sparkle-error", 60502),
+  collection: $1j("collection", 60503),
+  newCollection: $1j("new-collection", 60504),
+  thinking: $1j("thinking", 60505),
+  build: $1j("build", 60506),
+  commentDiscussionQuote: $1j("comment-discussion-quote", 60507),
+  cursor: $1j("cursor", 60508),
+  eraser: $1j("eraser", 60509),
+  fileText: $1j("file-text", 60510),
+  gitLens: $1j("git-lens", 60511),
+  quotes: $1j("quotes", 60512),
+  rename: $1j("rename", 60513),
+  runWithDeps: $1j("run-with-deps", 60514),
+  debugConnected: $1j("debug-connected", 60515),
+  strikethrough: $1j("strikethrough", 60516),
+  openInProduct: $1j("open-in-product", 60517),
+  indexZero: $1j("index-zero", 60518),
+  agent: $1j("agent", 60519),
+  editCode: $1j("edit-code", 60520),
+  repoSelected: $1j("repo-selected", 60521),
+  skip: $1j("skip", 60522),
+  mergeInto: $1j("merge-into", 60523),
+  gitBranchChanges: $1j("git-branch-changes", 60524),
+  gitBranchStagedChanges: $1j("git-branch-staged-changes", 60525),
+  gitBranchConflicts: $1j("git-branch-conflicts", 60526),
+  gitBranch: $1j("git-branch", 60527),
+  gitBranchCreate: $1j("git-branch-create", 60527),
+  gitBranchDelete: $1j("git-branch-delete", 60527),
+  searchLarge: $1j("search-large", 60528),
+  terminalGitBash: $1j("terminal-git-bash", 60529),
+  windowActive: $1j("window-active", 60530),
+  forward: $1j("forward", 60531),
+  download: $1j("download", 60532)
 };
 
 // out-build/vs/base/common/codicons.js
-var codiconsDerived = {
-  dialogError: register("dialog-error", "error"),
-  dialogWarning: register("dialog-warning", "warning"),
-  dialogInfo: register("dialog-info", "info"),
-  dialogClose: register("dialog-close", "close"),
-  treeItemExpanded: register("tree-item-expanded", "chevron-down"),
+var $5j = {
+  dialogError: $1j("dialog-error", "error"),
+  dialogWarning: $1j("dialog-warning", "warning"),
+  dialogInfo: $1j("dialog-info", "info"),
+  dialogClose: $1j("dialog-close", "close"),
+  treeItemExpanded: $1j("tree-item-expanded", "chevron-down"),
   // collapsed is done with rotation
-  treeFilterOnTypeOn: register("tree-filter-on-type-on", "list-filter"),
-  treeFilterOnTypeOff: register("tree-filter-on-type-off", "list-selection"),
-  treeFilterClear: register("tree-filter-clear", "close"),
-  treeItemLoading: register("tree-item-loading", "loading"),
-  menuSelection: register("menu-selection", "check"),
-  menuSubmenu: register("menu-submenu", "chevron-right"),
-  menuBarMore: register("menubar-more", "more"),
-  scrollbarButtonLeft: register("scrollbar-button-left", "triangle-left"),
-  scrollbarButtonRight: register("scrollbar-button-right", "triangle-right"),
-  scrollbarButtonUp: register("scrollbar-button-up", "triangle-up"),
-  scrollbarButtonDown: register("scrollbar-button-down", "triangle-down"),
-  toolBarMore: register("toolbar-more", "more"),
-  quickInputBack: register("quick-input-back", "arrow-left"),
-  dropDownButton: register("drop-down-button", 60084),
-  symbolCustomColor: register("symbol-customcolor", 60252),
-  exportIcon: register("export", 60332),
-  workspaceUnspecified: register("workspace-unspecified", 60355),
-  newLine: register("newline", 60394),
-  thumbsDownFilled: register("thumbsdown-filled", 60435),
-  thumbsUpFilled: register("thumbsup-filled", 60436),
-  gitFetch: register("git-fetch", 60445),
-  lightbulbSparkleAutofix: register("lightbulb-sparkle-autofix", 60447),
-  debugBreakpointPending: register("debug-breakpoint-pending", 60377)
+  treeFilterOnTypeOn: $1j("tree-filter-on-type-on", "list-filter"),
+  treeFilterOnTypeOff: $1j("tree-filter-on-type-off", "list-selection"),
+  treeFilterClear: $1j("tree-filter-clear", "close"),
+  treeItemLoading: $1j("tree-item-loading", "loading"),
+  menuSelection: $1j("menu-selection", "check"),
+  menuSubmenu: $1j("menu-submenu", "chevron-right"),
+  menuBarMore: $1j("menubar-more", "more"),
+  scrollbarButtonLeft: $1j("scrollbar-button-left", "triangle-left"),
+  scrollbarButtonRight: $1j("scrollbar-button-right", "triangle-right"),
+  scrollbarButtonUp: $1j("scrollbar-button-up", "triangle-up"),
+  scrollbarButtonDown: $1j("scrollbar-button-down", "triangle-down"),
+  toolBarMore: $1j("toolbar-more", "more"),
+  quickInputBack: $1j("quick-input-back", "arrow-left"),
+  dropDownButton: $1j("drop-down-button", 60084),
+  symbolCustomColor: $1j("symbol-customcolor", 60252),
+  exportIcon: $1j("export", 60332),
+  workspaceUnspecified: $1j("workspace-unspecified", 60355),
+  newLine: $1j("newline", 60394),
+  thumbsDownFilled: $1j("thumbsdown-filled", 60435),
+  thumbsUpFilled: $1j("thumbsup-filled", 60436),
+  gitFetch: $1j("git-fetch", 60445),
+  lightbulbSparkleAutofix: $1j("lightbulb-sparkle-autofix", 60447),
+  debugBreakpointPending: $1j("debug-breakpoint-pending", 60377)
 };
-var Codicon = {
-  ...codiconsLibrary,
-  ...codiconsDerived
+var $6j = {
+  ...$3j,
+  ...$5j
 };
 
 // out-build/vs/editor/common/tokenizationRegistry.js
-var TokenizationRegistry = class {
+var $FE = class {
   constructor() {
-    this._tokenizationSupports = /* @__PURE__ */ new Map();
-    this._factories = /* @__PURE__ */ new Map();
-    this._onDidChange = new Emitter();
-    this.onDidChange = this._onDidChange.event;
-    this._colorMap = null;
+    this.a = /* @__PURE__ */ new Map();
+    this.b = /* @__PURE__ */ new Map();
+    this.c = new $qf();
+    this.onDidChange = this.c.event;
+    this.d = null;
   }
   handleChange(languageIds) {
-    this._onDidChange.fire({
+    this.c.fire({
       changedLanguages: languageIds,
       changedColorMap: false
     });
   }
   register(languageId, support) {
-    this._tokenizationSupports.set(languageId, support);
+    this.a.set(languageId, support);
     this.handleChange([languageId]);
-    return toDisposable(() => {
-      if (this._tokenizationSupports.get(languageId) !== support) {
+    return $Dd(() => {
+      if (this.a.get(languageId) !== support) {
         return;
       }
-      this._tokenizationSupports.delete(languageId);
+      this.a.delete(languageId);
       this.handleChange([languageId]);
     });
   }
   get(languageId) {
-    return this._tokenizationSupports.get(languageId) || null;
+    return this.a.get(languageId) || null;
   }
   registerFactory(languageId, factory) {
-    this._factories.get(languageId)?.dispose();
+    this.b.get(languageId)?.dispose();
     const myData = new TokenizationSupportFactoryData(this, languageId, factory);
-    this._factories.set(languageId, myData);
-    return toDisposable(() => {
-      const v = this._factories.get(languageId);
+    this.b.set(languageId, myData);
+    return $Dd(() => {
+      const v = this.b.get(languageId);
       if (!v || v !== myData) {
         return;
       }
-      this._factories.delete(languageId);
+      this.b.delete(languageId);
       v.dispose();
     });
   }
@@ -9308,7 +9308,7 @@ var TokenizationRegistry = class {
     if (tokenizationSupport) {
       return tokenizationSupport;
     }
-    const factory = this._factories.get(languageId);
+    const factory = this.b.get(languageId);
     if (!factory || factory.isResolved) {
       return null;
     }
@@ -9320,25 +9320,25 @@ var TokenizationRegistry = class {
     if (tokenizationSupport) {
       return true;
     }
-    const factory = this._factories.get(languageId);
+    const factory = this.b.get(languageId);
     if (!factory || factory.isResolved) {
       return true;
     }
     return false;
   }
   setColorMap(colorMap) {
-    this._colorMap = colorMap;
-    this._onDidChange.fire({
-      changedLanguages: Array.from(this._tokenizationSupports.keys()),
+    this.d = colorMap;
+    this.c.fire({
+      changedLanguages: Array.from(this.a.keys()),
       changedColorMap: true
     });
   }
   getColorMap() {
-    return this._colorMap;
+    return this.d;
   }
   getDefaultBackground() {
-    if (this._colorMap && this._colorMap.length > 2) {
-      return this._colorMap[
+    if (this.d && this.d.length > 2) {
+      return this.d[
         2
         /* ColorId.DefaultBackground */
       ];
@@ -9346,44 +9346,44 @@ var TokenizationRegistry = class {
     return null;
   }
 };
-var TokenizationSupportFactoryData = class extends Disposable {
+var TokenizationSupportFactoryData = class extends $Fd {
   get isResolved() {
-    return this._isResolved;
+    return this.c;
   }
-  constructor(_registry, _languageId, _factory) {
+  constructor(f, g, h) {
     super();
-    this._registry = _registry;
-    this._languageId = _languageId;
-    this._factory = _factory;
-    this._isDisposed = false;
-    this._resolvePromise = null;
-    this._isResolved = false;
+    this.f = f;
+    this.g = g;
+    this.h = h;
+    this.a = false;
+    this.b = null;
+    this.c = false;
   }
   dispose() {
-    this._isDisposed = true;
+    this.a = true;
     super.dispose();
   }
   async resolve() {
-    if (!this._resolvePromise) {
-      this._resolvePromise = this._create();
+    if (!this.b) {
+      this.b = this.j();
     }
-    return this._resolvePromise;
+    return this.b;
   }
-  async _create() {
-    const value = await this._factory.tokenizationSupport;
-    this._isResolved = true;
-    if (value && !this._isDisposed) {
-      this._register(this._registry.register(this._languageId, value));
+  async j() {
+    const value = await this.h.tokenizationSupport;
+    this.c = true;
+    if (value && !this.a) {
+      this.D(this.f.register(this.g, value));
     }
   }
 };
 
 // out-build/vs/editor/common/languages.js
-var Token = class {
-  constructor(offset, type, language2) {
+var $YE = class {
+  constructor(offset, type, language) {
     this.offset = offset;
     this.type = type;
-    this.language = language2;
+    this.language = language;
     this._tokenBrand = void 0;
   }
   toString() {
@@ -9430,41 +9430,41 @@ var CompletionItemKind;
 var CompletionItemKinds;
 (function(CompletionItemKinds2) {
   const byKind = /* @__PURE__ */ new Map();
-  byKind.set(0, Codicon.symbolMethod);
-  byKind.set(1, Codicon.symbolFunction);
-  byKind.set(2, Codicon.symbolConstructor);
-  byKind.set(3, Codicon.symbolField);
-  byKind.set(4, Codicon.symbolVariable);
-  byKind.set(5, Codicon.symbolClass);
-  byKind.set(6, Codicon.symbolStruct);
-  byKind.set(7, Codicon.symbolInterface);
-  byKind.set(8, Codicon.symbolModule);
-  byKind.set(9, Codicon.symbolProperty);
-  byKind.set(10, Codicon.symbolEvent);
-  byKind.set(11, Codicon.symbolOperator);
-  byKind.set(12, Codicon.symbolUnit);
-  byKind.set(13, Codicon.symbolValue);
-  byKind.set(15, Codicon.symbolEnum);
-  byKind.set(14, Codicon.symbolConstant);
-  byKind.set(15, Codicon.symbolEnum);
-  byKind.set(16, Codicon.symbolEnumMember);
-  byKind.set(17, Codicon.symbolKeyword);
-  byKind.set(28, Codicon.symbolSnippet);
-  byKind.set(18, Codicon.symbolText);
-  byKind.set(19, Codicon.symbolColor);
-  byKind.set(20, Codicon.symbolFile);
-  byKind.set(21, Codicon.symbolReference);
-  byKind.set(22, Codicon.symbolCustomColor);
-  byKind.set(23, Codicon.symbolFolder);
-  byKind.set(24, Codicon.symbolTypeParameter);
-  byKind.set(25, Codicon.account);
-  byKind.set(26, Codicon.issues);
-  byKind.set(27, Codicon.tools);
+  byKind.set(0, $6j.symbolMethod);
+  byKind.set(1, $6j.symbolFunction);
+  byKind.set(2, $6j.symbolConstructor);
+  byKind.set(3, $6j.symbolField);
+  byKind.set(4, $6j.symbolVariable);
+  byKind.set(5, $6j.symbolClass);
+  byKind.set(6, $6j.symbolStruct);
+  byKind.set(7, $6j.symbolInterface);
+  byKind.set(8, $6j.symbolModule);
+  byKind.set(9, $6j.symbolProperty);
+  byKind.set(10, $6j.symbolEvent);
+  byKind.set(11, $6j.symbolOperator);
+  byKind.set(12, $6j.symbolUnit);
+  byKind.set(13, $6j.symbolValue);
+  byKind.set(15, $6j.symbolEnum);
+  byKind.set(14, $6j.symbolConstant);
+  byKind.set(15, $6j.symbolEnum);
+  byKind.set(16, $6j.symbolEnumMember);
+  byKind.set(17, $6j.symbolKeyword);
+  byKind.set(28, $6j.symbolSnippet);
+  byKind.set(18, $6j.symbolText);
+  byKind.set(19, $6j.symbolColor);
+  byKind.set(20, $6j.symbolFile);
+  byKind.set(21, $6j.symbolReference);
+  byKind.set(22, $6j.symbolCustomColor);
+  byKind.set(23, $6j.symbolFolder);
+  byKind.set(24, $6j.symbolTypeParameter);
+  byKind.set(25, $6j.account);
+  byKind.set(26, $6j.issues);
+  byKind.set(27, $6j.tools);
   function toIcon(kind) {
     let codicon = byKind.get(kind);
     if (!codicon) {
       console.info("No codicon found for CompletionItemKind " + kind);
-      codicon = Codicon.symbolProperty;
+      codicon = $6j.symbolProperty;
     }
     return codicon;
   }
@@ -9788,7 +9788,7 @@ var SymbolKind;
   SymbolKind3[SymbolKind3["Operator"] = 24] = "Operator";
   SymbolKind3[SymbolKind3["TypeParameter"] = 25] = "TypeParameter";
 })(SymbolKind || (SymbolKind = {}));
-var symbolKindNames = {
+var $7E = {
   [
     17
     /* SymbolKind.Array */
@@ -9901,37 +9901,37 @@ var SymbolTag;
 var SymbolKinds;
 (function(SymbolKinds2) {
   const byKind = /* @__PURE__ */ new Map();
-  byKind.set(0, Codicon.symbolFile);
-  byKind.set(1, Codicon.symbolModule);
-  byKind.set(2, Codicon.symbolNamespace);
-  byKind.set(3, Codicon.symbolPackage);
-  byKind.set(4, Codicon.symbolClass);
-  byKind.set(5, Codicon.symbolMethod);
-  byKind.set(6, Codicon.symbolProperty);
-  byKind.set(7, Codicon.symbolField);
-  byKind.set(8, Codicon.symbolConstructor);
-  byKind.set(9, Codicon.symbolEnum);
-  byKind.set(10, Codicon.symbolInterface);
-  byKind.set(11, Codicon.symbolFunction);
-  byKind.set(12, Codicon.symbolVariable);
-  byKind.set(13, Codicon.symbolConstant);
-  byKind.set(14, Codicon.symbolString);
-  byKind.set(15, Codicon.symbolNumber);
-  byKind.set(16, Codicon.symbolBoolean);
-  byKind.set(17, Codicon.symbolArray);
-  byKind.set(18, Codicon.symbolObject);
-  byKind.set(19, Codicon.symbolKey);
-  byKind.set(20, Codicon.symbolNull);
-  byKind.set(21, Codicon.symbolEnumMember);
-  byKind.set(22, Codicon.symbolStruct);
-  byKind.set(23, Codicon.symbolEvent);
-  byKind.set(24, Codicon.symbolOperator);
-  byKind.set(25, Codicon.symbolTypeParameter);
+  byKind.set(0, $6j.symbolFile);
+  byKind.set(1, $6j.symbolModule);
+  byKind.set(2, $6j.symbolNamespace);
+  byKind.set(3, $6j.symbolPackage);
+  byKind.set(4, $6j.symbolClass);
+  byKind.set(5, $6j.symbolMethod);
+  byKind.set(6, $6j.symbolProperty);
+  byKind.set(7, $6j.symbolField);
+  byKind.set(8, $6j.symbolConstructor);
+  byKind.set(9, $6j.symbolEnum);
+  byKind.set(10, $6j.symbolInterface);
+  byKind.set(11, $6j.symbolFunction);
+  byKind.set(12, $6j.symbolVariable);
+  byKind.set(13, $6j.symbolConstant);
+  byKind.set(14, $6j.symbolString);
+  byKind.set(15, $6j.symbolNumber);
+  byKind.set(16, $6j.symbolBoolean);
+  byKind.set(17, $6j.symbolArray);
+  byKind.set(18, $6j.symbolObject);
+  byKind.set(19, $6j.symbolKey);
+  byKind.set(20, $6j.symbolNull);
+  byKind.set(21, $6j.symbolEnumMember);
+  byKind.set(22, $6j.symbolStruct);
+  byKind.set(23, $6j.symbolEvent);
+  byKind.set(24, $6j.symbolOperator);
+  byKind.set(25, $6j.symbolTypeParameter);
   function toIcon(kind) {
     let icon = byKind.get(kind);
     if (!icon) {
       console.info("No codicon found for SymbolKind " + kind);
-      icon = Codicon.symbolProperty;
+      icon = $6j.symbolProperty;
     }
     return icon;
   }
@@ -10077,34 +10077,34 @@ var SymbolKinds;
   }
   SymbolKinds2.toCompletionKind = toCompletionKind;
 })(SymbolKinds || (SymbolKinds = {}));
-var FoldingRangeKind = class _FoldingRangeKind {
+var $0E = class _$0E {
   static {
-    this.Comment = new _FoldingRangeKind("comment");
+    this.Comment = new _$0E("comment");
   }
   static {
-    this.Imports = new _FoldingRangeKind("imports");
+    this.Imports = new _$0E("imports");
   }
   static {
-    this.Region = new _FoldingRangeKind("region");
+    this.Region = new _$0E("region");
   }
   /**
-   * Returns a {@link FoldingRangeKind} for the given value.
+   * Returns a {@link $0E} for the given value.
    *
    * @param value of the kind.
    */
   static fromValue(value) {
     switch (value) {
       case "comment":
-        return _FoldingRangeKind.Comment;
+        return _$0E.Comment;
       case "imports":
-        return _FoldingRangeKind.Imports;
+        return _$0E.Imports;
       case "region":
-        return _FoldingRangeKind.Region;
+        return _$0E.Region;
     }
-    return new _FoldingRangeKind(value);
+    return new _$0E(value);
   }
   /**
-   * Creates a new {@link FoldingRangeKind}.
+   * Creates a new {@link $0E}.
    *
    * @param value of the kind.
    */
@@ -10161,7 +10161,7 @@ var InlayHintKind;
   InlayHintKind3[InlayHintKind3["Type"] = 1] = "Type";
   InlayHintKind3[InlayHintKind3["Parameter"] = 2] = "Parameter";
 })(InlayHintKind || (InlayHintKind = {}));
-var TokenizationRegistry2 = new TokenizationRegistry();
+var $_E = new $FE();
 var ExternalUriOpenerPriority;
 (function(ExternalUriOpenerPriority2) {
   ExternalUriOpenerPriority2[ExternalUriOpenerPriority2["None"] = 0] = "None";
@@ -10824,7 +10824,7 @@ var WrappingIndent;
 })(WrappingIndent || (WrappingIndent = {}));
 
 // out-build/vs/editor/common/services/editorBaseApi.js
-var KeyMod2 = class {
+var $Bfb = class {
   static {
     this.CtrlCmd = 2048;
   }
@@ -10838,27 +10838,27 @@ var KeyMod2 = class {
     this.WinCtrl = 256;
   }
   static chord(firstPart, secondPart) {
-    return KeyChord(firstPart, secondPart);
+    return $Lx(firstPart, secondPart);
   }
 };
-function createMonacoBaseAPI() {
+function $Cfb() {
   return {
     editor: void 0,
     // undefined override expected here
     languages: void 0,
     // undefined override expected here
-    CancellationTokenSource,
-    Emitter,
+    CancellationTokenSource: $Cf,
+    Emitter: $qf,
     KeyCode: KeyCode2,
-    KeyMod: KeyMod2,
-    Position,
-    Range,
-    Selection,
+    KeyMod: $Bfb,
+    Position: $GD,
+    Range: $HD,
+    Selection: $JD,
     SelectionDirection: SelectionDirection2,
     MarkerSeverity,
     MarkerTag,
     Uri: URI,
-    Token
+    Token: $YE
   };
 }
 
@@ -10877,7 +10877,7 @@ var WordCharacterClass;
   WordCharacterClass2[WordCharacterClass2["Whitespace"] = 1] = "Whitespace";
   WordCharacterClass2[WordCharacterClass2["WordSeparator"] = 2] = "WordSeparator";
 })(WordCharacterClass || (WordCharacterClass = {}));
-var wordClassifierCache = new LRUCache(10);
+var wordClassifierCache = new $Sc(10);
 
 // out-build/vs/editor/common/model.js
 var OverviewRulerLane2;
@@ -10952,7 +10952,7 @@ var ModelConstants;
 })(ModelConstants || (ModelConstants = {}));
 
 // out-build/vs/editor/common/model/textModelSearch.js
-function isMultilineRegexSource(searchString) {
+function $pJ(searchString) {
   if (!searchString || searchString.length === 0) {
     return false;
   }
@@ -11012,48 +11012,48 @@ function rightIsWordBounday(wordSeparators, text, textLength, matchStartIndex, m
   }
   return false;
 }
-function isValidMatch(wordSeparators, text, textLength, matchStartIndex, matchLength) {
+function $sJ(wordSeparators, text, textLength, matchStartIndex, matchLength) {
   return leftIsWordBounday(wordSeparators, text, textLength, matchStartIndex, matchLength) && rightIsWordBounday(wordSeparators, text, textLength, matchStartIndex, matchLength);
 }
-var Searcher = class {
+var $tJ = class {
   constructor(wordSeparators, searchRegex) {
     this._wordSeparators = wordSeparators;
-    this._searchRegex = searchRegex;
-    this._prevMatchStartIndex = -1;
-    this._prevMatchLength = 0;
+    this.a = searchRegex;
+    this.b = -1;
+    this.c = 0;
   }
   reset(lastIndex) {
-    this._searchRegex.lastIndex = lastIndex;
-    this._prevMatchStartIndex = -1;
-    this._prevMatchLength = 0;
+    this.a.lastIndex = lastIndex;
+    this.b = -1;
+    this.c = 0;
   }
   next(text) {
     const textLength = text.length;
     let m;
     do {
-      if (this._prevMatchStartIndex + this._prevMatchLength === textLength) {
+      if (this.b + this.c === textLength) {
         return null;
       }
-      m = this._searchRegex.exec(text);
+      m = this.a.exec(text);
       if (!m) {
         return null;
       }
       const matchStartIndex = m.index;
       const matchLength = m[0].length;
-      if (matchStartIndex === this._prevMatchStartIndex && matchLength === this._prevMatchLength) {
+      if (matchStartIndex === this.b && matchLength === this.c) {
         if (matchLength === 0) {
-          if (getNextCodePoint(text, textLength, this._searchRegex.lastIndex) > 65535) {
-            this._searchRegex.lastIndex += 2;
+          if ($pg(text, textLength, this.a.lastIndex) > 65535) {
+            this.a.lastIndex += 2;
           } else {
-            this._searchRegex.lastIndex += 1;
+            this.a.lastIndex += 1;
           }
           continue;
         }
         return null;
       }
-      this._prevMatchStartIndex = matchStartIndex;
-      this._prevMatchLength = matchLength;
-      if (!this._wordSeparators || isValidMatch(this._wordSeparators, text, textLength, matchStartIndex, matchLength)) {
+      this.b = matchStartIndex;
+      this.c = matchLength;
+      if (!this._wordSeparators || $sJ(this._wordSeparators, text, textLength, matchStartIndex, matchLength)) {
         return m;
       }
     } while (m);
@@ -11062,10 +11062,10 @@ var Searcher = class {
 };
 
 // out-build/vs/editor/common/core/wordHelper.js
-var USUAL_WORD_SEPARATORS = "`~!@#$%^&*()-=+[{]}\\|;:'\",.<>/?";
+var $dD = "`~!@#$%^&*()-=+[{]}\\|;:'\",.<>/?";
 function createWordRegExp(allowInWords = "") {
   let source = "(-?\\d*\\.\\d\\w*)|([^";
-  for (const sep2 of USUAL_WORD_SEPARATORS) {
+  for (const sep2 of $dD) {
     if (allowInWords.indexOf(sep2) >= 0) {
       continue;
     }
@@ -11074,9 +11074,9 @@ function createWordRegExp(allowInWords = "") {
   source += "\\s]+)";
   return new RegExp(source, "g");
 }
-var DEFAULT_WORD_REGEXP = createWordRegExp();
-function ensureValidWordDefinition(wordDefinition) {
-  let result = DEFAULT_WORD_REGEXP;
+var $eD = createWordRegExp();
+function $fD(wordDefinition) {
+  let result = $eD;
   if (wordDefinition && wordDefinition instanceof RegExp) {
     if (!wordDefinition.global) {
       let flags = "g";
@@ -11097,14 +11097,14 @@ function ensureValidWordDefinition(wordDefinition) {
   result.lastIndex = 0;
   return result;
 }
-var _defaultConfig = new LinkedList();
+var _defaultConfig = new $Qd();
 _defaultConfig.unshift({
   maxLen: 1e3,
   windowSize: 15,
   timeBudget: 150
 });
-function getWordAtText(column, wordDefinition, text, textOffset, config) {
-  wordDefinition = ensureValidWordDefinition(wordDefinition);
+function $hD(column, wordDefinition, text, textOffset, config) {
+  wordDefinition = $fD(wordDefinition);
   if (!config) {
     config = Iterable.first(_defaultConfig);
   }
@@ -11116,7 +11116,7 @@ function getWordAtText(column, wordDefinition, text, textOffset, config) {
       textOffset += start;
     }
     text = text.substring(start, column + config.maxLen / 2);
-    return getWordAtText(column, wordDefinition, text, textOffset, config);
+    return $hD(column, wordDefinition, text, textOffset, config);
   }
   const t1 = Date.now();
   const pos = column - 1 - textOffset;
@@ -11163,7 +11163,7 @@ function _findRegexMatchEnclosingPosition(wordDefinition, text, pos, stopPos) {
 }
 
 // out-build/vs/editor/common/services/unicodeTextModelHighlighter.js
-var UnicodeTextModelHighlighter = class {
+var $wfb = class {
   static computeUnicodeHighlights(model, options, range) {
     const startLine = range ? range.startLineNumber : 1;
     const endLine = range ? range.endLineNumber : model.getLineCount();
@@ -11175,7 +11175,7 @@ var UnicodeTextModelHighlighter = class {
     } else {
       regex = new RegExp(`${buildRegExpCharClassExpr(Array.from(candidates))}`, "g");
     }
-    const searcher = new Searcher(null, regex);
+    const searcher = new $tJ(null, regex);
     const ranges = [];
     let hasMore = false;
     let m;
@@ -11193,18 +11193,18 @@ var UnicodeTextModelHighlighter = class {
           let endIndex = m.index + m[0].length;
           if (startIndex > 0) {
             const charCodeBefore = lineContent.charCodeAt(startIndex - 1);
-            if (isHighSurrogate(charCodeBefore)) {
+            if ($mg(charCodeBefore)) {
               startIndex--;
             }
           }
           if (endIndex + 1 < lineLength) {
             const charCodeBefore = lineContent.charCodeAt(endIndex - 1);
-            if (isHighSurrogate(charCodeBefore)) {
+            if ($mg(charCodeBefore)) {
               endIndex++;
             }
           }
           const str = lineContent.substring(startIndex, endIndex);
-          let word = getWordAtText(startIndex + 1, DEFAULT_WORD_REGEXP, lineContent, 0);
+          let word = $hD(startIndex + 1, $eD, lineContent, 0);
           if (word && word.endColumn <= startIndex + 1) {
             word = null;
           }
@@ -11217,14 +11217,14 @@ var UnicodeTextModelHighlighter = class {
             } else if (highlightReason === 1) {
               nonBasicAsciiCharacterCount++;
             } else {
-              assertNever(highlightReason);
+              $1c(highlightReason);
             }
             const MAX_RESULT_LENGTH = 1e3;
             if (ranges.length >= MAX_RESULT_LENGTH) {
               hasMore = true;
               break forLoop;
             }
-            ranges.push(new Range(lineNumber, startIndex + 1, lineNumber, endIndex + 1));
+            ranges.push(new $HD(lineNumber, startIndex + 1, lineNumber, endIndex + 1));
           }
         }
       } while (m);
@@ -11251,7 +11251,7 @@ var UnicodeTextModelHighlighter = class {
       case 3: {
         const codePoint = char.codePointAt(0);
         const primaryConfusable = codePointHighlighter.ambiguousCharacters.getPrimaryConfusable(codePoint);
-        const notAmbiguousInLocales = AmbiguousCharacters.getLocales().filter((l) => !AmbiguousCharacters.getInstance(/* @__PURE__ */ new Set([...options.allowedLocales, l])).isAmbiguous(codePoint));
+        const notAmbiguousInLocales = $Rg.getLocales().filter((l) => !$Rg.getInstance(/* @__PURE__ */ new Set([...options.allowedLocales, l])).isAmbiguous(codePoint));
         return { kind: 0, confusableWith: String.fromCodePoint(primaryConfusable), notAmbiguousInLocales };
       }
       case 1:
@@ -11263,7 +11263,7 @@ var UnicodeTextModelHighlighter = class {
   }
 };
 function buildRegExpCharClassExpr(codePoints, flags) {
-  const src = `[${escapeRegExpCharacters(codePoints.map((i) => String.fromCodePoint(i)).join(""))}]`;
+  const src = `[${$Sf(codePoints.map((i) => String.fromCodePoint(i)).join(""))}]`;
   return src;
 }
 var UnicodeHighlighterReasonKind;
@@ -11273,39 +11273,39 @@ var UnicodeHighlighterReasonKind;
   UnicodeHighlighterReasonKind2[UnicodeHighlighterReasonKind2["NonBasicAscii"] = 2] = "NonBasicAscii";
 })(UnicodeHighlighterReasonKind || (UnicodeHighlighterReasonKind = {}));
 var CodePointHighlighter = class {
-  constructor(options) {
-    this.options = options;
-    this.allowedCodePoints = new Set(options.allowedCodePoints);
-    this.ambiguousCharacters = AmbiguousCharacters.getInstance(new Set(options.allowedLocales));
+  constructor(b) {
+    this.b = b;
+    this.a = new Set(b.allowedCodePoints);
+    this.ambiguousCharacters = $Rg.getInstance(new Set(b.allowedLocales));
   }
   getCandidateCodePoints() {
-    if (this.options.nonBasicASCII) {
+    if (this.b.nonBasicASCII) {
       return "allNonBasicAscii";
     }
     const set = /* @__PURE__ */ new Set();
-    if (this.options.invisibleCharacters) {
-      for (const cp of InvisibleCharacters.codePoints) {
+    if (this.b.invisibleCharacters) {
+      for (const cp of $Sg.codePoints) {
         if (!isAllowedInvisibleCharacter(String.fromCodePoint(cp))) {
           set.add(cp);
         }
       }
     }
-    if (this.options.ambiguousCharacters) {
+    if (this.b.ambiguousCharacters) {
       for (const cp of this.ambiguousCharacters.getConfusableCodePoints()) {
         set.add(cp);
       }
     }
-    for (const cp of this.allowedCodePoints) {
+    for (const cp of this.a) {
       set.delete(cp);
     }
     return set;
   }
   shouldHighlightNonBasicASCII(character, wordContext) {
     const codePoint = character.codePointAt(0);
-    if (this.allowedCodePoints.has(codePoint)) {
+    if (this.a.has(codePoint)) {
       return 0;
     }
-    if (this.options.nonBasicASCII) {
+    if (this.b.nonBasicASCII) {
       return 1;
     }
     let hasBasicASCIICharacters = false;
@@ -11313,9 +11313,9 @@ var CodePointHighlighter = class {
     if (wordContext) {
       for (const char of wordContext) {
         const codePoint2 = char.codePointAt(0);
-        const isBasicASCII2 = isBasicASCII(char);
-        hasBasicASCIICharacters = hasBasicASCIICharacters || isBasicASCII2;
-        if (!isBasicASCII2 && !this.ambiguousCharacters.isAmbiguous(codePoint2) && !InvisibleCharacters.isInvisibleCharacter(codePoint2)) {
+        const isBasicASCII = $xg(char);
+        hasBasicASCIICharacters = hasBasicASCIICharacters || isBasicASCII;
+        if (!isBasicASCII && !this.ambiguousCharacters.isAmbiguous(codePoint2) && !$Sg.isInvisibleCharacter(codePoint2)) {
           hasNonConfusableNonBasicAsciiCharacter = true;
         }
       }
@@ -11327,12 +11327,12 @@ var CodePointHighlighter = class {
     ) {
       return 0;
     }
-    if (this.options.invisibleCharacters) {
-      if (!isAllowedInvisibleCharacter(character) && InvisibleCharacters.isInvisibleCharacter(codePoint)) {
+    if (this.b.invisibleCharacters) {
+      if (!isAllowedInvisibleCharacter(character) && $Sg.isInvisibleCharacter(codePoint)) {
         return 2;
       }
     }
-    if (this.options.ambiguousCharacters) {
+    if (this.b.ambiguousCharacters) {
       if (this.ambiguousCharacters.isAmbiguous(codePoint)) {
         return 3;
       }
@@ -11352,27 +11352,27 @@ var SimpleHighlightReason;
 })(SimpleHighlightReason || (SimpleHighlightReason = {}));
 
 // out-build/vs/editor/common/diff/linesDiffComputer.js
-var LinesDiff = class {
+var $jE = class {
   constructor(changes, moves, hitTimeout) {
     this.changes = changes;
     this.moves = moves;
     this.hitTimeout = hitTimeout;
   }
 };
-var MovedText = class _MovedText {
+var $kE = class _$kE {
   constructor(lineRangeMapping, changes) {
     this.lineRangeMapping = lineRangeMapping;
     this.changes = changes;
   }
   flip() {
-    return new _MovedText(this.lineRangeMapping.flip(), this.changes.map((c) => c.flip()));
+    return new _$kE(this.lineRangeMapping.flip(), this.changes.map((c) => c.flip()));
   }
 };
 
 // out-build/vs/editor/common/core/ranges/offsetRange.js
-var OffsetRange = class _OffsetRange {
+var $PD = class _$PD {
   static fromTo(start, endExclusive) {
-    return new _OffsetRange(start, endExclusive);
+    return new _$PD(start, endExclusive);
   }
   static addRange(range, sortedRanges) {
     let i = 0;
@@ -11388,42 +11388,42 @@ var OffsetRange = class _OffsetRange {
     } else {
       const start = Math.min(range.start, sortedRanges[i].start);
       const end = Math.max(range.endExclusive, sortedRanges[j - 1].endExclusive);
-      sortedRanges.splice(i, j - i, new _OffsetRange(start, end));
+      sortedRanges.splice(i, j - i, new _$PD(start, end));
     }
   }
   static tryCreate(start, endExclusive) {
     if (start > endExclusive) {
       return void 0;
     }
-    return new _OffsetRange(start, endExclusive);
+    return new _$PD(start, endExclusive);
   }
   static ofLength(length) {
-    return new _OffsetRange(0, length);
+    return new _$PD(0, length);
   }
   static ofStartAndLength(start, length) {
-    return new _OffsetRange(start, start + length);
+    return new _$PD(start, start + length);
   }
   static emptyAt(offset) {
-    return new _OffsetRange(offset, offset);
+    return new _$PD(offset, offset);
   }
   constructor(start, endExclusive) {
     this.start = start;
     this.endExclusive = endExclusive;
     if (start > endExclusive) {
-      throw new BugIndicatingError(`Invalid range: ${this.toString()}`);
+      throw new $Eb(`Invalid range: ${this.toString()}`);
     }
   }
   get isEmpty() {
     return this.start === this.endExclusive;
   }
   delta(offset) {
-    return new _OffsetRange(this.start + offset, this.endExclusive + offset);
+    return new _$PD(this.start + offset, this.endExclusive + offset);
   }
   deltaStart(offset) {
-    return new _OffsetRange(this.start + offset, this.endExclusive);
+    return new _$PD(this.start + offset, this.endExclusive);
   }
   deltaEnd(offset) {
-    return new _OffsetRange(this.start, this.endExclusive + offset);
+    return new _$PD(this.start, this.endExclusive + offset);
   }
   get length() {
     return this.endExclusive - this.start;
@@ -11445,7 +11445,7 @@ var OffsetRange = class _OffsetRange {
    * The joined range is the smallest range that contains both ranges.
    */
   join(other) {
-    return new _OffsetRange(Math.min(this.start, other.start), Math.max(this.endExclusive, other.endExclusive));
+    return new _$PD(Math.min(this.start, other.start), Math.max(this.endExclusive, other.endExclusive));
   }
   /**
    * for all numbers n: range1.contains(n) and range2.contains(n) <=> range1.intersect(range2).contains(n)
@@ -11457,7 +11457,7 @@ var OffsetRange = class _OffsetRange {
     const start = Math.max(this.start, other.start);
     const end = Math.min(this.endExclusive, other.endExclusive);
     if (start <= end) {
-      return new _OffsetRange(start, end);
+      return new _$PD(start, end);
     }
     return void 0;
   }
@@ -11494,7 +11494,7 @@ var OffsetRange = class _OffsetRange {
    */
   clip(value) {
     if (this.isEmpty) {
-      throw new BugIndicatingError(`Invalid clipping range: ${this.toString()}`);
+      throw new $Eb(`Invalid clipping range: ${this.toString()}`);
     }
     return Math.max(this.start, Math.min(this.endExclusive - 1, value));
   }
@@ -11506,7 +11506,7 @@ var OffsetRange = class _OffsetRange {
    */
   clipCyclic(value) {
     if (this.isEmpty) {
-      throw new BugIndicatingError(`Invalid clipping range: ${this.toString()}`);
+      throw new $Eb(`Invalid clipping range: ${this.toString()}`);
     }
     if (value < this.start) {
       return this.endExclusive - (this.start - value) % this.length;
@@ -11534,31 +11534,31 @@ var OffsetRange = class _OffsetRange {
   */
   joinRightTouching(range) {
     if (this.endExclusive !== range.start) {
-      throw new BugIndicatingError(`Invalid join: ${this.toString()} and ${range.toString()}`);
+      throw new $Eb(`Invalid join: ${this.toString()} and ${range.toString()}`);
     }
-    return new _OffsetRange(this.start, range.endExclusive);
+    return new _$PD(this.start, range.endExclusive);
   }
   withMargin(marginStart, marginEnd) {
     if (marginEnd === void 0) {
       marginEnd = marginStart;
     }
-    return new _OffsetRange(this.start - marginStart, this.endExclusive + marginEnd);
+    return new _$PD(this.start - marginStart, this.endExclusive + marginEnd);
   }
 };
 
 // out-build/vs/editor/common/core/ranges/lineRange.js
-var LineRange = class _LineRange {
+var $RD = class _$RD {
   static ofLength(startLineNumber, length) {
-    return new _LineRange(startLineNumber, startLineNumber + length);
+    return new _$RD(startLineNumber, startLineNumber + length);
   }
   static fromRange(range) {
-    return new _LineRange(range.startLineNumber, range.endLineNumber);
+    return new _$RD(range.startLineNumber, range.endLineNumber);
   }
   static fromRangeInclusive(range) {
-    return new _LineRange(range.startLineNumber, range.endLineNumber + 1);
+    return new _$RD(range.startLineNumber, range.endLineNumber + 1);
   }
   static {
-    this.compareByStart = compareBy((l) => l.startLineNumber, numberComparator);
+    this.compareByStart = $xc((l) => l.startLineNumber, $zc);
   }
   static subtract(a, b) {
     if (!b) {
@@ -11566,15 +11566,15 @@ var LineRange = class _LineRange {
     }
     if (a.startLineNumber < b.startLineNumber && b.endLineNumberExclusive < a.endLineNumberExclusive) {
       return [
-        new _LineRange(a.startLineNumber, b.startLineNumber),
-        new _LineRange(b.endLineNumberExclusive, a.endLineNumberExclusive)
+        new _$RD(a.startLineNumber, b.startLineNumber),
+        new _$RD(b.endLineNumberExclusive, a.endLineNumberExclusive)
       ];
     } else if (b.startLineNumber <= a.startLineNumber && a.endLineNumberExclusive <= b.endLineNumberExclusive) {
       return [];
     } else if (b.endLineNumberExclusive < a.endLineNumberExclusive) {
-      return [new _LineRange(Math.max(b.endLineNumberExclusive, a.startLineNumber), a.endLineNumberExclusive)];
+      return [new _$RD(Math.max(b.endLineNumberExclusive, a.startLineNumber), a.endLineNumberExclusive)];
     } else {
-      return [new _LineRange(a.startLineNumber, Math.min(b.startLineNumber, a.endLineNumberExclusive))];
+      return [new _$RD(a.startLineNumber, Math.min(b.startLineNumber, a.endLineNumberExclusive))];
     }
   }
   /**
@@ -11584,15 +11584,15 @@ var LineRange = class _LineRange {
     if (lineRanges.length === 0) {
       return [];
     }
-    let result = new LineRangeSet(lineRanges[0].slice());
+    let result = new $SD(lineRanges[0].slice());
     for (let i = 1; i < lineRanges.length; i++) {
-      result = result.getUnion(new LineRangeSet(lineRanges[i].slice()));
+      result = result.getUnion(new $SD(lineRanges[i].slice()));
     }
     return result.ranges;
   }
   static join(lineRanges) {
     if (lineRanges.length === 0) {
-      throw new BugIndicatingError("lineRanges cannot be empty");
+      throw new $Eb("lineRanges cannot be empty");
     }
     let startLineNumber = lineRanges[0].startLineNumber;
     let endLineNumberExclusive = lineRanges[0].endLineNumberExclusive;
@@ -11600,17 +11600,17 @@ var LineRange = class _LineRange {
       startLineNumber = Math.min(startLineNumber, lineRanges[i].startLineNumber);
       endLineNumberExclusive = Math.max(endLineNumberExclusive, lineRanges[i].endLineNumberExclusive);
     }
-    return new _LineRange(startLineNumber, endLineNumberExclusive);
+    return new _$RD(startLineNumber, endLineNumberExclusive);
   }
   /**
    * @internal
    */
   static deserialize(lineRange) {
-    return new _LineRange(lineRange[0], lineRange[1]);
+    return new _$RD(lineRange[0], lineRange[1]);
   }
   constructor(startLineNumber, endLineNumberExclusive) {
     if (startLineNumber > endLineNumberExclusive) {
-      throw new BugIndicatingError(`startLineNumber ${startLineNumber} cannot be after endLineNumberExclusive ${endLineNumberExclusive}`);
+      throw new $Eb(`startLineNumber ${startLineNumber} cannot be after endLineNumberExclusive ${endLineNumberExclusive}`);
     }
     this.startLineNumber = startLineNumber;
     this.endLineNumberExclusive = endLineNumberExclusive;
@@ -11634,10 +11634,10 @@ var LineRange = class _LineRange {
    * Moves this line range by the given offset of line numbers.
    */
   delta(offset) {
-    return new _LineRange(this.startLineNumber + offset, this.endLineNumberExclusive + offset);
+    return new _$RD(this.startLineNumber + offset, this.endLineNumberExclusive + offset);
   }
   deltaLength(offset) {
-    return new _LineRange(this.startLineNumber, this.endLineNumberExclusive + offset);
+    return new _$RD(this.startLineNumber, this.endLineNumberExclusive + offset);
   }
   /**
    * The number of lines this line range spans.
@@ -11649,7 +11649,7 @@ var LineRange = class _LineRange {
    * Creates a line range that combines this and the given line range.
    */
   join(other) {
-    return new _LineRange(Math.min(this.startLineNumber, other.startLineNumber), Math.max(this.endLineNumberExclusive, other.endLineNumberExclusive));
+    return new _$RD(Math.min(this.startLineNumber, other.startLineNumber), Math.max(this.endLineNumberExclusive, other.endLineNumberExclusive));
   }
   toString() {
     return `[${this.startLineNumber},${this.endLineNumberExclusive})`;
@@ -11662,7 +11662,7 @@ var LineRange = class _LineRange {
     const startLineNumber = Math.max(this.startLineNumber, other.startLineNumber);
     const endLineNumberExclusive = Math.min(this.endLineNumberExclusive, other.endLineNumberExclusive);
     if (startLineNumber <= endLineNumberExclusive) {
-      return new _LineRange(startLineNumber, endLineNumberExclusive);
+      return new _$RD(startLineNumber, endLineNumberExclusive);
     }
     return void 0;
   }
@@ -11679,13 +11679,13 @@ var LineRange = class _LineRange {
     if (this.isEmpty) {
       return null;
     }
-    return new Range(this.startLineNumber, 1, this.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER);
+    return new $HD(this.startLineNumber, 1, this.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER);
   }
   /**
    * @deprecated Using this function is discouraged because it might lead to bugs: The end position is not guaranteed to be a valid position!
   */
   toExclusiveRange() {
-    return new Range(this.startLineNumber, 1, this.endLineNumberExclusive, 1);
+    return new $HD(this.startLineNumber, 1, this.endLineNumberExclusive, 1);
   }
   mapToLineArray(f) {
     const result = [];
@@ -11710,7 +11710,7 @@ var LineRange = class _LineRange {
    * @internal
    */
   toOffsetRange() {
-    return new OffsetRange(this.startLineNumber - 1, this.endLineNumberExclusive - 1);
+    return new $PD(this.startLineNumber - 1, this.endLineNumberExclusive - 1);
   }
   distanceToRange(other) {
     if (this.endLineNumberExclusive <= other.startLineNumber) {
@@ -11731,56 +11731,56 @@ var LineRange = class _LineRange {
     return lineNumber - this.endLineNumberExclusive;
   }
   addMargin(marginTop, marginBottom) {
-    return new _LineRange(this.startLineNumber - marginTop, this.endLineNumberExclusive + marginBottom);
+    return new _$RD(this.startLineNumber - marginTop, this.endLineNumberExclusive + marginBottom);
   }
 };
-var LineRangeSet = class _LineRangeSet {
-  constructor(_normalizedRanges = []) {
-    this._normalizedRanges = _normalizedRanges;
+var $SD = class _$SD {
+  constructor(c = []) {
+    this.c = c;
   }
   get ranges() {
-    return this._normalizedRanges;
+    return this.c;
   }
   addRange(range) {
     if (range.length === 0) {
       return;
     }
-    const joinRangeStartIdx = findFirstIdxMonotonousOrArrLen(this._normalizedRanges, (r) => r.endLineNumberExclusive >= range.startLineNumber);
-    const joinRangeEndIdxExclusive = findLastIdxMonotonous(this._normalizedRanges, (r) => r.startLineNumber <= range.endLineNumberExclusive) + 1;
+    const joinRangeStartIdx = $Nb(this.c, (r) => r.endLineNumberExclusive >= range.startLineNumber);
+    const joinRangeEndIdxExclusive = $Lb(this.c, (r) => r.startLineNumber <= range.endLineNumberExclusive) + 1;
     if (joinRangeStartIdx === joinRangeEndIdxExclusive) {
-      this._normalizedRanges.splice(joinRangeStartIdx, 0, range);
+      this.c.splice(joinRangeStartIdx, 0, range);
     } else if (joinRangeStartIdx === joinRangeEndIdxExclusive - 1) {
-      const joinRange = this._normalizedRanges[joinRangeStartIdx];
-      this._normalizedRanges[joinRangeStartIdx] = joinRange.join(range);
+      const joinRange = this.c[joinRangeStartIdx];
+      this.c[joinRangeStartIdx] = joinRange.join(range);
     } else {
-      const joinRange = this._normalizedRanges[joinRangeStartIdx].join(this._normalizedRanges[joinRangeEndIdxExclusive - 1]).join(range);
-      this._normalizedRanges.splice(joinRangeStartIdx, joinRangeEndIdxExclusive - joinRangeStartIdx, joinRange);
+      const joinRange = this.c[joinRangeStartIdx].join(this.c[joinRangeEndIdxExclusive - 1]).join(range);
+      this.c.splice(joinRangeStartIdx, joinRangeEndIdxExclusive - joinRangeStartIdx, joinRange);
     }
   }
   contains(lineNumber) {
-    const rangeThatStartsBeforeEnd = findLastMonotonous(this._normalizedRanges, (r) => r.startLineNumber <= lineNumber);
+    const rangeThatStartsBeforeEnd = $Kb(this.c, (r) => r.startLineNumber <= lineNumber);
     return !!rangeThatStartsBeforeEnd && rangeThatStartsBeforeEnd.endLineNumberExclusive > lineNumber;
   }
   intersects(range) {
-    const rangeThatStartsBeforeEnd = findLastMonotonous(this._normalizedRanges, (r) => r.startLineNumber < range.endLineNumberExclusive);
+    const rangeThatStartsBeforeEnd = $Kb(this.c, (r) => r.startLineNumber < range.endLineNumberExclusive);
     return !!rangeThatStartsBeforeEnd && rangeThatStartsBeforeEnd.endLineNumberExclusive > range.startLineNumber;
   }
   getUnion(other) {
-    if (this._normalizedRanges.length === 0) {
+    if (this.c.length === 0) {
       return other;
     }
-    if (other._normalizedRanges.length === 0) {
+    if (other.c.length === 0) {
       return this;
     }
     const result = [];
     let i1 = 0;
     let i2 = 0;
     let current = null;
-    while (i1 < this._normalizedRanges.length || i2 < other._normalizedRanges.length) {
+    while (i1 < this.c.length || i2 < other.c.length) {
       let next = null;
-      if (i1 < this._normalizedRanges.length && i2 < other._normalizedRanges.length) {
-        const lineRange1 = this._normalizedRanges[i1];
-        const lineRange2 = other._normalizedRanges[i2];
+      if (i1 < this.c.length && i2 < other.c.length) {
+        const lineRange1 = this.c[i1];
+        const lineRange2 = other.c[i2];
         if (lineRange1.startLineNumber < lineRange2.startLineNumber) {
           next = lineRange1;
           i1++;
@@ -11788,18 +11788,18 @@ var LineRangeSet = class _LineRangeSet {
           next = lineRange2;
           i2++;
         }
-      } else if (i1 < this._normalizedRanges.length) {
-        next = this._normalizedRanges[i1];
+      } else if (i1 < this.c.length) {
+        next = this.c[i1];
         i1++;
       } else {
-        next = other._normalizedRanges[i2];
+        next = other.c[i2];
         i2++;
       }
       if (current === null) {
         current = next;
       } else {
         if (current.endLineNumberExclusive >= next.startLineNumber) {
-          current = new LineRange(current.startLineNumber, Math.max(current.endLineNumberExclusive, next.endLineNumberExclusive));
+          current = new $RD(current.startLineNumber, Math.max(current.endLineNumberExclusive, next.endLineNumberExclusive));
         } else {
           result.push(current);
           current = next;
@@ -11809,41 +11809,41 @@ var LineRangeSet = class _LineRangeSet {
     if (current !== null) {
       result.push(current);
     }
-    return new _LineRangeSet(result);
+    return new _$SD(result);
   }
   /**
    * Subtracts all ranges in this set from `range` and returns the result.
    */
   subtractFrom(range) {
-    const joinRangeStartIdx = findFirstIdxMonotonousOrArrLen(this._normalizedRanges, (r) => r.endLineNumberExclusive >= range.startLineNumber);
-    const joinRangeEndIdxExclusive = findLastIdxMonotonous(this._normalizedRanges, (r) => r.startLineNumber <= range.endLineNumberExclusive) + 1;
+    const joinRangeStartIdx = $Nb(this.c, (r) => r.endLineNumberExclusive >= range.startLineNumber);
+    const joinRangeEndIdxExclusive = $Lb(this.c, (r) => r.startLineNumber <= range.endLineNumberExclusive) + 1;
     if (joinRangeStartIdx === joinRangeEndIdxExclusive) {
-      return new _LineRangeSet([range]);
+      return new _$SD([range]);
     }
     const result = [];
     let startLineNumber = range.startLineNumber;
     for (let i = joinRangeStartIdx; i < joinRangeEndIdxExclusive; i++) {
-      const r = this._normalizedRanges[i];
+      const r = this.c[i];
       if (r.startLineNumber > startLineNumber) {
-        result.push(new LineRange(startLineNumber, r.startLineNumber));
+        result.push(new $RD(startLineNumber, r.startLineNumber));
       }
       startLineNumber = r.endLineNumberExclusive;
     }
     if (startLineNumber < range.endLineNumberExclusive) {
-      result.push(new LineRange(startLineNumber, range.endLineNumberExclusive));
+      result.push(new $RD(startLineNumber, range.endLineNumberExclusive));
     }
-    return new _LineRangeSet(result);
+    return new _$SD(result);
   }
   toString() {
-    return this._normalizedRanges.map((r) => r.toString()).join(", ");
+    return this.c.map((r) => r.toString()).join(", ");
   }
   getIntersection(other) {
     const result = [];
     let i1 = 0;
     let i2 = 0;
-    while (i1 < this._normalizedRanges.length && i2 < other._normalizedRanges.length) {
-      const r1 = this._normalizedRanges[i1];
-      const r2 = other._normalizedRanges[i2];
+    while (i1 < this.c.length && i2 < other.c.length) {
+      const r1 = this.c[i1];
+      const r2 = other.c[i2];
       const i = r1.intersect(r2);
       if (i && !i.isEmpty) {
         result.push(i);
@@ -11854,40 +11854,40 @@ var LineRangeSet = class _LineRangeSet {
         i2++;
       }
     }
-    return new _LineRangeSet(result);
+    return new _$SD(result);
   }
   getWithDelta(value) {
-    return new _LineRangeSet(this._normalizedRanges.map((r) => r.delta(value)));
+    return new _$SD(this.c.map((r) => r.delta(value)));
   }
 };
 
 // out-build/vs/editor/common/core/text/textLength.js
-var TextLength = class _TextLength {
+var $TD = class _$TD {
   static {
-    this.zero = new _TextLength(0, 0);
+    this.zero = new _$TD(0, 0);
   }
   static lengthDiffNonNegative(start, end) {
     if (end.isLessThan(start)) {
-      return _TextLength.zero;
+      return _$TD.zero;
     }
     if (start.lineCount === end.lineCount) {
-      return new _TextLength(0, end.columnCount - start.columnCount);
+      return new _$TD(0, end.columnCount - start.columnCount);
     } else {
-      return new _TextLength(end.lineCount - start.lineCount, end.columnCount);
+      return new _$TD(end.lineCount - start.lineCount, end.columnCount);
     }
   }
   static betweenPositions(position1, position2) {
     if (position1.lineNumber === position2.lineNumber) {
-      return new _TextLength(0, position2.column - position1.column);
+      return new _$TD(0, position2.column - position1.column);
     } else {
-      return new _TextLength(position2.lineNumber - position1.lineNumber, position2.column - 1);
+      return new _$TD(position2.lineNumber - position1.lineNumber, position2.column - 1);
     }
   }
   static fromPosition(pos) {
-    return new _TextLength(pos.lineNumber - 1, pos.column - 1);
+    return new _$TD(pos.lineNumber - 1, pos.column - 1);
   }
   static ofRange(range) {
-    return _TextLength.betweenPositions(range.getStartPosition(), range.getEndPosition());
+    return _$TD.betweenPositions(range.getStartPosition(), range.getEndPosition());
   }
   static ofText(text) {
     let line = 0;
@@ -11900,13 +11900,13 @@ var TextLength = class _TextLength {
         column++;
       }
     }
-    return new _TextLength(line, column);
+    return new _$TD(line, column);
   }
   static ofSubstr(str, range) {
-    return _TextLength.ofText(range.substring(str));
+    return _$TD.ofText(range.substring(str));
   }
   static sum(fragments, getLength) {
-    return fragments.reduce((acc, f) => acc.add(getLength(f)), _TextLength.zero);
+    return fragments.reduce((acc, f) => acc.add(getLength(f)), _$TD.zero);
   }
   constructor(lineCount, columnCount) {
     this.lineCount = lineCount;
@@ -11944,33 +11944,33 @@ var TextLength = class _TextLength {
   }
   add(other) {
     if (other.lineCount === 0) {
-      return new _TextLength(this.lineCount, this.columnCount + other.columnCount);
+      return new _$TD(this.lineCount, this.columnCount + other.columnCount);
     } else {
-      return new _TextLength(this.lineCount + other.lineCount, other.columnCount);
+      return new _$TD(this.lineCount + other.lineCount, other.columnCount);
     }
   }
   createRange(startPosition) {
     if (this.lineCount === 0) {
-      return new Range(startPosition.lineNumber, startPosition.column, startPosition.lineNumber, startPosition.column + this.columnCount);
+      return new $HD(startPosition.lineNumber, startPosition.column, startPosition.lineNumber, startPosition.column + this.columnCount);
     } else {
-      return new Range(startPosition.lineNumber, startPosition.column, startPosition.lineNumber + this.lineCount, this.columnCount + 1);
+      return new $HD(startPosition.lineNumber, startPosition.column, startPosition.lineNumber + this.lineCount, this.columnCount + 1);
     }
   }
   toRange() {
-    return new Range(1, 1, this.lineCount + 1, this.columnCount + 1);
+    return new $HD(1, 1, this.lineCount + 1, this.columnCount + 1);
   }
   toLineRange() {
-    return LineRange.ofLength(1, this.lineCount + 1);
+    return $RD.ofLength(1, this.lineCount + 1);
   }
   addToPosition(position) {
     if (this.lineCount === 0) {
-      return new Position(position.lineNumber, position.column + this.columnCount);
+      return new $GD(position.lineNumber, position.column + this.columnCount);
     } else {
-      return new Position(position.lineNumber + this.lineCount, this.columnCount + 1);
+      return new $GD(position.lineNumber + this.lineCount, this.columnCount + 1);
     }
   }
   addToRange(range) {
-    return Range.fromPositions(this.addToPosition(range.getStartPosition()), this.addToPosition(range.getEndPosition()));
+    return $HD.fromPositions(this.addToPosition(range.getStartPosition()), this.addToPosition(range.getEndPosition()));
   }
   toString() {
     return `${this.lineCount},${this.columnCount}`;
@@ -11978,12 +11978,12 @@ var TextLength = class _TextLength {
 };
 
 // out-build/vs/editor/common/core/text/positionToOffsetImpl.js
-var PositionOffsetTransformerBase = class {
+var $UD = class {
   getOffsetRange(range) {
-    return new OffsetRange(this.getOffset(range.getStartPosition()), this.getOffset(range.getEndPosition()));
+    return new $PD(this.getOffset(range.getStartPosition()), this.getOffset(range.getEndPosition()));
   }
   getRange(offsetRange) {
-    return Range.fromPositions(this.getPosition(offsetRange.start), this.getPosition(offsetRange.endExclusive));
+    return $HD.fromPositions(this.getPosition(offsetRange.start), this.getPosition(offsetRange.endExclusive));
   }
   getStringEdit(edit) {
     const edits = edit.replacements.map((e) => this.getStringReplacement(e));
@@ -12011,75 +12011,75 @@ var Deps = class {
     return this._deps;
   }
 };
-function _setPositionOffsetTransformerDependencies(deps) {
+function $VD(deps) {
   Deps._deps = deps;
 }
-var PositionOffsetTransformer = class extends PositionOffsetTransformerBase {
+var $WD = class extends $UD {
   constructor(text) {
     super();
     this.text = text;
-    this.lineStartOffsetByLineIdx = [];
-    this.lineEndOffsetByLineIdx = [];
-    this.lineStartOffsetByLineIdx.push(0);
+    this.a = [];
+    this.b = [];
+    this.a.push(0);
     for (let i = 0; i < text.length; i++) {
       if (text.charAt(i) === "\n") {
-        this.lineStartOffsetByLineIdx.push(i + 1);
+        this.a.push(i + 1);
         if (i > 0 && text.charAt(i - 1) === "\r") {
-          this.lineEndOffsetByLineIdx.push(i - 1);
+          this.b.push(i - 1);
         } else {
-          this.lineEndOffsetByLineIdx.push(i);
+          this.b.push(i);
         }
       }
     }
-    this.lineEndOffsetByLineIdx.push(text.length);
+    this.b.push(text.length);
   }
   getOffset(position) {
-    const valPos = this._validatePosition(position);
-    return this.lineStartOffsetByLineIdx[valPos.lineNumber - 1] + valPos.column - 1;
+    const valPos = this.c(position);
+    return this.a[valPos.lineNumber - 1] + valPos.column - 1;
   }
-  _validatePosition(position) {
+  c(position) {
     if (position.lineNumber < 1) {
-      return new Position(1, 1);
+      return new $GD(1, 1);
     }
     const lineCount = this.textLength.lineCount + 1;
     if (position.lineNumber > lineCount) {
       const lineLength2 = this.getLineLength(lineCount);
-      return new Position(lineCount, lineLength2 + 1);
+      return new $GD(lineCount, lineLength2 + 1);
     }
     if (position.column < 1) {
-      return new Position(position.lineNumber, 1);
+      return new $GD(position.lineNumber, 1);
     }
     const lineLength = this.getLineLength(position.lineNumber);
     if (position.column - 1 > lineLength) {
-      return new Position(position.lineNumber, lineLength + 1);
+      return new $GD(position.lineNumber, lineLength + 1);
     }
     return position;
   }
   getPosition(offset) {
-    const idx = findLastIdxMonotonous(this.lineStartOffsetByLineIdx, (i) => i <= offset);
+    const idx = $Lb(this.a, (i) => i <= offset);
     const lineNumber = idx + 1;
-    const column = offset - this.lineStartOffsetByLineIdx[idx] + 1;
-    return new Position(lineNumber, column);
+    const column = offset - this.a[idx] + 1;
+    return new $GD(lineNumber, column);
   }
   getTextLength(offsetRange) {
     return Deps.deps.TextLength.ofRange(this.getRange(offsetRange));
   }
   get textLength() {
-    const lineIdx = this.lineStartOffsetByLineIdx.length - 1;
-    return new Deps.deps.TextLength(lineIdx, this.text.length - this.lineStartOffsetByLineIdx[lineIdx]);
+    const lineIdx = this.a.length - 1;
+    return new Deps.deps.TextLength(lineIdx, this.text.length - this.a[lineIdx]);
   }
   getLineLength(lineNumber) {
-    return this.lineEndOffsetByLineIdx[lineNumber - 1] - this.lineStartOffsetByLineIdx[lineNumber - 1];
+    return this.b[lineNumber - 1] - this.a[lineNumber - 1];
   }
 };
 
 // out-build/vs/editor/common/core/text/abstractText.js
-var AbstractText = class {
+var $XD = class {
   constructor() {
-    this._transformer = void 0;
+    this.a = void 0;
   }
   get endPositionExclusive() {
-    return this.length.addToPosition(new Position(1, 1));
+    return this.length.addToPosition(new $GD(1, 1));
   }
   get lineRange() {
     return this.length.toLineRange();
@@ -12091,20 +12091,20 @@ var AbstractText = class {
     return this.getValueOfRange(this.getTransformer().getRange(range));
   }
   getLineLength(lineNumber) {
-    return this.getValueOfRange(new Range(lineNumber, 1, lineNumber, Number.MAX_SAFE_INTEGER)).length;
+    return this.getValueOfRange(new $HD(lineNumber, 1, lineNumber, Number.MAX_SAFE_INTEGER)).length;
   }
   getTransformer() {
-    if (!this._transformer) {
-      this._transformer = new PositionOffsetTransformer(this.getValue());
+    if (!this.a) {
+      this.a = new $WD(this.getValue());
     }
-    return this._transformer;
+    return this.a;
   }
   getLineAt(lineNumber) {
-    return this.getValueOfRange(new Range(lineNumber, 1, lineNumber, Number.MAX_SAFE_INTEGER));
+    return this.getValueOfRange(new $HD(lineNumber, 1, lineNumber, Number.MAX_SAFE_INTEGER));
   }
   getLines() {
     const value = this.getValue();
-    return splitLines(value);
+    return $4f(value);
   }
   getLinesOfRange(range) {
     return range.mapToLineArray((lineNumber) => this.getLineAt(lineNumber));
@@ -12116,77 +12116,77 @@ var AbstractText = class {
     return this.getValue() === other.getValue();
   }
 };
-var LineBasedText = class extends AbstractText {
-  constructor(_getLineContent, _lineCount) {
-    assert(_lineCount >= 1);
+var $YD = class extends $XD {
+  constructor(b, c) {
+    $3c(c >= 1);
     super();
-    this._getLineContent = _getLineContent;
-    this._lineCount = _lineCount;
+    this.b = b;
+    this.c = c;
   }
   getValueOfRange(range) {
     if (range.startLineNumber === range.endLineNumber) {
-      return this._getLineContent(range.startLineNumber).substring(range.startColumn - 1, range.endColumn - 1);
+      return this.b(range.startLineNumber).substring(range.startColumn - 1, range.endColumn - 1);
     }
-    let result = this._getLineContent(range.startLineNumber).substring(range.startColumn - 1);
+    let result = this.b(range.startLineNumber).substring(range.startColumn - 1);
     for (let i = range.startLineNumber + 1; i < range.endLineNumber; i++) {
-      result += "\n" + this._getLineContent(i);
+      result += "\n" + this.b(i);
     }
-    result += "\n" + this._getLineContent(range.endLineNumber).substring(0, range.endColumn - 1);
+    result += "\n" + this.b(range.endLineNumber).substring(0, range.endColumn - 1);
     return result;
   }
   getLineLength(lineNumber) {
-    return this._getLineContent(lineNumber).length;
+    return this.b(lineNumber).length;
   }
   get length() {
-    const lastLine = this._getLineContent(this._lineCount);
-    return new TextLength(this._lineCount - 1, lastLine.length);
+    const lastLine = this.b(this.c);
+    return new $TD(this.c - 1, lastLine.length);
   }
 };
-var ArrayText = class extends LineBasedText {
+var $ZD = class extends $YD {
   constructor(lines) {
     super((lineNumber) => lines[lineNumber - 1], lines.length);
   }
 };
-var StringText = class extends AbstractText {
+var $1D = class extends $XD {
   constructor(value) {
     super();
     this.value = value;
-    this._t = new PositionOffsetTransformer(this.value);
+    this.b = new $WD(this.value);
   }
   getValueOfRange(range) {
-    return this._t.getOffsetRange(range).substring(this.value);
+    return this.b.getOffsetRange(range).substring(this.value);
   }
   get length() {
-    return this._t.textLength;
+    return this.b.textLength;
   }
   // Override the getTransformer method to return the cached transformer
   getTransformer() {
-    return this._t;
+    return this.b;
   }
 };
 
 // out-build/vs/editor/common/core/edits/textEdit.js
-var TextEdit = class _TextEdit {
+var $bE = class _$bE {
   static fromStringEdit(edit, initialState) {
-    const edits = edit.replacements.map((e) => TextReplacement.fromStringReplacement(e, initialState));
-    return new _TextEdit(edits);
+    const edits = edit.replacements.map((e) => $cE.fromStringReplacement(e, initialState));
+    return new _$bE(edits);
   }
   static replace(originalRange, newText) {
-    return new _TextEdit([new TextReplacement(originalRange, newText)]);
+    return new _$bE([new $cE(originalRange, newText)]);
   }
   static delete(range) {
-    return new _TextEdit([new TextReplacement(range, "")]);
+    return new _$bE([new $cE(range, "")]);
   }
   static insert(position, newText) {
-    return new _TextEdit([new TextReplacement(Range.fromPositions(position, position), newText)]);
+    return new _$bE([new $cE($HD.fromPositions(position, position), newText)]);
   }
   static fromParallelReplacementsUnsorted(replacements) {
-    const r = replacements.slice().sort(compareBy((i) => i.range, Range.compareRangesUsingStarts));
-    return new _TextEdit(r);
+    const r = replacements.slice().sort($xc((i) => i.range, $HD.compareRangesUsingStarts));
+    return new _$bE(r);
   }
   constructor(replacements) {
     this.replacements = replacements;
-    assertFn(() => checkAdjacentItems(replacements, (a, b) => a.range.getEndPosition().isBeforeOrEqual(b.range.getStartPosition())));
+    $5c(() => $6c(replacements, (a, b) => a.range.getEndPosition().isBeforeOrEqual(b.range.getStartPosition())));
   }
   /**
    * Joins touching edits and removes empty edits.
@@ -12196,12 +12196,12 @@ var TextEdit = class _TextEdit {
     for (const r of this.replacements) {
       if (replacements.length > 0 && replacements[replacements.length - 1].range.getEndPosition().equals(r.range.getStartPosition())) {
         const last = replacements[replacements.length - 1];
-        replacements[replacements.length - 1] = new TextReplacement(last.range.plusRange(r.range), last.text + r.text);
+        replacements[replacements.length - 1] = new $cE(last.range.plusRange(r.range), last.text + r.text);
       } else if (!r.isEmpty) {
         replacements.push(r);
       }
     }
-    return new _TextEdit(replacements);
+    return new _$bE(replacements);
   }
   mapPosition(position) {
     let lineDelta = 0;
@@ -12213,9 +12213,9 @@ var TextEdit = class _TextEdit {
         break;
       }
       const end = replacement.range.getEndPosition();
-      const len = TextLength.ofText(replacement.text);
+      const len = $TD.ofText(replacement.text);
       if (position.isBefore(end)) {
-        const startPos = new Position(start.lineNumber + lineDelta, start.column + (start.lineNumber + lineDelta === curLine ? columnDeltaInCurLine : 0));
+        const startPos = new $GD(start.lineNumber + lineDelta, start.column + (start.lineNumber + lineDelta === curLine ? columnDeltaInCurLine : 0));
         const endPos = len.addToPosition(startPos);
         return rangeFromPositions(startPos, endPos);
       }
@@ -12234,14 +12234,14 @@ var TextEdit = class _TextEdit {
       }
       curLine = end.lineNumber + lineDelta;
     }
-    return new Position(position.lineNumber + lineDelta, position.column + (position.lineNumber + lineDelta === curLine ? columnDeltaInCurLine : 0));
+    return new $GD(position.lineNumber + lineDelta, position.column + (position.lineNumber + lineDelta === curLine ? columnDeltaInCurLine : 0));
   }
   mapRange(range) {
     function getStart(p) {
-      return p instanceof Position ? p : p.getStartPosition();
+      return p instanceof $GD ? p : p.getStartPosition();
     }
     function getEnd(p) {
-      return p instanceof Position ? p : p.getEndPosition();
+      return p instanceof $GD ? p : p.getEndPosition();
     }
     const start = getStart(this.mapPosition(range.getStartPosition()));
     const end = getEnd(this.mapPosition(range.getEndPosition()));
@@ -12258,7 +12258,7 @@ var TextEdit = class _TextEdit {
   }
   apply(text) {
     let result = "";
-    let lastEditEnd = new Position(1, 1);
+    let lastEditEnd = new $GD(1, 1);
     for (const replacement of this.replacements) {
       const editRange = replacement.range;
       const editStart = editRange.getStartPosition();
@@ -12277,12 +12277,12 @@ var TextEdit = class _TextEdit {
     return result;
   }
   applyToString(str) {
-    const strText = new StringText(str);
+    const strText = new $1D(str);
     return this.apply(strText);
   }
   inverse(doc) {
     const ranges = this.getNewRanges();
-    return new _TextEdit(this.replacements.map((e, idx) => new TextReplacement(ranges[idx], doc.getValueOfRange(e.range))));
+    return new _$bE(this.replacements.map((e, idx) => new $cE(ranges[idx], doc.getValueOfRange(e.range))));
   }
   getNewRanges() {
     const newRanges = [];
@@ -12290,8 +12290,8 @@ var TextEdit = class _TextEdit {
     let lineOffset = 0;
     let columnOffset = 0;
     for (const replacement of this.replacements) {
-      const textLength = TextLength.ofText(replacement.text);
-      const newRangeStart = Position.lift({
+      const textLength = $TD.ofText(replacement.text);
+      const newRangeStart = $GD.lift({
         lineNumber: replacement.range.startLineNumber + lineOffset,
         column: replacement.range.startColumn + (replacement.range.startLineNumber === previousEditEndLineNumber ? columnOffset : 0)
       });
@@ -12305,7 +12305,7 @@ var TextEdit = class _TextEdit {
   }
   toReplacement(text) {
     if (this.replacements.length === 0) {
-      throw new BugIndicatingError();
+      throw new $Eb();
     }
     if (this.replacements.length === 1) {
       return this.replacements[0];
@@ -12318,15 +12318,15 @@ var TextEdit = class _TextEdit {
       newText += curEdit.text;
       if (i < this.replacements.length - 1) {
         const nextEdit = this.replacements[i + 1];
-        const gapRange = Range.fromPositions(curEdit.range.getEndPosition(), nextEdit.range.getStartPosition());
+        const gapRange = $HD.fromPositions(curEdit.range.getEndPosition(), nextEdit.range.getStartPosition());
         const gapText = text.getValueOfRange(gapRange);
         newText += gapText;
       }
     }
-    return new TextReplacement(Range.fromPositions(startPos, endPos), newText);
+    return new $cE($HD.fromPositions(startPos, endPos), newText);
   }
   equals(other) {
-    return equals(this.replacements, other.replacements, (a, b) => a.equals(b));
+    return $Xb(this.replacements, other.replacements, (a, b) => a.equals(b));
   }
   /**
    * Combines two edits into one with the same effect.
@@ -12426,7 +12426,7 @@ var TextEdit = class _TextEdit {
       while (line < lenLine) {
         const idx = text.indexOf("\n", offset);
         if (idx === -1) {
-          throw new BugIndicatingError("Text length mismatch");
+          throw new $Eb("Text length mismatch");
         }
         offset = idx + 1;
         line++;
@@ -12494,7 +12494,7 @@ var TextEdit = class _TextEdit {
           }
           if (headText !== null) {
             const [t1, t2] = splitText(headText, splitLenLine, splitLenCol);
-            resultReplacements.push(new TextReplacement(new Range(headSrcRangeStartLine, headSrcRangeStartCol, headSrcRangeEndLine, headSrcRangeEndCol), t1));
+            resultReplacements.push(new $cE(new $HD(headSrcRangeStartLine, headSrcRangeStartCol, headSrcRangeEndLine, headSrcRangeEndCol), t1));
             headText = t2;
             headLengthLine = remainingLenLine;
             headLengthCol = remainingLenCol;
@@ -12519,7 +12519,7 @@ var TextEdit = class _TextEdit {
           break;
         }
         if (headText !== null) {
-          resultReplacements.push(new TextReplacement(new Range(headSrcRangeStartLine, headSrcRangeStartCol, headSrcRangeEndLine, headSrcRangeEndCol), headText));
+          resultReplacements.push(new $cE(new $HD(headSrcRangeStartLine, headSrcRangeStartCol, headSrcRangeEndLine, headSrcRangeEndCol), headText));
         }
         currentPosInS1Line = headEndInS1Line;
         currentPosInS1Col = headEndInS1Col;
@@ -12642,12 +12642,12 @@ var TextEdit = class _TextEdit {
         headHasValue = false;
       }
       if (consumedStartS0Line !== null) {
-        resultReplacements.push(new TextReplacement(new Range(consumedStartS0Line, consumedStartS0Col, consumedEndS0Line, consumedEndS0Col), r2.text));
+        resultReplacements.push(new $cE(new $HD(consumedStartS0Line, consumedStartS0Col, consumedEndS0Line, consumedEndS0Col), r2.text));
       } else {
         ensureHead();
         const insertPosS0Line = headSrcRangeStartLine;
         const insertPosS0Col = headSrcRangeStartCol;
-        resultReplacements.push(new TextReplacement(new Range(insertPosS0Line, insertPosS0Col, insertPosS0Line, insertPosS0Col), r2.text));
+        resultReplacements.push(new $cE(new $HD(insertPosS0Line, insertPosS0Col, insertPosS0Line, insertPosS0Col), r2.text));
       }
     }
     while (true) {
@@ -12656,18 +12656,18 @@ var TextEdit = class _TextEdit {
         break;
       }
       if (headText !== null) {
-        resultReplacements.push(new TextReplacement(new Range(headSrcRangeStartLine, headSrcRangeStartCol, headSrcRangeEndLine, headSrcRangeEndCol), headText));
+        resultReplacements.push(new $cE(new $HD(headSrcRangeStartLine, headSrcRangeStartCol, headSrcRangeEndLine, headSrcRangeEndCol), headText));
       }
       headHasValue = false;
     }
-    return new _TextEdit(resultReplacements).normalize();
+    return new _$bE(resultReplacements).normalize();
   }
   toString(text) {
     if (text === void 0) {
       return this.replacements.map((edit) => edit.toString()).join("\n");
     }
     if (typeof text === "string") {
-      return this.toString(new StringText(text));
+      return this.toString(new $1D(text));
     }
     if (this.replacements.length === 0) {
       return "";
@@ -12675,12 +12675,12 @@ var TextEdit = class _TextEdit {
     return this.replacements.map((r) => {
       const maxLength = 10;
       const originalText = text.getValueOfRange(r.range);
-      const beforeRange = Range.fromPositions(new Position(Math.max(1, r.range.startLineNumber - 1), 1), r.range.getStartPosition());
+      const beforeRange = $HD.fromPositions(new $GD(Math.max(1, r.range.startLineNumber - 1), 1), r.range.getStartPosition());
       let beforeText = text.getValueOfRange(beforeRange);
       if (beforeText.length > maxLength) {
         beforeText = "..." + beforeText.substring(beforeText.length - maxLength);
       }
-      const afterRange = Range.fromPositions(r.range.getEndPosition(), new Position(r.range.endLineNumber + 1, 1));
+      const afterRange = $HD.fromPositions(r.range.getEndPosition(), new $GD(r.range.endLineNumber + 1, 1));
       let afterText = text.getValueOfRange(afterRange);
       if (afterText.length > maxLength) {
         afterText = afterText.substring(0, maxLength) + "...";
@@ -12702,10 +12702,10 @@ var TextEdit = class _TextEdit {
     }).join("\n");
   }
 };
-var TextReplacement = class _TextReplacement {
+var $cE = class _$cE {
   static joinReplacements(replacements, initialValue) {
     if (replacements.length === 0) {
-      throw new BugIndicatingError();
+      throw new $Eb();
     }
     if (replacements.length === 1) {
       return replacements[0];
@@ -12718,18 +12718,18 @@ var TextReplacement = class _TextReplacement {
       newText += curEdit.text;
       if (i < replacements.length - 1) {
         const nextEdit = replacements[i + 1];
-        const gapRange = Range.fromPositions(curEdit.range.getEndPosition(), nextEdit.range.getStartPosition());
+        const gapRange = $HD.fromPositions(curEdit.range.getEndPosition(), nextEdit.range.getStartPosition());
         const gapText = initialValue.getValueOfRange(gapRange);
         newText += gapText;
       }
     }
-    return new _TextReplacement(Range.fromPositions(startPos, endPos), newText);
+    return new _$cE($HD.fromPositions(startPos, endPos), newText);
   }
   static fromStringReplacement(replacement, initialState) {
-    return new _TextReplacement(initialState.getTransformer().getRange(replacement.replaceRange), replacement.newText);
+    return new _$cE(initialState.getTransformer().getRange(replacement.replaceRange), replacement.newText);
   }
   static delete(range) {
-    return new _TextReplacement(range, "");
+    return new _$cE(range, "");
   }
   constructor(range, text) {
     this.range = range;
@@ -12748,23 +12748,23 @@ var TextReplacement = class _TextReplacement {
     };
   }
   toEdit() {
-    return new TextEdit([this]);
+    return new $bE([this]);
   }
   equals(other) {
-    return _TextReplacement.equals(this, other);
+    return _$cE.equals(this, other);
   }
   extendToCoverRange(range, initialValue) {
     if (this.range.containsRange(range)) {
       return this;
     }
     const newRange = this.range.plusRange(range);
-    const textBefore = initialValue.getValueOfRange(Range.fromPositions(newRange.getStartPosition(), this.range.getStartPosition()));
-    const textAfter = initialValue.getValueOfRange(Range.fromPositions(this.range.getEndPosition(), newRange.getEndPosition()));
+    const textBefore = initialValue.getValueOfRange($HD.fromPositions(newRange.getStartPosition(), this.range.getStartPosition()));
+    const textAfter = initialValue.getValueOfRange($HD.fromPositions(this.range.getEndPosition(), newRange.getEndPosition()));
     const newText = textBefore + this.text + textAfter;
-    return new _TextReplacement(newRange, newText);
+    return new _$cE(newRange, newText);
   }
   extendToFullLine(initialValue) {
-    const newRange = new Range(this.range.startLineNumber, 1, this.range.endLineNumber, initialValue.getTransformer().getLineLength(this.range.endLineNumber) + 1);
+    const newRange = new $HD(this.range.startLineNumber, 1, this.range.endLineNumber, initialValue.getTransformer().getLineLength(this.range.endLineNumber) + 1);
     return this.extendToCoverRange(newRange, initialValue);
   }
   removeCommonPrefixAndSuffix(text) {
@@ -12775,28 +12775,28 @@ var TextReplacement = class _TextReplacement {
   removeCommonPrefix(text) {
     const normalizedOriginalText = text.getValueOfRange(this.range).replaceAll("\r\n", "\n");
     const normalizedModifiedText = this.text.replaceAll("\r\n", "\n");
-    const commonPrefixLen = commonPrefixLength(normalizedOriginalText, normalizedModifiedText);
-    const start = TextLength.ofText(normalizedOriginalText.substring(0, commonPrefixLen)).addToPosition(this.range.getStartPosition());
+    const commonPrefixLen = $kg(normalizedOriginalText, normalizedModifiedText);
+    const start = $TD.ofText(normalizedOriginalText.substring(0, commonPrefixLen)).addToPosition(this.range.getStartPosition());
     const newText = normalizedModifiedText.substring(commonPrefixLen);
-    const range = Range.fromPositions(start, this.range.getEndPosition());
-    return new _TextReplacement(range, newText);
+    const range = $HD.fromPositions(start, this.range.getEndPosition());
+    return new _$cE(range, newText);
   }
   removeCommonSuffix(text) {
     const normalizedOriginalText = text.getValueOfRange(this.range).replaceAll("\r\n", "\n");
     const normalizedModifiedText = this.text.replaceAll("\r\n", "\n");
-    const commonSuffixLen = commonSuffixLength(normalizedOriginalText, normalizedModifiedText);
-    const end = TextLength.ofText(normalizedOriginalText.substring(0, normalizedOriginalText.length - commonSuffixLen)).addToPosition(this.range.getStartPosition());
+    const commonSuffixLen = $lg(normalizedOriginalText, normalizedModifiedText);
+    const end = $TD.ofText(normalizedOriginalText.substring(0, normalizedOriginalText.length - commonSuffixLen)).addToPosition(this.range.getStartPosition());
     const newText = normalizedModifiedText.substring(0, normalizedModifiedText.length - commonSuffixLen);
-    const range = Range.fromPositions(this.range.getStartPosition(), end);
-    return new _TextReplacement(range, newText);
+    const range = $HD.fromPositions(this.range.getStartPosition(), end);
+    return new _$cE(range, newText);
   }
   isEffectiveDeletion(text) {
     let newText = this.text.replaceAll("\r\n", "\n");
     let existingText = text.getValueOfRange(this.range).replaceAll("\r\n", "\n");
-    const l = commonPrefixLength(newText, existingText);
+    const l = $kg(newText, existingText);
     newText = newText.substring(l);
     existingText = existingText.substring(l);
-    const r = commonSuffixLength(newText, existingText);
+    const r = $lg(newText, existingText);
     newText = newText.substring(0, newText.length - r);
     existingText = existingText.substring(0, existingText.length - r);
     return newText === "";
@@ -12809,28 +12809,28 @@ var TextReplacement = class _TextReplacement {
 };
 function rangeFromPositions(start, end) {
   if (start.lineNumber === end.lineNumber && start.column === Number.MAX_SAFE_INTEGER) {
-    return Range.fromPositions(end, end);
+    return $HD.fromPositions(end, end);
   } else if (!start.isBeforeOrEqual(end)) {
-    throw new BugIndicatingError("start must be before end");
+    throw new $Eb("start must be before end");
   }
-  return new Range(start.lineNumber, start.column, end.lineNumber, end.column);
+  return new $HD(start.lineNumber, start.column, end.lineNumber, end.column);
 }
 
 // out-build/vs/editor/common/diff/rangeMapping.js
-var LineRangeMapping = class _LineRangeMapping {
+var $dE = class _$dE {
   static inverse(mapping, originalLineCount, modifiedLineCount) {
     const result = [];
     let lastOriginalEndLineNumber = 1;
     let lastModifiedEndLineNumber = 1;
     for (const m of mapping) {
-      const r2 = new _LineRangeMapping(new LineRange(lastOriginalEndLineNumber, m.original.startLineNumber), new LineRange(lastModifiedEndLineNumber, m.modified.startLineNumber));
+      const r2 = new _$dE(new $RD(lastOriginalEndLineNumber, m.original.startLineNumber), new $RD(lastModifiedEndLineNumber, m.modified.startLineNumber));
       if (!r2.modified.isEmpty) {
         result.push(r2);
       }
       lastOriginalEndLineNumber = m.original.endLineNumberExclusive;
       lastModifiedEndLineNumber = m.modified.endLineNumberExclusive;
     }
-    const r = new _LineRangeMapping(new LineRange(lastOriginalEndLineNumber, originalLineCount + 1), new LineRange(lastModifiedEndLineNumber, modifiedLineCount + 1));
+    const r = new _$dE(new $RD(lastOriginalEndLineNumber, originalLineCount + 1), new $RD(lastModifiedEndLineNumber, modifiedLineCount + 1));
     if (!r.modified.isEmpty) {
       result.push(r);
     }
@@ -12842,7 +12842,7 @@ var LineRangeMapping = class _LineRangeMapping {
       const original = m.original.intersect(originalRange);
       const modified = m.modified.intersect(modifiedRange);
       if (original && !original.isEmpty && modified && !modified.isEmpty) {
-        result.push(new _LineRangeMapping(original, modified));
+        result.push(new _$dE(original, modified));
       }
     }
     return result;
@@ -12855,10 +12855,10 @@ var LineRangeMapping = class _LineRangeMapping {
     return `{${this.original.toString()}->${this.modified.toString()}}`;
   }
   flip() {
-    return new _LineRangeMapping(this.modified, this.original);
+    return new _$dE(this.modified, this.original);
   }
   join(other) {
-    return new _LineRangeMapping(this.original.join(other.original), this.modified.join(other.modified));
+    return new _$dE(this.original.join(other.original), this.modified.join(other.modified));
   }
   get changedLineCount() {
     return Math.max(this.original.length, this.modified.length);
@@ -12872,14 +12872,14 @@ var LineRangeMapping = class _LineRangeMapping {
     const origInclusiveRange = this.original.toInclusiveRange();
     const modInclusiveRange = this.modified.toInclusiveRange();
     if (origInclusiveRange && modInclusiveRange) {
-      return new RangeMapping(origInclusiveRange, modInclusiveRange);
+      return new $fE(origInclusiveRange, modInclusiveRange);
     } else if (this.original.startLineNumber === 1 || this.modified.startLineNumber === 1) {
       if (!(this.modified.startLineNumber === 1 && this.original.startLineNumber === 1)) {
-        throw new BugIndicatingError("not a valid diff");
+        throw new $Eb("not a valid diff");
       }
-      return new RangeMapping(new Range(this.original.startLineNumber, 1, this.original.endLineNumberExclusive, 1), new Range(this.modified.startLineNumber, 1, this.modified.endLineNumberExclusive, 1));
+      return new $fE(new $HD(this.original.startLineNumber, 1, this.original.endLineNumberExclusive, 1), new $HD(this.modified.startLineNumber, 1, this.modified.endLineNumberExclusive, 1));
     } else {
-      return new RangeMapping(new Range(this.original.startLineNumber - 1, Number.MAX_SAFE_INTEGER, this.original.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER), new Range(this.modified.startLineNumber - 1, Number.MAX_SAFE_INTEGER, this.modified.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER));
+      return new $fE(new $HD(this.original.startLineNumber - 1, Number.MAX_SAFE_INTEGER, this.original.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER), new $HD(this.modified.startLineNumber - 1, Number.MAX_SAFE_INTEGER, this.modified.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER));
     }
   }
   /**
@@ -12889,34 +12889,34 @@ var LineRangeMapping = class _LineRangeMapping {
   */
   toRangeMapping2(original, modified) {
     if (isValidLineNumber(this.original.endLineNumberExclusive, original) && isValidLineNumber(this.modified.endLineNumberExclusive, modified)) {
-      return new RangeMapping(new Range(this.original.startLineNumber, 1, this.original.endLineNumberExclusive, 1), new Range(this.modified.startLineNumber, 1, this.modified.endLineNumberExclusive, 1));
+      return new $fE(new $HD(this.original.startLineNumber, 1, this.original.endLineNumberExclusive, 1), new $HD(this.modified.startLineNumber, 1, this.modified.endLineNumberExclusive, 1));
     }
     if (!this.original.isEmpty && !this.modified.isEmpty) {
-      return new RangeMapping(Range.fromPositions(new Position(this.original.startLineNumber, 1), normalizePosition(new Position(this.original.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER), original)), Range.fromPositions(new Position(this.modified.startLineNumber, 1), normalizePosition(new Position(this.modified.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER), modified)));
+      return new $fE($HD.fromPositions(new $GD(this.original.startLineNumber, 1), normalizePosition(new $GD(this.original.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER), original)), $HD.fromPositions(new $GD(this.modified.startLineNumber, 1), normalizePosition(new $GD(this.modified.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER), modified)));
     }
     if (this.original.startLineNumber > 1 && this.modified.startLineNumber > 1) {
-      return new RangeMapping(Range.fromPositions(normalizePosition(new Position(this.original.startLineNumber - 1, Number.MAX_SAFE_INTEGER), original), normalizePosition(new Position(this.original.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER), original)), Range.fromPositions(normalizePosition(new Position(this.modified.startLineNumber - 1, Number.MAX_SAFE_INTEGER), modified), normalizePosition(new Position(this.modified.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER), modified)));
+      return new $fE($HD.fromPositions(normalizePosition(new $GD(this.original.startLineNumber - 1, Number.MAX_SAFE_INTEGER), original), normalizePosition(new $GD(this.original.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER), original)), $HD.fromPositions(normalizePosition(new $GD(this.modified.startLineNumber - 1, Number.MAX_SAFE_INTEGER), modified), normalizePosition(new $GD(this.modified.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER), modified)));
     }
-    throw new BugIndicatingError();
+    throw new $Eb();
   }
 };
 function normalizePosition(position, content) {
   if (position.lineNumber < 1) {
-    return new Position(1, 1);
+    return new $GD(1, 1);
   }
   if (position.lineNumber > content.length) {
-    return new Position(content.length, content[content.length - 1].length + 1);
+    return new $GD(content.length, content[content.length - 1].length + 1);
   }
   const line = content[position.lineNumber - 1];
   if (position.column > line.length + 1) {
-    return new Position(position.lineNumber, line.length + 1);
+    return new $GD(position.lineNumber, line.length + 1);
   }
   return position;
 }
 function isValidLineNumber(lineNumber, lines) {
   return lineNumber >= 1 && lineNumber <= lines.length;
 }
-var DetailedLineRangeMapping = class _DetailedLineRangeMapping extends LineRangeMapping {
+var $eE = class _$eE extends $dE {
   static toTextEdit(mapping, modified) {
     const replacements = [];
     for (const m of mapping) {
@@ -12925,38 +12925,38 @@ var DetailedLineRangeMapping = class _DetailedLineRangeMapping extends LineRange
         replacements.push(replacement);
       }
     }
-    return new TextEdit(replacements);
+    return new $bE(replacements);
   }
   static fromRangeMappings(rangeMappings) {
-    const originalRange = LineRange.join(rangeMappings.map((r) => LineRange.fromRangeInclusive(r.originalRange)));
-    const modifiedRange = LineRange.join(rangeMappings.map((r) => LineRange.fromRangeInclusive(r.modifiedRange)));
-    return new _DetailedLineRangeMapping(originalRange, modifiedRange, rangeMappings);
+    const originalRange = $RD.join(rangeMappings.map((r) => $RD.fromRangeInclusive(r.originalRange)));
+    const modifiedRange = $RD.join(rangeMappings.map((r) => $RD.fromRangeInclusive(r.modifiedRange)));
+    return new _$eE(originalRange, modifiedRange, rangeMappings);
   }
   constructor(originalRange, modifiedRange, innerChanges) {
     super(originalRange, modifiedRange);
     this.innerChanges = innerChanges;
   }
   flip() {
-    return new _DetailedLineRangeMapping(this.modified, this.original, this.innerChanges?.map((c) => c.flip()));
+    return new _$eE(this.modified, this.original, this.innerChanges?.map((c) => c.flip()));
   }
   withInnerChangesFromLineRanges() {
-    return new _DetailedLineRangeMapping(this.original, this.modified, [this.toRangeMapping()]);
+    return new _$eE(this.original, this.modified, [this.toRangeMapping()]);
   }
 };
-var RangeMapping = class _RangeMapping {
+var $fE = class _$fE {
   static fromEdit(edit) {
     const newRanges = edit.getNewRanges();
-    const result = edit.replacements.map((e, idx) => new _RangeMapping(e.range, newRanges[idx]));
+    const result = edit.replacements.map((e, idx) => new _$fE(e.range, newRanges[idx]));
     return result;
   }
   static fromEditJoin(edit) {
     const newRanges = edit.getNewRanges();
-    const result = edit.replacements.map((e, idx) => new _RangeMapping(e.range, newRanges[idx]));
-    return _RangeMapping.join(result);
+    const result = edit.replacements.map((e, idx) => new _$fE(e.range, newRanges[idx]));
+    return _$fE.join(result);
   }
   static join(rangeMappings) {
     if (rangeMappings.length === 0) {
-      throw new BugIndicatingError("Cannot join an empty list of range mappings");
+      throw new $Eb("Cannot join an empty list of range mappings");
     }
     let result = rangeMappings[0];
     for (let i = 1; i < rangeMappings.length; i++) {
@@ -12969,7 +12969,7 @@ var RangeMapping = class _RangeMapping {
       const previous = rangeMappings[i - 1];
       const current = rangeMappings[i];
       if (!(previous.originalRange.getEndPosition().isBeforeOrEqual(current.originalRange.getStartPosition()) && previous.modifiedRange.getEndPosition().isBeforeOrEqual(current.modifiedRange.getStartPosition()))) {
-        throw new BugIndicatingError("Range mappings must be sorted");
+        throw new $Eb("Range mappings must be sorted");
       }
     }
   }
@@ -12981,27 +12981,27 @@ var RangeMapping = class _RangeMapping {
     return `{${this.originalRange.toString()}->${this.modifiedRange.toString()}}`;
   }
   flip() {
-    return new _RangeMapping(this.modifiedRange, this.originalRange);
+    return new _$fE(this.modifiedRange, this.originalRange);
   }
   /**
    * Creates a single text edit that describes the change from the original to the modified text.
   */
   toTextEdit(modified) {
     const newText = modified.getValueOfRange(this.modifiedRange);
-    return new TextReplacement(this.originalRange, newText);
+    return new $cE(this.originalRange, newText);
   }
   join(other) {
-    return new _RangeMapping(this.originalRange.plusRange(other.originalRange), this.modifiedRange.plusRange(other.modifiedRange));
+    return new _$fE(this.originalRange.plusRange(other.originalRange), this.modifiedRange.plusRange(other.modifiedRange));
   }
 };
-function lineRangeMappingFromRangeMappings(alignments, originalLines, modifiedLines, dontAssertStartLine = false) {
+function $gE(alignments, originalLines, modifiedLines, dontAssertStartLine = false) {
   const changes = [];
-  for (const g of groupAdjacentBy(alignments.map((a) => getLineRangeMapping(a, originalLines, modifiedLines)), (a1, a2) => a1.original.intersectsOrTouches(a2.original) || a1.modified.intersectsOrTouches(a2.modified))) {
+  for (const g of $4b(alignments.map((a) => $hE(a, originalLines, modifiedLines)), (a1, a2) => a1.original.intersectsOrTouches(a2.original) || a1.modified.intersectsOrTouches(a2.modified))) {
     const first = g[0];
     const last = g[g.length - 1];
-    changes.push(new DetailedLineRangeMapping(first.original.join(last.original), first.modified.join(last.modified), g.map((a) => a.innerChanges[0])));
+    changes.push(new $eE(first.original.join(last.original), first.modified.join(last.modified), g.map((a) => a.innerChanges[0])));
   }
-  assertFn(() => {
+  $5c(() => {
     if (!dontAssertStartLine && changes.length > 0) {
       if (changes[0].modified.startLineNumber !== changes[0].original.startLineNumber) {
         return false;
@@ -13010,12 +13010,12 @@ function lineRangeMappingFromRangeMappings(alignments, originalLines, modifiedLi
         return false;
       }
     }
-    return checkAdjacentItems(changes, (m1, m2) => m2.original.startLineNumber - m1.original.endLineNumberExclusive === m2.modified.startLineNumber - m1.modified.endLineNumberExclusive && // There has to be an unchanged line in between (otherwise both diffs should have been joined)
+    return $6c(changes, (m1, m2) => m2.original.startLineNumber - m1.original.endLineNumberExclusive === m2.modified.startLineNumber - m1.modified.endLineNumberExclusive && // There has to be an unchanged line in between (otherwise both diffs should have been joined)
     m1.original.endLineNumberExclusive < m2.original.startLineNumber && m1.modified.endLineNumberExclusive < m2.modified.startLineNumber);
   });
   return changes;
 }
-function getLineRangeMapping(rangeMapping, originalLines, modifiedLines) {
+function $hE(rangeMapping, originalLines, modifiedLines) {
   let lineStartDelta = 0;
   let lineEndDelta = 0;
   if (rangeMapping.modifiedRange.endColumn === 1 && rangeMapping.originalRange.endColumn === 1 && rangeMapping.originalRange.startLineNumber + lineStartDelta <= rangeMapping.originalRange.endLineNumber && rangeMapping.modifiedRange.startLineNumber + lineStartDelta <= rangeMapping.modifiedRange.endLineNumber) {
@@ -13024,16 +13024,16 @@ function getLineRangeMapping(rangeMapping, originalLines, modifiedLines) {
   if (rangeMapping.modifiedRange.startColumn - 1 >= modifiedLines.getLineLength(rangeMapping.modifiedRange.startLineNumber) && rangeMapping.originalRange.startColumn - 1 >= originalLines.getLineLength(rangeMapping.originalRange.startLineNumber) && rangeMapping.originalRange.startLineNumber <= rangeMapping.originalRange.endLineNumber + lineEndDelta && rangeMapping.modifiedRange.startLineNumber <= rangeMapping.modifiedRange.endLineNumber + lineEndDelta) {
     lineStartDelta = 1;
   }
-  const originalLineRange = new LineRange(rangeMapping.originalRange.startLineNumber + lineStartDelta, rangeMapping.originalRange.endLineNumber + 1 + lineEndDelta);
-  const modifiedLineRange = new LineRange(rangeMapping.modifiedRange.startLineNumber + lineStartDelta, rangeMapping.modifiedRange.endLineNumber + 1 + lineEndDelta);
-  return new DetailedLineRangeMapping(originalLineRange, modifiedLineRange, [rangeMapping]);
+  const originalLineRange = new $RD(rangeMapping.originalRange.startLineNumber + lineStartDelta, rangeMapping.originalRange.endLineNumber + 1 + lineEndDelta);
+  const modifiedLineRange = new $RD(rangeMapping.modifiedRange.startLineNumber + lineStartDelta, rangeMapping.modifiedRange.endLineNumber + 1 + lineEndDelta);
+  return new $eE(originalLineRange, modifiedLineRange, [rangeMapping]);
 }
 
 // out-build/vs/editor/common/diff/legacyLinesDiffComputer.js
 var MINIMUM_MATCHING_CHARACTER_LENGTH = 3;
-var LegacyLinesDiffComputer = class {
+var $lE = class {
   computeDiff(originalLines, modifiedLines, options) {
-    const diffComputer = new DiffComputer(originalLines, modifiedLines, {
+    const diffComputer = new $mE(originalLines, modifiedLines, {
       maxComputationTime: options.maxComputationTimeMs,
       shouldIgnoreTrimWhitespace: options.ignoreTrimWhitespace,
       shouldComputeCharChanges: true,
@@ -13046,35 +13046,35 @@ var LegacyLinesDiffComputer = class {
     for (const c of result.changes) {
       let originalRange;
       if (c.originalEndLineNumber === 0) {
-        originalRange = new LineRange(c.originalStartLineNumber + 1, c.originalStartLineNumber + 1);
+        originalRange = new $RD(c.originalStartLineNumber + 1, c.originalStartLineNumber + 1);
       } else {
-        originalRange = new LineRange(c.originalStartLineNumber, c.originalEndLineNumber + 1);
+        originalRange = new $RD(c.originalStartLineNumber, c.originalEndLineNumber + 1);
       }
       let modifiedRange;
       if (c.modifiedEndLineNumber === 0) {
-        modifiedRange = new LineRange(c.modifiedStartLineNumber + 1, c.modifiedStartLineNumber + 1);
+        modifiedRange = new $RD(c.modifiedStartLineNumber + 1, c.modifiedStartLineNumber + 1);
       } else {
-        modifiedRange = new LineRange(c.modifiedStartLineNumber, c.modifiedEndLineNumber + 1);
+        modifiedRange = new $RD(c.modifiedStartLineNumber, c.modifiedEndLineNumber + 1);
       }
-      let change = new DetailedLineRangeMapping(originalRange, modifiedRange, c.charChanges?.map((c2) => new RangeMapping(new Range(c2.originalStartLineNumber, c2.originalStartColumn, c2.originalEndLineNumber, c2.originalEndColumn), new Range(c2.modifiedStartLineNumber, c2.modifiedStartColumn, c2.modifiedEndLineNumber, c2.modifiedEndColumn))));
+      let change = new $eE(originalRange, modifiedRange, c.charChanges?.map((c2) => new $fE(new $HD(c2.originalStartLineNumber, c2.originalStartColumn, c2.originalEndLineNumber, c2.originalEndColumn), new $HD(c2.modifiedStartLineNumber, c2.modifiedStartColumn, c2.modifiedEndLineNumber, c2.modifiedEndColumn))));
       if (lastChange) {
         if (lastChange.modified.endLineNumberExclusive === change.modified.startLineNumber || lastChange.original.endLineNumberExclusive === change.original.startLineNumber) {
-          change = new DetailedLineRangeMapping(lastChange.original.join(change.original), lastChange.modified.join(change.modified), lastChange.innerChanges && change.innerChanges ? lastChange.innerChanges.concat(change.innerChanges) : void 0);
+          change = new $eE(lastChange.original.join(change.original), lastChange.modified.join(change.modified), lastChange.innerChanges && change.innerChanges ? lastChange.innerChanges.concat(change.innerChanges) : void 0);
           changes.pop();
         }
       }
       changes.push(change);
       lastChange = change;
     }
-    assertFn(() => {
-      return checkAdjacentItems(changes, (m1, m2) => m2.original.startLineNumber - m1.original.endLineNumberExclusive === m2.modified.startLineNumber - m1.modified.endLineNumberExclusive && // There has to be an unchanged line in between (otherwise both diffs should have been joined)
+    $5c(() => {
+      return $6c(changes, (m1, m2) => m2.original.startLineNumber - m1.original.endLineNumberExclusive === m2.modified.startLineNumber - m1.modified.endLineNumberExclusive && // There has to be an unchanged line in between (otherwise both diffs should have been joined)
       m1.original.endLineNumberExclusive < m2.original.startLineNumber && m1.modified.endLineNumberExclusive < m2.modified.startLineNumber);
     });
-    return new LinesDiff(changes, [], result.quitEarly);
+    return new $jE(changes, [], result.quitEarly);
   }
 };
 function computeDiff(originalSequence, modifiedSequence, continueProcessingPredicate, pretty) {
-  const diffAlgo = new LcsDiff(originalSequence, modifiedSequence, continueProcessingPredicate);
+  const diffAlgo = new $ND(originalSequence, modifiedSequence, continueProcessingPredicate);
   return diffAlgo.ComputeDiff(pretty);
 }
 var LineSequence = class {
@@ -13086,13 +13086,13 @@ var LineSequence = class {
       endColumns[i] = getLastNonBlankColumn(lines[i], 1);
     }
     this.lines = lines;
-    this._startColumns = startColumns;
-    this._endColumns = endColumns;
+    this.a = startColumns;
+    this.b = endColumns;
   }
   getElements() {
     const elements = [];
     for (let i = 0, len = this.lines.length; i < len; i++) {
-      elements[i] = this.lines[i].substring(this._startColumns[i] - 1, this._endColumns[i] - 1);
+      elements[i] = this.lines[i].substring(this.a[i] - 1, this.b[i] - 1);
     }
     return elements;
   }
@@ -13112,8 +13112,8 @@ var LineSequence = class {
     let len = 0;
     for (let index = startIndex; index <= endIndex; index++) {
       const lineContent = this.lines[index];
-      const startColumn = shouldIgnoreTrimWhitespace ? this._startColumns[index] : 1;
-      const endColumn = shouldIgnoreTrimWhitespace ? this._endColumns[index] : lineContent.length + 1;
+      const startColumn = shouldIgnoreTrimWhitespace ? this.a[index] : 1;
+      const endColumn = shouldIgnoreTrimWhitespace ? this.b[index] : lineContent.length + 1;
       for (let col = startColumn; col < endColumn; col++) {
         charCodes[len] = lineContent.charCodeAt(col - 1);
         lineNumbers[len] = index + 1;
@@ -13132,54 +13132,54 @@ var LineSequence = class {
 };
 var CharSequence = class {
   constructor(charCodes, lineNumbers, columns) {
-    this._charCodes = charCodes;
-    this._lineNumbers = lineNumbers;
-    this._columns = columns;
+    this.a = charCodes;
+    this.b = lineNumbers;
+    this.d = columns;
   }
   toString() {
-    return "[" + this._charCodes.map((s, idx) => (s === 10 ? "\\n" : String.fromCharCode(s)) + `-(${this._lineNumbers[idx]},${this._columns[idx]})`).join(", ") + "]";
+    return "[" + this.a.map((s, idx) => (s === 10 ? "\\n" : String.fromCharCode(s)) + `-(${this.b[idx]},${this.d[idx]})`).join(", ") + "]";
   }
-  _assertIndex(index, arr) {
+  e(index, arr) {
     if (index < 0 || index >= arr.length) {
       throw new Error(`Illegal index`);
     }
   }
   getElements() {
-    return this._charCodes;
+    return this.a;
   }
   getStartLineNumber(i) {
-    if (i > 0 && i === this._lineNumbers.length) {
+    if (i > 0 && i === this.b.length) {
       return this.getEndLineNumber(i - 1);
     }
-    this._assertIndex(i, this._lineNumbers);
-    return this._lineNumbers[i];
+    this.e(i, this.b);
+    return this.b[i];
   }
   getEndLineNumber(i) {
     if (i === -1) {
       return this.getStartLineNumber(i + 1);
     }
-    this._assertIndex(i, this._lineNumbers);
-    if (this._charCodes[i] === 10) {
-      return this._lineNumbers[i] + 1;
+    this.e(i, this.b);
+    if (this.a[i] === 10) {
+      return this.b[i] + 1;
     }
-    return this._lineNumbers[i];
+    return this.b[i];
   }
   getStartColumn(i) {
-    if (i > 0 && i === this._columns.length) {
+    if (i > 0 && i === this.d.length) {
       return this.getEndColumn(i - 1);
     }
-    this._assertIndex(i, this._columns);
-    return this._columns[i];
+    this.e(i, this.d);
+    return this.d[i];
   }
   getEndColumn(i) {
     if (i === -1) {
       return this.getStartColumn(i + 1);
     }
-    this._assertIndex(i, this._columns);
-    if (this._charCodes[i] === 10) {
+    this.e(i, this.d);
+    if (this.a[i] === 10) {
       return 1;
     }
-    return this._columns[i] + 1;
+    return this.d[i] + 1;
   }
 };
 var CharChange = class _CharChange {
@@ -13271,22 +13271,22 @@ var LineChange = class _LineChange {
     return new _LineChange(originalStartLineNumber, originalEndLineNumber, modifiedStartLineNumber, modifiedEndLineNumber, charChanges);
   }
 };
-var DiffComputer = class {
+var $mE = class {
   constructor(originalLines, modifiedLines, opts) {
-    this.shouldComputeCharChanges = opts.shouldComputeCharChanges;
-    this.shouldPostProcessCharChanges = opts.shouldPostProcessCharChanges;
-    this.shouldIgnoreTrimWhitespace = opts.shouldIgnoreTrimWhitespace;
-    this.shouldMakePrettyDiff = opts.shouldMakePrettyDiff;
-    this.originalLines = originalLines;
-    this.modifiedLines = modifiedLines;
-    this.original = new LineSequence(originalLines);
-    this.modified = new LineSequence(modifiedLines);
-    this.continueLineDiff = createContinueProcessingPredicate(opts.maxComputationTime);
-    this.continueCharDiff = createContinueProcessingPredicate(opts.maxComputationTime === 0 ? 0 : Math.min(opts.maxComputationTime, 5e3));
+    this.a = opts.shouldComputeCharChanges;
+    this.b = opts.shouldPostProcessCharChanges;
+    this.d = opts.shouldIgnoreTrimWhitespace;
+    this.e = opts.shouldMakePrettyDiff;
+    this.f = originalLines;
+    this.g = modifiedLines;
+    this.h = new LineSequence(originalLines);
+    this.j = new LineSequence(modifiedLines);
+    this.k = createContinueProcessingPredicate(opts.maxComputationTime);
+    this.l = createContinueProcessingPredicate(opts.maxComputationTime === 0 ? 0 : Math.min(opts.maxComputationTime, 5e3));
   }
   computeDiff() {
-    if (this.original.lines.length === 1 && this.original.lines[0].length === 0) {
-      if (this.modified.lines.length === 1 && this.modified.lines[0].length === 0) {
+    if (this.h.lines.length === 1 && this.h.lines[0].length === 0) {
+      if (this.j.lines.length === 1 && this.j.lines[0].length === 0) {
         return {
           quitEarly: false,
           changes: []
@@ -13298,30 +13298,30 @@ var DiffComputer = class {
           originalStartLineNumber: 1,
           originalEndLineNumber: 1,
           modifiedStartLineNumber: 1,
-          modifiedEndLineNumber: this.modified.lines.length,
+          modifiedEndLineNumber: this.j.lines.length,
           charChanges: void 0
         }]
       };
     }
-    if (this.modified.lines.length === 1 && this.modified.lines[0].length === 0) {
+    if (this.j.lines.length === 1 && this.j.lines[0].length === 0) {
       return {
         quitEarly: false,
         changes: [{
           originalStartLineNumber: 1,
-          originalEndLineNumber: this.original.lines.length,
+          originalEndLineNumber: this.h.lines.length,
           modifiedStartLineNumber: 1,
           modifiedEndLineNumber: 1,
           charChanges: void 0
         }]
       };
     }
-    const diffResult = computeDiff(this.original, this.modified, this.continueLineDiff, this.shouldMakePrettyDiff);
+    const diffResult = computeDiff(this.h, this.j, this.k, this.e);
     const rawChanges = diffResult.changes;
     const quitEarly = diffResult.quitEarly;
-    if (this.shouldIgnoreTrimWhitespace) {
+    if (this.d) {
       const lineChanges = [];
       for (let i = 0, length = rawChanges.length; i < length; i++) {
-        lineChanges.push(LineChange.createFromDiffResult(this.shouldIgnoreTrimWhitespace, rawChanges[i], this.original, this.modified, this.continueCharDiff, this.shouldComputeCharChanges, this.shouldPostProcessCharChanges));
+        lineChanges.push(LineChange.createFromDiffResult(this.d, rawChanges[i], this.h, this.j, this.l, this.a, this.b));
       }
       return {
         quitEarly,
@@ -13333,11 +13333,11 @@ var DiffComputer = class {
     let modifiedLineIndex = 0;
     for (let i = -1, len = rawChanges.length; i < len; i++) {
       const nextChange = i + 1 < len ? rawChanges[i + 1] : null;
-      const originalStop = nextChange ? nextChange.originalStart : this.originalLines.length;
-      const modifiedStop = nextChange ? nextChange.modifiedStart : this.modifiedLines.length;
+      const originalStop = nextChange ? nextChange.originalStart : this.f.length;
+      const modifiedStop = nextChange ? nextChange.modifiedStart : this.g.length;
       while (originalLineIndex < originalStop && modifiedLineIndex < modifiedStop) {
-        const originalLine = this.originalLines[originalLineIndex];
-        const modifiedLine = this.modifiedLines[modifiedLineIndex];
+        const originalLine = this.f[originalLineIndex];
+        const modifiedLine = this.g[modifiedLineIndex];
         if (originalLine !== modifiedLine) {
           {
             let originalStartColumn = getFirstNonBlankColumn(originalLine, 1);
@@ -13352,7 +13352,7 @@ var DiffComputer = class {
               modifiedStartColumn--;
             }
             if (originalStartColumn > 1 || modifiedStartColumn > 1) {
-              this._pushTrimWhitespaceCharChange(result, originalLineIndex + 1, 1, originalStartColumn, modifiedLineIndex + 1, 1, modifiedStartColumn);
+              this.m(result, originalLineIndex + 1, 1, originalStartColumn, modifiedLineIndex + 1, 1, modifiedStartColumn);
             }
           }
           {
@@ -13370,7 +13370,7 @@ var DiffComputer = class {
               modifiedEndColumn++;
             }
             if (originalEndColumn < originalMaxColumn || modifiedEndColumn < modifiedMaxColumn) {
-              this._pushTrimWhitespaceCharChange(result, originalLineIndex + 1, originalEndColumn, originalMaxColumn, modifiedLineIndex + 1, modifiedEndColumn, modifiedMaxColumn);
+              this.m(result, originalLineIndex + 1, originalEndColumn, originalMaxColumn, modifiedLineIndex + 1, modifiedEndColumn, modifiedMaxColumn);
             }
           }
         }
@@ -13378,7 +13378,7 @@ var DiffComputer = class {
         modifiedLineIndex++;
       }
       if (nextChange) {
-        result.push(LineChange.createFromDiffResult(this.shouldIgnoreTrimWhitespace, nextChange, this.original, this.modified, this.continueCharDiff, this.shouldComputeCharChanges, this.shouldPostProcessCharChanges));
+        result.push(LineChange.createFromDiffResult(this.d, nextChange, this.h, this.j, this.l, this.a, this.b));
         originalLineIndex += nextChange.originalLength;
         modifiedLineIndex += nextChange.modifiedLength;
       }
@@ -13388,17 +13388,17 @@ var DiffComputer = class {
       changes: result
     };
   }
-  _pushTrimWhitespaceCharChange(result, originalLineNumber, originalStartColumn, originalEndColumn, modifiedLineNumber, modifiedStartColumn, modifiedEndColumn) {
-    if (this._mergeTrimWhitespaceCharChange(result, originalLineNumber, originalStartColumn, originalEndColumn, modifiedLineNumber, modifiedStartColumn, modifiedEndColumn)) {
+  m(result, originalLineNumber, originalStartColumn, originalEndColumn, modifiedLineNumber, modifiedStartColumn, modifiedEndColumn) {
+    if (this.n(result, originalLineNumber, originalStartColumn, originalEndColumn, modifiedLineNumber, modifiedStartColumn, modifiedEndColumn)) {
       return;
     }
     let charChanges = void 0;
-    if (this.shouldComputeCharChanges) {
+    if (this.a) {
       charChanges = [new CharChange(originalLineNumber, originalStartColumn, originalLineNumber, originalEndColumn, modifiedLineNumber, modifiedStartColumn, modifiedLineNumber, modifiedEndColumn)];
     }
     result.push(new LineChange(originalLineNumber, originalLineNumber, modifiedLineNumber, modifiedLineNumber, charChanges));
   }
-  _mergeTrimWhitespaceCharChange(result, originalLineNumber, originalStartColumn, originalEndColumn, modifiedLineNumber, modifiedStartColumn, modifiedEndColumn) {
+  n(result, originalLineNumber, originalStartColumn, originalEndColumn, modifiedLineNumber, modifiedStartColumn, modifiedEndColumn) {
     const len = result.length;
     if (len === 0) {
       return false;
@@ -13408,7 +13408,7 @@ var DiffComputer = class {
       return false;
     }
     if (prevChange.originalEndLineNumber === originalLineNumber && prevChange.modifiedEndLineNumber === modifiedLineNumber) {
-      if (this.shouldComputeCharChanges && prevChange.charChanges) {
+      if (this.a && prevChange.charChanges) {
         prevChange.charChanges.push(new CharChange(originalLineNumber, originalStartColumn, originalLineNumber, originalEndColumn, modifiedLineNumber, modifiedStartColumn, modifiedLineNumber, modifiedEndColumn));
       }
       return true;
@@ -13416,7 +13416,7 @@ var DiffComputer = class {
     if (prevChange.originalEndLineNumber + 1 === originalLineNumber && prevChange.modifiedEndLineNumber + 1 === modifiedLineNumber) {
       prevChange.originalEndLineNumber = originalLineNumber;
       prevChange.modifiedEndLineNumber = modifiedLineNumber;
-      if (this.shouldComputeCharChanges && prevChange.charChanges) {
+      if (this.a && prevChange.charChanges) {
         prevChange.charChanges.push(new CharChange(originalLineNumber, originalStartColumn, originalLineNumber, originalEndColumn, modifiedLineNumber, modifiedStartColumn, modifiedLineNumber, modifiedEndColumn));
       }
       return true;
@@ -13425,14 +13425,14 @@ var DiffComputer = class {
   }
 };
 function getFirstNonBlankColumn(txt, defaultValue) {
-  const r = firstNonWhitespaceIndex(txt);
+  const r = $7f(txt);
   if (r === -1) {
     return defaultValue;
   }
   return r + 1;
 }
 function getLastNonBlankColumn(txt, defaultValue) {
-  const r = lastNonWhitespaceIndex(txt);
+  const r = $9f(txt);
   if (r === -1) {
     return defaultValue;
   }
@@ -13449,35 +13449,35 @@ function createContinueProcessingPredicate(maximumRuntime) {
 }
 
 // out-build/vs/editor/common/diff/defaultLinesDiffComputer/algorithms/diffAlgorithm.js
-var DiffAlgorithmResult = class _DiffAlgorithmResult {
+var $Dfb = class _$Dfb {
   static trivial(seq1, seq2) {
-    return new _DiffAlgorithmResult([new SequenceDiff(OffsetRange.ofLength(seq1.length), OffsetRange.ofLength(seq2.length))], false);
+    return new _$Dfb([new $Efb($PD.ofLength(seq1.length), $PD.ofLength(seq2.length))], false);
   }
   static trivialTimedOut(seq1, seq2) {
-    return new _DiffAlgorithmResult([new SequenceDiff(OffsetRange.ofLength(seq1.length), OffsetRange.ofLength(seq2.length))], true);
+    return new _$Dfb([new $Efb($PD.ofLength(seq1.length), $PD.ofLength(seq2.length))], true);
   }
   constructor(diffs, hitTimeout) {
     this.diffs = diffs;
     this.hitTimeout = hitTimeout;
   }
 };
-var SequenceDiff = class _SequenceDiff {
+var $Efb = class _$Efb {
   static invert(sequenceDiffs, doc1Length) {
     const result = [];
-    forEachAdjacent(sequenceDiffs, (a, b) => {
-      result.push(_SequenceDiff.fromOffsetPairs(a ? a.getEndExclusives() : OffsetPair.zero, b ? b.getStarts() : new OffsetPair(doc1Length, (a ? a.seq2Range.endExclusive - a.seq1Range.endExclusive : 0) + doc1Length)));
+    $5b(sequenceDiffs, (a, b) => {
+      result.push(_$Efb.fromOffsetPairs(a ? a.getEndExclusives() : $Ffb.zero, b ? b.getStarts() : new $Ffb(doc1Length, (a ? a.seq2Range.endExclusive - a.seq1Range.endExclusive : 0) + doc1Length)));
     });
     return result;
   }
   static fromOffsetPairs(start, endExclusive) {
-    return new _SequenceDiff(new OffsetRange(start.offset1, endExclusive.offset1), new OffsetRange(start.offset2, endExclusive.offset2));
+    return new _$Efb(new $PD(start.offset1, endExclusive.offset1), new $PD(start.offset2, endExclusive.offset2));
   }
   static assertSorted(sequenceDiffs) {
     let last = void 0;
     for (const cur of sequenceDiffs) {
       if (last) {
         if (!(last.seq1Range.endExclusive <= cur.seq1Range.start && last.seq2Range.endExclusive <= cur.seq2Range.start)) {
-          throw new BugIndicatingError("Sequence diffs must be sorted");
+          throw new $Eb("Sequence diffs must be sorted");
         }
       }
       last = cur;
@@ -13488,31 +13488,31 @@ var SequenceDiff = class _SequenceDiff {
     this.seq2Range = seq2Range;
   }
   swap() {
-    return new _SequenceDiff(this.seq2Range, this.seq1Range);
+    return new _$Efb(this.seq2Range, this.seq1Range);
   }
   toString() {
     return `${this.seq1Range} <-> ${this.seq2Range}`;
   }
   join(other) {
-    return new _SequenceDiff(this.seq1Range.join(other.seq1Range), this.seq2Range.join(other.seq2Range));
+    return new _$Efb(this.seq1Range.join(other.seq1Range), this.seq2Range.join(other.seq2Range));
   }
   delta(offset) {
     if (offset === 0) {
       return this;
     }
-    return new _SequenceDiff(this.seq1Range.delta(offset), this.seq2Range.delta(offset));
+    return new _$Efb(this.seq1Range.delta(offset), this.seq2Range.delta(offset));
   }
   deltaStart(offset) {
     if (offset === 0) {
       return this;
     }
-    return new _SequenceDiff(this.seq1Range.deltaStart(offset), this.seq2Range.deltaStart(offset));
+    return new _$Efb(this.seq1Range.deltaStart(offset), this.seq2Range.deltaStart(offset));
   }
   deltaEnd(offset) {
     if (offset === 0) {
       return this;
     }
-    return new _SequenceDiff(this.seq1Range.deltaEnd(offset), this.seq2Range.deltaEnd(offset));
+    return new _$Efb(this.seq1Range.deltaEnd(offset), this.seq2Range.deltaEnd(offset));
   }
   intersectsOrTouches(other) {
     return this.seq1Range.intersectsOrTouches(other.seq1Range) || this.seq2Range.intersectsOrTouches(other.seq2Range);
@@ -13523,21 +13523,21 @@ var SequenceDiff = class _SequenceDiff {
     if (!i1 || !i2) {
       return void 0;
     }
-    return new _SequenceDiff(i1, i2);
+    return new _$Efb(i1, i2);
   }
   getStarts() {
-    return new OffsetPair(this.seq1Range.start, this.seq2Range.start);
+    return new $Ffb(this.seq1Range.start, this.seq2Range.start);
   }
   getEndExclusives() {
-    return new OffsetPair(this.seq1Range.endExclusive, this.seq2Range.endExclusive);
+    return new $Ffb(this.seq1Range.endExclusive, this.seq2Range.endExclusive);
   }
 };
-var OffsetPair = class _OffsetPair {
+var $Ffb = class _$Ffb {
   static {
-    this.zero = new _OffsetPair(0, 0);
+    this.zero = new _$Ffb(0, 0);
   }
   static {
-    this.max = new _OffsetPair(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
+    this.max = new _$Ffb(Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
   }
   constructor(offset1, offset2) {
     this.offset1 = offset1;
@@ -13550,71 +13550,71 @@ var OffsetPair = class _OffsetPair {
     if (offset === 0) {
       return this;
     }
-    return new _OffsetPair(this.offset1 + offset, this.offset2 + offset);
+    return new _$Ffb(this.offset1 + offset, this.offset2 + offset);
   }
   equals(other) {
     return this.offset1 === other.offset1 && this.offset2 === other.offset2;
   }
 };
-var InfiniteTimeout = class _InfiniteTimeout {
+var $Gfb = class _$Gfb {
   static {
-    this.instance = new _InfiniteTimeout();
+    this.instance = new _$Gfb();
   }
   isValid() {
     return true;
   }
 };
-var DateTimeout = class {
-  constructor(timeout) {
-    this.timeout = timeout;
-    this.startTime = Date.now();
-    this.valid = true;
-    if (timeout <= 0) {
-      throw new BugIndicatingError("timeout must be positive");
+var $Hfb = class {
+  constructor(e) {
+    this.e = e;
+    this.c = Date.now();
+    this.d = true;
+    if (e <= 0) {
+      throw new $Eb("timeout must be positive");
     }
   }
   // Recommendation: Set a log-point `{this.disable()}` in the body
   isValid() {
-    const valid = Date.now() - this.startTime < this.timeout;
-    if (!valid && this.valid) {
-      this.valid = false;
+    const valid = Date.now() - this.c < this.e;
+    if (!valid && this.d) {
+      this.d = false;
     }
-    return this.valid;
+    return this.d;
   }
   disable() {
-    this.timeout = Number.MAX_SAFE_INTEGER;
+    this.e = Number.MAX_SAFE_INTEGER;
     this.isValid = () => true;
-    this.valid = true;
+    this.d = true;
   }
 };
 
 // out-build/vs/editor/common/diff/defaultLinesDiffComputer/utils.js
-var Array2D = class {
+var $Ifb = class {
   constructor(width, height) {
     this.width = width;
     this.height = height;
-    this.array = [];
-    this.array = new Array(width * height);
+    this.a = [];
+    this.a = new Array(width * height);
   }
   get(x, y) {
-    return this.array[x + y * this.width];
+    return this.a[x + y * this.width];
   }
   set(x, y, value) {
-    this.array[x + y * this.width] = value;
+    this.a[x + y * this.width] = value;
   }
 };
-function isSpace(charCode) {
+function $Jfb(charCode) {
   return charCode === 32 || charCode === 9;
 }
-var LineRangeFragment = class _LineRangeFragment {
+var $Kfb = class _$Kfb {
   static {
-    this.chrKeys = /* @__PURE__ */ new Map();
+    this.a = /* @__PURE__ */ new Map();
   }
-  static getKey(chr) {
-    let key = this.chrKeys.get(chr);
+  static b(chr) {
+    let key = this.a.get(chr);
     if (key === void 0) {
-      key = this.chrKeys.size;
-      this.chrKeys.set(chr, key);
+      key = this.a.size;
+      this.a.set(chr, key);
     }
     return key;
   }
@@ -13622,45 +13622,45 @@ var LineRangeFragment = class _LineRangeFragment {
     this.range = range;
     this.lines = lines;
     this.source = source;
-    this.histogram = [];
+    this.d = [];
     let counter = 0;
     for (let i = range.startLineNumber - 1; i < range.endLineNumberExclusive - 1; i++) {
       const line = lines[i];
       for (let j = 0; j < line.length; j++) {
         counter++;
         const chr = line[j];
-        const key2 = _LineRangeFragment.getKey(chr);
-        this.histogram[key2] = (this.histogram[key2] || 0) + 1;
+        const key2 = _$Kfb.b(chr);
+        this.d[key2] = (this.d[key2] || 0) + 1;
       }
       counter++;
-      const key = _LineRangeFragment.getKey("\n");
-      this.histogram[key] = (this.histogram[key] || 0) + 1;
+      const key = _$Kfb.b("\n");
+      this.d[key] = (this.d[key] || 0) + 1;
     }
-    this.totalCount = counter;
+    this.c = counter;
   }
   computeSimilarity(other) {
     let sumDifferences = 0;
-    const maxLength = Math.max(this.histogram.length, other.histogram.length);
+    const maxLength = Math.max(this.d.length, other.d.length);
     for (let i = 0; i < maxLength; i++) {
-      sumDifferences += Math.abs((this.histogram[i] ?? 0) - (other.histogram[i] ?? 0));
+      sumDifferences += Math.abs((this.d[i] ?? 0) - (other.d[i] ?? 0));
     }
-    return 1 - sumDifferences / (this.totalCount + other.totalCount);
+    return 1 - sumDifferences / (this.c + other.c);
   }
 };
 
 // out-build/vs/editor/common/diff/defaultLinesDiffComputer/algorithms/dynamicProgrammingDiffing.js
-var DynamicProgrammingDiffing = class {
-  compute(sequence1, sequence2, timeout = InfiniteTimeout.instance, equalityScore) {
+var $Lfb = class {
+  compute(sequence1, sequence2, timeout = $Gfb.instance, equalityScore) {
     if (sequence1.length === 0 || sequence2.length === 0) {
-      return DiffAlgorithmResult.trivial(sequence1, sequence2);
+      return $Dfb.trivial(sequence1, sequence2);
     }
-    const lcsLengths = new Array2D(sequence1.length, sequence2.length);
-    const directions = new Array2D(sequence1.length, sequence2.length);
-    const lengths = new Array2D(sequence1.length, sequence2.length);
+    const lcsLengths = new $Ifb(sequence1.length, sequence2.length);
+    const directions = new $Ifb(sequence1.length, sequence2.length);
+    const lengths = new $Ifb(sequence1.length, sequence2.length);
     for (let s12 = 0; s12 < sequence1.length; s12++) {
       for (let s22 = 0; s22 < sequence2.length; s22++) {
         if (!timeout.isValid()) {
-          return DiffAlgorithmResult.trivialTimedOut(sequence1, sequence2);
+          return $Dfb.trivialTimedOut(sequence1, sequence2);
         }
         const horizontalLen = s12 === 0 ? 0 : lcsLengths.get(s12 - 1, s22);
         const verticalLen = s22 === 0 ? 0 : lcsLengths.get(s12, s22 - 1);
@@ -13698,7 +13698,7 @@ var DynamicProgrammingDiffing = class {
     let lastAligningPosS2 = sequence2.length;
     function reportDecreasingAligningPositions(s12, s22) {
       if (s12 + 1 !== lastAligningPosS1 || s22 + 1 !== lastAligningPosS2) {
-        result.push(new SequenceDiff(new OffsetRange(s12 + 1, lastAligningPosS1), new OffsetRange(s22 + 1, lastAligningPosS2)));
+        result.push(new $Efb(new $PD(s12 + 1, lastAligningPosS1), new $PD(s22 + 1, lastAligningPosS2)));
       }
       lastAligningPosS1 = s12;
       lastAligningPosS2 = s22;
@@ -13720,15 +13720,15 @@ var DynamicProgrammingDiffing = class {
     }
     reportDecreasingAligningPositions(-1, -1);
     result.reverse();
-    return new DiffAlgorithmResult(result, false);
+    return new $Dfb(result, false);
   }
 };
 
 // out-build/vs/editor/common/diff/defaultLinesDiffComputer/algorithms/myersDiffAlgorithm.js
-var MyersDiffAlgorithm = class {
-  compute(seq1, seq2, timeout = InfiniteTimeout.instance) {
+var $Mfb = class {
+  compute(seq1, seq2, timeout = $Gfb.instance) {
     if (seq1.length === 0 || seq2.length === 0) {
-      return DiffAlgorithmResult.trivial(seq1, seq2);
+      return $Dfb.trivial(seq1, seq2);
     }
     const seqX = seq1;
     const seqY = seq2;
@@ -13748,7 +13748,7 @@ var MyersDiffAlgorithm = class {
     loop: while (true) {
       d++;
       if (!timeout.isValid()) {
-        return DiffAlgorithmResult.trivialTimedOut(seqX, seqY);
+        return $Dfb.trivialTimedOut(seqX, seqY);
       }
       const lowerBound = -Math.min(d, seqY.length + d % 2);
       const upperBound = Math.min(d, seqX.length + d % 2);
@@ -13780,7 +13780,7 @@ var MyersDiffAlgorithm = class {
       const endX = path ? path.x + path.length : 0;
       const endY = path ? path.y + path.length : 0;
       if (endX !== lastAligningPosS1 || endY !== lastAligningPosS2) {
-        result.push(new SequenceDiff(new OffsetRange(endX, lastAligningPosS1), new OffsetRange(endY, lastAligningPosS2)));
+        result.push(new $Efb(new $PD(endX, lastAligningPosS1), new $PD(endY, lastAligningPosS2)));
       }
       if (!path) {
         break;
@@ -13790,7 +13790,7 @@ var MyersDiffAlgorithm = class {
       path = path.prev;
     }
     result.reverse();
-    return new DiffAlgorithmResult(result, false);
+    return new $Dfb(result, false);
   }
 };
 var SnakePath = class {
@@ -13803,92 +13803,92 @@ var SnakePath = class {
 };
 var FastInt32Array = class {
   constructor() {
-    this.positiveArr = new Int32Array(10);
-    this.negativeArr = new Int32Array(10);
+    this.a = new Int32Array(10);
+    this.b = new Int32Array(10);
   }
   get(idx) {
     if (idx < 0) {
       idx = -idx - 1;
-      return this.negativeArr[idx];
+      return this.b[idx];
     } else {
-      return this.positiveArr[idx];
+      return this.a[idx];
     }
   }
   set(idx, value) {
     if (idx < 0) {
       idx = -idx - 1;
-      if (idx >= this.negativeArr.length) {
-        const arr = this.negativeArr;
-        this.negativeArr = new Int32Array(arr.length * 2);
-        this.negativeArr.set(arr);
+      if (idx >= this.b.length) {
+        const arr = this.b;
+        this.b = new Int32Array(arr.length * 2);
+        this.b.set(arr);
       }
-      this.negativeArr[idx] = value;
+      this.b[idx] = value;
     } else {
-      if (idx >= this.positiveArr.length) {
-        const arr = this.positiveArr;
-        this.positiveArr = new Int32Array(arr.length * 2);
-        this.positiveArr.set(arr);
+      if (idx >= this.a.length) {
+        const arr = this.a;
+        this.a = new Int32Array(arr.length * 2);
+        this.a.set(arr);
       }
-      this.positiveArr[idx] = value;
+      this.a[idx] = value;
     }
   }
 };
 var FastArrayNegativeIndices = class {
   constructor() {
-    this.positiveArr = [];
-    this.negativeArr = [];
+    this.a = [];
+    this.b = [];
   }
   get(idx) {
     if (idx < 0) {
       idx = -idx - 1;
-      return this.negativeArr[idx];
+      return this.b[idx];
     } else {
-      return this.positiveArr[idx];
+      return this.a[idx];
     }
   }
   set(idx, value) {
     if (idx < 0) {
       idx = -idx - 1;
-      this.negativeArr[idx] = value;
+      this.b[idx] = value;
     } else {
-      this.positiveArr[idx] = value;
+      this.a[idx] = value;
     }
   }
 };
 
 // out-build/vs/editor/common/diff/defaultLinesDiffComputer/linesSliceCharSequence.js
-var LinesSliceCharSequence = class {
-  constructor(lines, range, considerWhitespaceChanges) {
+var $Nfb = class {
+  constructor(lines, g, considerWhitespaceChanges) {
     this.lines = lines;
-    this.range = range;
+    this.g = g;
     this.considerWhitespaceChanges = considerWhitespaceChanges;
-    this.elements = [];
-    this.firstElementOffsetByLineIdx = [];
-    this.lineStartOffsets = [];
-    this.trimmedWsLengthsByLineIdx = [];
-    this.firstElementOffsetByLineIdx.push(0);
-    for (let lineNumber = this.range.startLineNumber; lineNumber <= this.range.endLineNumber; lineNumber++) {
+    this.b = [];
+    this.c = [];
+    this.d = [];
+    this.f = [];
+    this.c.push(0);
+    for (let lineNumber = this.g.startLineNumber; lineNumber <= this.g.endLineNumber; lineNumber++) {
       let line = lines[lineNumber - 1];
       let lineStartOffset = 0;
-      if (lineNumber === this.range.startLineNumber && this.range.startColumn > 1) {
-        lineStartOffset = this.range.startColumn - 1;
+      if (lineNumber === this.g.startLineNumber && this.g.startColumn > 1) {
+        lineStartOffset = this.g.startColumn - 1;
         line = line.substring(lineStartOffset);
       }
-      this.lineStartOffsets.push(lineStartOffset);
+      this.d.push(lineStartOffset);
       let trimmedWsLength = 0;
       if (!considerWhitespaceChanges) {
         const trimmedStartLine = line.trimStart();
         trimmedWsLength = line.length - trimmedStartLine.length;
         line = trimmedStartLine.trimEnd();
       }
-      this.trimmedWsLengthsByLineIdx.push(trimmedWsLength);
-      const lineLength = lineNumber === this.range.endLineNumber ? Math.min(this.range.endColumn - 1 - lineStartOffset - trimmedWsLength, line.length) : line.length;
+      this.f.push(trimmedWsLength);
+      const lineLength = lineNumber === this.g.endLineNumber ? Math.min(this.g.endColumn - 1 - lineStartOffset - trimmedWsLength, line.length) : line.length;
       for (let i = 0; i < lineLength; i++) {
-        this.elements.push(line.charCodeAt(i));
+        this.b.push(line.charCodeAt(i));
       }
-      if (lineNumber < this.range.endLineNumber) {
-        this.elements.push("\n".charCodeAt(0));
-        this.firstElementOffsetByLineIdx.push(this.elements.length);
+      if (lineNumber < this.g.endLineNumber) {
+        this.b.push("\n".charCodeAt(0));
+        this.c.push(this.b.length);
       }
     }
   }
@@ -13896,20 +13896,20 @@ var LinesSliceCharSequence = class {
     return `Slice: "${this.text}"`;
   }
   get text() {
-    return this.getText(new OffsetRange(0, this.length));
+    return this.getText(new $PD(0, this.length));
   }
   getText(range) {
-    return this.elements.slice(range.start, range.endExclusive).map((e) => String.fromCharCode(e)).join("");
+    return this.b.slice(range.start, range.endExclusive).map((e) => String.fromCharCode(e)).join("");
   }
   getElement(offset) {
-    return this.elements[offset];
+    return this.b[offset];
   }
   get length() {
-    return this.elements.length;
+    return this.b.length;
   }
   getBoundaryScore(length) {
-    const prevCategory = getCategory(length > 0 ? this.elements[length - 1] : -1);
-    const nextCategory = getCategory(length < this.elements.length ? this.elements[length] : -1);
+    const prevCategory = getCategory(length > 0 ? this.b[length - 1] : -1);
+    const nextCategory = getCategory(length < this.b.length ? this.b[length] : -1);
     if (prevCategory === 7 && nextCategory === 8) {
       return 0;
     }
@@ -13928,66 +13928,66 @@ var LinesSliceCharSequence = class {
     return score2;
   }
   translateOffset(offset, preference = "right") {
-    const i = findLastIdxMonotonous(this.firstElementOffsetByLineIdx, (value) => value <= offset);
-    const lineOffset = offset - this.firstElementOffsetByLineIdx[i];
-    return new Position(this.range.startLineNumber + i, 1 + this.lineStartOffsets[i] + lineOffset + (lineOffset === 0 && preference === "left" ? 0 : this.trimmedWsLengthsByLineIdx[i]));
+    const i = $Lb(this.c, (value) => value <= offset);
+    const lineOffset = offset - this.c[i];
+    return new $GD(this.g.startLineNumber + i, 1 + this.d[i] + lineOffset + (lineOffset === 0 && preference === "left" ? 0 : this.f[i]));
   }
   translateRange(range) {
     const pos1 = this.translateOffset(range.start, "right");
     const pos2 = this.translateOffset(range.endExclusive, "left");
     if (pos2.isBefore(pos1)) {
-      return Range.fromPositions(pos2, pos2);
+      return $HD.fromPositions(pos2, pos2);
     }
-    return Range.fromPositions(pos1, pos2);
+    return $HD.fromPositions(pos1, pos2);
   }
   /**
    * Finds the word that contains the character at the given offset
    */
   findWordContaining(offset) {
-    if (offset < 0 || offset >= this.elements.length) {
+    if (offset < 0 || offset >= this.b.length) {
       return void 0;
     }
-    if (!isWordChar(this.elements[offset])) {
+    if (!isWordChar(this.b[offset])) {
       return void 0;
     }
     let start = offset;
-    while (start > 0 && isWordChar(this.elements[start - 1])) {
+    while (start > 0 && isWordChar(this.b[start - 1])) {
       start--;
     }
     let end = offset;
-    while (end < this.elements.length && isWordChar(this.elements[end])) {
+    while (end < this.b.length && isWordChar(this.b[end])) {
       end++;
     }
-    return new OffsetRange(start, end);
+    return new $PD(start, end);
   }
   /** fooBar has the two sub-words foo and bar */
   findSubWordContaining(offset) {
-    if (offset < 0 || offset >= this.elements.length) {
+    if (offset < 0 || offset >= this.b.length) {
       return void 0;
     }
-    if (!isWordChar(this.elements[offset])) {
+    if (!isWordChar(this.b[offset])) {
       return void 0;
     }
     let start = offset;
-    while (start > 0 && isWordChar(this.elements[start - 1]) && !isUpperCase(this.elements[start])) {
+    while (start > 0 && isWordChar(this.b[start - 1]) && !isUpperCase(this.b[start])) {
       start--;
     }
     let end = offset;
-    while (end < this.elements.length && isWordChar(this.elements[end]) && !isUpperCase(this.elements[end])) {
+    while (end < this.b.length && isWordChar(this.b[end]) && !isUpperCase(this.b[end])) {
       end++;
     }
-    return new OffsetRange(start, end);
+    return new $PD(start, end);
   }
   countLinesIn(range) {
     return this.translateOffset(range.endExclusive).lineNumber - this.translateOffset(range.start).lineNumber;
   }
   isStronglyEqual(offset1, offset2) {
-    return this.elements[offset1] === this.elements[offset2];
+    return this.b[offset1] === this.b[offset2];
   }
   extendToFullLines(range) {
-    const start = findLastMonotonous(this.firstElementOffsetByLineIdx, (x) => x <= range.start) ?? 0;
-    const end = findFirstMonotonous(this.firstElementOffsetByLineIdx, (x) => range.endExclusive <= x) ?? this.elements.length;
-    return new OffsetRange(start, end);
+    const start = $Kb(this.c, (x) => x <= range.start) ?? 0;
+    const end = $Mb(this.c, (x) => range.endExclusive <= x) ?? this.b.length;
+    return new $PD(start, end);
   }
 };
 function isWordChar(charCode) {
@@ -14054,7 +14054,7 @@ function getCategory(charCode) {
     return 8;
   } else if (charCode === 13) {
     return 7;
-  } else if (isSpace(charCode)) {
+  } else if ($Jfb(charCode)) {
     return 6;
   } else if (charCode >= 97 && charCode <= 122) {
     return 0;
@@ -14072,14 +14072,14 @@ function getCategory(charCode) {
 }
 
 // out-build/vs/editor/common/diff/defaultLinesDiffComputer/computeMovedLines.js
-function computeMovedLines(changes, originalLines, modifiedLines, hashedOriginalLines, hashedModifiedLines, timeout) {
+function $Ofb(changes, originalLines, modifiedLines, hashedOriginalLines, hashedModifiedLines, timeout) {
   let { moves, excludedChanges } = computeMovesFromSimpleDeletionsToSimpleInsertions(changes, originalLines, modifiedLines, timeout);
   if (!timeout.isValid()) {
     return [];
   }
   const filteredChanges = changes.filter((c) => !excludedChanges.has(c));
   const unchangedMoves = computeUnchangedMoves(filteredChanges, hashedOriginalLines, hashedModifiedLines, originalLines, modifiedLines, timeout);
-  pushMany(moves, unchangedMoves);
+  $pc(moves, unchangedMoves);
   moves = joinCloseConsecutiveMoves(moves);
   moves = moves.filter((current) => {
     const lines = current.original.toOffsetRange().slice(originalLines).map((l) => l.trim());
@@ -14100,8 +14100,8 @@ function countWhere(arr, predicate) {
 }
 function computeMovesFromSimpleDeletionsToSimpleInsertions(changes, originalLines, modifiedLines, timeout) {
   const moves = [];
-  const deletions = changes.filter((c) => c.modified.isEmpty && c.original.length >= 3).map((d) => new LineRangeFragment(d.original, originalLines, d));
-  const insertions = new Set(changes.filter((c) => c.original.isEmpty && c.modified.length >= 3).map((d) => new LineRangeFragment(d.modified, modifiedLines, d)));
+  const deletions = changes.filter((c) => c.modified.isEmpty && c.original.length >= 3).map((d) => new $Kfb(d.original, originalLines, d));
+  const insertions = new Set(changes.filter((c) => c.original.isEmpty && c.modified.length >= 3).map((d) => new $Kfb(d.modified, modifiedLines, d)));
   const excludedChanges = /* @__PURE__ */ new Set();
   for (const deletion of deletions) {
     let highestSimilarity = -1;
@@ -14115,7 +14115,7 @@ function computeMovesFromSimpleDeletionsToSimpleInsertions(changes, originalLine
     }
     if (highestSimilarity > 0.9 && best) {
       insertions.delete(best);
-      moves.push(new LineRangeMapping(deletion.range, best.range));
+      moves.push(new $dE(deletion.range, best.range));
       excludedChanges.add(deletion.source);
       excludedChanges.add(best.source);
     }
@@ -14127,26 +14127,26 @@ function computeMovesFromSimpleDeletionsToSimpleInsertions(changes, originalLine
 }
 function computeUnchangedMoves(changes, hashedOriginalLines, hashedModifiedLines, originalLines, modifiedLines, timeout) {
   const moves = [];
-  const original3LineHashes = new SetMap();
+  const original3LineHashes = new $Wc();
   for (const change of changes) {
     for (let i = change.original.startLineNumber; i < change.original.endLineNumberExclusive - 2; i++) {
       const key = `${hashedOriginalLines[i - 1]}:${hashedOriginalLines[i + 1 - 1]}:${hashedOriginalLines[i + 2 - 1]}`;
-      original3LineHashes.add(key, { range: new LineRange(i, i + 3) });
+      original3LineHashes.add(key, { range: new $RD(i, i + 3) });
     }
   }
   const possibleMappings = [];
-  changes.sort(compareBy((c) => c.modified.startLineNumber, numberComparator));
+  changes.sort($xc((c) => c.modified.startLineNumber, $zc));
   for (const change of changes) {
     let lastMappings = [];
     for (let i = change.modified.startLineNumber; i < change.modified.endLineNumberExclusive - 2; i++) {
       const key = `${hashedModifiedLines[i - 1]}:${hashedModifiedLines[i + 1 - 1]}:${hashedModifiedLines[i + 2 - 1]}`;
-      const currentModifiedRange = new LineRange(i, i + 3);
+      const currentModifiedRange = new $RD(i, i + 3);
       const nextMappings = [];
       original3LineHashes.forEach(key, ({ range }) => {
         for (const lastMapping of lastMappings) {
           if (lastMapping.originalLineRange.endLineNumberExclusive + 1 === range.endLineNumberExclusive && lastMapping.modifiedLineRange.endLineNumberExclusive + 1 === currentModifiedRange.endLineNumberExclusive) {
-            lastMapping.originalLineRange = new LineRange(lastMapping.originalLineRange.startLineNumber, range.endLineNumberExclusive);
-            lastMapping.modifiedLineRange = new LineRange(lastMapping.modifiedLineRange.startLineNumber, currentModifiedRange.endLineNumberExclusive);
+            lastMapping.originalLineRange = new $RD(lastMapping.originalLineRange.startLineNumber, range.endLineNumberExclusive);
+            lastMapping.modifiedLineRange = new $RD(lastMapping.modifiedLineRange.startLineNumber, currentModifiedRange.endLineNumberExclusive);
             nextMappings.push(lastMapping);
             return;
           }
@@ -14164,9 +14164,9 @@ function computeUnchangedMoves(changes, hashedOriginalLines, hashedModifiedLines
       return [];
     }
   }
-  possibleMappings.sort(reverseOrder(compareBy((m) => m.modifiedLineRange.length, numberComparator)));
-  const modifiedSet = new LineRangeSet();
-  const originalSet = new LineRangeSet();
+  possibleMappings.sort($Bc($xc((m) => m.modifiedLineRange.length, $zc)));
+  const modifiedSet = new $SD();
+  const originalSet = new $SD();
   for (const mapping of possibleMappings) {
     const diffOrigToMod = mapping.modifiedLineRange.startLineNumber - mapping.originalLineRange.startLineNumber;
     const modifiedSections = modifiedSet.subtractFrom(mapping.modifiedLineRange);
@@ -14178,20 +14178,20 @@ function computeUnchangedMoves(changes, hashedOriginalLines, hashedModifiedLines
       }
       const modifiedLineRange = s;
       const originalLineRange = s.delta(-diffOrigToMod);
-      moves.push(new LineRangeMapping(originalLineRange, modifiedLineRange));
+      moves.push(new $dE(originalLineRange, modifiedLineRange));
       modifiedSet.addRange(modifiedLineRange);
       originalSet.addRange(originalLineRange);
     }
   }
-  moves.sort(compareBy((m) => m.original.startLineNumber, numberComparator));
-  const monotonousChanges = new MonotonousArray(changes);
+  moves.sort($xc((m) => m.original.startLineNumber, $zc));
+  const monotonousChanges = new $Pb(changes);
   for (let i = 0; i < moves.length; i++) {
     const move = moves[i];
     const firstTouchingChangeOrig = monotonousChanges.findLastMonotonous((c) => c.original.startLineNumber <= move.original.startLineNumber);
-    const firstTouchingChangeMod = findLastMonotonous(changes, (c) => c.modified.startLineNumber <= move.modified.startLineNumber);
+    const firstTouchingChangeMod = $Kb(changes, (c) => c.modified.startLineNumber <= move.modified.startLineNumber);
     const linesAbove = Math.max(move.original.startLineNumber - firstTouchingChangeOrig.original.startLineNumber, move.modified.startLineNumber - firstTouchingChangeMod.modified.startLineNumber);
     const lastTouchingChangeOrig = monotonousChanges.findLastMonotonous((c) => c.original.startLineNumber < move.original.endLineNumberExclusive);
-    const lastTouchingChangeMod = findLastMonotonous(changes, (c) => c.modified.startLineNumber < move.modified.endLineNumberExclusive);
+    const lastTouchingChangeMod = $Kb(changes, (c) => c.modified.startLineNumber < move.modified.endLineNumberExclusive);
     const linesBelow = Math.max(lastTouchingChangeOrig.original.endLineNumberExclusive - move.original.endLineNumberExclusive, lastTouchingChangeMod.modified.endLineNumberExclusive - move.modified.endLineNumberExclusive);
     let extendToTop;
     for (extendToTop = 0; extendToTop < linesAbove; extendToTop++) {
@@ -14208,8 +14208,8 @@ function computeUnchangedMoves(changes, hashedOriginalLines, hashedModifiedLines
       }
     }
     if (extendToTop > 0) {
-      originalSet.addRange(new LineRange(move.original.startLineNumber - extendToTop, move.original.startLineNumber));
-      modifiedSet.addRange(new LineRange(move.modified.startLineNumber - extendToTop, move.modified.startLineNumber));
+      originalSet.addRange(new $RD(move.original.startLineNumber - extendToTop, move.original.startLineNumber));
+      modifiedSet.addRange(new $RD(move.modified.startLineNumber - extendToTop, move.modified.startLineNumber));
     }
     let extendToBottom;
     for (extendToBottom = 0; extendToBottom < linesBelow; extendToBottom++) {
@@ -14226,11 +14226,11 @@ function computeUnchangedMoves(changes, hashedOriginalLines, hashedModifiedLines
       }
     }
     if (extendToBottom > 0) {
-      originalSet.addRange(new LineRange(move.original.endLineNumberExclusive, move.original.endLineNumberExclusive + extendToBottom));
-      modifiedSet.addRange(new LineRange(move.modified.endLineNumberExclusive, move.modified.endLineNumberExclusive + extendToBottom));
+      originalSet.addRange(new $RD(move.original.endLineNumberExclusive, move.original.endLineNumberExclusive + extendToBottom));
+      modifiedSet.addRange(new $RD(move.modified.endLineNumberExclusive, move.modified.endLineNumberExclusive + extendToBottom));
     }
     if (extendToTop > 0 || extendToBottom > 0) {
-      moves[i] = new LineRangeMapping(new LineRange(move.original.startLineNumber - extendToTop, move.original.endLineNumberExclusive + extendToBottom), new LineRange(move.modified.startLineNumber - extendToTop, move.modified.endLineNumberExclusive + extendToBottom));
+      moves[i] = new $dE(new $RD(move.original.startLineNumber - extendToTop, move.original.endLineNumberExclusive + extendToBottom), new $RD(move.modified.startLineNumber - extendToTop, move.modified.endLineNumberExclusive + extendToBottom));
     }
   }
   return moves;
@@ -14242,13 +14242,13 @@ function areLinesSimilar(line1, line2, timeout) {
   if (line1.length > 300 && line2.length > 300) {
     return false;
   }
-  const myersDiffingAlgorithm = new MyersDiffAlgorithm();
-  const result = myersDiffingAlgorithm.compute(new LinesSliceCharSequence([line1], new Range(1, 1, 1, line1.length), false), new LinesSliceCharSequence([line2], new Range(1, 1, 1, line2.length), false), timeout);
+  const myersDiffingAlgorithm = new $Mfb();
+  const result = myersDiffingAlgorithm.compute(new $Nfb([line1], new $HD(1, 1, 1, line1.length), false), new $Nfb([line2], new $HD(1, 1, 1, line2.length), false), timeout);
   let commonNonSpaceCharCount = 0;
-  const inverted = SequenceDiff.invert(result.diffs, line1.length);
+  const inverted = $Efb.invert(result.diffs, line1.length);
   for (const seq of inverted) {
     seq.seq1Range.forEach((idx) => {
-      if (!isSpace(line1.charCodeAt(idx))) {
+      if (!$Jfb(line1.charCodeAt(idx))) {
         commonNonSpaceCharCount++;
       }
     });
@@ -14256,7 +14256,7 @@ function areLinesSimilar(line1, line2, timeout) {
   function countNonWsChars(str) {
     let count = 0;
     for (let i = 0; i < line1.length; i++) {
-      if (!isSpace(str.charCodeAt(i))) {
+      if (!$Jfb(str.charCodeAt(i))) {
         count++;
       }
     }
@@ -14270,7 +14270,7 @@ function joinCloseConsecutiveMoves(moves) {
   if (moves.length === 0) {
     return moves;
   }
-  moves.sort(compareBy((m) => m.original.startLineNumber, numberComparator));
+  moves.sort($xc((m) => m.original.startLineNumber, $zc));
   const result = [moves[0]];
   for (let i = 1; i < moves.length; i++) {
     const last = result[result.length - 1];
@@ -14287,10 +14287,10 @@ function joinCloseConsecutiveMoves(moves) {
   return result;
 }
 function removeMovesInSameDiff(changes, moves) {
-  const changesMonotonous = new MonotonousArray(changes);
+  const changesMonotonous = new $Pb(changes);
   moves = moves.filter((m) => {
-    const diffBeforeEndOfMoveOriginal = changesMonotonous.findLastMonotonous((c) => c.original.startLineNumber < m.original.endLineNumberExclusive) || new LineRangeMapping(new LineRange(1, 1), new LineRange(1, 1));
-    const diffBeforeEndOfMoveModified = findLastMonotonous(changes, (c) => c.modified.startLineNumber < m.modified.endLineNumberExclusive);
+    const diffBeforeEndOfMoveOriginal = changesMonotonous.findLastMonotonous((c) => c.original.startLineNumber < m.original.endLineNumberExclusive) || new $dE(new $RD(1, 1), new $RD(1, 1));
+    const diffBeforeEndOfMoveModified = $Kb(changes, (c) => c.modified.startLineNumber < m.modified.endLineNumberExclusive);
     const differentDiffs = diffBeforeEndOfMoveOriginal !== diffBeforeEndOfMoveModified;
     return differentDiffs;
   });
@@ -14298,7 +14298,7 @@ function removeMovesInSameDiff(changes, moves) {
 }
 
 // out-build/vs/editor/common/diff/defaultLinesDiffComputer/heuristicSequenceOptimizations.js
-function optimizeSequenceDiffs(sequence1, sequence2, sequenceDiffs) {
+function $Qfb(sequence1, sequence2, sequenceDiffs) {
   let result = sequenceDiffs;
   result = joinSequenceDiffsByShifting(sequence1, sequence2, result);
   result = joinSequenceDiffsByShifting(sequence1, sequence2, result);
@@ -14324,7 +14324,7 @@ function joinSequenceDiffsByShifting(sequence1, sequence2, sequenceDiffs) {
       }
       d--;
       if (d === length) {
-        result[result.length - 1] = new SequenceDiff(new OffsetRange(prevResult.seq1Range.start, cur.seq1Range.endExclusive - length), new OffsetRange(prevResult.seq2Range.start, cur.seq2Range.endExclusive - length));
+        result[result.length - 1] = new $Efb(new $PD(prevResult.seq1Range.start, cur.seq1Range.endExclusive - length), new $PD(prevResult.seq2Range.start, cur.seq2Range.endExclusive - length));
         continue;
       }
       cur = cur.delta(-d);
@@ -14344,7 +14344,7 @@ function joinSequenceDiffsByShifting(sequence1, sequence2, sequenceDiffs) {
         }
       }
       if (d === length) {
-        result[i + 1] = new SequenceDiff(new OffsetRange(cur.seq1Range.start + length, nextResult.seq1Range.endExclusive), new OffsetRange(cur.seq2Range.start + length, nextResult.seq2Range.endExclusive));
+        result[i + 1] = new $Efb(new $PD(cur.seq1Range.start + length, nextResult.seq1Range.endExclusive), new $PD(cur.seq2Range.start + length, nextResult.seq2Range.endExclusive));
         continue;
       }
       if (d > 0) {
@@ -14366,8 +14366,8 @@ function shiftSequenceDiffs(sequence1, sequence2, sequenceDiffs) {
     const prevDiff = i > 0 ? sequenceDiffs[i - 1] : void 0;
     const diff = sequenceDiffs[i];
     const nextDiff = i + 1 < sequenceDiffs.length ? sequenceDiffs[i + 1] : void 0;
-    const seq1ValidRange = new OffsetRange(prevDiff ? prevDiff.seq1Range.endExclusive + 1 : 0, nextDiff ? nextDiff.seq1Range.start - 1 : sequence1.length);
-    const seq2ValidRange = new OffsetRange(prevDiff ? prevDiff.seq2Range.endExclusive + 1 : 0, nextDiff ? nextDiff.seq2Range.start - 1 : sequence2.length);
+    const seq1ValidRange = new $PD(prevDiff ? prevDiff.seq1Range.endExclusive + 1 : 0, nextDiff ? nextDiff.seq1Range.start - 1 : sequence1.length);
+    const seq2ValidRange = new $PD(prevDiff ? prevDiff.seq2Range.endExclusive + 1 : 0, nextDiff ? nextDiff.seq2Range.start - 1 : sequence2.length);
     if (diff.seq1Range.isEmpty) {
       sequenceDiffs[i] = shiftDiffToBetterPosition(diff, sequence1, sequence2, seq1ValidRange, seq2ValidRange);
     } else if (diff.seq2Range.isEmpty) {
@@ -14404,7 +14404,7 @@ function shiftDiffToBetterPosition(diff, sequence1, sequence2, seq1ValidRange, s
   }
   return diff.delta(bestDelta);
 }
-function removeShortMatches(sequence1, sequence2, sequenceDiffs) {
+function $Rfb(sequence1, sequence2, sequenceDiffs) {
   const result = [];
   for (const s of sequenceDiffs) {
     const last = result[result.length - 1];
@@ -14413,17 +14413,17 @@ function removeShortMatches(sequence1, sequence2, sequenceDiffs) {
       continue;
     }
     if (s.seq1Range.start - last.seq1Range.endExclusive <= 2 || s.seq2Range.start - last.seq2Range.endExclusive <= 2) {
-      result[result.length - 1] = new SequenceDiff(last.seq1Range.join(s.seq1Range), last.seq2Range.join(s.seq2Range));
+      result[result.length - 1] = new $Efb(last.seq1Range.join(s.seq1Range), last.seq2Range.join(s.seq2Range));
     } else {
       result.push(s);
     }
   }
   return result;
 }
-function extendDiffsToEntireWordIfAppropriate(sequence1, sequence2, sequenceDiffs, findParent, force = false) {
-  const equalMappings = SequenceDiff.invert(sequenceDiffs, sequence1.length);
+function $Sfb(sequence1, sequence2, sequenceDiffs, findParent, force = false) {
+  const equalMappings = $Efb.invert(sequenceDiffs, sequence1.length);
   const additional = [];
-  let lastPoint = new OffsetPair(0, 0);
+  let lastPoint = new $Ffb(0, 0);
   function scanWord(pair, equalMapping) {
     if (pair.offset1 < lastPoint.offset1 || pair.offset2 < lastPoint.offset2) {
       return;
@@ -14433,7 +14433,7 @@ function extendDiffsToEntireWordIfAppropriate(sequence1, sequence2, sequenceDiff
     if (!w1 || !w2) {
       return;
     }
-    let w = new SequenceDiff(w1, w2);
+    let w = new $Efb(w1, w2);
     const equalPart = w.intersect(equalMapping);
     let equalChars1 = equalPart.seq1Range.length;
     let equalChars2 = equalPart.seq2Range.length;
@@ -14445,7 +14445,7 @@ function extendDiffsToEntireWordIfAppropriate(sequence1, sequence2, sequenceDiff
       }
       const v1 = findParent(sequence1, next.seq1Range.start);
       const v2 = findParent(sequence2, next.seq2Range.start);
-      const v = new SequenceDiff(v1, v2);
+      const v = new $Efb(v1, v2);
       const equalPart2 = v.intersect(next);
       equalChars1 += equalPart2.seq1Range.length;
       equalChars2 += equalPart2.seq2Range.length;
@@ -14491,7 +14491,7 @@ function mergeSequenceDiffs(sequenceDiffs1, sequenceDiffs2) {
   }
   return result;
 }
-function removeVeryShortMatchingLinesBetweenDiffs(sequence1, _sequence2, sequenceDiffs) {
+function $Tfb(sequence1, _sequence2, sequenceDiffs) {
   let diffs = sequenceDiffs;
   if (diffs.length === 0) {
     return diffs;
@@ -14505,7 +14505,7 @@ function removeVeryShortMatchingLinesBetweenDiffs(sequence1, _sequence2, sequenc
     ];
     for (let i = 1; i < diffs.length; i++) {
       let shouldJoinDiffs2 = function(before, after) {
-        const unchangedRange = new OffsetRange(lastResult.seq1Range.endExclusive, cur.seq1Range.start);
+        const unchangedRange = new $PD(lastResult.seq1Range.endExclusive, cur.seq1Range.start);
         const unchangedText = sequence1.getText(unchangedRange);
         const unchangedTextWithoutWs = unchangedText.replace(/\s/g, "");
         if (unchangedTextWithoutWs.length <= 4 && (before.seq1Range.length + before.seq2Range.length > 5 || after.seq1Range.length + after.seq2Range.length > 5)) {
@@ -14528,7 +14528,7 @@ function removeVeryShortMatchingLinesBetweenDiffs(sequence1, _sequence2, sequenc
   } while (counter++ < 10 && shouldRepeat);
   return diffs;
 }
-function removeVeryShortMatchingTextBetweenLongDiffs(sequence1, sequence2, sequenceDiffs) {
+function $Ufb(sequence1, sequence2, sequenceDiffs) {
   let diffs = sequenceDiffs;
   if (diffs.length === 0) {
     return diffs;
@@ -14542,7 +14542,7 @@ function removeVeryShortMatchingTextBetweenLongDiffs(sequence1, sequence2, seque
     ];
     for (let i = 1; i < diffs.length; i++) {
       let shouldJoinDiffs2 = function(before, after) {
-        const unchangedRange = new OffsetRange(lastResult.seq1Range.endExclusive, cur.seq1Range.start);
+        const unchangedRange = new $PD(lastResult.seq1Range.endExclusive, cur.seq1Range.start);
         const unchangedLineCount = sequence1.countLinesIn(unchangedRange);
         if (unchangedLineCount > 5 || unchangedRange.length > 500) {
           return false;
@@ -14582,21 +14582,21 @@ function removeVeryShortMatchingTextBetweenLongDiffs(sequence1, sequence2, seque
     diffs = result;
   } while (counter++ < 10 && shouldRepeat);
   const newDiffs = [];
-  forEachWithNeighbors(diffs, (prev, cur, next) => {
+  $6b(diffs, (prev, cur, next) => {
     let newDiff = cur;
     function shouldMarkAsChanged(text) {
       return text.length > 0 && text.trim().length <= 3 && cur.seq1Range.length + cur.seq2Range.length > 100;
     }
     const fullRange1 = sequence1.extendToFullLines(cur.seq1Range);
-    const prefix = sequence1.getText(new OffsetRange(fullRange1.start, cur.seq1Range.start));
+    const prefix = sequence1.getText(new $PD(fullRange1.start, cur.seq1Range.start));
     if (shouldMarkAsChanged(prefix)) {
       newDiff = newDiff.deltaStart(-prefix.length);
     }
-    const suffix = sequence1.getText(new OffsetRange(cur.seq1Range.endExclusive, fullRange1.endExclusive));
+    const suffix = sequence1.getText(new $PD(cur.seq1Range.endExclusive, fullRange1.endExclusive));
     if (shouldMarkAsChanged(suffix)) {
       newDiff = newDiff.deltaEnd(suffix.length);
     }
-    const availableSpace = SequenceDiff.fromOffsetPairs(prev ? prev.getEndExclusives() : OffsetPair.zero, next ? next.getStarts() : OffsetPair.max);
+    const availableSpace = $Efb.fromOffsetPairs(prev ? prev.getEndExclusives() : $Ffb.zero, next ? next.getStarts() : $Ffb.max);
     const result = newDiff.intersect(availableSpace);
     if (newDiffs.length > 0 && result.getStarts().equals(newDiffs[newDiffs.length - 1].getEndExclusives())) {
       newDiffs[newDiffs.length - 1] = newDiffs[newDiffs.length - 1].join(result);
@@ -14608,27 +14608,27 @@ function removeVeryShortMatchingTextBetweenLongDiffs(sequence1, sequence2, seque
 }
 
 // out-build/vs/editor/common/diff/defaultLinesDiffComputer/lineSequence.js
-var LineSequence2 = class {
-  constructor(trimmedHash, lines) {
-    this.trimmedHash = trimmedHash;
-    this.lines = lines;
+var $Pfb = class {
+  constructor(a, b) {
+    this.a = a;
+    this.b = b;
   }
   getElement(offset) {
-    return this.trimmedHash[offset];
+    return this.a[offset];
   }
   get length() {
-    return this.trimmedHash.length;
+    return this.a.length;
   }
   getBoundaryScore(length) {
-    const indentationBefore = length === 0 ? 0 : getIndentation(this.lines[length - 1]);
-    const indentationAfter = length === this.lines.length ? 0 : getIndentation(this.lines[length]);
+    const indentationBefore = length === 0 ? 0 : getIndentation(this.b[length - 1]);
+    const indentationAfter = length === this.b.length ? 0 : getIndentation(this.b[length]);
     return 1e3 - (indentationBefore + indentationAfter);
   }
   getText(range) {
-    return this.lines.slice(range.start, range.endExclusive).join("\n");
+    return this.b.slice(range.start, range.endExclusive).join("\n");
   }
   isStronglyEqual(offset1, offset2) {
-    return this.lines[offset1] === this.lines[offset2];
+    return this.b[offset1] === this.b[offset2];
   }
 };
 function getIndentation(str) {
@@ -14640,23 +14640,23 @@ function getIndentation(str) {
 }
 
 // out-build/vs/editor/common/diff/defaultLinesDiffComputer/defaultLinesDiffComputer.js
-var DefaultLinesDiffComputer = class {
+var $Vfb = class {
   constructor() {
-    this.dynamicProgrammingDiffing = new DynamicProgrammingDiffing();
-    this.myersDiffingAlgorithm = new MyersDiffAlgorithm();
+    this.e = new $Lfb();
+    this.f = new $Mfb();
   }
   computeDiff(originalLines, modifiedLines, options) {
-    if (originalLines.length <= 1 && equals(originalLines, modifiedLines, (a, b) => a === b)) {
-      return new LinesDiff([], [], false);
+    if (originalLines.length <= 1 && $Xb(originalLines, modifiedLines, (a, b) => a === b)) {
+      return new $jE([], [], false);
     }
     if (originalLines.length === 1 && originalLines[0].length === 0 || modifiedLines.length === 1 && modifiedLines[0].length === 0) {
-      return new LinesDiff([
-        new DetailedLineRangeMapping(new LineRange(1, originalLines.length + 1), new LineRange(1, modifiedLines.length + 1), [
-          new RangeMapping(new Range(1, 1, originalLines.length, originalLines[originalLines.length - 1].length + 1), new Range(1, 1, modifiedLines.length, modifiedLines[modifiedLines.length - 1].length + 1))
+      return new $jE([
+        new $eE(new $RD(1, originalLines.length + 1), new $RD(1, modifiedLines.length + 1), [
+          new $fE(new $HD(1, 1, originalLines.length, originalLines[originalLines.length - 1].length + 1), new $HD(1, 1, modifiedLines.length, modifiedLines[modifiedLines.length - 1].length + 1))
         ])
       ], [], false);
     }
-    const timeout = options.maxComputationTimeMs === 0 ? InfiniteTimeout.instance : new DateTimeout(options.maxComputationTimeMs);
+    const timeout = options.maxComputationTimeMs === 0 ? $Gfb.instance : new $Hfb(options.maxComputationTimeMs);
     const considerWhitespaceChanges = !options.ignoreTrimWhitespace;
     const perfectHashes = /* @__PURE__ */ new Map();
     function getOrCreateHash(text) {
@@ -14669,18 +14669,18 @@ var DefaultLinesDiffComputer = class {
     }
     const originalLinesHashes = originalLines.map((l) => getOrCreateHash(l.trim()));
     const modifiedLinesHashes = modifiedLines.map((l) => getOrCreateHash(l.trim()));
-    const sequence1 = new LineSequence2(originalLinesHashes, originalLines);
-    const sequence2 = new LineSequence2(modifiedLinesHashes, modifiedLines);
+    const sequence1 = new $Pfb(originalLinesHashes, originalLines);
+    const sequence2 = new $Pfb(modifiedLinesHashes, modifiedLines);
     const lineAlignmentResult = (() => {
       if (sequence1.length + sequence2.length < 1700) {
-        return this.dynamicProgrammingDiffing.compute(sequence1, sequence2, timeout, (offset1, offset2) => originalLines[offset1] === modifiedLines[offset2] ? modifiedLines[offset2].length === 0 ? 0.1 : 1 + Math.log(1 + modifiedLines[offset2].length) : 0.99);
+        return this.e.compute(sequence1, sequence2, timeout, (offset1, offset2) => originalLines[offset1] === modifiedLines[offset2] ? modifiedLines[offset2].length === 0 ? 0.1 : 1 + Math.log(1 + modifiedLines[offset2].length) : 0.99);
       }
-      return this.myersDiffingAlgorithm.compute(sequence1, sequence2, timeout);
+      return this.f.compute(sequence1, sequence2, timeout);
     })();
     let lineAlignments = lineAlignmentResult.diffs;
     let hitTimeout = lineAlignmentResult.hitTimeout;
-    lineAlignments = optimizeSequenceDiffs(sequence1, sequence2, lineAlignments);
-    lineAlignments = removeVeryShortMatchingLinesBetweenDiffs(sequence1, sequence2, lineAlignments);
+    lineAlignments = $Qfb(sequence1, sequence2, lineAlignments);
+    lineAlignments = $Tfb(sequence1, sequence2, lineAlignments);
     const alignments = [];
     const scanForWhitespaceChanges = (equalLinesCount) => {
       if (!considerWhitespaceChanges) {
@@ -14690,7 +14690,7 @@ var DefaultLinesDiffComputer = class {
         const seq1Offset = seq1LastStart + i;
         const seq2Offset = seq2LastStart + i;
         if (originalLines[seq1Offset] !== modifiedLines[seq2Offset]) {
-          const characterDiffs = this.refineDiff(originalLines, modifiedLines, new SequenceDiff(new OffsetRange(seq1Offset, seq1Offset + 1), new OffsetRange(seq2Offset, seq2Offset + 1)), timeout, considerWhitespaceChanges, options);
+          const characterDiffs = this.h(originalLines, modifiedLines, new $Efb(new $PD(seq1Offset, seq1Offset + 1), new $PD(seq2Offset, seq2Offset + 1)), timeout, considerWhitespaceChanges, options);
           for (const a of characterDiffs.mappings) {
             alignments.push(a);
           }
@@ -14703,12 +14703,12 @@ var DefaultLinesDiffComputer = class {
     let seq1LastStart = 0;
     let seq2LastStart = 0;
     for (const diff of lineAlignments) {
-      assertFn(() => diff.seq1Range.start - seq1LastStart === diff.seq2Range.start - seq2LastStart);
+      $5c(() => diff.seq1Range.start - seq1LastStart === diff.seq2Range.start - seq2LastStart);
       const equalLinesCount = diff.seq1Range.start - seq1LastStart;
       scanForWhitespaceChanges(equalLinesCount);
       seq1LastStart = diff.seq1Range.endExclusive;
       seq2LastStart = diff.seq2Range.endExclusive;
-      const characterDiffs = this.refineDiff(originalLines, modifiedLines, diff, timeout, considerWhitespaceChanges, options);
+      const characterDiffs = this.h(originalLines, modifiedLines, diff, timeout, considerWhitespaceChanges, options);
       if (characterDiffs.hitTimeout) {
         hitTimeout = true;
       }
@@ -14717,14 +14717,14 @@ var DefaultLinesDiffComputer = class {
       }
     }
     scanForWhitespaceChanges(originalLines.length - seq1LastStart);
-    const original = new ArrayText(originalLines);
-    const modified = new ArrayText(modifiedLines);
-    const changes = lineRangeMappingFromRangeMappings(alignments, original, modified);
+    const original = new $ZD(originalLines);
+    const modified = new $ZD(modifiedLines);
+    const changes = $gE(alignments, original, modified);
     let moves = [];
     if (options.computeMoves) {
-      moves = this.computeMoves(changes, originalLines, modifiedLines, originalLinesHashes, modifiedLinesHashes, timeout, considerWhitespaceChanges, options);
+      moves = this.g(changes, originalLines, modifiedLines, originalLinesHashes, modifiedLinesHashes, timeout, considerWhitespaceChanges, options);
     }
-    assertFn(() => {
+    $5c(() => {
       function validatePosition(pos, lines) {
         if (pos.lineNumber < 1 || pos.lineNumber > lines.length) {
           return false;
@@ -14760,53 +14760,53 @@ var DefaultLinesDiffComputer = class {
       }
       return true;
     });
-    return new LinesDiff(changes, moves, hitTimeout);
+    return new $jE(changes, moves, hitTimeout);
   }
-  computeMoves(changes, originalLines, modifiedLines, hashedOriginalLines, hashedModifiedLines, timeout, considerWhitespaceChanges, options) {
-    const moves = computeMovedLines(changes, originalLines, modifiedLines, hashedOriginalLines, hashedModifiedLines, timeout);
+  g(changes, originalLines, modifiedLines, hashedOriginalLines, hashedModifiedLines, timeout, considerWhitespaceChanges, options) {
+    const moves = $Ofb(changes, originalLines, modifiedLines, hashedOriginalLines, hashedModifiedLines, timeout);
     const movesWithDiffs = moves.map((m) => {
-      const moveChanges = this.refineDiff(originalLines, modifiedLines, new SequenceDiff(m.original.toOffsetRange(), m.modified.toOffsetRange()), timeout, considerWhitespaceChanges, options);
-      const mappings = lineRangeMappingFromRangeMappings(moveChanges.mappings, new ArrayText(originalLines), new ArrayText(modifiedLines), true);
-      return new MovedText(m, mappings);
+      const moveChanges = this.h(originalLines, modifiedLines, new $Efb(m.original.toOffsetRange(), m.modified.toOffsetRange()), timeout, considerWhitespaceChanges, options);
+      const mappings = $gE(moveChanges.mappings, new $ZD(originalLines), new $ZD(modifiedLines), true);
+      return new $kE(m, mappings);
     });
     return movesWithDiffs;
   }
-  refineDiff(originalLines, modifiedLines, diff, timeout, considerWhitespaceChanges, options) {
+  h(originalLines, modifiedLines, diff, timeout, considerWhitespaceChanges, options) {
     const lineRangeMapping = toLineRangeMapping(diff);
     const rangeMapping = lineRangeMapping.toRangeMapping2(originalLines, modifiedLines);
-    const slice1 = new LinesSliceCharSequence(originalLines, rangeMapping.originalRange, considerWhitespaceChanges);
-    const slice2 = new LinesSliceCharSequence(modifiedLines, rangeMapping.modifiedRange, considerWhitespaceChanges);
-    const diffResult = slice1.length + slice2.length < 500 ? this.dynamicProgrammingDiffing.compute(slice1, slice2, timeout) : this.myersDiffingAlgorithm.compute(slice1, slice2, timeout);
+    const slice1 = new $Nfb(originalLines, rangeMapping.originalRange, considerWhitespaceChanges);
+    const slice2 = new $Nfb(modifiedLines, rangeMapping.modifiedRange, considerWhitespaceChanges);
+    const diffResult = slice1.length + slice2.length < 500 ? this.e.compute(slice1, slice2, timeout) : this.f.compute(slice1, slice2, timeout);
     const check = false;
     let diffs = diffResult.diffs;
     if (check) {
-      SequenceDiff.assertSorted(diffs);
+      $Efb.assertSorted(diffs);
     }
-    diffs = optimizeSequenceDiffs(slice1, slice2, diffs);
+    diffs = $Qfb(slice1, slice2, diffs);
     if (check) {
-      SequenceDiff.assertSorted(diffs);
+      $Efb.assertSorted(diffs);
     }
-    diffs = extendDiffsToEntireWordIfAppropriate(slice1, slice2, diffs, (seq, idx) => seq.findWordContaining(idx));
+    diffs = $Sfb(slice1, slice2, diffs, (seq, idx) => seq.findWordContaining(idx));
     if (check) {
-      SequenceDiff.assertSorted(diffs);
+      $Efb.assertSorted(diffs);
     }
     if (options.extendToSubwords) {
-      diffs = extendDiffsToEntireWordIfAppropriate(slice1, slice2, diffs, (seq, idx) => seq.findSubWordContaining(idx), true);
+      diffs = $Sfb(slice1, slice2, diffs, (seq, idx) => seq.findSubWordContaining(idx), true);
       if (check) {
-        SequenceDiff.assertSorted(diffs);
+        $Efb.assertSorted(diffs);
       }
     }
-    diffs = removeShortMatches(slice1, slice2, diffs);
+    diffs = $Rfb(slice1, slice2, diffs);
     if (check) {
-      SequenceDiff.assertSorted(diffs);
+      $Efb.assertSorted(diffs);
     }
-    diffs = removeVeryShortMatchingTextBetweenLongDiffs(slice1, slice2, diffs);
+    diffs = $Ufb(slice1, slice2, diffs);
     if (check) {
-      SequenceDiff.assertSorted(diffs);
+      $Efb.assertSorted(diffs);
     }
-    const result = diffs.map((d) => new RangeMapping(slice1.translateRange(d.seq1Range), slice2.translateRange(d.seq2Range)));
+    const result = diffs.map((d) => new $fE(slice1.translateRange(d.seq1Range), slice2.translateRange(d.seq2Range)));
     if (check) {
-      RangeMapping.assertSorted(result);
+      $fE.assertSorted(result);
     }
     return {
       mappings: result,
@@ -14815,13 +14815,13 @@ var DefaultLinesDiffComputer = class {
   }
 };
 function toLineRangeMapping(sequenceDiff) {
-  return new LineRangeMapping(new LineRange(sequenceDiff.seq1Range.start + 1, sequenceDiff.seq1Range.endExclusive + 1), new LineRange(sequenceDiff.seq2Range.start + 1, sequenceDiff.seq2Range.endExclusive + 1));
+  return new $dE(new $RD(sequenceDiff.seq1Range.start + 1, sequenceDiff.seq1Range.endExclusive + 1), new $RD(sequenceDiff.seq2Range.start + 1, sequenceDiff.seq2Range.endExclusive + 1));
 }
 
 // out-build/vs/editor/common/diff/linesDiffComputers.js
-var linesDiffComputers = {
-  getLegacy: () => new LegacyLinesDiffComputer(),
-  getDefault: () => new DefaultLinesDiffComputer()
+var $Wfb = {
+  getLegacy: () => new $lE(),
+  getDefault: () => new $Vfb()
 };
 
 // out-build/vs/base/common/color.js
@@ -14829,7 +14829,7 @@ function roundFloat(number, decimalPoints) {
   const decimal = Math.pow(10, decimalPoints);
   return Math.round(number * decimal) / decimal;
 }
-var RGBA = class {
+var $Ip = class {
   constructor(r, g, b, a = 1) {
     this._rgbaBrand = void 0;
     this.r = Math.min(255, Math.max(0, r)) | 0;
@@ -14841,7 +14841,7 @@ var RGBA = class {
     return a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
   }
 };
-var HSLA = class _HSLA {
+var $Jp = class _$Jp {
   constructor(h, s, l, a) {
     this._hslaBrand = void 0;
     this.h = Math.max(Math.min(360, h), 0) | 0;
@@ -14885,9 +14885,9 @@ var HSLA = class _HSLA {
       h *= 60;
       h = Math.round(h);
     }
-    return new _HSLA(h, s, l, a);
+    return new _$Jp(h, s, l, a);
   }
-  static _hue2rgb(p, q, t) {
+  static i(p, q, t) {
     if (t < 0) {
       t += 1;
     }
@@ -14920,14 +14920,14 @@ var HSLA = class _HSLA {
     } else {
       const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
       const p = 2 * l - q;
-      r = _HSLA._hue2rgb(p, q, h + 1 / 3);
-      g = _HSLA._hue2rgb(p, q, h);
-      b = _HSLA._hue2rgb(p, q, h - 1 / 3);
+      r = _$Jp.i(p, q, h + 1 / 3);
+      g = _$Jp.i(p, q, h);
+      b = _$Jp.i(p, q, h - 1 / 3);
     }
-    return new RGBA(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255), a);
+    return new $Ip(Math.round(r * 255), Math.round(g * 255), Math.round(b * 255), a);
   }
 };
-var HSVA = class _HSVA {
+var $Kp = class _$Kp {
   constructor(h, s, v, a) {
     this._hsvaBrand = void 0;
     this.h = Math.max(Math.min(360, h), 0) | 0;
@@ -14957,7 +14957,7 @@ var HSVA = class _HSVA {
     } else {
       m = (r - g) / delta + 4;
     }
-    return new _HSVA(Math.round(m * 60), s, cmax, rgba.a);
+    return new _$Kp(Math.round(m * 60), s, cmax, rgba.a);
   }
   // from http://www.rapidtables.com/convert/color/hsv-to-rgb.htm
   static toRGBA(hsva) {
@@ -14988,12 +14988,12 @@ var HSVA = class _HSVA {
     r = Math.round((r + m) * 255);
     g = Math.round((g + m) * 255);
     b = Math.round((b + m) * 255);
-    return new RGBA(r, g, b, a);
+    return new $Ip(r, g, b, a);
   }
 };
-var Color = class _Color {
+var $Lp = class _$Lp {
   static fromHex(hex) {
-    return _Color.Format.CSS.parseHex(hex) || _Color.red;
+    return _$Lp.Format.CSS.parseHex(hex) || _$Lp.red;
   }
   static equals(a, b) {
     if (!a && !b) {
@@ -15005,44 +15005,44 @@ var Color = class _Color {
     return a.equals(b);
   }
   get hsla() {
-    if (this._hsla) {
-      return this._hsla;
+    if (this.i) {
+      return this.i;
     } else {
-      return HSLA.fromRGBA(this.rgba);
+      return $Jp.fromRGBA(this.rgba);
     }
   }
   get hsva() {
-    if (this._hsva) {
-      return this._hsva;
+    if (this.j) {
+      return this.j;
     }
-    return HSVA.fromRGBA(this.rgba);
+    return $Kp.fromRGBA(this.rgba);
   }
   constructor(arg) {
     if (!arg) {
       throw new Error("Color needs a value");
-    } else if (arg instanceof RGBA) {
+    } else if (arg instanceof $Ip) {
       this.rgba = arg;
-    } else if (arg instanceof HSLA) {
-      this._hsla = arg;
-      this.rgba = HSLA.toRGBA(arg);
-    } else if (arg instanceof HSVA) {
-      this._hsva = arg;
-      this.rgba = HSVA.toRGBA(arg);
+    } else if (arg instanceof $Jp) {
+      this.i = arg;
+      this.rgba = $Jp.toRGBA(arg);
+    } else if (arg instanceof $Kp) {
+      this.j = arg;
+      this.rgba = $Kp.toRGBA(arg);
     } else {
       throw new Error("Invalid color ctor argument");
     }
   }
   equals(other) {
-    return !!other && RGBA.equals(this.rgba, other.rgba) && HSLA.equals(this.hsla, other.hsla) && HSVA.equals(this.hsva, other.hsva);
+    return !!other && $Ip.equals(this.rgba, other.rgba) && $Jp.equals(this.hsla, other.hsla) && $Kp.equals(this.hsva, other.hsva);
   }
   /**
    * http://www.w3.org/TR/WCAG20/#relativeluminancedef
    * Returns the number in the set [0, 1]. O => Darkest Black. 1 => Lightest white.
    */
   getRelativeLuminance() {
-    const R = _Color._relativeLuminanceForComponent(this.rgba.r);
-    const G = _Color._relativeLuminanceForComponent(this.rgba.g);
-    const B = _Color._relativeLuminanceForComponent(this.rgba.b);
+    const R = _$Lp.k(this.rgba.r);
+    const G = _$Lp.k(this.rgba.g);
+    const B = _$Lp.k(this.rgba.b);
     const luminance = 0.2126 * R + 0.7152 * G + 0.0722 * B;
     return roundFloat(luminance, 4);
   }
@@ -15059,9 +15059,9 @@ var Color = class _Color {
       fgR -= Math.max(0, Math.ceil(fgR * 0.1));
       fgG -= Math.max(0, Math.ceil(fgG * 0.1));
       fgB -= Math.max(0, Math.ceil(fgB * 0.1));
-      cr = this.getContrastRatio(new _Color(new RGBA(fgR, fgG, fgB)));
+      cr = this.getContrastRatio(new _$Lp(new $Ip(fgR, fgG, fgB)));
     }
-    return new _Color(new RGBA(fgR, fgG, fgB));
+    return new _$Lp(new $Ip(fgR, fgG, fgB));
   }
   /**
    * Increases the "foreground" color on this "background" color unti it is
@@ -15076,11 +15076,11 @@ var Color = class _Color {
       fgR = Math.min(255, fgR + Math.ceil((255 - fgR) * 0.1));
       fgG = Math.min(255, fgG + Math.ceil((255 - fgG) * 0.1));
       fgB = Math.min(255, fgB + Math.ceil((255 - fgB) * 0.1));
-      cr = this.getContrastRatio(new _Color(new RGBA(fgR, fgG, fgB)));
+      cr = this.getContrastRatio(new _$Lp(new $Ip(fgR, fgG, fgB)));
     }
-    return new _Color(new RGBA(fgR, fgG, fgB));
+    return new _$Lp(new $Ip(fgR, fgG, fgB));
   }
-  static _relativeLuminanceForComponent(color) {
+  static k(color) {
     const c = color / 255;
     return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   }
@@ -15159,14 +15159,14 @@ var Color = class _Color {
     return foreground;
   }
   lighten(factor) {
-    return new _Color(new HSLA(this.hsla.h, this.hsla.s, this.hsla.l + this.hsla.l * factor, this.hsla.a));
+    return new _$Lp(new $Jp(this.hsla.h, this.hsla.s, this.hsla.l + this.hsla.l * factor, this.hsla.a));
   }
   darken(factor) {
-    return new _Color(new HSLA(this.hsla.h, this.hsla.s, this.hsla.l - this.hsla.l * factor, this.hsla.a));
+    return new _$Lp(new $Jp(this.hsla.h, this.hsla.s, this.hsla.l - this.hsla.l * factor, this.hsla.a));
   }
   transparent(factor) {
     const { r, g, b, a } = this.rgba;
-    return new _Color(new RGBA(r, g, b, a * factor));
+    return new _$Lp(new $Ip(r, g, b, a * factor));
   }
   isTransparent() {
     return this.rgba.a === 0;
@@ -15175,7 +15175,7 @@ var Color = class _Color {
     return this.rgba.a === 1;
   }
   opposite() {
-    return new _Color(new RGBA(255 - this.rgba.r, 255 - this.rgba.g, 255 - this.rgba.b, this.rgba.a));
+    return new _$Lp(new $Ip(255 - this.rgba.r, 255 - this.rgba.g, 255 - this.rgba.b, this.rgba.a));
   }
   blend(c) {
     const rgba = c.rgba;
@@ -15183,12 +15183,12 @@ var Color = class _Color {
     const colorA = rgba.a;
     const a = thisA + colorA * (1 - thisA);
     if (a < 1e-6) {
-      return _Color.transparent;
+      return _$Lp.transparent;
     }
     const r = this.rgba.r * thisA / a + rgba.r * colorA * (1 - thisA) / a;
     const g = this.rgba.g * thisA / a + rgba.g * colorA * (1 - thisA) / a;
     const b = this.rgba.b * thisA / a + rgba.b * colorA * (1 - thisA) / a;
-    return new _Color(new RGBA(r, g, b, a));
+    return new _$Lp(new $Ip(r, g, b, a));
   }
   /**
    * Mixes the current color with the provided color based on the given factor.
@@ -15197,90 +15197,90 @@ var Color = class _Color {
    * @returns A new color representing the mix
    */
   mix(color, factor = 0.5) {
-    const normalize2 = Math.min(Math.max(factor, 0), 1);
+    const normalize = Math.min(Math.max(factor, 0), 1);
     const thisRGBA = this.rgba;
     const otherRGBA = color.rgba;
-    const r = thisRGBA.r + (otherRGBA.r - thisRGBA.r) * normalize2;
-    const g = thisRGBA.g + (otherRGBA.g - thisRGBA.g) * normalize2;
-    const b = thisRGBA.b + (otherRGBA.b - thisRGBA.b) * normalize2;
-    const a = thisRGBA.a + (otherRGBA.a - thisRGBA.a) * normalize2;
-    return new _Color(new RGBA(r, g, b, a));
+    const r = thisRGBA.r + (otherRGBA.r - thisRGBA.r) * normalize;
+    const g = thisRGBA.g + (otherRGBA.g - thisRGBA.g) * normalize;
+    const b = thisRGBA.b + (otherRGBA.b - thisRGBA.b) * normalize;
+    const a = thisRGBA.a + (otherRGBA.a - thisRGBA.a) * normalize;
+    return new _$Lp(new $Ip(r, g, b, a));
   }
   makeOpaque(opaqueBackground) {
     if (this.isOpaque() || opaqueBackground.rgba.a !== 1) {
       return this;
     }
     const { r, g, b, a } = this.rgba;
-    return new _Color(new RGBA(opaqueBackground.rgba.r - a * (opaqueBackground.rgba.r - r), opaqueBackground.rgba.g - a * (opaqueBackground.rgba.g - g), opaqueBackground.rgba.b - a * (opaqueBackground.rgba.b - b), 1));
+    return new _$Lp(new $Ip(opaqueBackground.rgba.r - a * (opaqueBackground.rgba.r - r), opaqueBackground.rgba.g - a * (opaqueBackground.rgba.g - g), opaqueBackground.rgba.b - a * (opaqueBackground.rgba.b - b), 1));
   }
   flatten(...backgrounds) {
     const background = backgrounds.reduceRight((accumulator, color) => {
-      return _Color._flatten(color, accumulator);
+      return _$Lp.o(color, accumulator);
     });
-    return _Color._flatten(this, background);
+    return _$Lp.o(this, background);
   }
-  static _flatten(foreground, background) {
+  static o(foreground, background) {
     const backgroundAlpha = 1 - foreground.rgba.a;
-    return new _Color(new RGBA(backgroundAlpha * background.rgba.r + foreground.rgba.a * foreground.rgba.r, backgroundAlpha * background.rgba.g + foreground.rgba.a * foreground.rgba.g, backgroundAlpha * background.rgba.b + foreground.rgba.a * foreground.rgba.b));
+    return new _$Lp(new $Ip(backgroundAlpha * background.rgba.r + foreground.rgba.a * foreground.rgba.r, backgroundAlpha * background.rgba.g + foreground.rgba.a * foreground.rgba.g, backgroundAlpha * background.rgba.b + foreground.rgba.a * foreground.rgba.b));
   }
   toString() {
-    if (!this._toString) {
-      this._toString = _Color.Format.CSS.format(this);
+    if (!this.u) {
+      this.u = _$Lp.Format.CSS.format(this);
     }
-    return this._toString;
+    return this.u;
   }
   toNumber32Bit() {
-    if (!this._toNumber32Bit) {
-      this._toNumber32Bit = (this.rgba.r << 24 | this.rgba.g << 16 | this.rgba.b << 8 | this.rgba.a * 255 << 0) >>> 0;
+    if (!this.w) {
+      this.w = (this.rgba.r << 24 | this.rgba.g << 16 | this.rgba.b << 8 | this.rgba.a * 255 << 0) >>> 0;
     }
-    return this._toNumber32Bit;
+    return this.w;
   }
-  static getLighterColor(of, relative2, factor) {
-    if (of.isLighterThan(relative2)) {
+  static getLighterColor(of, relative, factor) {
+    if (of.isLighterThan(relative)) {
       return of;
     }
     factor = factor ? factor : 0.5;
     const lum1 = of.getRelativeLuminance();
-    const lum2 = relative2.getRelativeLuminance();
+    const lum2 = relative.getRelativeLuminance();
     factor = factor * (lum2 - lum1) / lum2;
     return of.lighten(factor);
   }
-  static getDarkerColor(of, relative2, factor) {
-    if (of.isDarkerThan(relative2)) {
+  static getDarkerColor(of, relative, factor) {
+    if (of.isDarkerThan(relative)) {
       return of;
     }
     factor = factor ? factor : 0.5;
     const lum1 = of.getRelativeLuminance();
-    const lum2 = relative2.getRelativeLuminance();
+    const lum2 = relative.getRelativeLuminance();
     factor = factor * (lum1 - lum2) / lum1;
     return of.darken(factor);
   }
   static {
-    this.white = new _Color(new RGBA(255, 255, 255, 1));
+    this.white = new _$Lp(new $Ip(255, 255, 255, 1));
   }
   static {
-    this.black = new _Color(new RGBA(0, 0, 0, 1));
+    this.black = new _$Lp(new $Ip(0, 0, 0, 1));
   }
   static {
-    this.red = new _Color(new RGBA(255, 0, 0, 1));
+    this.red = new _$Lp(new $Ip(255, 0, 0, 1));
   }
   static {
-    this.blue = new _Color(new RGBA(0, 0, 255, 1));
+    this.blue = new _$Lp(new $Ip(0, 0, 255, 1));
   }
   static {
-    this.green = new _Color(new RGBA(0, 255, 0, 1));
+    this.green = new _$Lp(new $Ip(0, 255, 0, 1));
   }
   static {
-    this.cyan = new _Color(new RGBA(0, 255, 255, 1));
+    this.cyan = new _$Lp(new $Ip(0, 255, 255, 1));
   }
   static {
-    this.lightgrey = new _Color(new RGBA(211, 211, 211, 1));
+    this.lightgrey = new _$Lp(new $Ip(211, 211, 211, 1));
   }
   static {
-    this.transparent = new _Color(new RGBA(0, 0, 0, 0));
+    this.transparent = new _$Lp(new $Ip(0, 0, 0, 0));
   }
 };
-(function(Color2) {
+(function($Lp2) {
   let Format;
   (function(Format2) {
     let CSS;
@@ -15289,7 +15289,7 @@ var Color = class _Color {
         if (color.rgba.a === 1) {
           return `rgb(${color.rgba.r}, ${color.rgba.g}, ${color.rgba.b})`;
         }
-        return Color2.Format.CSS.formatRGBA(color);
+        return $Lp2.Format.CSS.formatRGBA(color);
       }
       CSS2.formatRGB = formatRGB;
       function formatRGBA(color) {
@@ -15300,7 +15300,7 @@ var Color = class _Color {
         if (color.hsla.a === 1) {
           return `hsl(${color.hsla.h}, ${Math.round(color.hsla.s * 100)}%, ${Math.round(color.hsla.l * 100)}%)`;
         }
-        return Color2.Format.CSS.formatHSLA(color);
+        return $Lp2.Format.CSS.formatHSLA(color);
       }
       CSS2.formatHSL = formatHSL;
       function formatHSLA(color) {
@@ -15317,21 +15317,21 @@ var Color = class _Color {
       CSS2.formatHex = formatHex;
       function formatHexA(color, compact = false) {
         if (compact && color.rgba.a === 1) {
-          return Color2.Format.CSS.formatHex(color);
+          return $Lp2.Format.CSS.formatHex(color);
         }
         return `#${_toTwoDigitHex(color.rgba.r)}${_toTwoDigitHex(color.rgba.g)}${_toTwoDigitHex(color.rgba.b)}${_toTwoDigitHex(Math.round(color.rgba.a * 255))}`;
       }
       CSS2.formatHexA = formatHexA;
-      function format2(color) {
+      function format(color) {
         if (color.isOpaque()) {
-          return Color2.Format.CSS.formatHex(color);
+          return $Lp2.Format.CSS.formatHex(color);
         }
-        return Color2.Format.CSS.formatRGBA(color);
+        return $Lp2.Format.CSS.formatRGBA(color);
       }
-      CSS2.format = format2;
-      function parse2(css) {
+      CSS2.format = format;
+      function parse(css) {
         if (css === "transparent") {
-          return Color2.transparent;
+          return $Lp2.transparent;
         }
         if (css.startsWith("#")) {
           return parseHex(css);
@@ -15345,7 +15345,7 @@ var Color = class _Color {
           const g = parseInt(color.groups?.g ?? "0");
           const b = parseInt(color.groups?.b ?? "0");
           const a = parseFloat(color.groups?.a ?? "0");
-          return new Color2(new RGBA(r, g, b, a));
+          return new $Lp2(new $Ip(r, g, b, a));
         }
         if (css.startsWith("rgb(")) {
           const color = css.match(/rgb\((?<r>(?:\+|-)?\d+), *(?<g>(?:\+|-)?\d+), *(?<b>(?:\+|-)?\d+)\)/);
@@ -15355,309 +15355,309 @@ var Color = class _Color {
           const r = parseInt(color.groups?.r ?? "0");
           const g = parseInt(color.groups?.g ?? "0");
           const b = parseInt(color.groups?.b ?? "0");
-          return new Color2(new RGBA(r, g, b));
+          return new $Lp2(new $Ip(r, g, b));
         }
         return parseNamedKeyword(css);
       }
-      CSS2.parse = parse2;
+      CSS2.parse = parse;
       function parseNamedKeyword(css) {
         switch (css) {
           case "aliceblue":
-            return new Color2(new RGBA(240, 248, 255, 1));
+            return new $Lp2(new $Ip(240, 248, 255, 1));
           case "antiquewhite":
-            return new Color2(new RGBA(250, 235, 215, 1));
+            return new $Lp2(new $Ip(250, 235, 215, 1));
           case "aqua":
-            return new Color2(new RGBA(0, 255, 255, 1));
+            return new $Lp2(new $Ip(0, 255, 255, 1));
           case "aquamarine":
-            return new Color2(new RGBA(127, 255, 212, 1));
+            return new $Lp2(new $Ip(127, 255, 212, 1));
           case "azure":
-            return new Color2(new RGBA(240, 255, 255, 1));
+            return new $Lp2(new $Ip(240, 255, 255, 1));
           case "beige":
-            return new Color2(new RGBA(245, 245, 220, 1));
+            return new $Lp2(new $Ip(245, 245, 220, 1));
           case "bisque":
-            return new Color2(new RGBA(255, 228, 196, 1));
+            return new $Lp2(new $Ip(255, 228, 196, 1));
           case "black":
-            return new Color2(new RGBA(0, 0, 0, 1));
+            return new $Lp2(new $Ip(0, 0, 0, 1));
           case "blanchedalmond":
-            return new Color2(new RGBA(255, 235, 205, 1));
+            return new $Lp2(new $Ip(255, 235, 205, 1));
           case "blue":
-            return new Color2(new RGBA(0, 0, 255, 1));
+            return new $Lp2(new $Ip(0, 0, 255, 1));
           case "blueviolet":
-            return new Color2(new RGBA(138, 43, 226, 1));
+            return new $Lp2(new $Ip(138, 43, 226, 1));
           case "brown":
-            return new Color2(new RGBA(165, 42, 42, 1));
+            return new $Lp2(new $Ip(165, 42, 42, 1));
           case "burlywood":
-            return new Color2(new RGBA(222, 184, 135, 1));
+            return new $Lp2(new $Ip(222, 184, 135, 1));
           case "cadetblue":
-            return new Color2(new RGBA(95, 158, 160, 1));
+            return new $Lp2(new $Ip(95, 158, 160, 1));
           case "chartreuse":
-            return new Color2(new RGBA(127, 255, 0, 1));
+            return new $Lp2(new $Ip(127, 255, 0, 1));
           case "chocolate":
-            return new Color2(new RGBA(210, 105, 30, 1));
+            return new $Lp2(new $Ip(210, 105, 30, 1));
           case "coral":
-            return new Color2(new RGBA(255, 127, 80, 1));
+            return new $Lp2(new $Ip(255, 127, 80, 1));
           case "cornflowerblue":
-            return new Color2(new RGBA(100, 149, 237, 1));
+            return new $Lp2(new $Ip(100, 149, 237, 1));
           case "cornsilk":
-            return new Color2(new RGBA(255, 248, 220, 1));
+            return new $Lp2(new $Ip(255, 248, 220, 1));
           case "crimson":
-            return new Color2(new RGBA(220, 20, 60, 1));
+            return new $Lp2(new $Ip(220, 20, 60, 1));
           case "cyan":
-            return new Color2(new RGBA(0, 255, 255, 1));
+            return new $Lp2(new $Ip(0, 255, 255, 1));
           case "darkblue":
-            return new Color2(new RGBA(0, 0, 139, 1));
+            return new $Lp2(new $Ip(0, 0, 139, 1));
           case "darkcyan":
-            return new Color2(new RGBA(0, 139, 139, 1));
+            return new $Lp2(new $Ip(0, 139, 139, 1));
           case "darkgoldenrod":
-            return new Color2(new RGBA(184, 134, 11, 1));
+            return new $Lp2(new $Ip(184, 134, 11, 1));
           case "darkgray":
-            return new Color2(new RGBA(169, 169, 169, 1));
+            return new $Lp2(new $Ip(169, 169, 169, 1));
           case "darkgreen":
-            return new Color2(new RGBA(0, 100, 0, 1));
+            return new $Lp2(new $Ip(0, 100, 0, 1));
           case "darkgrey":
-            return new Color2(new RGBA(169, 169, 169, 1));
+            return new $Lp2(new $Ip(169, 169, 169, 1));
           case "darkkhaki":
-            return new Color2(new RGBA(189, 183, 107, 1));
+            return new $Lp2(new $Ip(189, 183, 107, 1));
           case "darkmagenta":
-            return new Color2(new RGBA(139, 0, 139, 1));
+            return new $Lp2(new $Ip(139, 0, 139, 1));
           case "darkolivegreen":
-            return new Color2(new RGBA(85, 107, 47, 1));
+            return new $Lp2(new $Ip(85, 107, 47, 1));
           case "darkorange":
-            return new Color2(new RGBA(255, 140, 0, 1));
+            return new $Lp2(new $Ip(255, 140, 0, 1));
           case "darkorchid":
-            return new Color2(new RGBA(153, 50, 204, 1));
+            return new $Lp2(new $Ip(153, 50, 204, 1));
           case "darkred":
-            return new Color2(new RGBA(139, 0, 0, 1));
+            return new $Lp2(new $Ip(139, 0, 0, 1));
           case "darksalmon":
-            return new Color2(new RGBA(233, 150, 122, 1));
+            return new $Lp2(new $Ip(233, 150, 122, 1));
           case "darkseagreen":
-            return new Color2(new RGBA(143, 188, 143, 1));
+            return new $Lp2(new $Ip(143, 188, 143, 1));
           case "darkslateblue":
-            return new Color2(new RGBA(72, 61, 139, 1));
+            return new $Lp2(new $Ip(72, 61, 139, 1));
           case "darkslategray":
-            return new Color2(new RGBA(47, 79, 79, 1));
+            return new $Lp2(new $Ip(47, 79, 79, 1));
           case "darkslategrey":
-            return new Color2(new RGBA(47, 79, 79, 1));
+            return new $Lp2(new $Ip(47, 79, 79, 1));
           case "darkturquoise":
-            return new Color2(new RGBA(0, 206, 209, 1));
+            return new $Lp2(new $Ip(0, 206, 209, 1));
           case "darkviolet":
-            return new Color2(new RGBA(148, 0, 211, 1));
+            return new $Lp2(new $Ip(148, 0, 211, 1));
           case "deeppink":
-            return new Color2(new RGBA(255, 20, 147, 1));
+            return new $Lp2(new $Ip(255, 20, 147, 1));
           case "deepskyblue":
-            return new Color2(new RGBA(0, 191, 255, 1));
+            return new $Lp2(new $Ip(0, 191, 255, 1));
           case "dimgray":
-            return new Color2(new RGBA(105, 105, 105, 1));
+            return new $Lp2(new $Ip(105, 105, 105, 1));
           case "dimgrey":
-            return new Color2(new RGBA(105, 105, 105, 1));
+            return new $Lp2(new $Ip(105, 105, 105, 1));
           case "dodgerblue":
-            return new Color2(new RGBA(30, 144, 255, 1));
+            return new $Lp2(new $Ip(30, 144, 255, 1));
           case "firebrick":
-            return new Color2(new RGBA(178, 34, 34, 1));
+            return new $Lp2(new $Ip(178, 34, 34, 1));
           case "floralwhite":
-            return new Color2(new RGBA(255, 250, 240, 1));
+            return new $Lp2(new $Ip(255, 250, 240, 1));
           case "forestgreen":
-            return new Color2(new RGBA(34, 139, 34, 1));
+            return new $Lp2(new $Ip(34, 139, 34, 1));
           case "fuchsia":
-            return new Color2(new RGBA(255, 0, 255, 1));
+            return new $Lp2(new $Ip(255, 0, 255, 1));
           case "gainsboro":
-            return new Color2(new RGBA(220, 220, 220, 1));
+            return new $Lp2(new $Ip(220, 220, 220, 1));
           case "ghostwhite":
-            return new Color2(new RGBA(248, 248, 255, 1));
+            return new $Lp2(new $Ip(248, 248, 255, 1));
           case "gold":
-            return new Color2(new RGBA(255, 215, 0, 1));
+            return new $Lp2(new $Ip(255, 215, 0, 1));
           case "goldenrod":
-            return new Color2(new RGBA(218, 165, 32, 1));
+            return new $Lp2(new $Ip(218, 165, 32, 1));
           case "gray":
-            return new Color2(new RGBA(128, 128, 128, 1));
+            return new $Lp2(new $Ip(128, 128, 128, 1));
           case "green":
-            return new Color2(new RGBA(0, 128, 0, 1));
+            return new $Lp2(new $Ip(0, 128, 0, 1));
           case "greenyellow":
-            return new Color2(new RGBA(173, 255, 47, 1));
+            return new $Lp2(new $Ip(173, 255, 47, 1));
           case "grey":
-            return new Color2(new RGBA(128, 128, 128, 1));
+            return new $Lp2(new $Ip(128, 128, 128, 1));
           case "honeydew":
-            return new Color2(new RGBA(240, 255, 240, 1));
+            return new $Lp2(new $Ip(240, 255, 240, 1));
           case "hotpink":
-            return new Color2(new RGBA(255, 105, 180, 1));
+            return new $Lp2(new $Ip(255, 105, 180, 1));
           case "indianred":
-            return new Color2(new RGBA(205, 92, 92, 1));
+            return new $Lp2(new $Ip(205, 92, 92, 1));
           case "indigo":
-            return new Color2(new RGBA(75, 0, 130, 1));
+            return new $Lp2(new $Ip(75, 0, 130, 1));
           case "ivory":
-            return new Color2(new RGBA(255, 255, 240, 1));
+            return new $Lp2(new $Ip(255, 255, 240, 1));
           case "khaki":
-            return new Color2(new RGBA(240, 230, 140, 1));
+            return new $Lp2(new $Ip(240, 230, 140, 1));
           case "lavender":
-            return new Color2(new RGBA(230, 230, 250, 1));
+            return new $Lp2(new $Ip(230, 230, 250, 1));
           case "lavenderblush":
-            return new Color2(new RGBA(255, 240, 245, 1));
+            return new $Lp2(new $Ip(255, 240, 245, 1));
           case "lawngreen":
-            return new Color2(new RGBA(124, 252, 0, 1));
+            return new $Lp2(new $Ip(124, 252, 0, 1));
           case "lemonchiffon":
-            return new Color2(new RGBA(255, 250, 205, 1));
+            return new $Lp2(new $Ip(255, 250, 205, 1));
           case "lightblue":
-            return new Color2(new RGBA(173, 216, 230, 1));
+            return new $Lp2(new $Ip(173, 216, 230, 1));
           case "lightcoral":
-            return new Color2(new RGBA(240, 128, 128, 1));
+            return new $Lp2(new $Ip(240, 128, 128, 1));
           case "lightcyan":
-            return new Color2(new RGBA(224, 255, 255, 1));
+            return new $Lp2(new $Ip(224, 255, 255, 1));
           case "lightgoldenrodyellow":
-            return new Color2(new RGBA(250, 250, 210, 1));
+            return new $Lp2(new $Ip(250, 250, 210, 1));
           case "lightgray":
-            return new Color2(new RGBA(211, 211, 211, 1));
+            return new $Lp2(new $Ip(211, 211, 211, 1));
           case "lightgreen":
-            return new Color2(new RGBA(144, 238, 144, 1));
+            return new $Lp2(new $Ip(144, 238, 144, 1));
           case "lightgrey":
-            return new Color2(new RGBA(211, 211, 211, 1));
+            return new $Lp2(new $Ip(211, 211, 211, 1));
           case "lightpink":
-            return new Color2(new RGBA(255, 182, 193, 1));
+            return new $Lp2(new $Ip(255, 182, 193, 1));
           case "lightsalmon":
-            return new Color2(new RGBA(255, 160, 122, 1));
+            return new $Lp2(new $Ip(255, 160, 122, 1));
           case "lightseagreen":
-            return new Color2(new RGBA(32, 178, 170, 1));
+            return new $Lp2(new $Ip(32, 178, 170, 1));
           case "lightskyblue":
-            return new Color2(new RGBA(135, 206, 250, 1));
+            return new $Lp2(new $Ip(135, 206, 250, 1));
           case "lightslategray":
-            return new Color2(new RGBA(119, 136, 153, 1));
+            return new $Lp2(new $Ip(119, 136, 153, 1));
           case "lightslategrey":
-            return new Color2(new RGBA(119, 136, 153, 1));
+            return new $Lp2(new $Ip(119, 136, 153, 1));
           case "lightsteelblue":
-            return new Color2(new RGBA(176, 196, 222, 1));
+            return new $Lp2(new $Ip(176, 196, 222, 1));
           case "lightyellow":
-            return new Color2(new RGBA(255, 255, 224, 1));
+            return new $Lp2(new $Ip(255, 255, 224, 1));
           case "lime":
-            return new Color2(new RGBA(0, 255, 0, 1));
+            return new $Lp2(new $Ip(0, 255, 0, 1));
           case "limegreen":
-            return new Color2(new RGBA(50, 205, 50, 1));
+            return new $Lp2(new $Ip(50, 205, 50, 1));
           case "linen":
-            return new Color2(new RGBA(250, 240, 230, 1));
+            return new $Lp2(new $Ip(250, 240, 230, 1));
           case "magenta":
-            return new Color2(new RGBA(255, 0, 255, 1));
+            return new $Lp2(new $Ip(255, 0, 255, 1));
           case "maroon":
-            return new Color2(new RGBA(128, 0, 0, 1));
+            return new $Lp2(new $Ip(128, 0, 0, 1));
           case "mediumaquamarine":
-            return new Color2(new RGBA(102, 205, 170, 1));
+            return new $Lp2(new $Ip(102, 205, 170, 1));
           case "mediumblue":
-            return new Color2(new RGBA(0, 0, 205, 1));
+            return new $Lp2(new $Ip(0, 0, 205, 1));
           case "mediumorchid":
-            return new Color2(new RGBA(186, 85, 211, 1));
+            return new $Lp2(new $Ip(186, 85, 211, 1));
           case "mediumpurple":
-            return new Color2(new RGBA(147, 112, 219, 1));
+            return new $Lp2(new $Ip(147, 112, 219, 1));
           case "mediumseagreen":
-            return new Color2(new RGBA(60, 179, 113, 1));
+            return new $Lp2(new $Ip(60, 179, 113, 1));
           case "mediumslateblue":
-            return new Color2(new RGBA(123, 104, 238, 1));
+            return new $Lp2(new $Ip(123, 104, 238, 1));
           case "mediumspringgreen":
-            return new Color2(new RGBA(0, 250, 154, 1));
+            return new $Lp2(new $Ip(0, 250, 154, 1));
           case "mediumturquoise":
-            return new Color2(new RGBA(72, 209, 204, 1));
+            return new $Lp2(new $Ip(72, 209, 204, 1));
           case "mediumvioletred":
-            return new Color2(new RGBA(199, 21, 133, 1));
+            return new $Lp2(new $Ip(199, 21, 133, 1));
           case "midnightblue":
-            return new Color2(new RGBA(25, 25, 112, 1));
+            return new $Lp2(new $Ip(25, 25, 112, 1));
           case "mintcream":
-            return new Color2(new RGBA(245, 255, 250, 1));
+            return new $Lp2(new $Ip(245, 255, 250, 1));
           case "mistyrose":
-            return new Color2(new RGBA(255, 228, 225, 1));
+            return new $Lp2(new $Ip(255, 228, 225, 1));
           case "moccasin":
-            return new Color2(new RGBA(255, 228, 181, 1));
+            return new $Lp2(new $Ip(255, 228, 181, 1));
           case "navajowhite":
-            return new Color2(new RGBA(255, 222, 173, 1));
+            return new $Lp2(new $Ip(255, 222, 173, 1));
           case "navy":
-            return new Color2(new RGBA(0, 0, 128, 1));
+            return new $Lp2(new $Ip(0, 0, 128, 1));
           case "oldlace":
-            return new Color2(new RGBA(253, 245, 230, 1));
+            return new $Lp2(new $Ip(253, 245, 230, 1));
           case "olive":
-            return new Color2(new RGBA(128, 128, 0, 1));
+            return new $Lp2(new $Ip(128, 128, 0, 1));
           case "olivedrab":
-            return new Color2(new RGBA(107, 142, 35, 1));
+            return new $Lp2(new $Ip(107, 142, 35, 1));
           case "orange":
-            return new Color2(new RGBA(255, 165, 0, 1));
+            return new $Lp2(new $Ip(255, 165, 0, 1));
           case "orangered":
-            return new Color2(new RGBA(255, 69, 0, 1));
+            return new $Lp2(new $Ip(255, 69, 0, 1));
           case "orchid":
-            return new Color2(new RGBA(218, 112, 214, 1));
+            return new $Lp2(new $Ip(218, 112, 214, 1));
           case "palegoldenrod":
-            return new Color2(new RGBA(238, 232, 170, 1));
+            return new $Lp2(new $Ip(238, 232, 170, 1));
           case "palegreen":
-            return new Color2(new RGBA(152, 251, 152, 1));
+            return new $Lp2(new $Ip(152, 251, 152, 1));
           case "paleturquoise":
-            return new Color2(new RGBA(175, 238, 238, 1));
+            return new $Lp2(new $Ip(175, 238, 238, 1));
           case "palevioletred":
-            return new Color2(new RGBA(219, 112, 147, 1));
+            return new $Lp2(new $Ip(219, 112, 147, 1));
           case "papayawhip":
-            return new Color2(new RGBA(255, 239, 213, 1));
+            return new $Lp2(new $Ip(255, 239, 213, 1));
           case "peachpuff":
-            return new Color2(new RGBA(255, 218, 185, 1));
+            return new $Lp2(new $Ip(255, 218, 185, 1));
           case "peru":
-            return new Color2(new RGBA(205, 133, 63, 1));
+            return new $Lp2(new $Ip(205, 133, 63, 1));
           case "pink":
-            return new Color2(new RGBA(255, 192, 203, 1));
+            return new $Lp2(new $Ip(255, 192, 203, 1));
           case "plum":
-            return new Color2(new RGBA(221, 160, 221, 1));
+            return new $Lp2(new $Ip(221, 160, 221, 1));
           case "powderblue":
-            return new Color2(new RGBA(176, 224, 230, 1));
+            return new $Lp2(new $Ip(176, 224, 230, 1));
           case "purple":
-            return new Color2(new RGBA(128, 0, 128, 1));
+            return new $Lp2(new $Ip(128, 0, 128, 1));
           case "rebeccapurple":
-            return new Color2(new RGBA(102, 51, 153, 1));
+            return new $Lp2(new $Ip(102, 51, 153, 1));
           case "red":
-            return new Color2(new RGBA(255, 0, 0, 1));
+            return new $Lp2(new $Ip(255, 0, 0, 1));
           case "rosybrown":
-            return new Color2(new RGBA(188, 143, 143, 1));
+            return new $Lp2(new $Ip(188, 143, 143, 1));
           case "royalblue":
-            return new Color2(new RGBA(65, 105, 225, 1));
+            return new $Lp2(new $Ip(65, 105, 225, 1));
           case "saddlebrown":
-            return new Color2(new RGBA(139, 69, 19, 1));
+            return new $Lp2(new $Ip(139, 69, 19, 1));
           case "salmon":
-            return new Color2(new RGBA(250, 128, 114, 1));
+            return new $Lp2(new $Ip(250, 128, 114, 1));
           case "sandybrown":
-            return new Color2(new RGBA(244, 164, 96, 1));
+            return new $Lp2(new $Ip(244, 164, 96, 1));
           case "seagreen":
-            return new Color2(new RGBA(46, 139, 87, 1));
+            return new $Lp2(new $Ip(46, 139, 87, 1));
           case "seashell":
-            return new Color2(new RGBA(255, 245, 238, 1));
+            return new $Lp2(new $Ip(255, 245, 238, 1));
           case "sienna":
-            return new Color2(new RGBA(160, 82, 45, 1));
+            return new $Lp2(new $Ip(160, 82, 45, 1));
           case "silver":
-            return new Color2(new RGBA(192, 192, 192, 1));
+            return new $Lp2(new $Ip(192, 192, 192, 1));
           case "skyblue":
-            return new Color2(new RGBA(135, 206, 235, 1));
+            return new $Lp2(new $Ip(135, 206, 235, 1));
           case "slateblue":
-            return new Color2(new RGBA(106, 90, 205, 1));
+            return new $Lp2(new $Ip(106, 90, 205, 1));
           case "slategray":
-            return new Color2(new RGBA(112, 128, 144, 1));
+            return new $Lp2(new $Ip(112, 128, 144, 1));
           case "slategrey":
-            return new Color2(new RGBA(112, 128, 144, 1));
+            return new $Lp2(new $Ip(112, 128, 144, 1));
           case "snow":
-            return new Color2(new RGBA(255, 250, 250, 1));
+            return new $Lp2(new $Ip(255, 250, 250, 1));
           case "springgreen":
-            return new Color2(new RGBA(0, 255, 127, 1));
+            return new $Lp2(new $Ip(0, 255, 127, 1));
           case "steelblue":
-            return new Color2(new RGBA(70, 130, 180, 1));
+            return new $Lp2(new $Ip(70, 130, 180, 1));
           case "tan":
-            return new Color2(new RGBA(210, 180, 140, 1));
+            return new $Lp2(new $Ip(210, 180, 140, 1));
           case "teal":
-            return new Color2(new RGBA(0, 128, 128, 1));
+            return new $Lp2(new $Ip(0, 128, 128, 1));
           case "thistle":
-            return new Color2(new RGBA(216, 191, 216, 1));
+            return new $Lp2(new $Ip(216, 191, 216, 1));
           case "tomato":
-            return new Color2(new RGBA(255, 99, 71, 1));
+            return new $Lp2(new $Ip(255, 99, 71, 1));
           case "turquoise":
-            return new Color2(new RGBA(64, 224, 208, 1));
+            return new $Lp2(new $Ip(64, 224, 208, 1));
           case "violet":
-            return new Color2(new RGBA(238, 130, 238, 1));
+            return new $Lp2(new $Ip(238, 130, 238, 1));
           case "wheat":
-            return new Color2(new RGBA(245, 222, 179, 1));
+            return new $Lp2(new $Ip(245, 222, 179, 1));
           case "white":
-            return new Color2(new RGBA(255, 255, 255, 1));
+            return new $Lp2(new $Ip(255, 255, 255, 1));
           case "whitesmoke":
-            return new Color2(new RGBA(245, 245, 245, 1));
+            return new $Lp2(new $Ip(245, 245, 245, 1));
           case "yellow":
-            return new Color2(new RGBA(255, 255, 0, 1));
+            return new $Lp2(new $Ip(255, 255, 0, 1));
           case "yellowgreen":
-            return new Color2(new RGBA(154, 205, 50, 1));
+            return new $Lp2(new $Ip(154, 205, 50, 1));
           default:
             return null;
         }
@@ -15674,27 +15674,27 @@ var Color = class _Color {
           const r = 16 * _parseHexDigit(hex.charCodeAt(1)) + _parseHexDigit(hex.charCodeAt(2));
           const g = 16 * _parseHexDigit(hex.charCodeAt(3)) + _parseHexDigit(hex.charCodeAt(4));
           const b = 16 * _parseHexDigit(hex.charCodeAt(5)) + _parseHexDigit(hex.charCodeAt(6));
-          return new Color2(new RGBA(r, g, b, 1));
+          return new $Lp2(new $Ip(r, g, b, 1));
         }
         if (length === 9) {
           const r = 16 * _parseHexDigit(hex.charCodeAt(1)) + _parseHexDigit(hex.charCodeAt(2));
           const g = 16 * _parseHexDigit(hex.charCodeAt(3)) + _parseHexDigit(hex.charCodeAt(4));
           const b = 16 * _parseHexDigit(hex.charCodeAt(5)) + _parseHexDigit(hex.charCodeAt(6));
           const a = 16 * _parseHexDigit(hex.charCodeAt(7)) + _parseHexDigit(hex.charCodeAt(8));
-          return new Color2(new RGBA(r, g, b, a / 255));
+          return new $Lp2(new $Ip(r, g, b, a / 255));
         }
         if (length === 4) {
           const r = _parseHexDigit(hex.charCodeAt(1));
           const g = _parseHexDigit(hex.charCodeAt(2));
           const b = _parseHexDigit(hex.charCodeAt(3));
-          return new Color2(new RGBA(16 * r + r, 16 * g + g, 16 * b + b));
+          return new $Lp2(new $Ip(16 * r + r, 16 * g + g, 16 * b + b));
         }
         if (length === 5) {
           const r = _parseHexDigit(hex.charCodeAt(1));
           const g = _parseHexDigit(hex.charCodeAt(2));
           const b = _parseHexDigit(hex.charCodeAt(3));
           const a = _parseHexDigit(hex.charCodeAt(4));
-          return new Color2(new RGBA(16 * r + r, 16 * g + g, 16 * b + b, (16 * a + a) / 255));
+          return new $Lp2(new $Ip(16 * r + r, 16 * g + g, 16 * b + b, (16 * a + a) / 255));
         }
         return null;
       }
@@ -15749,8 +15749,8 @@ var Color = class _Color {
         return 0;
       }
     })(CSS = Format2.CSS || (Format2.CSS = {}));
-  })(Format = Color2.Format || (Color2.Format = {}));
-})(Color || (Color = {}));
+  })(Format = $Lp2.Format || ($Lp2.Format = {}));
+})($Lp || ($Lp = {}));
 
 // out-build/vs/editor/common/languages/defaultDocumentColorsComputer.js
 function _parseCaptureGroups(captureGroups) {
@@ -15790,7 +15790,7 @@ function _findHexColorInformation(range, hexValue) {
   if (!range) {
     return;
   }
-  const parsedHexColor = Color.Format.CSS.parseHex(hexValue);
+  const parsedHexColor = $Lp.Format.CSS.parseHex(hexValue);
   if (!parsedHexColor) {
     return;
   }
@@ -15818,7 +15818,7 @@ function _findHSLColorInformation(range, matches, isAlpha) {
   const match = matches[0];
   const captureGroups = match.values();
   const parsedRegex = _parseCaptureGroups(captureGroups);
-  const colorEquivalent = new Color(new HSLA(parsedRegex[0], parsedRegex[1] / 100, parsedRegex[2] / 100, isAlpha ? parsedRegex[3] : 1));
+  const colorEquivalent = new $Lp(new $Jp(parsedRegex[0], parsedRegex[1] / 100, parsedRegex[2] / 100, isAlpha ? parsedRegex[3] : 1));
   return {
     range,
     color: _toIColor(colorEquivalent.rgba.r, colorEquivalent.rgba.g, colorEquivalent.rgba.b, colorEquivalent.rgba.a)
@@ -15866,7 +15866,7 @@ function computeColors(model) {
   }
   return result;
 }
-function computeDefaultDocumentColors(model) {
+function $Xfb(model) {
   if (!model || typeof model.getValue !== "function" || typeof model.positionAt !== "function") {
     return [];
   }
@@ -15877,14 +15877,14 @@ function computeDefaultDocumentColors(model) {
 var trimDashesRegex = /^-+|-+$/g;
 var CHUNK_SIZE = 100;
 var MAX_SECTION_LINES = 5;
-function findSectionHeaders(model, options) {
+function $Yfb(model, options) {
   let headers = [];
   if (options.findRegionSectionHeaders && options.foldingRules?.markers) {
     const regionHeaders = collectRegionHeaders(model, options);
     headers = headers.concat(regionHeaders);
   }
   if (options.findMarkSectionHeaders) {
-    const markHeaders = collectMarkHeaders(model, options);
+    const markHeaders = $Zfb(model, options);
     headers = headers.concat(markHeaders);
   }
   return headers;
@@ -15911,15 +15911,15 @@ function collectRegionHeaders(model, options) {
   }
   return regionHeaders;
 }
-function collectMarkHeaders(model, options) {
+function $Zfb(model, options) {
   const markHeaders = [];
   const endLineNumber = model.getLineCount();
   if (!options.markSectionHeaderRegex || options.markSectionHeaderRegex.trim() === "") {
     return markHeaders;
   }
-  const multiline = isMultilineRegexSource(options.markSectionHeaderRegex);
+  const multiline = $pJ(options.markSectionHeaderRegex);
   const regex = new RegExp(options.markSectionHeaderRegex, `gdm${multiline ? "s" : ""}`);
-  if (regExpLeadsToEndlessLoop(regex)) {
+  if ($2f(regex)) {
     return markHeaders;
   }
   for (let startLine = 1; startLine <= endLineNumber; startLine += CHUNK_SIZE - MAX_SECTION_LINES) {
@@ -15974,41 +15974,41 @@ function getHeaderText(text) {
 }
 
 // out-build/vs/base/common/extpath.js
-function isPathSeparator2(code) {
+function $Vg(code) {
   return code === 47 || code === 92;
 }
-function toSlashes(osPath) {
-  return osPath.replace(/[\\/]/g, posix.sep);
+function $Wg(osPath) {
+  return osPath.replace(/[\\/]/g, $7.sep);
 }
-function toPosixPath(osPath) {
+function $Xg(osPath) {
   if (osPath.indexOf("/") === -1) {
-    osPath = toSlashes(osPath);
+    osPath = $Wg(osPath);
   }
   if (/^[a-zA-Z]:(\/|$)/.test(osPath)) {
     osPath = "/" + osPath;
   }
   return osPath;
 }
-function getRoot(path, sep2 = posix.sep) {
+function $Yg(path, sep2 = $7.sep) {
   if (!path) {
     return "";
   }
   const len = path.length;
   const firstLetter = path.charCodeAt(0);
-  if (isPathSeparator2(firstLetter)) {
-    if (isPathSeparator2(path.charCodeAt(1))) {
-      if (!isPathSeparator2(path.charCodeAt(2))) {
+  if ($Vg(firstLetter)) {
+    if ($Vg(path.charCodeAt(1))) {
+      if (!$Vg(path.charCodeAt(2))) {
         let pos2 = 3;
         const start = pos2;
         for (; pos2 < len; pos2++) {
-          if (isPathSeparator2(path.charCodeAt(pos2))) {
+          if ($Vg(path.charCodeAt(pos2))) {
             break;
           }
         }
-        if (start !== pos2 && !isPathSeparator2(path.charCodeAt(pos2 + 1))) {
+        if (start !== pos2 && !$Vg(path.charCodeAt(pos2 + 1))) {
           pos2 += 1;
           for (; pos2 < len; pos2++) {
-            if (isPathSeparator2(path.charCodeAt(pos2))) {
+            if ($Vg(path.charCodeAt(pos2))) {
               return path.slice(0, pos2 + 1).replace(/[\\/]/g, sep2);
             }
           }
@@ -16016,9 +16016,9 @@ function getRoot(path, sep2 = posix.sep) {
       }
     }
     return sep2;
-  } else if (isWindowsDriveLetter(firstLetter)) {
+  } else if ($4g(firstLetter)) {
     if (path.charCodeAt(1) === 58) {
-      if (isPathSeparator2(path.charCodeAt(2))) {
+      if ($Vg(path.charCodeAt(2))) {
         return path.slice(0, 2) + sep2;
       } else {
         return path.slice(0, 2);
@@ -16029,14 +16029,14 @@ function getRoot(path, sep2 = posix.sep) {
   if (pos !== -1) {
     pos += 3;
     for (; pos < len; pos++) {
-      if (isPathSeparator2(path.charCodeAt(pos))) {
+      if ($Vg(path.charCodeAt(pos))) {
         return path.slice(0, pos + 1);
       }
     }
   }
   return "";
 }
-function isEqualOrParent(base, parentCandidate, ignoreCase, separator = sep) {
+function $3g(base, parentCandidate, ignoreCase, separator = sep) {
   if (base === parentCandidate) {
     return true;
   }
@@ -16047,7 +16047,7 @@ function isEqualOrParent(base, parentCandidate, ignoreCase, separator = sep) {
     return false;
   }
   if (ignoreCase) {
-    const beginsWith = startsWithIgnoreCase(base, parentCandidate);
+    const beginsWith = $ig(base, parentCandidate);
     if (!beginsWith) {
       return false;
     }
@@ -16065,7 +16065,7 @@ function isEqualOrParent(base, parentCandidate, ignoreCase, separator = sep) {
   }
   return base.indexOf(parentCandidate) === 0;
 }
-function isWindowsDriveLetter(char0) {
+function $4g(char0) {
   return char0 >= 65 && char0 <= 90 || char0 >= 97 && char0 <= 122;
 }
 
@@ -16119,77 +16119,77 @@ var Schemas;
   Schemas2.chatEditingModel = "chat-editing-text-model";
   Schemas2.copilotPr = "copilot-pr";
 })(Schemas || (Schemas = {}));
-var connectionTokenQueryName = "tkn";
+var $dh = "tkn";
 var RemoteAuthoritiesImpl = class {
   constructor() {
-    this._hosts = /* @__PURE__ */ Object.create(null);
-    this._ports = /* @__PURE__ */ Object.create(null);
-    this._connectionTokens = /* @__PURE__ */ Object.create(null);
-    this._preferredWebSchema = "http";
-    this._delegate = null;
-    this._serverRootPath = "/";
+    this.a = /* @__PURE__ */ Object.create(null);
+    this.b = /* @__PURE__ */ Object.create(null);
+    this.c = /* @__PURE__ */ Object.create(null);
+    this.d = "http";
+    this.e = null;
+    this.f = "/";
   }
   setPreferredWebSchema(schema) {
-    this._preferredWebSchema = schema;
+    this.d = schema;
   }
   setDelegate(delegate) {
-    this._delegate = delegate;
+    this.e = delegate;
   }
   setServerRootPath(product, serverBasePath) {
-    this._serverRootPath = posix.join(serverBasePath ?? "/", getServerProductSegment(product));
+    this.f = $7.join(serverBasePath ?? "/", $fh(product));
   }
   getServerRootPath() {
-    return this._serverRootPath;
+    return this.f;
   }
-  get _remoteResourcesPath() {
-    return posix.join(this._serverRootPath, Schemas.vscodeRemoteResource);
+  get g() {
+    return $7.join(this.f, Schemas.vscodeRemoteResource);
   }
   set(authority, host, port) {
-    this._hosts[authority] = host;
-    this._ports[authority] = port;
+    this.a[authority] = host;
+    this.b[authority] = port;
   }
   setConnectionToken(authority, connectionToken) {
-    this._connectionTokens[authority] = connectionToken;
+    this.c[authority] = connectionToken;
   }
   getPreferredWebSchema() {
-    return this._preferredWebSchema;
+    return this.d;
   }
   rewrite(uri) {
-    if (this._delegate) {
+    if (this.e) {
       try {
-        return this._delegate(uri);
+        return this.e(uri);
       } catch (err) {
-        onUnexpectedError(err);
+        $nb(err);
         return uri;
       }
     }
     const authority = uri.authority;
-    let host = this._hosts[authority];
+    let host = this.a[authority];
     if (host && host.indexOf(":") !== -1 && host.indexOf("[") === -1) {
       host = `[${host}]`;
     }
-    const port = this._ports[authority];
-    const connectionToken = this._connectionTokens[authority];
+    const port = this.b[authority];
+    const connectionToken = this.c[authority];
     let query = `path=${encodeURIComponent(uri.path)}`;
     if (typeof connectionToken === "string") {
-      query += `&${connectionTokenQueryName}=${encodeURIComponent(connectionToken)}`;
+      query += `&${$dh}=${encodeURIComponent(connectionToken)}`;
     }
     return URI.from({
-      scheme: isWeb ? this._preferredWebSchema : Schemas.vscodeRemoteResource,
+      scheme: $s ? this.d : Schemas.vscodeRemoteResource,
       authority: `${host}:${port}`,
-      path: this._remoteResourcesPath,
+      path: this.g,
       query
     });
   }
 };
-var RemoteAuthorities = new RemoteAuthoritiesImpl();
-function getServerProductSegment(product) {
+var $eh = new RemoteAuthoritiesImpl();
+function $fh(product) {
   return `${product.quality ?? "oss"}-${product.commit ?? "dev"}`;
 }
-var VSCODE_AUTHORITY = "vscode-app";
+var $kh = "vscode-app";
 var FileAccessImpl = class _FileAccessImpl {
   static {
-    this.FALLBACK_AUTHORITY = VSCODE_AUTHORITY;
+    this.a = $kh;
   }
   /**
    * Returns a URI to use in contexts where the browser is responsible
@@ -16198,7 +16198,7 @@ var FileAccessImpl = class _FileAccessImpl {
    * **Note:** use `dom.ts#asCSSUrl` whenever the URL is to be used in CSS context.
    */
   asBrowserUri(resourcePath) {
-    const uri = this.toUri(resourcePath);
+    const uri = this.b(resourcePath);
     return this.uriToBrowserUri(uri);
   }
   /**
@@ -16209,13 +16209,13 @@ var FileAccessImpl = class _FileAccessImpl {
    */
   uriToBrowserUri(uri) {
     if (uri.scheme === Schemas.vscodeRemote) {
-      return RemoteAuthorities.rewrite(uri);
+      return $eh.rewrite(uri);
     }
     if (
       // ...only ever for `file` resources
       uri.scheme === Schemas.file && // ...and we run in native environments
-      (isNative || // ...or web worker extensions on desktop
-      webWorkerOrigin === `${Schemas.vscodeFileResource}://${_FileAccessImpl.FALLBACK_AUTHORITY}`)
+      ($q || // ...or web worker extensions on desktop
+      $u === `${Schemas.vscodeFileResource}://${_FileAccessImpl.a}`)
     ) {
       return uri.with({
         scheme: Schemas.vscodeFileResource,
@@ -16223,7 +16223,7 @@ var FileAccessImpl = class _FileAccessImpl {
         // as origin for network and loading matters in chromium.
         // If the URI is not coming with an authority already, we
         // add our own
-        authority: uri.authority || _FileAccessImpl.FALLBACK_AUTHORITY,
+        authority: uri.authority || _FileAccessImpl.a,
         query: null,
         fragment: null
       });
@@ -16235,7 +16235,7 @@ var FileAccessImpl = class _FileAccessImpl {
    * is responsible for loading.
    */
   asFileUri(resourcePath) {
-    const uri = this.toUri(resourcePath);
+    const uri = this.b(resourcePath);
     return this.uriToFileUri(uri);
   }
   /**
@@ -16249,14 +16249,14 @@ var FileAccessImpl = class _FileAccessImpl {
         // Only preserve the `authority` if it is different from
         // our fallback authority. This ensures we properly preserve
         // Windows UNC paths that come with their own authority.
-        authority: uri.authority !== _FileAccessImpl.FALLBACK_AUTHORITY ? uri.authority : null,
+        authority: uri.authority !== _FileAccessImpl.a ? uri.authority : null,
         query: null,
         fragment: null
       });
     }
     return uri;
   }
-  toUri(uriOrModule) {
+  b(uriOrModule) {
     if (URI.isUri(uriOrModule)) {
       return uriOrModule;
     }
@@ -16265,17 +16265,17 @@ var FileAccessImpl = class _FileAccessImpl {
       if (/^\w[\w\d+.-]*:\/\//.test(rootUriOrPath)) {
         return URI.joinPath(URI.parse(rootUriOrPath, true), uriOrModule);
       }
-      const modulePath = join(rootUriOrPath, uriOrModule);
+      const modulePath = $0(rootUriOrPath, uriOrModule);
       return URI.file(modulePath);
     }
     throw new Error("Cannot determine URI for module id!");
   }
 };
-var FileAccess = new FileAccessImpl();
-var CacheControlheaders = Object.freeze({
+var $lh = new FileAccessImpl();
+var $mh = Object.freeze({
   "Cache-Control": "no-cache, no-store"
 });
-var DocumentPolicyheaders = Object.freeze({
+var $nh = Object.freeze({
   "Document-Policy": "include-js-call-stacks-in-crash-reports"
 });
 var COI;
@@ -16318,18 +16318,18 @@ var COI;
 })(COI || (COI = {}));
 
 // out-build/vs/base/common/resources.js
-function originalFSPath(uri) {
-  return uriToFsPath(uri, true);
+function $oh(uri) {
+  return $Lc(uri, true);
 }
-var ExtUri = class {
-  constructor(_ignorePathCasing) {
-    this._ignorePathCasing = _ignorePathCasing;
+var $ph = class {
+  constructor(a) {
+    this.a = a;
   }
   compare(uri1, uri2, ignoreFragment = false) {
     if (uri1 === uri2) {
       return 0;
     }
-    return compare(this.getComparisonKey(uri1, ignoreFragment), this.getComparisonKey(uri2, ignoreFragment));
+    return $_f(this.getComparisonKey(uri1, ignoreFragment), this.getComparisonKey(uri2, ignoreFragment));
   }
   isEqual(uri1, uri2, ignoreFragment = false) {
     if (uri1 === uri2) {
@@ -16342,20 +16342,20 @@ var ExtUri = class {
   }
   getComparisonKey(uri, ignoreFragment = false) {
     return uri.with({
-      path: this._ignorePathCasing(uri) ? uri.path.toLowerCase() : void 0,
+      path: this.a(uri) ? uri.path.toLowerCase() : void 0,
       fragment: ignoreFragment ? null : void 0
     }).toString();
   }
   ignorePathCasing(uri) {
-    return this._ignorePathCasing(uri);
+    return this.a(uri);
   }
   isEqualOrParent(base, parentCandidate, ignoreFragment = false) {
     if (base.scheme === parentCandidate.scheme) {
       if (base.scheme === Schemas.file) {
-        return isEqualOrParent(originalFSPath(base), originalFSPath(parentCandidate), this._ignorePathCasing(base)) && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
+        return $3g($oh(base), $oh(parentCandidate), this.a(base)) && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
       }
-      if (isEqualAuthority(base.authority, parentCandidate.authority)) {
-        return isEqualOrParent(base.path, parentCandidate.path, this._ignorePathCasing(base), "/") && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
+      if ($Fh(base.authority, parentCandidate.authority)) {
+        return $3g(base.path, parentCandidate.path, this.a(base), "/") && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
       }
     }
     return false;
@@ -16365,30 +16365,30 @@ var ExtUri = class {
     return URI.joinPath(resource, ...pathFragment);
   }
   basenameOrAuthority(resource) {
-    return basename2(resource) || resource.authority;
+    return $xh(resource) || resource.authority;
   }
   basename(resource) {
-    return posix.basename(resource.path);
+    return $7.basename(resource.path);
   }
   extname(resource) {
-    return posix.extname(resource.path);
+    return $7.extname(resource.path);
   }
   dirname(resource) {
     if (resource.path.length === 0) {
       return resource;
     }
-    let dirname3;
+    let dirname;
     if (resource.scheme === Schemas.file) {
-      dirname3 = URI.file(dirname(originalFSPath(resource))).path;
+      dirname = URI.file($ab($oh(resource))).path;
     } else {
-      dirname3 = posix.dirname(resource.path);
-      if (resource.authority && dirname3.length && dirname3.charCodeAt(0) !== 47) {
+      dirname = $7.dirname(resource.path);
+      if (resource.authority && dirname.length && dirname.charCodeAt(0) !== 47) {
         console.error(`dirname("${resource.toString})) resulted in a relative path`);
-        dirname3 = "/";
+        dirname = "/";
       }
     }
     return resource.with({
-      path: dirname3
+      path: dirname
     });
   }
   normalizePath(resource) {
@@ -16397,25 +16397,25 @@ var ExtUri = class {
     }
     let normalizedPath;
     if (resource.scheme === Schemas.file) {
-      normalizedPath = URI.file(normalize(originalFSPath(resource))).path;
+      normalizedPath = URI.file($8($oh(resource))).path;
     } else {
-      normalizedPath = posix.normalize(resource.path);
+      normalizedPath = $7.normalize(resource.path);
     }
     return resource.with({
       path: normalizedPath
     });
   }
   relativePath(from, to) {
-    if (from.scheme !== to.scheme || !isEqualAuthority(from.authority, to.authority)) {
+    if (from.scheme !== to.scheme || !$Fh(from.authority, to.authority)) {
       return void 0;
     }
     if (from.scheme === Schemas.file) {
-      const relativePath2 = relative(originalFSPath(from), originalFSPath(to));
-      return isWindows ? toSlashes(relativePath2) : relativePath2;
+      const relativePath = $_($oh(from), $oh(to));
+      return $m ? $Wg(relativePath) : relativePath;
     }
     let fromPath = from.path || "/";
     const toPath = to.path || "/";
-    if (this._ignorePathCasing(from)) {
+    if (this.a(from)) {
       let i = 0;
       for (const len = Math.min(fromPath.length, toPath.length); i < len; i++) {
         if (fromPath.charCodeAt(i) !== toPath.charCodeAt(i)) {
@@ -16426,19 +16426,19 @@ var ExtUri = class {
       }
       fromPath = toPath.substr(0, i) + fromPath.substr(i);
     }
-    return posix.relative(fromPath, toPath);
+    return $7.relative(fromPath, toPath);
   }
   resolvePath(base, path) {
     if (base.scheme === Schemas.file) {
-      const newURI = URI.file(resolve(originalFSPath(base), path));
+      const newURI = URI.file($$($oh(base), path));
       return base.with({
         authority: newURI.authority,
         path: newURI.path
       });
     }
-    path = toPosixPath(path);
+    path = $Xg(path);
     return base.with({
-      path: posix.resolve(base.path, path)
+      path: $7.resolve(base.path, path)
     });
   }
   // --- misc
@@ -16446,19 +16446,19 @@ var ExtUri = class {
     return !!resource.path && resource.path[0] === "/";
   }
   isEqualAuthority(a1, a2) {
-    return a1 === a2 || a1 !== void 0 && a2 !== void 0 && equalsIgnoreCase(a1, a2);
+    return a1 === a2 || a1 !== void 0 && a2 !== void 0 && $gg(a1, a2);
   }
   hasTrailingPathSeparator(resource, sep2 = sep) {
     if (resource.scheme === Schemas.file) {
-      const fsp = originalFSPath(resource);
-      return fsp.length > getRoot(fsp).length && fsp[fsp.length - 1] === sep2;
+      const fsp = $oh(resource);
+      return fsp.length > $Yg(fsp).length && fsp[fsp.length - 1] === sep2;
     } else {
       const p = resource.path;
       return p.length > 1 && p.charCodeAt(p.length - 1) === 47 && !/^[a-zA-Z]:(\/$|\\$)/.test(resource.fsPath);
     }
   }
   removeTrailingPathSeparator(resource, sep2 = sep) {
-    if (hasTrailingPathSeparator(resource, sep2)) {
+    if ($Gh(resource, sep2)) {
       return resource.with({ path: resource.path.substr(0, resource.path.length - 1) });
     }
     return resource;
@@ -16466,40 +16466,40 @@ var ExtUri = class {
   addTrailingPathSeparator(resource, sep2 = sep) {
     let isRootSep = false;
     if (resource.scheme === Schemas.file) {
-      const fsp = originalFSPath(resource);
-      isRootSep = fsp !== void 0 && fsp.length === getRoot(fsp).length && fsp[fsp.length - 1] === sep2;
+      const fsp = $oh(resource);
+      isRootSep = fsp !== void 0 && fsp.length === $Yg(fsp).length && fsp[fsp.length - 1] === sep2;
     } else {
       sep2 = "/";
       const p = resource.path;
       isRootSep = p.length === 1 && p.charCodeAt(p.length - 1) === 47;
     }
-    if (!isRootSep && !hasTrailingPathSeparator(resource, sep2)) {
+    if (!isRootSep && !$Gh(resource, sep2)) {
       return resource.with({ path: resource.path + "/" });
     }
     return resource;
   }
 };
-var extUri = new ExtUri(() => false);
-var extUriBiasedIgnorePathCase = new ExtUri((uri) => {
-  return uri.scheme === Schemas.file ? !isLinux : true;
+var $qh = new $ph(() => false);
+var $rh = new $ph((uri) => {
+  return uri.scheme === Schemas.file ? !$o : true;
 });
-var extUriIgnorePathCase = new ExtUri((_) => true);
-var isEqual = extUri.isEqual.bind(extUri);
-var isEqualOrParent2 = extUri.isEqualOrParent.bind(extUri);
-var getComparisonKey = extUri.getComparisonKey.bind(extUri);
-var basenameOrAuthority = extUri.basenameOrAuthority.bind(extUri);
-var basename2 = extUri.basename.bind(extUri);
-var extname2 = extUri.extname.bind(extUri);
-var dirname2 = extUri.dirname.bind(extUri);
-var joinPath = extUri.joinPath.bind(extUri);
-var normalizePath = extUri.normalizePath.bind(extUri);
-var relativePath = extUri.relativePath.bind(extUri);
-var resolvePath = extUri.resolvePath.bind(extUri);
-var isAbsolutePath = extUri.isAbsolutePath.bind(extUri);
-var isEqualAuthority = extUri.isEqualAuthority.bind(extUri);
-var hasTrailingPathSeparator = extUri.hasTrailingPathSeparator.bind(extUri);
-var removeTrailingPathSeparator = extUri.removeTrailingPathSeparator.bind(extUri);
-var addTrailingPathSeparator = extUri.addTrailingPathSeparator.bind(extUri);
+var $sh = new $ph((_) => true);
+var $th = $qh.isEqual.bind($qh);
+var $uh = $qh.isEqualOrParent.bind($qh);
+var $vh = $qh.getComparisonKey.bind($qh);
+var $wh = $qh.basenameOrAuthority.bind($qh);
+var $xh = $qh.basename.bind($qh);
+var $yh = $qh.extname.bind($qh);
+var $zh = $qh.dirname.bind($qh);
+var $Ah = $qh.joinPath.bind($qh);
+var $Bh = $qh.normalizePath.bind($qh);
+var $Ch = $qh.relativePath.bind($qh);
+var $Dh = $qh.resolvePath.bind($qh);
+var $Eh = $qh.isAbsolutePath.bind($qh);
+var $Fh = $qh.isEqualAuthority.bind($qh);
+var $Gh = $qh.hasTrailingPathSeparator.bind($qh);
+var $Hh = $qh.removeTrailingPathSeparator.bind($qh);
+var $Ih = $qh.addTrailingPathSeparator.bind($qh);
 var DataUri;
 (function(DataUri2) {
   DataUri2.META_DATA_LABEL = "label";
@@ -16525,16 +16525,16 @@ var DataUri;
 })(DataUri || (DataUri = {}));
 
 // out-build/vs/base/common/symbols.js
-var MicrotaskDelay = Symbol("MicrotaskDelay");
+var $lf = Symbol("MicrotaskDelay");
 
 // out-build/vs/base/common/async.js
-var runWhenGlobalIdle;
-var _runWhenIdle;
+var $fi;
+var $gi;
 (function() {
   const safeGlobal = globalThis;
   if (typeof safeGlobal.requestIdleCallback !== "function" || typeof safeGlobal.cancelIdleCallback !== "function") {
-    _runWhenIdle = (_targetWindow, runner, timeout) => {
-      setTimeout0(() => {
+    $gi = (_targetWindow, runner, timeout) => {
+      $F(() => {
         if (disposed) {
           return;
         }
@@ -16558,7 +16558,7 @@ var _runWhenIdle;
       };
     };
   } else {
-    _runWhenIdle = (targetWindow, runner, timeout) => {
+    $gi = (targetWindow, runner, timeout) => {
       const handle = targetWindow.requestIdleCallback(runner, typeof timeout === "number" ? { timeout } : void 0);
       let disposed = false;
       return {
@@ -16572,62 +16572,62 @@ var _runWhenIdle;
       };
     };
   }
-  runWhenGlobalIdle = (runner, timeout) => _runWhenIdle(globalThis, runner, timeout);
+  $fi = (runner, timeout) => $gi(globalThis, runner, timeout);
 })();
 var DeferredOutcome;
 (function(DeferredOutcome2) {
   DeferredOutcome2[DeferredOutcome2["Resolved"] = 0] = "Resolved";
   DeferredOutcome2[DeferredOutcome2["Rejected"] = 1] = "Rejected";
 })(DeferredOutcome || (DeferredOutcome = {}));
-var DeferredPromise = class _DeferredPromise {
+var $mi = class _$mi {
   static fromPromise(promise) {
-    const deferred = new _DeferredPromise();
+    const deferred = new _$mi();
     deferred.settleWith(promise);
     return deferred;
   }
   get isRejected() {
-    return this.outcome?.outcome === 1;
+    return this.d?.outcome === 1;
   }
   get isResolved() {
-    return this.outcome?.outcome === 0;
+    return this.d?.outcome === 0;
   }
   get isSettled() {
-    return !!this.outcome;
+    return !!this.d;
   }
   get value() {
-    return this.outcome?.outcome === 0 ? this.outcome?.value : void 0;
+    return this.d?.outcome === 0 ? this.d?.value : void 0;
   }
   constructor() {
     this.p = new Promise((c, e) => {
-      this.completeCallback = c;
-      this.errorCallback = e;
+      this.a = c;
+      this.b = e;
     });
   }
   complete(value) {
     if (this.isSettled) {
       return Promise.resolve();
     }
-    return new Promise((resolve2) => {
-      this.completeCallback(value);
-      this.outcome = { outcome: 0, value };
-      resolve2();
+    return new Promise((resolve) => {
+      this.a(value);
+      this.d = { outcome: 0, value };
+      resolve();
     });
   }
   error(err) {
     if (this.isSettled) {
       return Promise.resolve();
     }
-    return new Promise((resolve2) => {
-      this.errorCallback(err);
-      this.outcome = { outcome: 1, value: err };
-      resolve2();
+    return new Promise((resolve) => {
+      this.b(err);
+      this.d = { outcome: 1, value: err };
+      resolve();
     });
   }
   settleWith(promise) {
     return promise.then((value) => this.complete(value), (error) => this.error(error));
   }
   cancel() {
-    return this.error(new CancellationError());
+    return this.error(new $tb());
   }
 };
 var Promises;
@@ -16647,9 +16647,9 @@ var Promises;
   }
   Promises2.settled = settled;
   function withAsyncBody(bodyFn) {
-    return new Promise(async (resolve2, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
-        await bodyFn(resolve2, reject);
+        await bodyFn(resolve, reject);
       } catch (error) {
         reject(error);
       }
@@ -16663,24 +16663,24 @@ var AsyncIterableSourceState;
   AsyncIterableSourceState2[AsyncIterableSourceState2["DoneOK"] = 1] = "DoneOK";
   AsyncIterableSourceState2[AsyncIterableSourceState2["DoneError"] = 2] = "DoneError";
 })(AsyncIterableSourceState || (AsyncIterableSourceState = {}));
-var AsyncIterableObject = class _AsyncIterableObject {
+var $pi = class _$pi {
   static fromArray(items) {
-    return new _AsyncIterableObject((writer) => {
+    return new _$pi((writer) => {
       writer.emitMany(items);
     });
   }
   static fromPromise(promise) {
-    return new _AsyncIterableObject(async (emitter) => {
+    return new _$pi(async (emitter) => {
       emitter.emitMany(await promise);
     });
   }
   static fromPromisesResolveOrder(promises) {
-    return new _AsyncIterableObject(async (emitter) => {
+    return new _$pi(async (emitter) => {
       await Promise.all(promises.map(async (p) => emitter.emitOne(await p)));
     });
   }
   static merge(iterables) {
-    return new _AsyncIterableObject(async (emitter) => {
+    return new _$pi(async (emitter) => {
       await Promise.all(iterables.map(async (iterable) => {
         for await (const item of iterable) {
           emitter.emitOne(item);
@@ -16689,25 +16689,25 @@ var AsyncIterableObject = class _AsyncIterableObject {
     });
   }
   static {
-    this.EMPTY = _AsyncIterableObject.fromArray([]);
+    this.EMPTY = _$pi.fromArray([]);
   }
   constructor(executor, onReturn) {
-    this._state = 0;
-    this._results = [];
-    this._error = null;
-    this._onReturn = onReturn;
-    this._onStateChanged = new Emitter();
+    this.a = 0;
+    this.b = [];
+    this.d = null;
+    this.f = onReturn;
+    this.g = new $qf();
     queueMicrotask(async () => {
       const writer = {
-        emitOne: (item) => this.emitOne(item),
-        emitMany: (items) => this.emitMany(items),
-        reject: (error) => this.reject(error)
+        emitOne: (item) => this.h(item),
+        emitMany: (items) => this.j(items),
+        reject: (error) => this.l(error)
       };
       try {
         await Promise.resolve(executor(writer));
-        this.resolve();
+        this.k();
       } catch (err) {
-        this.reject(err);
+        this.l(err);
       } finally {
         writer.emitOne = void 0;
         writer.emitMany = void 0;
@@ -16720,36 +16720,36 @@ var AsyncIterableObject = class _AsyncIterableObject {
     return {
       next: async () => {
         do {
-          if (this._state === 2) {
-            throw this._error;
+          if (this.a === 2) {
+            throw this.d;
           }
-          if (i < this._results.length) {
-            return { done: false, value: this._results[i++] };
+          if (i < this.b.length) {
+            return { done: false, value: this.b[i++] };
           }
-          if (this._state === 1) {
+          if (this.a === 1) {
             return { done: true, value: void 0 };
           }
-          await Event.toPromise(this._onStateChanged.event);
+          await Event.toPromise(this.g.event);
         } while (true);
       },
       return: async () => {
-        this._onReturn?.();
+        this.f?.();
         return { done: true, value: void 0 };
       }
     };
   }
   static map(iterable, mapFn) {
-    return new _AsyncIterableObject(async (emitter) => {
+    return new _$pi(async (emitter) => {
       for await (const item of iterable) {
         emitter.emitOne(mapFn(item));
       }
     });
   }
   map(mapFn) {
-    return _AsyncIterableObject.map(this, mapFn);
+    return _$pi.map(this, mapFn);
   }
   static filter(iterable, filterFn) {
-    return new _AsyncIterableObject(async (emitter) => {
+    return new _$pi(async (emitter) => {
       for await (const item of iterable) {
         if (filterFn(item)) {
           emitter.emitOne(item);
@@ -16758,13 +16758,13 @@ var AsyncIterableObject = class _AsyncIterableObject {
     });
   }
   filter(filterFn) {
-    return _AsyncIterableObject.filter(this, filterFn);
+    return _$pi.filter(this, filterFn);
   }
   static coalesce(iterable) {
-    return _AsyncIterableObject.filter(iterable, (item) => !!item);
+    return _$pi.filter(iterable, (item) => !!item);
   }
   coalesce() {
-    return _AsyncIterableObject.coalesce(this);
+    return _$pi.coalesce(this);
   }
   static async toPromise(iterable) {
     const result = [];
@@ -16774,31 +16774,31 @@ var AsyncIterableObject = class _AsyncIterableObject {
     return result;
   }
   toPromise() {
-    return _AsyncIterableObject.toPromise(this);
+    return _$pi.toPromise(this);
   }
   /**
    * The value will be appended at the end.
    *
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  emitOne(value) {
-    if (this._state !== 0) {
+  h(value) {
+    if (this.a !== 0) {
       return;
     }
-    this._results.push(value);
-    this._onStateChanged.fire();
+    this.b.push(value);
+    this.g.fire();
   }
   /**
    * The values will be appended at the end.
    *
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  emitMany(values) {
-    if (this._state !== 0) {
+  j(values) {
+    if (this.a !== 0) {
       return;
     }
-    this._results = this._results.concat(values);
-    this._onStateChanged.fire();
+    this.b = this.b.concat(values);
+    this.g.fire();
   }
   /**
    * Calling `resolve()` will mark the result array as complete.
@@ -16806,12 +16806,12 @@ var AsyncIterableObject = class _AsyncIterableObject {
    * **NOTE** `resolve()` must be called, otherwise all consumers of this iterable will hang indefinitely, similar to a non-resolved promise.
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  resolve() {
-    if (this._state !== 0) {
+  k() {
+    if (this.a !== 0) {
       return;
     }
-    this._state = 1;
-    this._onStateChanged.fire();
+    this.a = 1;
+    this.g.fire();
   }
   /**
    * Writing an error will permanently invalidate this iterable.
@@ -16819,46 +16819,46 @@ var AsyncIterableObject = class _AsyncIterableObject {
    *
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  reject(error) {
-    if (this._state !== 0) {
+  l(error) {
+    if (this.a !== 0) {
       return;
     }
-    this._state = 2;
-    this._error = error;
-    this._onStateChanged.fire();
+    this.a = 2;
+    this.d = error;
+    this.g.fire();
   }
 };
 var ProducerConsumer = class {
   constructor() {
-    this._unsatisfiedConsumers = [];
-    this._unconsumedValues = [];
+    this.a = [];
+    this.b = [];
   }
   get hasFinalValue() {
-    return !!this._finalValue;
+    return !!this.d;
   }
   produce(value) {
-    this._ensureNoFinalValue();
-    if (this._unsatisfiedConsumers.length > 0) {
-      const deferred = this._unsatisfiedConsumers.shift();
-      this._resolveOrRejectDeferred(deferred, value);
+    this.f();
+    if (this.a.length > 0) {
+      const deferred = this.a.shift();
+      this.g(deferred, value);
     } else {
-      this._unconsumedValues.push(value);
+      this.b.push(value);
     }
   }
   produceFinal(value) {
-    this._ensureNoFinalValue();
-    this._finalValue = value;
-    for (const deferred of this._unsatisfiedConsumers) {
-      this._resolveOrRejectDeferred(deferred, value);
+    this.f();
+    this.d = value;
+    for (const deferred of this.a) {
+      this.g(deferred, value);
     }
-    this._unsatisfiedConsumers.length = 0;
+    this.a.length = 0;
   }
-  _ensureNoFinalValue() {
-    if (this._finalValue) {
-      throw new BugIndicatingError("ProducerConsumer: cannot produce after final value has been set");
+  f() {
+    if (this.d) {
+      throw new $Eb("ProducerConsumer: cannot produce after final value has been set");
     }
   }
-  _resolveOrRejectDeferred(deferred, value) {
+  g(deferred, value) {
     if (value.ok) {
       deferred.complete(value.value);
     } else {
@@ -16866,72 +16866,72 @@ var ProducerConsumer = class {
     }
   }
   consume() {
-    if (this._unconsumedValues.length > 0 || this._finalValue) {
-      const value = this._unconsumedValues.length > 0 ? this._unconsumedValues.shift() : this._finalValue;
+    if (this.b.length > 0 || this.d) {
+      const value = this.b.length > 0 ? this.b.shift() : this.d;
       if (value.ok) {
         return Promise.resolve(value.value);
       } else {
         return Promise.reject(value.error);
       }
     } else {
-      const deferred = new DeferredPromise();
-      this._unsatisfiedConsumers.push(deferred);
+      const deferred = new $mi();
+      this.a.push(deferred);
       return deferred.p;
     }
   }
 };
-var AsyncIterableProducer = class _AsyncIterableProducer {
-  constructor(executor, _onReturn) {
-    this._onReturn = _onReturn;
-    this._producerConsumer = new ProducerConsumer();
-    this._iterator = {
-      next: () => this._producerConsumer.consume(),
+var $ti = class _$ti {
+  constructor(executor, b) {
+    this.b = b;
+    this.a = new ProducerConsumer();
+    this.g = {
+      next: () => this.a.consume(),
       return: () => {
-        this._onReturn?.();
+        this.b?.();
         return Promise.resolve({ done: true, value: void 0 });
       },
       throw: async (e) => {
-        this._finishError(e);
+        this.f(e);
         return { done: true, value: void 0 };
       }
     };
     queueMicrotask(async () => {
       const p = executor({
-        emitOne: (value) => this._producerConsumer.produce({ ok: true, value: { done: false, value } }),
+        emitOne: (value) => this.a.produce({ ok: true, value: { done: false, value } }),
         emitMany: (values) => {
           for (const value of values) {
-            this._producerConsumer.produce({ ok: true, value: { done: false, value } });
+            this.a.produce({ ok: true, value: { done: false, value } });
           }
         },
-        reject: (error) => this._finishError(error)
+        reject: (error) => this.f(error)
       });
-      if (!this._producerConsumer.hasFinalValue) {
+      if (!this.a.hasFinalValue) {
         try {
           await p;
-          this._finishOk();
+          this.d();
         } catch (error) {
-          this._finishError(error);
+          this.f(error);
         }
       }
     });
   }
   static fromArray(items) {
-    return new _AsyncIterableProducer((writer) => {
+    return new _$ti((writer) => {
       writer.emitMany(items);
     });
   }
   static fromPromise(promise) {
-    return new _AsyncIterableProducer(async (emitter) => {
+    return new _$ti(async (emitter) => {
       emitter.emitMany(await promise);
     });
   }
   static fromPromisesResolveOrder(promises) {
-    return new _AsyncIterableProducer(async (emitter) => {
+    return new _$ti(async (emitter) => {
       await Promise.all(promises.map(async (p) => emitter.emitOne(await p)));
     });
   }
   static merge(iterables) {
-    return new _AsyncIterableProducer(async (emitter) => {
+    return new _$ti(async (emitter) => {
       await Promise.all(iterables.map(async (iterable) => {
         for await (const item of iterable) {
           emitter.emitOne(item);
@@ -16940,10 +16940,10 @@ var AsyncIterableProducer = class _AsyncIterableProducer {
     });
   }
   static {
-    this.EMPTY = _AsyncIterableProducer.fromArray([]);
+    this.EMPTY = _$ti.fromArray([]);
   }
   static map(iterable, mapFn) {
-    return new _AsyncIterableProducer(async (emitter) => {
+    return new _$ti(async (emitter) => {
       for await (const item of iterable) {
         emitter.emitOne(mapFn(item));
       }
@@ -16952,7 +16952,7 @@ var AsyncIterableProducer = class _AsyncIterableProducer {
   static tee(iterable) {
     let emitter1;
     let emitter2;
-    const defer = new DeferredPromise();
+    const defer = new $mi();
     const start = async () => {
       if (!emitter1 || !emitter2) {
         return;
@@ -16969,12 +16969,12 @@ var AsyncIterableProducer = class _AsyncIterableProducer {
         defer.complete();
       }
     };
-    const p1 = new _AsyncIterableProducer(async (emitter) => {
+    const p1 = new _$ti(async (emitter) => {
       emitter1 = emitter;
       start();
       return defer.p;
     });
-    const p2 = new _AsyncIterableProducer(async (emitter) => {
+    const p2 = new _$ti(async (emitter) => {
       emitter2 = emitter;
       start();
       return defer.p;
@@ -16982,16 +16982,16 @@ var AsyncIterableProducer = class _AsyncIterableProducer {
     return [p1, p2];
   }
   map(mapFn) {
-    return _AsyncIterableProducer.map(this, mapFn);
+    return _$ti.map(this, mapFn);
   }
   static coalesce(iterable) {
-    return _AsyncIterableProducer.filter(iterable, (item) => !!item);
+    return _$ti.filter(iterable, (item) => !!item);
   }
   coalesce() {
-    return _AsyncIterableProducer.coalesce(this);
+    return _$ti.coalesce(this);
   }
   static filter(iterable, filterFn) {
-    return new _AsyncIterableProducer(async (emitter) => {
+    return new _$ti(async (emitter) => {
       for await (const item of iterable) {
         if (filterFn(item)) {
           emitter.emitOne(item);
@@ -17000,73 +17000,73 @@ var AsyncIterableProducer = class _AsyncIterableProducer {
     });
   }
   filter(filterFn) {
-    return _AsyncIterableProducer.filter(this, filterFn);
+    return _$ti.filter(this, filterFn);
   }
-  _finishOk() {
-    if (!this._producerConsumer.hasFinalValue) {
-      this._producerConsumer.produceFinal({ ok: true, value: { done: true, value: void 0 } });
+  d() {
+    if (!this.a.hasFinalValue) {
+      this.a.produceFinal({ ok: true, value: { done: true, value: void 0 } });
     }
   }
-  _finishError(error) {
-    if (!this._producerConsumer.hasFinalValue) {
-      this._producerConsumer.produceFinal({ ok: false, error });
+  f(error) {
+    if (!this.a.hasFinalValue) {
+      this.a.produceFinal({ ok: false, error });
     }
   }
   [Symbol.asyncIterator]() {
-    return this._iterator;
+    return this.g;
   }
 };
-var AsyncReaderEndOfStream = Symbol("AsyncReaderEndOfStream");
+var $vi = Symbol("AsyncReaderEndOfStream");
 
 // out-build/vs/editor/common/model/prefixSumComputer.js
-var PrefixSumComputer = class {
+var $gG = class {
   constructor(values) {
-    this.values = values;
-    this.prefixSum = new Uint32Array(values.length);
-    this.prefixSumValidIndex = new Int32Array(1);
-    this.prefixSumValidIndex[0] = -1;
+    this.a = values;
+    this.b = new Uint32Array(values.length);
+    this.c = new Int32Array(1);
+    this.c[0] = -1;
   }
   getCount() {
-    return this.values.length;
+    return this.a.length;
   }
   insertValues(insertIndex, insertValues) {
-    insertIndex = toUint32(insertIndex);
-    const oldValues = this.values;
-    const oldPrefixSum = this.prefixSum;
+    insertIndex = $Mf(insertIndex);
+    const oldValues = this.a;
+    const oldPrefixSum = this.b;
     const insertValuesLen = insertValues.length;
     if (insertValuesLen === 0) {
       return false;
     }
-    this.values = new Uint32Array(oldValues.length + insertValuesLen);
-    this.values.set(oldValues.subarray(0, insertIndex), 0);
-    this.values.set(oldValues.subarray(insertIndex), insertIndex + insertValuesLen);
-    this.values.set(insertValues, insertIndex);
-    if (insertIndex - 1 < this.prefixSumValidIndex[0]) {
-      this.prefixSumValidIndex[0] = insertIndex - 1;
+    this.a = new Uint32Array(oldValues.length + insertValuesLen);
+    this.a.set(oldValues.subarray(0, insertIndex), 0);
+    this.a.set(oldValues.subarray(insertIndex), insertIndex + insertValuesLen);
+    this.a.set(insertValues, insertIndex);
+    if (insertIndex - 1 < this.c[0]) {
+      this.c[0] = insertIndex - 1;
     }
-    this.prefixSum = new Uint32Array(this.values.length);
-    if (this.prefixSumValidIndex[0] >= 0) {
-      this.prefixSum.set(oldPrefixSum.subarray(0, this.prefixSumValidIndex[0] + 1));
+    this.b = new Uint32Array(this.a.length);
+    if (this.c[0] >= 0) {
+      this.b.set(oldPrefixSum.subarray(0, this.c[0] + 1));
     }
     return true;
   }
   setValue(index, value) {
-    index = toUint32(index);
-    value = toUint32(value);
-    if (this.values[index] === value) {
+    index = $Mf(index);
+    value = $Mf(value);
+    if (this.a[index] === value) {
       return false;
     }
-    this.values[index] = value;
-    if (index - 1 < this.prefixSumValidIndex[0]) {
-      this.prefixSumValidIndex[0] = index - 1;
+    this.a[index] = value;
+    if (index - 1 < this.c[0]) {
+      this.c[0] = index - 1;
     }
     return true;
   }
   removeValues(startIndex, count) {
-    startIndex = toUint32(startIndex);
-    count = toUint32(count);
-    const oldValues = this.values;
-    const oldPrefixSum = this.prefixSum;
+    startIndex = $Mf(startIndex);
+    count = $Mf(count);
+    const oldValues = this.a;
+    const oldPrefixSum = this.b;
     if (startIndex >= oldValues.length) {
       return false;
     }
@@ -17077,23 +17077,23 @@ var PrefixSumComputer = class {
     if (count === 0) {
       return false;
     }
-    this.values = new Uint32Array(oldValues.length - count);
-    this.values.set(oldValues.subarray(0, startIndex), 0);
-    this.values.set(oldValues.subarray(startIndex + count), startIndex);
-    this.prefixSum = new Uint32Array(this.values.length);
-    if (startIndex - 1 < this.prefixSumValidIndex[0]) {
-      this.prefixSumValidIndex[0] = startIndex - 1;
+    this.a = new Uint32Array(oldValues.length - count);
+    this.a.set(oldValues.subarray(0, startIndex), 0);
+    this.a.set(oldValues.subarray(startIndex + count), startIndex);
+    this.b = new Uint32Array(this.a.length);
+    if (startIndex - 1 < this.c[0]) {
+      this.c[0] = startIndex - 1;
     }
-    if (this.prefixSumValidIndex[0] >= 0) {
-      this.prefixSum.set(oldPrefixSum.subarray(0, this.prefixSumValidIndex[0] + 1));
+    if (this.c[0] >= 0) {
+      this.b.set(oldPrefixSum.subarray(0, this.c[0] + 1));
     }
     return true;
   }
   getTotalSum() {
-    if (this.values.length === 0) {
+    if (this.a.length === 0) {
       return 0;
     }
-    return this._getPrefixSum(this.values.length - 1);
+    return this.d(this.a.length - 1);
   }
   /**
    * Returns the sum of the first `index + 1` many items.
@@ -17103,39 +17103,39 @@ var PrefixSumComputer = class {
     if (index < 0) {
       return 0;
     }
-    index = toUint32(index);
-    return this._getPrefixSum(index);
+    index = $Mf(index);
+    return this.d(index);
   }
-  _getPrefixSum(index) {
-    if (index <= this.prefixSumValidIndex[0]) {
-      return this.prefixSum[index];
+  d(index) {
+    if (index <= this.c[0]) {
+      return this.b[index];
     }
-    let startIndex = this.prefixSumValidIndex[0] + 1;
+    let startIndex = this.c[0] + 1;
     if (startIndex === 0) {
-      this.prefixSum[0] = this.values[0];
+      this.b[0] = this.a[0];
       startIndex++;
     }
-    if (index >= this.values.length) {
-      index = this.values.length - 1;
+    if (index >= this.a.length) {
+      index = this.a.length - 1;
     }
     for (let i = startIndex; i <= index; i++) {
-      this.prefixSum[i] = this.prefixSum[i - 1] + this.values[i];
+      this.b[i] = this.b[i - 1] + this.a[i];
     }
-    this.prefixSumValidIndex[0] = Math.max(this.prefixSumValidIndex[0], index);
-    return this.prefixSum[index];
+    this.c[0] = Math.max(this.c[0], index);
+    return this.b[index];
   }
   getIndexOf(sum) {
     sum = Math.floor(sum);
     this.getTotalSum();
     let low = 0;
-    let high = this.values.length - 1;
+    let high = this.a.length - 1;
     let mid = 0;
     let midStop = 0;
     let midStart = 0;
     while (low <= high) {
       mid = low + (high - low) / 2 | 0;
-      midStop = this.prefixSum[mid];
-      midStart = midStop - this.values[mid];
+      midStop = this.b[mid];
+      midStart = midStop - this.a[mid];
       if (sum < midStart) {
         high = mid - 1;
       } else if (sum >= midStop) {
@@ -17144,10 +17144,10 @@ var PrefixSumComputer = class {
         break;
       }
     }
-    return new PrefixSumIndexOfResult(mid, sum - midStart);
+    return new $iG(mid, sum - midStart);
   }
 };
-var PrefixSumIndexOfResult = class {
+var $iG = class {
   constructor(index, remainder) {
     this.index = index;
     this.remainder = remainder;
@@ -17158,146 +17158,146 @@ var PrefixSumIndexOfResult = class {
 };
 
 // out-build/vs/editor/common/model/mirrorTextModel.js
-var MirrorTextModel = class {
+var $jG = class {
   constructor(uri, lines, eol, versionId) {
-    this._uri = uri;
-    this._lines = lines;
-    this._eol = eol;
-    this._versionId = versionId;
-    this._lineStarts = null;
-    this._cachedTextValue = null;
+    this.a = uri;
+    this.b = lines;
+    this.c = eol;
+    this.d = versionId;
+    this.f = null;
+    this.g = null;
   }
   dispose() {
-    this._lines.length = 0;
+    this.b.length = 0;
   }
   get version() {
-    return this._versionId;
+    return this.d;
   }
   getText() {
-    if (this._cachedTextValue === null) {
-      this._cachedTextValue = this._lines.join(this._eol);
+    if (this.g === null) {
+      this.g = this.b.join(this.c);
     }
-    return this._cachedTextValue;
+    return this.g;
   }
   onEvents(e) {
-    if (e.eol && e.eol !== this._eol) {
-      this._eol = e.eol;
-      this._lineStarts = null;
+    if (e.eol && e.eol !== this.c) {
+      this.c = e.eol;
+      this.f = null;
     }
     const changes = e.changes;
     for (const change of changes) {
-      this._acceptDeleteRange(change.range);
-      this._acceptInsertText(new Position(change.range.startLineNumber, change.range.startColumn), change.text);
+      this.k(change.range);
+      this.l(new $GD(change.range.startLineNumber, change.range.startColumn), change.text);
     }
-    this._versionId = e.versionId;
-    this._cachedTextValue = null;
+    this.d = e.versionId;
+    this.g = null;
   }
-  _ensureLineStarts() {
-    if (!this._lineStarts) {
-      const eolLength = this._eol.length;
-      const linesLength = this._lines.length;
+  h() {
+    if (!this.f) {
+      const eolLength = this.c.length;
+      const linesLength = this.b.length;
       const lineStartValues = new Uint32Array(linesLength);
       for (let i = 0; i < linesLength; i++) {
-        lineStartValues[i] = this._lines[i].length + eolLength;
+        lineStartValues[i] = this.b[i].length + eolLength;
       }
-      this._lineStarts = new PrefixSumComputer(lineStartValues);
+      this.f = new $gG(lineStartValues);
     }
   }
   /**
    * All changes to a line's text go through this method
    */
-  _setLineText(lineIndex, newValue) {
-    this._lines[lineIndex] = newValue;
-    if (this._lineStarts) {
-      this._lineStarts.setValue(lineIndex, this._lines[lineIndex].length + this._eol.length);
+  j(lineIndex, newValue) {
+    this.b[lineIndex] = newValue;
+    if (this.f) {
+      this.f.setValue(lineIndex, this.b[lineIndex].length + this.c.length);
     }
   }
-  _acceptDeleteRange(range) {
+  k(range) {
     if (range.startLineNumber === range.endLineNumber) {
       if (range.startColumn === range.endColumn) {
         return;
       }
-      this._setLineText(range.startLineNumber - 1, this._lines[range.startLineNumber - 1].substring(0, range.startColumn - 1) + this._lines[range.startLineNumber - 1].substring(range.endColumn - 1));
+      this.j(range.startLineNumber - 1, this.b[range.startLineNumber - 1].substring(0, range.startColumn - 1) + this.b[range.startLineNumber - 1].substring(range.endColumn - 1));
       return;
     }
-    this._setLineText(range.startLineNumber - 1, this._lines[range.startLineNumber - 1].substring(0, range.startColumn - 1) + this._lines[range.endLineNumber - 1].substring(range.endColumn - 1));
-    this._lines.splice(range.startLineNumber, range.endLineNumber - range.startLineNumber);
-    if (this._lineStarts) {
-      this._lineStarts.removeValues(range.startLineNumber, range.endLineNumber - range.startLineNumber);
+    this.j(range.startLineNumber - 1, this.b[range.startLineNumber - 1].substring(0, range.startColumn - 1) + this.b[range.endLineNumber - 1].substring(range.endColumn - 1));
+    this.b.splice(range.startLineNumber, range.endLineNumber - range.startLineNumber);
+    if (this.f) {
+      this.f.removeValues(range.startLineNumber, range.endLineNumber - range.startLineNumber);
     }
   }
-  _acceptInsertText(position, insertText) {
+  l(position, insertText) {
     if (insertText.length === 0) {
       return;
     }
-    const insertLines = splitLines(insertText);
+    const insertLines = $4f(insertText);
     if (insertLines.length === 1) {
-      this._setLineText(position.lineNumber - 1, this._lines[position.lineNumber - 1].substring(0, position.column - 1) + insertLines[0] + this._lines[position.lineNumber - 1].substring(position.column - 1));
+      this.j(position.lineNumber - 1, this.b[position.lineNumber - 1].substring(0, position.column - 1) + insertLines[0] + this.b[position.lineNumber - 1].substring(position.column - 1));
       return;
     }
-    insertLines[insertLines.length - 1] += this._lines[position.lineNumber - 1].substring(position.column - 1);
-    this._setLineText(position.lineNumber - 1, this._lines[position.lineNumber - 1].substring(0, position.column - 1) + insertLines[0]);
+    insertLines[insertLines.length - 1] += this.b[position.lineNumber - 1].substring(position.column - 1);
+    this.j(position.lineNumber - 1, this.b[position.lineNumber - 1].substring(0, position.column - 1) + insertLines[0]);
     const newLengths = new Uint32Array(insertLines.length - 1);
     for (let i = 1; i < insertLines.length; i++) {
-      this._lines.splice(position.lineNumber + i - 1, 0, insertLines[i]);
-      newLengths[i - 1] = insertLines[i].length + this._eol.length;
+      this.b.splice(position.lineNumber + i - 1, 0, insertLines[i]);
+      newLengths[i - 1] = insertLines[i].length + this.c.length;
     }
-    if (this._lineStarts) {
-      this._lineStarts.insertValues(position.lineNumber, newLengths);
+    if (this.f) {
+      this.f.insertValues(position.lineNumber, newLengths);
     }
   }
 };
 
 // out-build/vs/editor/common/services/textModelSync/textModelSync.impl.js
-var STOP_SYNC_MODEL_DELTA_TIME_MS = 60 * 1e3;
-var WORKER_TEXT_MODEL_SYNC_CHANNEL = "workerTextModelSync";
-var WorkerTextModelSyncServer = class {
+var $1fb = 60 * 1e3;
+var $2fb = "workerTextModelSync";
+var $4fb = class {
   constructor() {
-    this._models = /* @__PURE__ */ Object.create(null);
+    this.a = /* @__PURE__ */ Object.create(null);
   }
   bindToServer(workerServer) {
-    workerServer.setChannel(WORKER_TEXT_MODEL_SYNC_CHANNEL, this);
+    workerServer.setChannel($2fb, this);
   }
   getModel(uri) {
-    return this._models[uri];
+    return this.a[uri];
   }
   getModels() {
     const all = [];
-    Object.keys(this._models).forEach((key) => all.push(this._models[key]));
+    Object.keys(this.a).forEach((key) => all.push(this.a[key]));
     return all;
   }
   $acceptNewModel(data) {
-    this._models[data.url] = new MirrorModel(URI.parse(data.url), data.lines, data.EOL, data.versionId);
+    this.a[data.url] = new $5fb(URI.parse(data.url), data.lines, data.EOL, data.versionId);
   }
   $acceptModelChanged(uri, e) {
-    if (!this._models[uri]) {
+    if (!this.a[uri]) {
       return;
     }
-    const model = this._models[uri];
+    const model = this.a[uri];
     model.onEvents(e);
   }
   $acceptRemovedModel(uri) {
-    if (!this._models[uri]) {
+    if (!this.a[uri]) {
       return;
     }
-    delete this._models[uri];
+    delete this.a[uri];
   }
 };
-var MirrorModel = class extends MirrorTextModel {
+var $5fb = class extends $jG {
   get uri() {
-    return this._uri;
+    return this.a;
   }
   get eol() {
-    return this._eol;
+    return this.c;
   }
   getValue() {
     return this.getText();
   }
   findMatches(regex) {
     const matches = [];
-    for (let i = 0; i < this._lines.length; i++) {
-      const line = this._lines[i];
-      const offsetToAdd = this.offsetAt(new Position(i + 1, 1));
+    for (let i = 0; i < this.b.length; i++) {
+      const line = this.b[i];
+      const offsetToAdd = this.offsetAt(new $GD(i + 1, 1));
       const iteratorOverMatches = line.matchAll(regex);
       for (const match of iteratorOverMatches) {
         if (match.index || match.index === 0) {
@@ -17309,18 +17309,18 @@ var MirrorModel = class extends MirrorTextModel {
     return matches;
   }
   getLinesContent() {
-    return this._lines.slice(0);
+    return this.b.slice(0);
   }
   getLineCount() {
-    return this._lines.length;
+    return this.b.length;
   }
   getLineContent(lineNumber) {
-    return this._lines[lineNumber - 1];
+    return this.b[lineNumber - 1];
   }
   getWordAtPosition(position, wordDefinition) {
-    const wordAtText = getWordAtText(position.column, ensureValidWordDefinition(wordDefinition), this._lines[position.lineNumber - 1], 0);
+    const wordAtText = $hD(position.column, $fD(wordDefinition), this.b[position.lineNumber - 1], 0);
     if (wordAtText) {
-      return new Range(position.lineNumber, wordAtText.startColumn, position.lineNumber, wordAtText.endColumn);
+      return new $HD(position.lineNumber, wordAtText.startColumn, position.lineNumber, wordAtText.endColumn);
     }
     return null;
   }
@@ -17334,14 +17334,14 @@ var MirrorModel = class extends MirrorTextModel {
       };
     }
     return {
-      word: this._lines[position.lineNumber - 1].substring(wordAtPosition.startColumn - 1, position.column - 1),
+      word: this.b[position.lineNumber - 1].substring(wordAtPosition.startColumn - 1, position.column - 1),
       startColumn: wordAtPosition.startColumn,
       endColumn: position.column
     };
   }
   words(wordDefinition) {
-    const lines = this._lines;
-    const wordenize = this._wordenize.bind(this);
+    const lines = this.b;
+    const wordenize = this.m.bind(this);
     let lineNumber = 0;
     let lineText = "";
     let wordRangesIdx = 0;
@@ -17368,8 +17368,8 @@ var MirrorModel = class extends MirrorTextModel {
     };
   }
   getLineWords(lineNumber, wordDefinition) {
-    const content = this._lines[lineNumber - 1];
-    const ranges = this._wordenize(content, wordDefinition);
+    const content = this.b[lineNumber - 1];
+    const ranges = this.m(content, wordDefinition);
     const words = [];
     for (const range of ranges) {
       words.push({
@@ -17380,7 +17380,7 @@ var MirrorModel = class extends MirrorTextModel {
     }
     return words;
   }
-  _wordenize(content, wordDefinition) {
+  m(content, wordDefinition) {
     const result = [];
     let match;
     wordDefinition.lastIndex = 0;
@@ -17393,40 +17393,40 @@ var MirrorModel = class extends MirrorTextModel {
     return result;
   }
   getValueInRange(range) {
-    range = this._validateRange(range);
+    range = this.n(range);
     if (range.startLineNumber === range.endLineNumber) {
-      return this._lines[range.startLineNumber - 1].substring(range.startColumn - 1, range.endColumn - 1);
+      return this.b[range.startLineNumber - 1].substring(range.startColumn - 1, range.endColumn - 1);
     }
-    const lineEnding = this._eol;
+    const lineEnding = this.c;
     const startLineIndex = range.startLineNumber - 1;
     const endLineIndex = range.endLineNumber - 1;
     const resultLines = [];
-    resultLines.push(this._lines[startLineIndex].substring(range.startColumn - 1));
+    resultLines.push(this.b[startLineIndex].substring(range.startColumn - 1));
     for (let i = startLineIndex + 1; i < endLineIndex; i++) {
-      resultLines.push(this._lines[i]);
+      resultLines.push(this.b[i]);
     }
-    resultLines.push(this._lines[endLineIndex].substring(0, range.endColumn - 1));
+    resultLines.push(this.b[endLineIndex].substring(0, range.endColumn - 1));
     return resultLines.join(lineEnding);
   }
   offsetAt(position) {
-    position = this._validatePosition(position);
-    this._ensureLineStarts();
-    return this._lineStarts.getPrefixSum(position.lineNumber - 2) + (position.column - 1);
+    position = this.o(position);
+    this.h();
+    return this.f.getPrefixSum(position.lineNumber - 2) + (position.column - 1);
   }
   positionAt(offset) {
     offset = Math.floor(offset);
     offset = Math.max(0, offset);
-    this._ensureLineStarts();
-    const out = this._lineStarts.getIndexOf(offset);
-    const lineLength = this._lines[out.index].length;
+    this.h();
+    const out = this.f.getIndexOf(offset);
+    const lineLength = this.b[out.index].length;
     return {
       lineNumber: 1 + out.index,
       column: 1 + Math.min(out.remainder, lineLength)
     };
   }
-  _validateRange(range) {
-    const start = this._validatePosition({ lineNumber: range.startLineNumber, column: range.startColumn });
-    const end = this._validatePosition({ lineNumber: range.endLineNumber, column: range.endColumn });
+  n(range) {
+    const start = this.o({ lineNumber: range.startLineNumber, column: range.startColumn });
+    const end = this.o({ lineNumber: range.endLineNumber, column: range.endColumn });
     if (start.lineNumber !== range.startLineNumber || start.column !== range.startColumn || end.lineNumber !== range.endLineNumber || end.column !== range.endColumn) {
       return {
         startLineNumber: start.lineNumber,
@@ -17437,8 +17437,8 @@ var MirrorModel = class extends MirrorTextModel {
     }
     return range;
   }
-  _validatePosition(position) {
-    if (!Position.isIPosition(position)) {
+  o(position) {
+    if (!$GD.isIPosition(position)) {
       throw new Error("bad position");
     }
     let { lineNumber, column } = position;
@@ -17447,12 +17447,12 @@ var MirrorModel = class extends MirrorTextModel {
       lineNumber = 1;
       column = 1;
       hasChanged = true;
-    } else if (lineNumber > this._lines.length) {
-      lineNumber = this._lines.length;
-      column = this._lines[lineNumber - 1].length + 1;
+    } else if (lineNumber > this.b.length) {
+      lineNumber = this.b.length;
+      column = this.b[lineNumber - 1].length + 1;
       hasChanged = true;
     } else {
-      const maxCharacter = this._lines[lineNumber - 1].length + 1;
+      const maxCharacter = this.b[lineNumber - 1].length + 1;
       if (column < 1) {
         column = 1;
         hasChanged = true;
@@ -17470,13 +17470,13 @@ var MirrorModel = class extends MirrorTextModel {
 };
 
 // out-build/vs/editor/common/core/edits/edit.js
-var BaseEdit = class {
+var $2D = class {
   constructor(replacements) {
     this.replacements = replacements;
     let lastEndEx = -1;
     for (const replacement of replacements) {
       if (!(replacement.replaceRange.start >= lastEndEx)) {
-        throw new BugIndicatingError(`Edits must be disjoint and sorted. Found ${replacement} after ${lastEndEx}`);
+        throw new $Eb(`Edits must be disjoint and sorted. Found ${replacement} after ${lastEndEx}`);
       }
       lastEndEx = replacement.replaceRange.endExclusive;
     }
@@ -17539,7 +17539,7 @@ var BaseEdit = class {
     if (lastReplacement) {
       newReplacements.push(lastReplacement);
     }
-    return this._createNew(newReplacements);
+    return this.a(newReplacements);
   }
   /**
    * Combines two edits into one with the same effect.
@@ -17594,20 +17594,20 @@ var BaseEdit = class {
         const newReplaceRangeStart = Math.min(firstIntersecting.replaceRange.start, r2.replaceRange.start - firstEdit1ToEdit2);
         const prefixLength = r2.replaceRange.start - (firstIntersecting.replaceRange.start + firstEdit1ToEdit2);
         if (prefixLength > 0) {
-          const prefix = firstIntersecting.slice(OffsetRange.emptyAt(newReplaceRangeStart), new OffsetRange(0, prefixLength));
+          const prefix = firstIntersecting.slice($PD.emptyAt(newReplaceRangeStart), new $PD(0, prefixLength));
           result.push(prefix);
         }
         if (!lastIntersecting) {
-          throw new BugIndicatingError(`Invariant violation: lastIntersecting is undefined`);
+          throw new $Eb(`Invariant violation: lastIntersecting is undefined`);
         }
         const suffixLength = lastIntersecting.replaceRange.endExclusive + edit1ToEdit2 - r2.replaceRange.endExclusive;
         if (suffixLength > 0) {
-          const e = lastIntersecting.slice(OffsetRange.ofStartAndLength(lastIntersecting.replaceRange.endExclusive, 0), new OffsetRange(lastIntersecting.getNewLength() - suffixLength, lastIntersecting.getNewLength()));
+          const e = lastIntersecting.slice($PD.ofStartAndLength(lastIntersecting.replaceRange.endExclusive, 0), new $PD(lastIntersecting.getNewLength() - suffixLength, lastIntersecting.getNewLength()));
           edit1Queue.unshift(e);
           edit1ToEdit2 -= e.getNewLength() - e.replaceRange.length;
         }
-        const newReplaceRange = new OffsetRange(newReplaceRangeStart, r2.replaceRange.endExclusive - edit1ToEdit2);
-        const middle = r2.slice(newReplaceRange, new OffsetRange(0, r2.getNewLength()));
+        const newReplaceRange = new $PD(newReplaceRangeStart, r2.replaceRange.endExclusive - edit1ToEdit2);
+        const middle = r2.slice(newReplaceRange, new $PD(0, r2.getNewLength()));
         result.push(middle);
       }
     }
@@ -17618,7 +17618,7 @@ var BaseEdit = class {
       }
       result.push(item);
     }
-    return this._createNew(result).normalize();
+    return this.a(result).normalize();
   }
   decomposeSplit(shouldBeInE1) {
     const e1 = [];
@@ -17629,10 +17629,10 @@ var BaseEdit = class {
         e1.push(edit);
         e2delta += edit.getNewLength() - edit.replaceRange.length;
       } else {
-        e2.push(edit.slice(edit.replaceRange.delta(e2delta), new OffsetRange(0, edit.getNewLength())));
+        e2.push(edit.slice(edit.replaceRange.delta(e2delta), new $PD(0, edit.getNewLength())));
       }
     }
-    return { e1: this._createNew(e1), e2: this._createNew(e2) };
+    return { e1: this.a(e1), e2: this.a(e2) };
   }
   /**
    * Returns the range of each replacement in the applied value.
@@ -17641,7 +17641,7 @@ var BaseEdit = class {
     const ranges = [];
     let offset = 0;
     for (const e of this.replacements) {
-      ranges.push(OffsetRange.ofStartAndLength(e.replaceRange.start + offset, e.getNewLength()));
+      ranges.push($PD.ofStartAndLength(e.replaceRange.start + offset, e.getNewLength()));
       offset += e.getLengthDelta();
     }
     return ranges;
@@ -17656,7 +17656,7 @@ var BaseEdit = class {
     return this.replacements.length === 0;
   }
   getLengthDelta() {
-    return sumBy(this.replacements, (replacement) => replacement.getLengthDelta());
+    return $Ic(this.replacements, (replacement) => replacement.getLengthDelta());
   }
   getNewDataLength(dataLength) {
     return dataLength + this.getLengthDelta();
@@ -17676,7 +17676,7 @@ var BaseEdit = class {
     return originalOffset + accumulatedDelta;
   }
   applyToOffsetRange(originalRange) {
-    return new OffsetRange(this.applyToOffset(originalRange.start), this.applyToOffset(originalRange.endExclusive));
+    return new $PD(this.applyToOffset(originalRange.start), this.applyToOffset(originalRange.endExclusive));
   }
   applyInverseToOffset(postEditsOffset) {
     let accumulatedDelta = 0;
@@ -17722,15 +17722,15 @@ var BaseEdit = class {
     if (end === void 0) {
       return void 0;
     }
-    return new OffsetRange(start, end);
+    return new $PD(start, end);
   }
 };
-var BaseReplacement = class {
+var $3D = class {
   constructor(replaceRange) {
     this.replaceRange = replaceRange;
   }
   delta(offset) {
-    return this.slice(this.replaceRange.delta(offset), new OffsetRange(0, this.getNewLength()));
+    return this.slice(this.replaceRange.delta(offset), new $PD(0, this.getNewLength()));
   }
   getLengthDelta() {
     return this.getNewLength() - this.replaceRange.length;
@@ -17742,26 +17742,26 @@ var BaseReplacement = class {
     return this.getNewLength() === 0 && this.replaceRange.length === 0;
   }
   getRangeAfterReplace() {
-    return new OffsetRange(this.replaceRange.start, this.replaceRange.start + this.getNewLength());
+    return new $PD(this.replaceRange.start, this.replaceRange.start + this.getNewLength());
   }
 };
-var Edit = class _Edit extends BaseEdit {
+var $4D = class _$4D extends $2D {
   static {
-    this.empty = new _Edit([]);
+    this.empty = new _$4D([]);
   }
   static create(replacements) {
-    return new _Edit(replacements);
+    return new _$4D(replacements);
   }
   static single(replacement) {
-    return new _Edit([replacement]);
+    return new _$4D([replacement]);
   }
-  _createNew(replacements) {
-    return new _Edit(replacements);
+  a(replacements) {
+    return new _$4D(replacements);
   }
 };
 
 // out-build/vs/editor/common/core/edits/stringEdit.js
-var BaseStringEdit = class extends BaseEdit {
+var $6D = class extends $2D {
   get TReplacement() {
     throw new Error("TReplacement is not defined for BaseStringEdit");
   }
@@ -17809,10 +17809,10 @@ var BaseStringEdit = class extends BaseEdit {
     const edits = [];
     let offset = 0;
     for (const e of this.replacements) {
-      edits.push(StringReplacement.replace(OffsetRange.ofStartAndLength(e.replaceRange.start + offset, e.newText.length), getOriginalSlice(e.replaceRange.start, e.replaceRange.endExclusive)));
+      edits.push($9D.replace($PD.ofStartAndLength(e.replaceRange.start + offset, e.newText.length), getOriginalSlice(e.replaceRange.start, e.replaceRange.endExclusive)));
       offset += e.newText.length - e.replaceRange.length;
     }
-    return new StringEdit(edits);
+    return new $8D(edits);
   }
   /**
    * Creates an edit that reverts this edit.
@@ -17821,12 +17821,12 @@ var BaseStringEdit = class extends BaseEdit {
     return this.inverseOnSlice((start, endEx) => original.substring(start, endEx));
   }
   rebaseSkipConflicting(base) {
-    return this._tryRebase(base, false);
+    return this.b(base, false);
   }
   tryRebase(base) {
-    return this._tryRebase(base, true);
+    return this.b(base, true);
   }
-  _tryRebase(base, noOverlap) {
+  b(base, noOverlap) {
     const newEdits = [];
     let baseIdx = 0;
     let ourIdx = 0;
@@ -17837,7 +17837,7 @@ var BaseStringEdit = class extends BaseEdit {
       if (!ourEdit) {
         break;
       } else if (!baseEdit) {
-        newEdits.push(new StringReplacement(ourEdit.replaceRange.delta(offset), ourEdit.newText));
+        newEdits.push(new $9D(ourEdit.replaceRange.delta(offset), ourEdit.newText));
         ourIdx++;
       } else if (ourEdit.replaceRange.intersectsOrTouches(baseEdit.replaceRange)) {
         ourIdx++;
@@ -17845,14 +17845,14 @@ var BaseStringEdit = class extends BaseEdit {
           return void 0;
         }
       } else if (ourEdit.replaceRange.start < baseEdit.replaceRange.start) {
-        newEdits.push(new StringReplacement(ourEdit.replaceRange.delta(offset), ourEdit.newText));
+        newEdits.push(new $9D(ourEdit.replaceRange.delta(offset), ourEdit.newText));
         ourIdx++;
       } else {
         baseIdx++;
         offset += baseEdit.newText.length - baseEdit.replaceRange.length;
       }
     }
-    return new StringEdit(newEdits);
+    return new $8D(newEdits);
   }
   toJson() {
     return this.replacements.map((e) => e.toJson());
@@ -17868,34 +17868,34 @@ var BaseStringEdit = class extends BaseEdit {
         edits.push(edit);
       }
     }
-    return new StringEdit(edits);
+    return new $8D(edits);
   }
   normalizeEOL(eol) {
-    return new StringEdit(this.replacements.map((edit) => edit.normalizeEOL(eol)));
+    return new $8D(this.replacements.map((edit) => edit.normalizeEOL(eol)));
   }
   /**
    * If `e1.apply(source) === e2.apply(source)`, then `e1.normalizeOnSource(source).equals(e2.normalizeOnSource(source))`.
   */
   normalizeOnSource(source) {
     const result = this.apply(source);
-    const edit = StringReplacement.replace(OffsetRange.ofLength(source.length), result);
+    const edit = $9D.replace($PD.ofLength(source.length), result);
     const e = edit.removeCommonSuffixAndPrefix(source);
     if (e.isEmpty) {
-      return StringEdit.empty;
+      return $8D.empty;
     }
     return e.toEdit();
   }
   removeCommonSuffixAndPrefix(source) {
-    return this._createNew(this.replacements.map((e) => e.removeCommonSuffixAndPrefix(source))).normalize();
+    return this.a(this.replacements.map((e) => e.removeCommonSuffixAndPrefix(source))).normalize();
   }
   applyOnText(docContents) {
-    return new StringText(this.apply(docContents.value));
+    return new $1D(this.apply(docContents.value));
   }
   mapData(f) {
-    return new AnnotatedStringEdit(this.replacements.map((e) => new AnnotatedStringReplacement(e.replaceRange, e.newText, f(e))));
+    return new $_D(this.replacements.map((e) => new $aE(e.replaceRange, e.newText, f(e))));
   }
 };
-var BaseStringReplacement = class extends BaseReplacement {
+var $7D = class extends $3D {
   constructor(range, newText) {
     super(range);
     this.newText = newText;
@@ -17917,37 +17917,37 @@ var BaseStringReplacement = class extends BaseReplacement {
   }
   removeCommonSuffixPrefix(originalText) {
     const oldText = originalText.substring(this.replaceRange.start, this.replaceRange.endExclusive);
-    const prefixLen = commonPrefixLength(oldText, this.newText);
-    const suffixLen = Math.min(oldText.length - prefixLen, this.newText.length - prefixLen, commonSuffixLength(oldText, this.newText));
-    const replaceRange = new OffsetRange(this.replaceRange.start + prefixLen, this.replaceRange.endExclusive - suffixLen);
+    const prefixLen = $kg(oldText, this.newText);
+    const suffixLen = Math.min(oldText.length - prefixLen, this.newText.length - prefixLen, $lg(oldText, this.newText));
+    const replaceRange = new $PD(this.replaceRange.start + prefixLen, this.replaceRange.endExclusive - suffixLen);
     const newText = this.newText.substring(prefixLen, this.newText.length - suffixLen);
-    return new StringReplacement(replaceRange, newText);
+    return new $9D(replaceRange, newText);
   }
   normalizeEOL(eol) {
     const newText = this.newText.replace(/\r\n|\n/g, eol);
-    return new StringReplacement(this.replaceRange, newText);
+    return new $9D(this.replaceRange, newText);
   }
   removeCommonSuffixAndPrefix(source) {
     return this.removeCommonSuffix(source).removeCommonPrefix(source);
   }
   removeCommonPrefix(source) {
     const oldText = this.replaceRange.substring(source);
-    const prefixLen = commonPrefixLength(oldText, this.newText);
+    const prefixLen = $kg(oldText, this.newText);
     if (prefixLen === 0) {
       return this;
     }
-    return this.slice(this.replaceRange.deltaStart(prefixLen), new OffsetRange(prefixLen, this.newText.length));
+    return this.slice(this.replaceRange.deltaStart(prefixLen), new $PD(prefixLen, this.newText.length));
   }
   removeCommonSuffix(source) {
     const oldText = this.replaceRange.substring(source);
-    const suffixLen = commonSuffixLength(oldText, this.newText);
+    const suffixLen = $lg(oldText, this.newText);
     if (suffixLen === 0) {
       return this;
     }
-    return this.slice(this.replaceRange.deltaEnd(-suffixLen), new OffsetRange(0, this.newText.length - suffixLen));
+    return this.slice(this.replaceRange.deltaEnd(-suffixLen), new $PD(0, this.newText.length - suffixLen));
   }
   toEdit() {
-    return new StringEdit([this]);
+    return new $8D([this]);
   }
   toJson() {
     return {
@@ -17957,31 +17957,31 @@ var BaseStringReplacement = class extends BaseReplacement {
     };
   }
 };
-var StringEdit = class _StringEdit extends BaseStringEdit {
+var $8D = class _$8D extends $6D {
   static {
-    this.empty = new _StringEdit([]);
+    this.empty = new _$8D([]);
   }
   static create(replacements) {
-    return new _StringEdit(replacements);
+    return new _$8D(replacements);
   }
   static single(replacement) {
-    return new _StringEdit([replacement]);
+    return new _$8D([replacement]);
   }
   static replace(range, replacement) {
-    return new _StringEdit([new StringReplacement(range, replacement)]);
+    return new _$8D([new $9D(range, replacement)]);
   }
   static insert(offset, replacement) {
-    return new _StringEdit([new StringReplacement(OffsetRange.emptyAt(offset), replacement)]);
+    return new _$8D([new $9D($PD.emptyAt(offset), replacement)]);
   }
   static delete(range) {
-    return new _StringEdit([new StringReplacement(range, "")]);
+    return new _$8D([new $9D(range, "")]);
   }
   static fromJson(data) {
-    return new _StringEdit(data.map(StringReplacement.fromJson));
+    return new _$8D(data.map($9D.fromJson));
   }
   static compose(edits) {
     if (edits.length === 0) {
-      return _StringEdit.empty;
+      return _$8D.empty;
     }
     let result = edits[0];
     for (let i = 1; i < edits.length; i++) {
@@ -17994,72 +17994,72 @@ var StringEdit = class _StringEdit extends BaseStringEdit {
    * Equals `StringEdit.compose(replacements.map(r => r.toEdit()))`, but is much more performant.
   */
   static composeSequentialReplacements(replacements) {
-    let edit = _StringEdit.empty;
+    let edit = _$8D.empty;
     let curEditReplacements = [];
     for (const r of replacements) {
       const last = curEditReplacements.at(-1);
       if (!last || r.replaceRange.isBefore(last.replaceRange)) {
         curEditReplacements.push(r);
       } else {
-        edit = edit.compose(_StringEdit.create(curEditReplacements.reverse()));
+        edit = edit.compose(_$8D.create(curEditReplacements.reverse()));
         curEditReplacements = [r];
       }
     }
-    edit = edit.compose(_StringEdit.create(curEditReplacements.reverse()));
+    edit = edit.compose(_$8D.create(curEditReplacements.reverse()));
     return edit;
   }
   constructor(replacements) {
     super(replacements);
   }
-  _createNew(replacements) {
-    return new _StringEdit(replacements);
+  a(replacements) {
+    return new _$8D(replacements);
   }
 };
-var StringReplacement = class _StringReplacement extends BaseStringReplacement {
+var $9D = class _$9D extends $7D {
   static insert(offset, text) {
-    return new _StringReplacement(OffsetRange.emptyAt(offset), text);
+    return new _$9D($PD.emptyAt(offset), text);
   }
   static replace(range, text) {
-    return new _StringReplacement(range, text);
+    return new _$9D(range, text);
   }
   static delete(range) {
-    return new _StringReplacement(range, "");
+    return new _$9D(range, "");
   }
   static fromJson(data) {
-    return new _StringReplacement(OffsetRange.ofStartAndLength(data.pos, data.len), data.txt);
+    return new _$9D($PD.ofStartAndLength(data.pos, data.len), data.txt);
   }
   equals(other) {
     return this.replaceRange.equals(other.replaceRange) && this.newText === other.newText;
   }
   tryJoinTouching(other) {
-    return new _StringReplacement(this.replaceRange.joinRightTouching(other.replaceRange), this.newText + other.newText);
+    return new _$9D(this.replaceRange.joinRightTouching(other.replaceRange), this.newText + other.newText);
   }
   slice(range, rangeInReplacement) {
-    return new _StringReplacement(range, rangeInReplacement ? rangeInReplacement.substring(this.newText) : this.newText);
+    return new _$9D(range, rangeInReplacement ? rangeInReplacement.substring(this.newText) : this.newText);
   }
 };
-var AnnotatedStringEdit = class _AnnotatedStringEdit extends BaseStringEdit {
+var $_D = class _$_D extends $6D {
   static {
-    this.empty = new _AnnotatedStringEdit([]);
+    this.empty = new _$_D([]);
   }
   static create(replacements) {
-    return new _AnnotatedStringEdit(replacements);
+    return new _$_D(replacements);
   }
   static single(replacement) {
-    return new _AnnotatedStringEdit([replacement]);
+    return new _$_D([replacement]);
   }
   static replace(range, replacement, data) {
-    return new _AnnotatedStringEdit([new AnnotatedStringReplacement(range, replacement, data)]);
+    return new _$_D([new $aE(range, replacement, data)]);
   }
   static insert(offset, replacement, data) {
-    return new _AnnotatedStringEdit([new AnnotatedStringReplacement(OffsetRange.emptyAt(offset), replacement, data)]);
+    return new _$_D([new $aE($PD.emptyAt(offset), replacement, data)]);
   }
   static delete(range, data) {
-    return new _AnnotatedStringEdit([new AnnotatedStringReplacement(range, "", data)]);
+    return new _$_D([new $aE(range, "", data)]);
   }
   static compose(edits) {
     if (edits.length === 0) {
-      return _AnnotatedStringEdit.empty;
+      return _$_D.empty;
     }
     let result = edits[0];
     for (let i = 1; i < edits.length; i++) {
@@ -18070,28 +18070,28 @@ var AnnotatedStringEdit = class _AnnotatedStringEdit extends BaseStringEdit {
   constructor(replacements) {
     super(replacements);
   }
-  _createNew(replacements) {
-    return new _AnnotatedStringEdit(replacements);
+  a(replacements) {
+    return new _$_D(replacements);
   }
   toStringEdit(filter) {
     const newReplacements = [];
     for (const r of this.replacements) {
       if (!filter || filter(r)) {
-        newReplacements.push(new StringReplacement(r.replaceRange, r.newText));
+        newReplacements.push(new $9D(r.replaceRange, r.newText));
       }
     }
-    return new StringEdit(newReplacements);
+    return new $8D(newReplacements);
   }
 };
-var AnnotatedStringReplacement = class _AnnotatedStringReplacement extends BaseStringReplacement {
+var $aE = class _$aE extends $7D {
   static insert(offset, text, data) {
-    return new _AnnotatedStringReplacement(OffsetRange.emptyAt(offset), text, data);
+    return new _$aE($PD.emptyAt(offset), text, data);
   }
   static replace(range, text, data) {
-    return new _AnnotatedStringReplacement(range, text, data);
+    return new _$aE(range, text, data);
   }
   static delete(range, data) {
-    return new _AnnotatedStringReplacement(range, "", data);
+    return new _$aE(range, "", data);
   }
   constructor(range, newText, data) {
     super(range, newText);
@@ -18105,81 +18105,81 @@ var AnnotatedStringReplacement = class _AnnotatedStringReplacement extends BaseS
     if (joined === void 0) {
       return void 0;
     }
-    return new _AnnotatedStringReplacement(this.replaceRange.joinRightTouching(other.replaceRange), this.newText + other.newText, joined);
+    return new _$aE(this.replaceRange.joinRightTouching(other.replaceRange), this.newText + other.newText, joined);
   }
   slice(range, rangeInReplacement) {
-    return new _AnnotatedStringReplacement(range, rangeInReplacement ? rangeInReplacement.substring(this.newText) : this.newText, this.data);
+    return new _$aE(range, rangeInReplacement ? rangeInReplacement.substring(this.newText) : this.newText, this.data);
   }
 };
 
 // out-build/vs/editor/common/core/text/positionToOffset.js
-_setPositionOffsetTransformerDependencies({
-  StringEdit,
-  StringReplacement,
-  TextReplacement,
-  TextEdit,
-  TextLength
+$VD({
+  StringEdit: $8D,
+  StringReplacement: $9D,
+  TextReplacement: $cE,
+  TextEdit: $bE,
+  TextLength: $TD
 });
-function ensureDependenciesAreSet() {
+function $deb() {
 }
 
 // out-build/vs/editor/common/services/editorWebWorker.js
-var EditorWorker = class _EditorWorker {
-  constructor(_foreignModule = null) {
-    this._foreignModule = _foreignModule;
+var $6fb = class _$6fb {
+  constructor(f = null) {
+    this.f = f;
     this._requestHandlerBrand = void 0;
-    this._workerTextModelSyncServer = new WorkerTextModelSyncServer();
+    this.d = new $4fb();
   }
   dispose() {
   }
   async $ping() {
     return "pong";
   }
-  _getModel(uri) {
-    return this._workerTextModelSyncServer.getModel(uri);
+  g(uri) {
+    return this.d.getModel(uri);
   }
   getModels() {
-    return this._workerTextModelSyncServer.getModels();
+    return this.d.getModels();
   }
   $acceptNewModel(data) {
-    this._workerTextModelSyncServer.$acceptNewModel(data);
+    this.d.$acceptNewModel(data);
   }
   $acceptModelChanged(uri, e) {
-    this._workerTextModelSyncServer.$acceptModelChanged(uri, e);
+    this.d.$acceptModelChanged(uri, e);
   }
   $acceptRemovedModel(uri) {
-    this._workerTextModelSyncServer.$acceptRemovedModel(uri);
+    this.d.$acceptRemovedModel(uri);
   }
   async $computeUnicodeHighlights(url, options, range) {
-    const model = this._getModel(url);
+    const model = this.g(url);
     if (!model) {
       return { ranges: [], hasMore: false, ambiguousCharacterCount: 0, invisibleCharacterCount: 0, nonBasicAsciiCharacterCount: 0 };
     }
-    return UnicodeTextModelHighlighter.computeUnicodeHighlights(model, options, range);
+    return $wfb.computeUnicodeHighlights(model, options, range);
   }
   async $findSectionHeaders(url, options) {
-    const model = this._getModel(url);
+    const model = this.g(url);
     if (!model) {
       return [];
     }
-    return findSectionHeaders(model, options);
+    return $Yfb(model, options);
   }
   // ---- BEGIN diff --------------------------------------------------------------------------
   async $computeDiff(originalUrl, modifiedUrl, options, algorithm) {
-    const original = this._getModel(originalUrl);
-    const modified = this._getModel(modifiedUrl);
+    const original = this.g(originalUrl);
+    const modified = this.g(modifiedUrl);
     if (!original || !modified) {
       return null;
     }
-    const result = _EditorWorker.computeDiff(original, modified, options, algorithm);
+    const result = _$6fb.h(original, modified, options, algorithm);
     return result;
   }
-  static computeDiff(originalTextModel, modifiedTextModel, options, algorithm) {
-    const diffAlgorithm = algorithm === "advanced" ? linesDiffComputers.getDefault() : linesDiffComputers.getLegacy();
+  static h(originalTextModel, modifiedTextModel, options, algorithm) {
+    const diffAlgorithm = algorithm === "advanced" ? $Wfb.getDefault() : $Wfb.getLegacy();
     const originalLines = originalTextModel.getLinesContent();
     const modifiedLines = modifiedTextModel.getLinesContent();
     const result = diffAlgorithm.computeDiff(originalLines, modifiedLines, options);
-    const identical = result.changes.length > 0 ? false : this._modelsAreIdentical(originalTextModel, modifiedTextModel);
+    const identical = result.changes.length > 0 ? false : this.j(originalTextModel, modifiedTextModel);
     function getLineChanges(changes) {
       return changes.map((m) => [m.original.startLineNumber, m.original.endLineNumberExclusive, m.modified.startLineNumber, m.modified.endLineNumberExclusive, m.innerChanges?.map((m2) => [
         m2.originalRange.startLineNumber,
@@ -18205,7 +18205,7 @@ var EditorWorker = class _EditorWorker {
       ])
     };
   }
-  static _modelsAreIdentical(original, modified) {
+  static j(original, modified) {
     const originalLineCount = original.getLineCount();
     const modifiedLineCount = modified.getLineCount();
     if (originalLineCount !== modifiedLineCount) {
@@ -18221,14 +18221,14 @@ var EditorWorker = class _EditorWorker {
     return true;
   }
   async $computeDirtyDiff(originalUrl, modifiedUrl, ignoreTrimWhitespace) {
-    const original = this._getModel(originalUrl);
-    const modified = this._getModel(modifiedUrl);
+    const original = this.g(originalUrl);
+    const modified = this.g(modifiedUrl);
     if (!original || !modified) {
       return null;
     }
     const originalLines = original.getLinesContent();
     const modifiedLines = modified.getLinesContent();
-    const diffComputer = new DiffComputer(originalLines, modifiedLines, {
+    const diffComputer = new $mE(originalLines, modifiedLines, {
       shouldComputeCharChanges: false,
       shouldPostProcessCharChanges: false,
       shouldIgnoreTrimWhitespace: ignoreTrimWhitespace,
@@ -18238,13 +18238,13 @@ var EditorWorker = class _EditorWorker {
     return diffComputer.computeDiff().changes;
   }
   $computeStringDiff(original, modified, options, algorithm) {
-    return computeStringDiff(original, modified, options, algorithm).toJson();
+    return $7fb(original, modified, options, algorithm).toJson();
   }
   static {
-    this._diffLimit = 1e5;
+    this.k = 1e5;
   }
   async $computeMoreMinimalEdits(modelUrl, edits, pretty) {
-    const model = this._getModel(modelUrl);
+    const model = this.g(modelUrl);
     if (!model) {
       return edits;
     }
@@ -18252,7 +18252,7 @@ var EditorWorker = class _EditorWorker {
     let lastEol = void 0;
     edits = edits.slice(0).sort((a, b) => {
       if (a.range && b.range) {
-        return Range.compareRangesUsingStarts(a.range, b.range);
+        return $HD.compareRangesUsingStarts(a.range, b.range);
       }
       const aRng = a.range ? 0 : 1;
       const bRng = b.range ? 0 : 1;
@@ -18260,8 +18260,8 @@ var EditorWorker = class _EditorWorker {
     });
     let writeIndex = 0;
     for (let readIndex = 1; readIndex < edits.length; readIndex++) {
-      if (Range.getEndPosition(edits[writeIndex].range).equals(Range.getStartPosition(edits[readIndex].range))) {
-        edits[writeIndex].range = Range.fromPositions(Range.getStartPosition(edits[writeIndex].range), Range.getEndPosition(edits[readIndex].range));
+      if ($HD.getEndPosition(edits[writeIndex].range).equals($HD.getStartPosition(edits[readIndex].range))) {
+        edits[writeIndex].range = $HD.fromPositions($HD.getStartPosition(edits[writeIndex].range), $HD.getEndPosition(edits[readIndex].range));
         edits[writeIndex].text += edits[readIndex].text;
       } else {
         writeIndex++;
@@ -18273,7 +18273,7 @@ var EditorWorker = class _EditorWorker {
       if (typeof eol === "number") {
         lastEol = eol;
       }
-      if (Range.isEmpty(range) && !text) {
+      if ($HD.isEmpty(range) && !text) {
         continue;
       }
       const original = model.getValueInRange(range);
@@ -18281,12 +18281,12 @@ var EditorWorker = class _EditorWorker {
       if (original === text) {
         continue;
       }
-      if (Math.max(text.length, original.length) > _EditorWorker._diffLimit) {
+      if (Math.max(text.length, original.length) > _$6fb.k) {
         result.push({ range, text });
         continue;
       }
-      const changes = stringDiff(original, text, pretty);
-      const editOffset = model.offsetAt(Range.lift(range).getStartPosition());
+      const changes = $MD(original, text, pretty);
+      const editOffset = model.offsetAt($HD.lift(range).getStartPosition());
       for (const change of changes) {
         const start = model.positionAt(editOffset + change.originalStart);
         const end = model.positionAt(editOffset + change.originalStart + change.originalLength);
@@ -18305,7 +18305,7 @@ var EditorWorker = class _EditorWorker {
     return result;
   }
   $computeHumanReadableDiff(modelUrl, edits, options) {
-    const model = this._getModel(modelUrl);
+    const model = this.g(modelUrl);
     if (!model) {
       return edits;
     }
@@ -18313,7 +18313,7 @@ var EditorWorker = class _EditorWorker {
     let lastEol = void 0;
     edits = edits.slice(0).sort((a, b) => {
       if (a.range && b.range) {
-        return Range.compareRangesUsingStarts(a.range, b.range);
+        return $HD.compareRangesUsingStarts(a.range, b.range);
       }
       const aRng = a.range ? 0 : 1;
       const bRng = b.range ? 0 : 1;
@@ -18321,7 +18321,7 @@ var EditorWorker = class _EditorWorker {
     });
     for (let { range, text, eol } of edits) {
       let addPositions2 = function(pos1, pos2) {
-        return new Position(pos1.lineNumber + pos2.lineNumber - 1, pos2.lineNumber === 1 ? pos1.column + pos2.column - 1 : pos2.column);
+        return new $GD(pos1.lineNumber + pos2.lineNumber - 1, pos2.lineNumber === 1 ? pos1.column + pos2.column - 1 : pos2.column);
       }, getText2 = function(lines, range2) {
         const result2 = [];
         for (let i = range2.startLineNumber; i <= range2.endLineNumber; i++) {
@@ -18342,7 +18342,7 @@ var EditorWorker = class _EditorWorker {
       if (typeof eol === "number") {
         lastEol = eol;
       }
-      if (Range.isEmpty(range) && !text) {
+      if ($HD.isEmpty(range) && !text) {
         continue;
       }
       const original = model.getValueInRange(range);
@@ -18350,24 +18350,24 @@ var EditorWorker = class _EditorWorker {
       if (original === text) {
         continue;
       }
-      if (Math.max(text.length, original.length) > _EditorWorker._diffLimit) {
+      if (Math.max(text.length, original.length) > _$6fb.k) {
         result.push({ range, text });
         continue;
       }
       const originalLines = original.split(/\r\n|\n|\r/);
       const modifiedLines = text.split(/\r\n|\n|\r/);
-      const diff = linesDiffComputers.getDefault().computeDiff(originalLines, modifiedLines, options);
-      const start = Range.lift(range).getStartPosition();
+      const diff = $Wfb.getDefault().computeDiff(originalLines, modifiedLines, options);
+      const start = $HD.lift(range).getStartPosition();
       for (const c of diff.changes) {
         if (c.innerChanges) {
           for (const x of c.innerChanges) {
             result.push({
-              range: Range.fromPositions(addPositions2(start, x.originalRange.getStartPosition()), addPositions2(start, x.originalRange.getEndPosition())),
+              range: $HD.fromPositions(addPositions2(start, x.originalRange.getStartPosition()), addPositions2(start, x.originalRange.getEndPosition())),
               text: getText2(modifiedLines, x.modifiedRange).join(model.eol)
             });
           }
         } else {
-          throw new BugIndicatingError("The experimental diff algorithm always produces inner changes");
+          throw new $Eb("The experimental diff algorithm always produces inner changes");
         }
       }
     }
@@ -18378,29 +18378,29 @@ var EditorWorker = class _EditorWorker {
   }
   // ---- END minimal edits ---------------------------------------------------------------
   async $computeLinks(modelUrl) {
-    const model = this._getModel(modelUrl);
+    const model = this.g(modelUrl);
     if (!model) {
       return null;
     }
-    return computeLinks(model);
+    return $zfb(model);
   }
   // --- BEGIN default document colors -----------------------------------------------------------
   async $computeDefaultDocumentColors(modelUrl) {
-    const model = this._getModel(modelUrl);
+    const model = this.g(modelUrl);
     if (!model) {
       return null;
     }
-    return computeDefaultDocumentColors(model);
+    return $Xfb(model);
   }
   static {
-    this._suggestionsLimit = 1e4;
+    this.l = 1e4;
   }
   async $textualSuggest(modelUrls, leadingWord, wordDef, wordDefFlags) {
-    const sw = new StopWatch();
+    const sw = new $kf();
     const wordDefRegExp = new RegExp(wordDef, wordDefFlags);
     const seen = /* @__PURE__ */ new Set();
     outer: for (const url of modelUrls) {
-      const model = this._getModel(url);
+      const model = this.g(url);
       if (!model) {
         continue;
       }
@@ -18409,7 +18409,7 @@ var EditorWorker = class _EditorWorker {
           continue;
         }
         seen.add(word);
-        if (seen.size > _EditorWorker._suggestionsLimit) {
+        if (seen.size > _$6fb.l) {
           break outer;
         }
       }
@@ -18419,7 +18419,7 @@ var EditorWorker = class _EditorWorker {
   // ---- END suggest --------------------------------------------------------------------------
   //#region -- word ranges --
   async $computeWordRanges(modelUrl, range, wordDef, wordDefFlags) {
-    const model = this._getModel(modelUrl);
+    const model = this.g(modelUrl);
     if (!model) {
       return /* @__PURE__ */ Object.create(null);
     }
@@ -18448,7 +18448,7 @@ var EditorWorker = class _EditorWorker {
   }
   //#endregion
   async $navigateValueSet(modelUrl, range, up, wordDef, wordDefFlags) {
-    const model = this._getModel(modelUrl);
+    const model = this.g(modelUrl);
     if (!model) {
       return null;
     }
@@ -18467,39 +18467,39 @@ var EditorWorker = class _EditorWorker {
       return null;
     }
     const word = model.getValueInRange(wordRange);
-    const result = BasicInplaceReplace.INSTANCE.navigateValueSet(range, selectionText, wordRange, word, up);
+    const result = $Afb.INSTANCE.navigateValueSet(range, selectionText, wordRange, word, up);
     return result;
   }
   // ---- BEGIN foreign module support --------------------------------------------------------------------------
   // foreign method request
   $fmr(method, args) {
-    if (!this._foreignModule || typeof this._foreignModule[method] !== "function") {
+    if (!this.f || typeof this.f[method] !== "function") {
       return Promise.reject(new Error("Missing requestHandler or method: " + method));
     }
     try {
-      return Promise.resolve(this._foreignModule[method].apply(this._foreignModule, args));
+      return Promise.resolve(this.f[method].apply(this.f, args));
     } catch (e) {
       return Promise.reject(e);
     }
   }
 };
 if (typeof importScripts === "function") {
-  globalThis.monaco = createMonacoBaseAPI();
+  globalThis.monaco = $Cfb();
 }
-function computeStringDiff(original, modified, options, algorithm) {
-  const diffAlgorithm = algorithm === "advanced" ? linesDiffComputers.getDefault() : linesDiffComputers.getLegacy();
-  ensureDependenciesAreSet();
-  const originalText = new StringText(original);
+function $7fb(original, modified, options, algorithm) {
+  const diffAlgorithm = algorithm === "advanced" ? $Wfb.getDefault() : $Wfb.getLegacy();
+  $deb();
+  const originalText = new $1D(original);
   const originalLines = originalText.getLines();
-  const modifiedText = new StringText(modified);
+  const modifiedText = new $1D(modified);
   const modifiedLines = modifiedText.getLines();
   const result = diffAlgorithm.computeDiff(originalLines, modifiedLines, { ignoreTrimWhitespace: false, maxComputationTimeMs: options.maxComputationTimeMs, computeMoves: false, extendToSubwords: false });
-  const textEdit = DetailedLineRangeMapping.toTextEdit(result.changes, modifiedText);
+  const textEdit = $eE.toTextEdit(result.changes, modifiedText);
   const strEdit = originalText.getTransformer().getStringEdit(textEdit);
   return strEdit;
 }
 
 // out-build/vs/editor/common/services/editorWebWorkerMain.js
-bootstrapWebWorker(() => new EditorWorker(null));
+$3$(() => new $6fb(null));
 
 //# sourceMappingURL=editorWebWorkerMain.js.map

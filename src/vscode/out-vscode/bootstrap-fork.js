@@ -382,10 +382,10 @@ function _definePolyfillMarks(timeOrigin) {
   if (typeof timeOrigin === "number") {
     _data.push("code/timeOrigin", timeOrigin);
   }
-  function mark2(name, markOptions) {
+  function mark(name, markOptions) {
     _data.push(name, markOptions?.startTime ?? Date.now());
   }
-  function getMarks2() {
+  function getMarks() {
     const result = [];
     for (let i = 0; i < _data.length; i += 2) {
       result.push({
@@ -395,7 +395,7 @@ function _definePolyfillMarks(timeOrigin) {
     }
     return result;
   }
-  return { mark: mark2, getMarks: getMarks2 };
+  return { mark, getMarks };
 }
 function _define() {
   if (typeof performance === "object" && typeof performance.mark === "function" && !performance.nodeTiming) {
@@ -437,8 +437,8 @@ function _factory(sharedObj) {
   return sharedObj.MonacoPerformanceMarks;
 }
 var perf = _factory(globalThis);
-var mark = perf.mark;
-var getMarks = perf.getMarks;
+var $W = perf.mark;
+var $X = perf.getMarks;
 
 // out-build/bootstrap-node.js
 import * as path from "node:path";
@@ -469,7 +469,7 @@ function setupCurrentWorkingDirectory() {
   }
 }
 setupCurrentWorkingDirectory();
-function devInjectNodeModuleLookupPath(injectPath) {
+function $T(injectPath) {
   if (!process.env["VSCODE_DEV"]) {
     return;
   }
@@ -479,7 +479,7 @@ function devInjectNodeModuleLookupPath(injectPath) {
   const Module = require2("node:module");
   Module.register("./bootstrap-import.js", { parentURL: import.meta.url, data: injectPath });
 }
-function removeGlobalNodeJsModuleLookupPaths() {
+function $U() {
   if (typeof process?.versions?.electron === "string") {
     return;
   }
@@ -541,8 +541,8 @@ if (process.env["VSCODE_DEV"]) {
   } catch (error) {
   }
 }
-var product = productObj;
-var pkg = pkgObj;
+var $R = productObj;
+var $S = pkgObj;
 
 // out-build/bootstrap-esm.js
 if (process.env["ELECTRON_RUN_AS_NODE"] || process.versions["electron"]) {
@@ -562,8 +562,8 @@ if (process.env["ELECTRON_RUN_AS_NODE"] || process.versions["electron"]) {
 	}`;
   register(`data:text/javascript;base64,${Buffer.from(jsCode).toString("base64")}`, import.meta.url);
 }
-globalThis._VSCODE_PRODUCT_JSON = { ...product };
-globalThis._VSCODE_PACKAGE_JSON = { ...pkg };
+globalThis._VSCODE_PRODUCT_JSON = { ...$R };
+globalThis._VSCODE_PACKAGE_JSON = { ...$S };
 globalThis._VSCODE_FILE_ROOT = import.meta.dirname;
 var setupNLSResult = void 0;
 function setupNLS() {
@@ -573,7 +573,7 @@ function setupNLS() {
   return setupNLSResult;
 }
 async function doSetupNLS() {
-  mark("code/willLoadNls");
+  $W("code/willLoadNls");
   let nlsConfig = void 0;
   let messagesFile;
   if (process.env["VSCODE_NLS_CONFIG"]) {
@@ -612,15 +612,15 @@ async function doSetupNLS() {
       }
     }
   }
-  mark("code/didLoadNls");
+  $W("code/didLoadNls");
   return nlsConfig;
 }
-async function bootstrapESM() {
+async function $Y() {
   await setupNLS();
 }
 
 // out-build/bootstrap-fork.js
-mark("code/fork/start");
+$W("code/fork/start");
 function pipeLoggingToParent() {
   const MAX_STREAM_BUFFER_LENGTH = 1024 * 1024;
   const MAX_LENGTH = 1e5;
@@ -752,9 +752,9 @@ function configureCrashReporter() {
   }
 }
 configureCrashReporter();
-removeGlobalNodeJsModuleLookupPaths();
+$U();
 if (process.env["VSCODE_DEV_INJECT_NODE_MODULE_LOOKUP_PATH"]) {
-  devInjectNodeModuleLookupPath(process.env["VSCODE_DEV_INJECT_NODE_MODULE_LOOKUP_PATH"]);
+  $T(process.env["VSCODE_DEV_INJECT_NODE_MODULE_LOOKUP_PATH"]);
 }
 if (!!process.send && process.env["VSCODE_PIPE_LOGGING"] === "true") {
   pipeLoggingToParent();
@@ -765,7 +765,7 @@ if (!process.env["VSCODE_HANDLES_UNCAUGHT_ERRORS"]) {
 if (process.env["VSCODE_PARENT_PID"]) {
   terminateWhenParentTerminates();
 }
-await bootstrapESM();
+await $Y();
 await import(
   [`./${process.env["VSCODE_ESM_ENTRYPOINT"]}.js`].join("/")
   /* workaround: esbuild prints some strange warnings when trying to inline? */

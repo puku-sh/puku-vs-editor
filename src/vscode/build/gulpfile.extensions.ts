@@ -210,15 +210,16 @@ export const cleanExtensionsBuildTask = task.define('clean-extensions-build', ut
 
 /**
  * brings in the marketplace extensions for the build
+ * DISABLED FOR PUKU: We don't need marketplace extensions - replaced with no-op task
  */
-const bundleMarketplaceExtensionsBuildTask = task.define('bundle-marketplace-extensions-build', () => ext.packageMarketplaceExtensionsStream(false).pipe(gulp.dest('.build')));
+const bundleMarketplaceExtensionsBuildTask = task.define('bundle-marketplace-extensions-build', () => Promise.resolve());
 
 /**
  * Compiles the non-native extensions for the build
  * @note this does not clean the directory ahead of it. See {@link cleanExtensionsBuildTask} for that.
  */
 export const compileNonNativeExtensionsBuildTask = task.define('compile-non-native-extensions-build', task.series(
-	bundleMarketplaceExtensionsBuildTask,
+	bundleMarketplaceExtensionsBuildTask,  // PUKU: No-op task (marketplace extensions disabled)
 	task.define('bundle-non-native-extensions-build', () => ext.packageNonNativeLocalExtensionsStream(false, false).pipe(gulp.dest('.build')))
 ));
 gulp.task(compileNonNativeExtensionsBuildTask);
@@ -236,7 +237,7 @@ gulp.task(compileNativeExtensionsBuildTask);
  */
 export const compileAllExtensionsBuildTask = task.define('compile-extensions-build', task.series(
 	cleanExtensionsBuildTask,
-	bundleMarketplaceExtensionsBuildTask,
+	bundleMarketplaceExtensionsBuildTask,  // PUKU: No-op task (marketplace extensions disabled)
 	task.define('bundle-extensions-build', () => ext.packageAllLocalExtensionsStream(false, false).pipe(gulp.dest('.build'))),
 ));
 gulp.task(compileAllExtensionsBuildTask);
@@ -247,7 +248,7 @@ gulp.task(task.define('extensions-ci', task.series(compileNonNativeExtensionsBui
 
 const compileExtensionsBuildPullRequestTask = task.define('compile-extensions-build-pr', task.series(
 	cleanExtensionsBuildTask,
-	bundleMarketplaceExtensionsBuildTask,
+	bundleMarketplaceExtensionsBuildTask,  // PUKU: No-op task (marketplace extensions disabled)
 	task.define('bundle-extensions-build-pr', () => ext.packageAllLocalExtensionsStream(false, true).pipe(gulp.dest('.build'))),
 ));
 gulp.task(compileExtensionsBuildPullRequestTask);
