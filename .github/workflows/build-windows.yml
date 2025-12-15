@@ -35,10 +35,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
+      - name: Setup Node.js 23.5.0
         uses: actions/setup-node@v4
         with:
-          node-version-file: 'src/vscode/.nvmrc'
+          node-version: '23.5.0'
+
+      - name: Setup Node.js 22.20.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.20.0'
           cache: 'npm'
           cache-dependency-path: |
             src/chat/package-lock.json
@@ -150,10 +155,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
+      - name: Setup Node.js 23.5.0
         uses: actions/setup-node@v4
         with:
-          node-version-file: 'src/vscode/.nvmrc'
+          node-version: '23.5.0'
+
+      - name: Setup Node.js 22.20.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.20.0'
           cache: 'npm'
           cache-dependency-path: |
             src/chat/package-lock.json
