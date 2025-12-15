@@ -24,7 +24,7 @@ on:
 jobs:
   build-windows-x64:
     name: Build Windows (x64)
-    runs-on: windows-2022  # 🚀 Standard 4-core runner
+    runs-on: namespace-profile-default-amd64-windows  # 🚀 Namespace.so AMD64
     if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.architecture == 'x64' }}
     env:
       VSCODE_ARCH: x64
@@ -156,7 +156,7 @@ jobs:
 
   build-windows-arm64:
     name: Build Windows (ARM64)
-    runs-on: windows-2022  # 🚀 Standard 4-core runner
+    runs-on: namespace-profile-default-arm64-windows  # 🚀 Namespace.so ARM64
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.architecture == 'arm64' }}
     env:
       VSCODE_ARCH: arm64
