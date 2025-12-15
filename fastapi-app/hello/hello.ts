@@ -17,6 +17,7 @@ useEffect(() => {
       } finally {
         setLoading(false);
       }
+      
     };
 
     fetchData();

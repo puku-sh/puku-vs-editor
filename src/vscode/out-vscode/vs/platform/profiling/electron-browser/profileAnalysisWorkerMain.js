@@ -377,15 +377,15 @@ export default {
 
 
 // out-build/vs/nls.messages.js
-function getNLSLanguage() {
+function $h() {
   return globalThis._VSCODE_NLS_LANGUAGE;
 }
 
 // out-build/vs/nls.js
-var isPseudo = getNLSLanguage() === "pseudo" || typeof document !== "undefined" && document.location && typeof document.location.hash === "string" && document.location.hash.indexOf("pseudo=true") >= 0;
+var isPseudo = $h() === "pseudo" || typeof document !== "undefined" && document.location && typeof document.location.hash === "string" && document.location.hash.indexOf("pseudo=true") >= 0;
 
 // out-build/vs/base/common/platform.js
-var LANGUAGE_DEFAULT = "en";
+var $k = "en";
 var _isWindows = false;
 var _isMacintosh = false;
 var _isLinux = false;
@@ -397,8 +397,8 @@ var _isIOS = false;
 var _isCI = false;
 var _isMobile = false;
 var _locale = void 0;
-var _language = LANGUAGE_DEFAULT;
-var _platformLocale = LANGUAGE_DEFAULT;
+var _language = $k;
+var _platformLocale = $k;
 var _translationsConfigFile = void 0;
 var _userAgent = void 0;
 var $globalThis = globalThis;
@@ -417,15 +417,15 @@ if (typeof nodeProcess === "object") {
   _isLinuxSnap = _isLinux && !!nodeProcess.env["SNAP"] && !!nodeProcess.env["SNAP_REVISION"];
   _isElectron = isElectronProcess;
   _isCI = !!nodeProcess.env["CI"] || !!nodeProcess.env["BUILD_ARTIFACTSTAGINGDIRECTORY"] || !!nodeProcess.env["GITHUB_WORKSPACE"];
-  _locale = LANGUAGE_DEFAULT;
-  _language = LANGUAGE_DEFAULT;
+  _locale = $k;
+  _language = $k;
   const rawNlsConfig = nodeProcess.env["VSCODE_NLS_CONFIG"];
   if (rawNlsConfig) {
     try {
       const nlsConfig = JSON.parse(rawNlsConfig);
       _locale = nlsConfig.userLocale;
       _platformLocale = nlsConfig.osLocale;
-      _language = nlsConfig.resolvedLanguage || LANGUAGE_DEFAULT;
+      _language = nlsConfig.resolvedLanguage || $k;
       _translationsConfigFile = nlsConfig.languagePack?.translationsConfigFile;
     } catch (e) {
     }
@@ -439,7 +439,7 @@ if (typeof nodeProcess === "object") {
   _isLinux = _userAgent.indexOf("Linux") >= 0;
   _isMobile = _userAgent?.indexOf("Mobi") >= 0;
   _isWeb = true;
-  _language = getNLSLanguage() || LANGUAGE_DEFAULT;
+  _language = $h() || $k;
   _locale = navigator.language.toLowerCase();
   _platformLocale = _locale;
 } else {
@@ -460,36 +460,36 @@ if (_isMacintosh) {
 } else if (_isLinux) {
   _platform = 2;
 }
-var isWindows = _isWindows;
-var isMacintosh = _isMacintosh;
-var isWebWorker = _isWeb && typeof $globalThis.importScripts === "function";
-var webWorkerOrigin = isWebWorker ? $globalThis.origin : void 0;
-var userAgent = _userAgent;
-var language = _language;
+var $m = _isWindows;
+var $n = _isMacintosh;
+var $t = _isWeb && typeof $globalThis.importScripts === "function";
+var $u = $t ? $globalThis.origin : void 0;
+var $z = _userAgent;
+var $A = _language;
 var Language;
 (function(Language2) {
   function value() {
-    return language;
+    return $A;
   }
   Language2.value = value;
   function isDefaultVariant() {
-    if (language.length === 2) {
-      return language === "en";
-    } else if (language.length >= 3) {
-      return language[0] === "e" && language[1] === "n" && language[2] === "-";
+    if ($A.length === 2) {
+      return $A === "en";
+    } else if ($A.length >= 3) {
+      return $A[0] === "e" && $A[1] === "n" && $A[2] === "-";
     } else {
       return false;
     }
   }
   Language2.isDefaultVariant = isDefaultVariant;
   function isDefault() {
-    return language === "en";
+    return $A === "en";
   }
   Language2.isDefault = isDefault;
 })(Language || (Language = {}));
-var setTimeout0IsFaster = typeof $globalThis.postMessage === "function" && !$globalThis.importScripts;
-var setTimeout0 = (() => {
-  if (setTimeout0IsFaster) {
+var $E = typeof $globalThis.postMessage === "function" && !$globalThis.importScripts;
+var $F = (() => {
+  if ($E) {
     const pending = [];
     $globalThis.addEventListener("message", (e) => {
       if (e.data && e.data.vscodeScheduleAsyncWork) {
@@ -521,11 +521,11 @@ var OperatingSystem;
   OperatingSystem2[OperatingSystem2["Macintosh"] = 2] = "Macintosh";
   OperatingSystem2[OperatingSystem2["Linux"] = 3] = "Linux";
 })(OperatingSystem || (OperatingSystem = {}));
-var isChrome = !!(userAgent && userAgent.indexOf("Chrome") >= 0);
-var isFirefox = !!(userAgent && userAgent.indexOf("Firefox") >= 0);
-var isSafari = !!(!isChrome && (userAgent && userAgent.indexOf("Safari") >= 0));
-var isEdge = !!(userAgent && userAgent.indexOf("Edg/") >= 0);
-var isAndroid = !!(userAgent && userAgent.indexOf("Android") >= 0);
+var $I = !!($z && $z.indexOf("Chrome") >= 0);
+var $J = !!($z && $z.indexOf("Firefox") >= 0);
+var $K = !!(!$I && ($z && $z.indexOf("Safari") >= 0));
+var $L = !!($z && $z.indexOf("Edg/") >= 0);
+var $M = !!($z && $z.indexOf("Android") >= 0);
 
 // out-build/vs/base/common/process.js
 var safeProcess;
@@ -565,7 +565,7 @@ if (typeof vscodeGlobal !== "undefined" && typeof vscodeGlobal.process !== "unde
   safeProcess = {
     // Supported
     get platform() {
-      return isWindows ? "win32" : isMacintosh ? "darwin" : "linux";
+      return $m ? "win32" : $n ? "darwin" : "linux";
     },
     get arch() {
       return void 0;
@@ -579,10 +579,10 @@ if (typeof vscodeGlobal !== "undefined" && typeof vscodeGlobal.process !== "unde
     }
   };
 }
-var cwd = safeProcess.cwd;
-var env = safeProcess.env;
-var platform = safeProcess.platform;
-var arch = safeProcess.arch;
+var $2 = safeProcess.cwd;
+var $3 = safeProcess.env;
+var $4 = safeProcess.platform;
+var $5 = safeProcess.arch;
 
 // out-build/vs/base/common/path.js
 var CHAR_UPPERCASE_A = 65;
@@ -620,7 +620,7 @@ function validateString(value, name) {
     throw new ErrorInvalidArgType(name, "string", value);
   }
 }
-var platformIsWin32 = platform === "win32";
+var platformIsWin32 = $4 === "win32";
 function isPathSeparator(code) {
   return code === CHAR_FORWARD_SLASH || code === CHAR_BACKWARD_SLASH;
 }
@@ -702,7 +702,7 @@ function _format(sep2, pathObject) {
   }
   return dir === pathObject.root ? `${dir}${base}` : `${dir}${sep2}${base}`;
 }
-var win32 = {
+var $6 = {
   // path.resolve([from ...], to)
   resolve(...pathSegments) {
     let resolvedDevice = "";
@@ -717,9 +717,9 @@ var win32 = {
           continue;
         }
       } else if (resolvedDevice.length === 0) {
-        path = cwd();
+        path = $2();
       } else {
-        path = env[`=${resolvedDevice}`] || cwd();
+        path = $3[`=${resolvedDevice}`] || $2();
         if (path === void 0 || path.slice(0, 2).toLowerCase() !== resolvedDevice.toLowerCase() && path.charCodeAt(2) === CHAR_BACKWARD_SLASH) {
           path = `${resolvedDevice}\\`;
         }
@@ -727,15 +727,15 @@ var win32 = {
       const len = path.length;
       let rootEnd = 0;
       let device = "";
-      let isAbsolute2 = false;
+      let isAbsolute = false;
       const code = path.charCodeAt(0);
       if (len === 1) {
         if (isPathSeparator(code)) {
           rootEnd = 1;
-          isAbsolute2 = true;
+          isAbsolute = true;
         }
       } else if (isPathSeparator(code)) {
-        isAbsolute2 = true;
+        isAbsolute = true;
         if (isPathSeparator(path.charCodeAt(1))) {
           let j = 2;
           let last = j;
@@ -766,7 +766,7 @@ var win32 = {
         device = path.slice(0, 2);
         rootEnd = 2;
         if (len > 2 && isPathSeparator(path.charCodeAt(2))) {
-          isAbsolute2 = true;
+          isAbsolute = true;
           rootEnd = 3;
         }
       }
@@ -785,8 +785,8 @@ var win32 = {
         }
       } else {
         resolvedTail = `${path.slice(rootEnd)}\\${resolvedTail}`;
-        resolvedAbsolute = isAbsolute2;
-        if (isAbsolute2 && resolvedDevice.length > 0) {
+        resolvedAbsolute = isAbsolute;
+        if (isAbsolute && resolvedDevice.length > 0) {
           break;
         }
       }
@@ -802,13 +802,13 @@ var win32 = {
     }
     let rootEnd = 0;
     let device;
-    let isAbsolute2 = false;
+    let isAbsolute = false;
     const code = path.charCodeAt(0);
     if (len === 1) {
       return isPosixPathSeparator(code) ? "\\" : path;
     }
     if (isPathSeparator(code)) {
-      isAbsolute2 = true;
+      isAbsolute = true;
       if (isPathSeparator(path.charCodeAt(1))) {
         let j = 2;
         let last = j;
@@ -842,18 +842,18 @@ var win32 = {
       device = path.slice(0, 2);
       rootEnd = 2;
       if (len > 2 && isPathSeparator(path.charCodeAt(2))) {
-        isAbsolute2 = true;
+        isAbsolute = true;
         rootEnd = 3;
       }
     }
-    let tail = rootEnd < len ? normalizeString(path.slice(rootEnd), !isAbsolute2, "\\", isPathSeparator) : "";
-    if (tail.length === 0 && !isAbsolute2) {
+    let tail = rootEnd < len ? normalizeString(path.slice(rootEnd), !isAbsolute, "\\", isPathSeparator) : "";
+    if (tail.length === 0 && !isAbsolute) {
       tail = ".";
     }
     if (tail.length > 0 && isPathSeparator(path.charCodeAt(len - 1))) {
       tail += "\\";
     }
-    if (!isAbsolute2 && device === void 0 && path.includes(":")) {
+    if (!isAbsolute && device === void 0 && path.includes(":")) {
       if (tail.length >= 2 && isWindowsDeviceRoot(tail.charCodeAt(0)) && tail.charCodeAt(1) === CHAR_COLON) {
         return `.\\${tail}`;
       }
@@ -865,9 +865,9 @@ var win32 = {
       } while ((index = path.indexOf(":", index + 1)) !== -1);
     }
     if (device === void 0) {
-      return isAbsolute2 ? `\\${tail}` : tail;
+      return isAbsolute ? `\\${tail}` : tail;
     }
-    return isAbsolute2 ? `${device}\\${tail}` : `${device}${tail}`;
+    return isAbsolute ? `${device}\\${tail}` : `${device}${tail}`;
   },
   isAbsolute(path) {
     validateString(path, "path");
@@ -923,7 +923,7 @@ var win32 = {
         joined = `\\${joined.slice(slashCount)}`;
       }
     }
-    return win32.normalize(joined);
+    return $6.normalize(joined);
   },
   // It will solve the relative path from `from` to `to`, for instance:
   //  from = 'C:\\orandea\\test\\aaa'
@@ -935,8 +935,8 @@ var win32 = {
     if (from === to) {
       return "";
     }
-    const fromOrig = win32.resolve(from);
-    const toOrig = win32.resolve(to);
+    const fromOrig = $6.resolve(from);
+    const toOrig = $6.resolve(to);
     if (fromOrig === toOrig) {
       return "";
     }
@@ -1048,7 +1048,7 @@ var win32 = {
     if (typeof path !== "string" || path.length === 0) {
       return path;
     }
-    const resolvedPath = win32.resolve(path);
+    const resolvedPath = $6.resolve(path);
     if (resolvedPath.length <= 2) {
       return path;
     }
@@ -1350,13 +1350,13 @@ var posixCwd = (() => {
   if (platformIsWin32) {
     const regexp = /\\/g;
     return () => {
-      const cwd2 = cwd().replace(regexp, "/");
-      return cwd2.slice(cwd2.indexOf("/"));
+      const cwd = $2().replace(regexp, "/");
+      return cwd.slice(cwd.indexOf("/"));
     };
   }
-  return () => cwd();
+  return () => $2();
 })();
-var posix = {
+var $7 = {
   // path.resolve([from ...], to)
   resolve(...pathSegments) {
     let resolvedPath = "";
@@ -1371,9 +1371,9 @@ var posix = {
       resolvedAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     }
     if (!resolvedAbsolute) {
-      const cwd2 = posixCwd();
-      resolvedPath = `${cwd2}/${resolvedPath}`;
-      resolvedAbsolute = cwd2.charCodeAt(0) === CHAR_FORWARD_SLASH;
+      const cwd = posixCwd();
+      resolvedPath = `${cwd}/${resolvedPath}`;
+      resolvedAbsolute = cwd.charCodeAt(0) === CHAR_FORWARD_SLASH;
     }
     resolvedPath = normalizeString(resolvedPath, !resolvedAbsolute, "/", isPosixPathSeparator);
     if (resolvedAbsolute) {
@@ -1386,11 +1386,11 @@ var posix = {
     if (path.length === 0) {
       return ".";
     }
-    const isAbsolute2 = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+    const isAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     const trailingSeparator = path.charCodeAt(path.length - 1) === CHAR_FORWARD_SLASH;
-    path = normalizeString(path, !isAbsolute2, "/", isPosixPathSeparator);
+    path = normalizeString(path, !isAbsolute, "/", isPosixPathSeparator);
     if (path.length === 0) {
-      if (isAbsolute2) {
+      if (isAbsolute) {
         return "/";
       }
       return trailingSeparator ? "./" : ".";
@@ -1398,7 +1398,7 @@ var posix = {
     if (trailingSeparator) {
       path += "/";
     }
-    return isAbsolute2 ? `/${path}` : path;
+    return isAbsolute ? `/${path}` : path;
   },
   isAbsolute(path) {
     validateString(path, "path");
@@ -1419,7 +1419,7 @@ var posix = {
     if (path.length === 0) {
       return ".";
     }
-    return posix.normalize(path.join("/"));
+    return $7.normalize(path.join("/"));
   },
   relative(from, to) {
     validateString(from, "from");
@@ -1427,8 +1427,8 @@ var posix = {
     if (from === to) {
       return "";
     }
-    from = posix.resolve(from);
-    to = posix.resolve(to);
+    from = $7.resolve(from);
+    to = $7.resolve(to);
     if (from === to) {
       return "";
     }
@@ -1607,9 +1607,9 @@ var posix = {
     if (path.length === 0) {
       return ret;
     }
-    const isAbsolute2 = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+    const isAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     let start;
-    if (isAbsolute2) {
+    if (isAbsolute) {
       ret.root = "/";
       start = 1;
     } else {
@@ -1645,7 +1645,7 @@ var posix = {
       }
     }
     if (end !== -1) {
-      const start2 = startPart === 0 && isAbsolute2 ? 1 : startPart;
+      const start2 = startPart === 0 && isAbsolute ? 1 : startPart;
       if (startDot === -1 || // We saw a non-dot character immediately before the dot
       preDotState === 0 || // The (right-most) trimmed path component is exactly '..'
       preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
@@ -1658,7 +1658,7 @@ var posix = {
     }
     if (startPart > 0) {
       ret.dir = path.slice(0, startPart - 1);
-    } else if (isAbsolute2) {
+    } else if (isAbsolute) {
       ret.dir = "/";
     }
     return ret;
@@ -1668,24 +1668,24 @@ var posix = {
   win32: null,
   posix: null
 };
-posix.win32 = win32.win32 = win32;
-posix.posix = win32.posix = posix;
-var normalize = platformIsWin32 ? win32.normalize : posix.normalize;
-var isAbsolute = platformIsWin32 ? win32.isAbsolute : posix.isAbsolute;
-var join = platformIsWin32 ? win32.join : posix.join;
-var resolve = platformIsWin32 ? win32.resolve : posix.resolve;
-var relative = platformIsWin32 ? win32.relative : posix.relative;
-var dirname = platformIsWin32 ? win32.dirname : posix.dirname;
-var basename = platformIsWin32 ? win32.basename : posix.basename;
-var extname = platformIsWin32 ? win32.extname : posix.extname;
-var format = platformIsWin32 ? win32.format : posix.format;
-var parse = platformIsWin32 ? win32.parse : posix.parse;
-var toNamespacedPath = platformIsWin32 ? win32.toNamespacedPath : posix.toNamespacedPath;
-var sep = platformIsWin32 ? win32.sep : posix.sep;
-var delimiter = platformIsWin32 ? win32.delimiter : posix.delimiter;
+$7.win32 = $6.win32 = $6;
+$7.posix = $6.posix = $7;
+var $8 = platformIsWin32 ? $6.normalize : $7.normalize;
+var $9 = platformIsWin32 ? $6.isAbsolute : $7.isAbsolute;
+var $0 = platformIsWin32 ? $6.join : $7.join;
+var $$ = platformIsWin32 ? $6.resolve : $7.resolve;
+var $_ = platformIsWin32 ? $6.relative : $7.relative;
+var $ab = platformIsWin32 ? $6.dirname : $7.dirname;
+var $bb = platformIsWin32 ? $6.basename : $7.basename;
+var $cb = platformIsWin32 ? $6.extname : $7.extname;
+var $db = platformIsWin32 ? $6.format : $7.format;
+var $eb = platformIsWin32 ? $6.parse : $7.parse;
+var $fb = platformIsWin32 ? $6.toNamespacedPath : $7.toNamespacedPath;
+var sep = platformIsWin32 ? $6.sep : $7.sep;
+var $hb = platformIsWin32 ? $6.delimiter : $7.delimiter;
 
 // out-build/vs/base/common/arraysFind.js
-function findLastIdxMonotonous(array, predicate, startIdx = 0, endIdxEx = array.length) {
+function $Lb(array, predicate, startIdx = 0, endIdxEx = array.length) {
   let i = startIdx;
   let j = endIdxEx;
   while (i < j) {
@@ -1698,44 +1698,44 @@ function findLastIdxMonotonous(array, predicate, startIdx = 0, endIdxEx = array.
   }
   return i - 1;
 }
-var MonotonousArray = class _MonotonousArray {
+var $Pb = class _$Pb {
   static {
     this.assertInvariants = false;
   }
-  constructor(_array) {
-    this._array = _array;
-    this._findLastMonotonousLastIdx = 0;
+  constructor(e) {
+    this.e = e;
+    this.c = 0;
   }
   /**
    * The predicate must be monotonous, i.e. `arr.map(predicate)` must be like `[true, ..., true, false, ..., false]`!
    * For subsequent calls, current predicate must be weaker than (or equal to) the previous predicate, i.e. more entries must be `true`.
    */
   findLastMonotonous(predicate) {
-    if (_MonotonousArray.assertInvariants) {
-      if (this._prevFindLastPredicate) {
-        for (const item of this._array) {
-          if (this._prevFindLastPredicate(item) && !predicate(item)) {
+    if (_$Pb.assertInvariants) {
+      if (this.d) {
+        for (const item of this.e) {
+          if (this.d(item) && !predicate(item)) {
             throw new Error("MonotonousArray: current predicate must be weaker than (or equal to) the previous predicate.");
           }
         }
       }
-      this._prevFindLastPredicate = predicate;
+      this.d = predicate;
     }
-    const idx = findLastIdxMonotonous(this._array, predicate, this._findLastMonotonousLastIdx);
-    this._findLastMonotonousLastIdx = idx + 1;
-    return idx === -1 ? void 0 : this._array[idx];
+    const idx = $Lb(this.e, predicate, this.c);
+    this.c = idx + 1;
+    return idx === -1 ? void 0 : this.e[idx];
   }
 };
 
 // out-build/vs/base/common/errors.js
-var ErrorHandler = class {
+var $ib = class {
   constructor() {
-    this.listeners = [];
-    this.unexpectedErrorHandler = function(e) {
+    this.b = [];
+    this.a = function(e) {
       setTimeout(() => {
         if (e.stack) {
-          if (ErrorNoTelemetry.isErrorNoTelemetry(e)) {
-            throw new ErrorNoTelemetry(e.message + "\n\n" + e.stack);
+          if ($Db.isErrorNoTelemetry(e)) {
+            throw new $Db(e.message + "\n\n" + e.stack);
           }
           throw new Error(e.message + "\n\n" + e.stack);
         }
@@ -1744,42 +1744,42 @@ var ErrorHandler = class {
     };
   }
   addListener(listener) {
-    this.listeners.push(listener);
+    this.b.push(listener);
     return () => {
-      this._removeListener(listener);
+      this.d(listener);
     };
   }
-  emit(e) {
-    this.listeners.forEach((listener) => {
+  c(e) {
+    this.b.forEach((listener) => {
       listener(e);
     });
   }
-  _removeListener(listener) {
-    this.listeners.splice(this.listeners.indexOf(listener), 1);
+  d(listener) {
+    this.b.splice(this.b.indexOf(listener), 1);
   }
   setUnexpectedErrorHandler(newUnexpectedErrorHandler) {
-    this.unexpectedErrorHandler = newUnexpectedErrorHandler;
+    this.a = newUnexpectedErrorHandler;
   }
   getUnexpectedErrorHandler() {
-    return this.unexpectedErrorHandler;
+    return this.a;
   }
   onUnexpectedError(e) {
-    this.unexpectedErrorHandler(e);
-    this.emit(e);
+    this.a(e);
+    this.c(e);
   }
   // For external errors, we don't want the listeners to be called
   onUnexpectedExternalError(e) {
-    this.unexpectedErrorHandler(e);
+    this.a(e);
   }
 };
-var errorHandler = new ErrorHandler();
-function onUnexpectedError(e) {
-  if (!isCancellationError(e)) {
-    errorHandler.onUnexpectedError(e);
+var $jb = new $ib();
+function $nb(e) {
+  if (!$sb(e)) {
+    $jb.onUnexpectedError(e);
   }
   return void 0;
 }
-function transformErrorForSerialization(error) {
+function $pb(error) {
   if (error instanceof Error) {
     const { name, message, cause } = error;
     const stack = error.stacktrace || error.stack;
@@ -1788,48 +1788,48 @@ function transformErrorForSerialization(error) {
       name,
       message,
       stack,
-      noTelemetry: ErrorNoTelemetry.isErrorNoTelemetry(error),
-      cause: cause ? transformErrorForSerialization(cause) : void 0,
+      noTelemetry: $Db.isErrorNoTelemetry(error),
+      cause: cause ? $pb(cause) : void 0,
       code: error.code
     };
   }
   return error;
 }
-var canceledName = "Canceled";
-function isCancellationError(error) {
-  if (error instanceof CancellationError) {
+var $rb = "Canceled";
+function $sb(error) {
+  if (error instanceof $tb) {
     return true;
   }
-  return error instanceof Error && error.name === canceledName && error.message === canceledName;
+  return error instanceof Error && error.name === $rb && error.message === $rb;
 }
-var CancellationError = class extends Error {
+var $tb = class extends Error {
   constructor() {
-    super(canceledName);
+    super($rb);
     this.name = this.message;
   }
 };
-var PendingMigrationError = class _PendingMigrationError extends Error {
+var $ub = class _$ub extends Error {
   static {
-    this._name = "PendingMigrationError";
+    this.a = "PendingMigrationError";
   }
   static is(error) {
-    return error instanceof _PendingMigrationError || error instanceof Error && error.name === _PendingMigrationError._name;
+    return error instanceof _$ub || error instanceof Error && error.name === _$ub.a;
   }
   constructor(message) {
     super(message);
-    this.name = _PendingMigrationError._name;
+    this.name = _$ub.a;
   }
 };
-var ErrorNoTelemetry = class _ErrorNoTelemetry extends Error {
+var $Db = class _$Db extends Error {
   constructor(msg) {
     super(msg);
     this.name = "CodeExpectedError";
   }
   static fromError(err) {
-    if (err instanceof _ErrorNoTelemetry) {
+    if (err instanceof _$Db) {
       return err;
     }
-    const result = new _ErrorNoTelemetry();
+    const result = new _$Db();
     result.message = err.message;
     result.stack = err.stack;
     return result;
@@ -1838,15 +1838,15 @@ var ErrorNoTelemetry = class _ErrorNoTelemetry extends Error {
     return err.name === "CodeExpectedError";
   }
 };
-var BugIndicatingError = class _BugIndicatingError extends Error {
+var $Eb = class _$Eb extends Error {
   constructor(message) {
     super(message || "An unexpected bug occurred.");
-    Object.setPrototypeOf(this, _BugIndicatingError.prototype);
+    Object.setPrototypeOf(this, _$Eb.prototype);
   }
 };
 
 // out-build/vs/base/common/arrays.js
-function shuffle(array, _seed) {
+function $mc(array, _seed) {
   let rand;
   if (typeof _seed === "number") {
     let seed = _seed;
@@ -1886,13 +1886,13 @@ var CompareResult;
   CompareResult2.lessThan = -1;
   CompareResult2.neitherLessOrGreaterThan = 0;
 })(CompareResult || (CompareResult = {}));
-function compareBy(selector, comparator) {
+function $xc(selector, comparator) {
   return (a, b) => comparator(selector(a), selector(b));
 }
-var numberComparator = (a, b) => a - b;
-var CallbackIterable = class _CallbackIterable {
+var $zc = (a, b) => a - b;
+var $Ec = class _$Ec {
   static {
-    this.empty = new _CallbackIterable((_callback) => {
+    this.empty = new _$Ec((_callback) => {
     });
   }
   constructor(iterate) {
@@ -1913,10 +1913,10 @@ var CallbackIterable = class _CallbackIterable {
     return result;
   }
   filter(predicate) {
-    return new _CallbackIterable((cb) => this.iterate((item) => predicate(item) ? cb(item) : true));
+    return new _$Ec((cb) => this.iterate((item) => predicate(item) ? cb(item) : true));
   }
   map(mapFn) {
-    return new _CallbackIterable((cb) => this.iterate((item) => cb(mapFn(item))));
+    return new _$Ec((cb) => this.iterate((item) => cb(mapFn(item))));
   }
   some(predicate) {
     let result = false;
@@ -1962,16 +1962,16 @@ var CallbackIterable = class _CallbackIterable {
 };
 
 // out-build/vs/base/common/assert.js
-function assert(condition, messageOrError = "unexpected state") {
+function $3c(condition, messageOrError = "unexpected state") {
   if (!condition) {
-    const errorToThrow = typeof messageOrError === "string" ? new BugIndicatingError(`Assertion Failed: ${messageOrError}`) : messageOrError;
+    const errorToThrow = typeof messageOrError === "string" ? new $Eb(`Assertion Failed: ${messageOrError}`) : messageOrError;
     throw errorToThrow;
   }
 }
 
 // out-build/vs/base/common/collections.js
 var _a;
-function groupBy(data, groupFn) {
+function $a(data, groupFn) {
   const result = /* @__PURE__ */ Object.create(null);
   for (const element of data) {
     const key = groupFn(element);
@@ -1983,34 +1983,34 @@ function groupBy(data, groupFn) {
   }
   return result;
 }
-var SetWithKey = class {
+var $f = class {
   static {
     _a = Symbol.toStringTag;
   }
-  constructor(values, toKey) {
-    this.toKey = toKey;
-    this._map = /* @__PURE__ */ new Map();
+  constructor(values, b) {
+    this.b = b;
+    this.a = /* @__PURE__ */ new Map();
     this[_a] = "SetWithKey";
     for (const value of values) {
       this.add(value);
     }
   }
   get size() {
-    return this._map.size;
+    return this.a.size;
   }
   add(value) {
-    const key = this.toKey(value);
-    this._map.set(key, value);
+    const key = this.b(value);
+    this.a.set(key, value);
     return this;
   }
   delete(value) {
-    return this._map.delete(this.toKey(value));
+    return this.a.delete(this.b(value));
   }
   has(value) {
-    return this._map.has(this.toKey(value));
+    return this.a.has(this.b(value));
   }
   *entries() {
-    for (const entry of this._map.values()) {
+    for (const entry of this.a.values()) {
       yield [entry, entry];
     }
   }
@@ -2018,15 +2018,15 @@ var SetWithKey = class {
     return this.values();
   }
   *values() {
-    for (const entry of this._map.values()) {
+    for (const entry of this.a.values()) {
       yield entry;
     }
   }
   clear() {
-    this._map.clear();
+    this.a.clear();
   }
   forEach(callbackfn, thisArg) {
-    this._map.forEach((entry) => callbackfn.call(thisArg, entry, entry, this));
+    this.a.forEach((entry) => callbackfn.call(thisArg, entry, entry, this));
   }
   [Symbol.iterator]() {
     return this.values();
@@ -2046,111 +2046,111 @@ var ResourceMapEntry = class {
 function isEntries(arg) {
   return Array.isArray(arg);
 }
-var ResourceMap = class _ResourceMap {
+var $Pc = class _$Pc {
   static {
-    this.defaultToKey = (resource) => resource.toString();
+    this.c = (resource) => resource.toString();
   }
   constructor(arg, toKey) {
     this[_a2] = "ResourceMap";
-    if (arg instanceof _ResourceMap) {
-      this.map = new Map(arg.map);
-      this.toKey = toKey ?? _ResourceMap.defaultToKey;
+    if (arg instanceof _$Pc) {
+      this.d = new Map(arg.d);
+      this.e = toKey ?? _$Pc.c;
     } else if (isEntries(arg)) {
-      this.map = /* @__PURE__ */ new Map();
-      this.toKey = toKey ?? _ResourceMap.defaultToKey;
+      this.d = /* @__PURE__ */ new Map();
+      this.e = toKey ?? _$Pc.c;
       for (const [resource, value] of arg) {
         this.set(resource, value);
       }
     } else {
-      this.map = /* @__PURE__ */ new Map();
-      this.toKey = arg ?? _ResourceMap.defaultToKey;
+      this.d = /* @__PURE__ */ new Map();
+      this.e = arg ?? _$Pc.c;
     }
   }
   set(resource, value) {
-    this.map.set(this.toKey(resource), new ResourceMapEntry(resource, value));
+    this.d.set(this.e(resource), new ResourceMapEntry(resource, value));
     return this;
   }
   get(resource) {
-    return this.map.get(this.toKey(resource))?.value;
+    return this.d.get(this.e(resource))?.value;
   }
   has(resource) {
-    return this.map.has(this.toKey(resource));
+    return this.d.has(this.e(resource));
   }
   get size() {
-    return this.map.size;
+    return this.d.size;
   }
   clear() {
-    this.map.clear();
+    this.d.clear();
   }
   delete(resource) {
-    return this.map.delete(this.toKey(resource));
+    return this.d.delete(this.e(resource));
   }
   forEach(clb, thisArg) {
     if (typeof thisArg !== "undefined") {
       clb = clb.bind(thisArg);
     }
-    for (const [_, entry] of this.map) {
+    for (const [_, entry] of this.d) {
       clb(entry.value, entry.uri, this);
     }
   }
   *values() {
-    for (const entry of this.map.values()) {
+    for (const entry of this.d.values()) {
       yield entry.value;
     }
   }
   *keys() {
-    for (const entry of this.map.values()) {
+    for (const entry of this.d.values()) {
       yield entry.uri;
     }
   }
   *entries() {
-    for (const entry of this.map.values()) {
+    for (const entry of this.d.values()) {
       yield [entry.uri, entry.value];
     }
   }
   *[(_a2 = Symbol.toStringTag, Symbol.iterator)]() {
-    for (const [, entry] of this.map) {
+    for (const [, entry] of this.d) {
       yield [entry.uri, entry.value];
     }
   }
 };
-var ResourceSet = class {
+var $Qc = class {
   constructor(entriesOrKey, toKey) {
     this[_b] = "ResourceSet";
     if (!entriesOrKey || typeof entriesOrKey === "function") {
-      this._map = new ResourceMap(entriesOrKey);
+      this.c = new $Pc(entriesOrKey);
     } else {
-      this._map = new ResourceMap(toKey);
+      this.c = new $Pc(toKey);
       entriesOrKey.forEach(this.add, this);
     }
   }
   get size() {
-    return this._map.size;
+    return this.c.size;
   }
   add(value) {
-    this._map.set(value, value);
+    this.c.set(value, value);
     return this;
   }
   clear() {
-    this._map.clear();
+    this.c.clear();
   }
   delete(value) {
-    return this._map.delete(value);
+    return this.c.delete(value);
   }
   forEach(callbackfn, thisArg) {
-    this._map.forEach((_value, key) => callbackfn.call(thisArg, key, key, this));
+    this.c.forEach((_value, key) => callbackfn.call(thisArg, key, key, this));
   }
   has(value) {
-    return this._map.has(value);
+    return this.c.has(value);
   }
   entries() {
-    return this._map.entries();
+    return this.c.entries();
   }
   keys() {
-    return this._map.keys();
+    return this.c.keys();
   }
   values() {
-    return this._map.keys();
+    return this.c.keys();
   }
   [(_b = Symbol.toStringTag, Symbol.iterator)]() {
     return this.keys();
@@ -2162,72 +2162,72 @@ var Touch;
   Touch2[Touch2["AsOld"] = 1] = "AsOld";
   Touch2[Touch2["AsNew"] = 2] = "AsNew";
 })(Touch || (Touch = {}));
-var LinkedMap = class {
+var $Rc = class {
   constructor() {
     this[_c] = "LinkedMap";
-    this._map = /* @__PURE__ */ new Map();
-    this._head = void 0;
-    this._tail = void 0;
-    this._size = 0;
-    this._state = 0;
+    this.c = /* @__PURE__ */ new Map();
+    this.d = void 0;
+    this.e = void 0;
+    this.f = 0;
+    this.g = 0;
   }
   clear() {
-    this._map.clear();
-    this._head = void 0;
-    this._tail = void 0;
-    this._size = 0;
-    this._state++;
+    this.c.clear();
+    this.d = void 0;
+    this.e = void 0;
+    this.f = 0;
+    this.g++;
   }
   isEmpty() {
-    return !this._head && !this._tail;
+    return !this.d && !this.e;
   }
   get size() {
-    return this._size;
+    return this.f;
   }
   get first() {
-    return this._head?.value;
+    return this.d?.value;
   }
   get last() {
-    return this._tail?.value;
+    return this.e?.value;
   }
   has(key) {
-    return this._map.has(key);
+    return this.c.has(key);
   }
   get(key, touch = 0) {
-    const item = this._map.get(key);
+    const item = this.c.get(key);
     if (!item) {
       return void 0;
     }
     if (touch !== 0) {
-      this.touch(item, touch);
+      this.n(item, touch);
     }
     return item.value;
   }
   set(key, value, touch = 0) {
-    let item = this._map.get(key);
+    let item = this.c.get(key);
     if (item) {
       item.value = value;
       if (touch !== 0) {
-        this.touch(item, touch);
+        this.n(item, touch);
       }
     } else {
       item = { key, value, next: void 0, previous: void 0 };
       switch (touch) {
         case 0:
-          this.addItemLast(item);
+          this.l(item);
           break;
         case 1:
-          this.addItemFirst(item);
+          this.k(item);
           break;
         case 2:
-          this.addItemLast(item);
+          this.l(item);
           break;
         default:
-          this.addItemLast(item);
+          this.l(item);
           break;
       }
-      this._map.set(key, item);
-      this._size++;
+      this.c.set(key, item);
+      this.f++;
     }
     return this;
   }
@@ -2235,38 +2235,38 @@ var LinkedMap = class {
     return !!this.remove(key);
   }
   remove(key) {
-    const item = this._map.get(key);
+    const item = this.c.get(key);
     if (!item) {
       return void 0;
     }
-    this._map.delete(key);
-    this.removeItem(item);
-    this._size--;
+    this.c.delete(key);
+    this.m(item);
+    this.f--;
     return item.value;
   }
   shift() {
-    if (!this._head && !this._tail) {
+    if (!this.d && !this.e) {
       return void 0;
     }
-    if (!this._head || !this._tail) {
+    if (!this.d || !this.e) {
       throw new Error("Invalid list");
     }
-    const item = this._head;
-    this._map.delete(item.key);
-    this.removeItem(item);
-    this._size--;
+    const item = this.d;
+    this.c.delete(item.key);
+    this.m(item);
+    this.f--;
     return item.value;
   }
   forEach(callbackfn, thisArg) {
-    const state = this._state;
-    let current = this._head;
+    const state = this.g;
+    let current = this.d;
     while (current) {
       if (thisArg) {
         callbackfn.bind(thisArg)(current.value, current.key, this);
       } else {
         callbackfn(current.value, current.key, this);
       }
-      if (this._state !== state) {
+      if (this.g !== state) {
         throw new Error(`LinkedMap got modified during iteration.`);
       }
       current = current.next;
@@ -2274,14 +2274,14 @@ var LinkedMap = class {
   }
   keys() {
     const map = this;
-    const state = this._state;
-    let current = this._head;
+    const state = this.g;
+    let current = this.d;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map._state !== state) {
+        if (map.g !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -2297,14 +2297,14 @@ var LinkedMap = class {
   }
   values() {
     const map = this;
-    const state = this._state;
-    let current = this._head;
+    const state = this.g;
+    let current = this.d;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map._state !== state) {
+        if (map.g !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -2320,14 +2320,14 @@ var LinkedMap = class {
   }
   entries() {
     const map = this;
-    const state = this._state;
-    let current = this._head;
+    const state = this.g;
+    let current = this.d;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map._state !== state) {
+        if (map.g !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -2344,7 +2344,7 @@ var LinkedMap = class {
   [(_c = Symbol.toStringTag, Symbol.iterator)]() {
     return this.entries();
   }
-  trimOld(newSize) {
+  h(newSize) {
     if (newSize >= this.size) {
       return;
     }
@@ -2352,21 +2352,21 @@ var LinkedMap = class {
       this.clear();
       return;
     }
-    let current = this._head;
+    let current = this.d;
     let currentSize = this.size;
     while (current && currentSize > newSize) {
-      this._map.delete(current.key);
+      this.c.delete(current.key);
       current = current.next;
       currentSize--;
     }
-    this._head = current;
-    this._size = currentSize;
+    this.d = current;
+    this.f = currentSize;
     if (current) {
       current.previous = void 0;
     }
-    this._state++;
+    this.g++;
   }
-  trimNew(newSize) {
+  j(newSize) {
     if (newSize >= this.size) {
       return;
     }
@@ -2374,60 +2374,60 @@ var LinkedMap = class {
       this.clear();
       return;
     }
-    let current = this._tail;
+    let current = this.e;
     let currentSize = this.size;
     while (current && currentSize > newSize) {
-      this._map.delete(current.key);
+      this.c.delete(current.key);
       current = current.previous;
       currentSize--;
     }
-    this._tail = current;
-    this._size = currentSize;
+    this.e = current;
+    this.f = currentSize;
     if (current) {
       current.next = void 0;
     }
-    this._state++;
+    this.g++;
   }
-  addItemFirst(item) {
-    if (!this._head && !this._tail) {
-      this._tail = item;
-    } else if (!this._head) {
+  k(item) {
+    if (!this.d && !this.e) {
+      this.e = item;
+    } else if (!this.d) {
       throw new Error("Invalid list");
     } else {
-      item.next = this._head;
-      this._head.previous = item;
+      item.next = this.d;
+      this.d.previous = item;
     }
-    this._head = item;
-    this._state++;
+    this.d = item;
+    this.g++;
   }
-  addItemLast(item) {
-    if (!this._head && !this._tail) {
-      this._head = item;
-    } else if (!this._tail) {
+  l(item) {
+    if (!this.d && !this.e) {
+      this.d = item;
+    } else if (!this.e) {
       throw new Error("Invalid list");
     } else {
-      item.previous = this._tail;
-      this._tail.next = item;
+      item.previous = this.e;
+      this.e.next = item;
     }
-    this._tail = item;
-    this._state++;
+    this.e = item;
+    this.g++;
   }
-  removeItem(item) {
-    if (item === this._head && item === this._tail) {
-      this._head = void 0;
-      this._tail = void 0;
-    } else if (item === this._head) {
+  m(item) {
+    if (item === this.d && item === this.e) {
+      this.d = void 0;
+      this.e = void 0;
+    } else if (item === this.d) {
       if (!item.next) {
         throw new Error("Invalid list");
       }
       item.next.previous = void 0;
-      this._head = item.next;
-    } else if (item === this._tail) {
+      this.d = item.next;
+    } else if (item === this.e) {
       if (!item.previous) {
         throw new Error("Invalid list");
       }
       item.previous.next = void 0;
-      this._tail = item.previous;
+      this.e = item.previous;
     } else {
       const next = item.next;
       const previous = item.previous;
@@ -2439,51 +2439,51 @@ var LinkedMap = class {
     }
     item.next = void 0;
     item.previous = void 0;
-    this._state++;
+    this.g++;
   }
-  touch(item, touch) {
-    if (!this._head || !this._tail) {
+  n(item, touch) {
+    if (!this.d || !this.e) {
       throw new Error("Invalid list");
     }
     if (touch !== 1 && touch !== 2) {
       return;
     }
     if (touch === 1) {
-      if (item === this._head) {
+      if (item === this.d) {
         return;
       }
       const next = item.next;
       const previous = item.previous;
-      if (item === this._tail) {
+      if (item === this.e) {
         previous.next = void 0;
-        this._tail = previous;
+        this.e = previous;
       } else {
         next.previous = previous;
         previous.next = next;
       }
       item.previous = void 0;
-      item.next = this._head;
-      this._head.previous = item;
-      this._head = item;
-      this._state++;
+      item.next = this.d;
+      this.d.previous = item;
+      this.d = item;
+      this.g++;
     } else if (touch === 2) {
-      if (item === this._tail) {
+      if (item === this.e) {
         return;
       }
       const next = item.next;
       const previous = item.previous;
-      if (item === this._head) {
+      if (item === this.d) {
         next.previous = void 0;
-        this._head = next;
+        this.d = next;
       } else {
         next.previous = previous;
         previous.next = next;
       }
       item.next = void 0;
-      item.previous = this._tail;
-      this._tail.next = item;
-      this._tail = item;
-      this._state++;
+      item.previous = this.e;
+      this.e.next = item;
+      this.e = item;
+      this.g++;
     }
   }
   toJSON() {
@@ -2500,37 +2500,37 @@ var LinkedMap = class {
     }
   }
 };
-var SetMap = class {
+var $Wc = class {
   constructor() {
-    this.map = /* @__PURE__ */ new Map();
+    this.c = /* @__PURE__ */ new Map();
   }
   add(key, value) {
-    let values = this.map.get(key);
+    let values = this.c.get(key);
     if (!values) {
       values = /* @__PURE__ */ new Set();
-      this.map.set(key, values);
+      this.c.set(key, values);
     }
     values.add(value);
   }
   delete(key, value) {
-    const values = this.map.get(key);
+    const values = this.c.get(key);
     if (!values) {
       return;
     }
     values.delete(value);
     if (values.size === 0) {
-      this.map.delete(key);
+      this.c.delete(key);
     }
   }
   forEach(key, fn) {
-    const values = this.map.get(key);
+    const values = this.c.get(key);
     if (!values) {
       return;
     }
     values.forEach(fn);
   }
   get(key) {
-    const values = this.map.get(key);
+    const values = this.c.get(key);
     if (!values) {
       return /* @__PURE__ */ new Set();
     }
@@ -2539,7 +2539,7 @@ var SetMap = class {
 };
 
 // out-build/vs/base/common/types.js
-function isIterable(obj) {
+function $ad(obj) {
   return !!obj && typeof obj[Symbol.iterator] === "function";
 }
 
@@ -2638,7 +2638,7 @@ var Iterable;
   Iterable2.flatMap = flatMap;
   function* concat(...iterables) {
     for (const item of iterables) {
-      if (isIterable(item)) {
+      if ($ad(item)) {
         yield* item;
       } else {
         yield item;
@@ -2718,49 +2718,49 @@ var Iterable;
 // out-build/vs/base/common/lifecycle.js
 var TRACK_DISPOSABLES = false;
 var disposableTracker = null;
-var DisposableTracker = class _DisposableTracker {
+var $ud = class _$ud {
   constructor() {
-    this.livingDisposables = /* @__PURE__ */ new Map();
+    this.b = /* @__PURE__ */ new Map();
   }
   static {
-    this.idx = 0;
+    this.a = 0;
   }
-  getDisposableData(d) {
-    let val = this.livingDisposables.get(d);
+  c(d) {
+    let val = this.b.get(d);
     if (!val) {
-      val = { parent: null, source: null, isSingleton: false, value: d, idx: _DisposableTracker.idx++ };
-      this.livingDisposables.set(d, val);
+      val = { parent: null, source: null, isSingleton: false, value: d, idx: _$ud.a++ };
+      this.b.set(d, val);
     }
     return val;
   }
   trackDisposable(d) {
-    const data = this.getDisposableData(d);
+    const data = this.c(d);
     if (!data.source) {
       data.source = new Error().stack;
     }
   }
   setParent(child, parent) {
-    const data = this.getDisposableData(child);
+    const data = this.c(child);
     data.parent = parent;
   }
   markAsDisposed(x) {
-    this.livingDisposables.delete(x);
+    this.b.delete(x);
   }
   markAsSingleton(disposable) {
-    this.getDisposableData(disposable).isSingleton = true;
+    this.c(disposable).isSingleton = true;
   }
-  getRootParent(data, cache) {
+  f(data, cache) {
     const cacheValue = cache.get(data);
     if (cacheValue) {
       return cacheValue;
     }
-    const result = data.parent ? this.getRootParent(this.getDisposableData(data.parent), cache) : data;
+    const result = data.parent ? this.f(this.c(data.parent), cache) : data;
     cache.set(data, result);
     return result;
   }
   getTrackedDisposables() {
     const rootParentCache = /* @__PURE__ */ new Map();
-    const leaking = [...this.livingDisposables.entries()].filter(([, v]) => v.source !== null && !this.getRootParent(v, rootParentCache).isSingleton).flatMap(([k]) => k);
+    const leaking = [...this.b.entries()].filter(([, v]) => v.source !== null && !this.f(v, rootParentCache).isSingleton).flatMap(([k]) => k);
     return leaking;
   }
   computeLeakingDisposables(maxReported = 10, preComputedLeaks) {
@@ -2769,7 +2769,7 @@ var DisposableTracker = class _DisposableTracker {
       uncoveredLeakingObjs = preComputedLeaks;
     } else {
       const rootParentCache = /* @__PURE__ */ new Map();
-      const leakingObjects = [...this.livingDisposables.values()].filter((info) => info.source !== null && !this.getRootParent(info, rootParentCache).isSingleton);
+      const leakingObjects = [...this.b.values()].filter((info) => info.source !== null && !this.f(info, rootParentCache).isSingleton);
       if (leakingObjects.length === 0) {
         return;
       }
@@ -2794,14 +2794,14 @@ var DisposableTracker = class _DisposableTracker {
       removePrefix(lines, ["Error", /^trackDisposable \(.*\)$/, /^DisposableTracker.trackDisposable \(.*\)$/]);
       return lines.reverse();
     }
-    const stackTraceStarts = new SetMap();
+    const stackTraceStarts = new $Wc();
     for (const leaking of uncoveredLeakingObjs) {
       const stackTracePath = getStackTracePath(leaking);
       for (let i2 = 0; i2 <= stackTracePath.length; i2++) {
         stackTraceStarts.add(stackTracePath.slice(0, i2).join("\n"), leaking);
       }
     }
-    uncoveredLeakingObjs.sort(compareBy((l) => l.idx, numberComparator));
+    uncoveredLeakingObjs.sort($xc((l) => l.idx, $zc));
     let message = "";
     let i = 0;
     for (const leaking of uncoveredLeakingObjs.slice(0, maxReported)) {
@@ -2813,7 +2813,7 @@ var DisposableTracker = class _DisposableTracker {
         const starts = stackTraceStarts.get(stackTracePath.slice(0, i2 + 1).join("\n"));
         line = `(shared with ${starts.size}/${uncoveredLeakingObjs.length} leaks) at ${line}`;
         const prevStarts = stackTraceStarts.get(stackTracePath.slice(0, i2).join("\n"));
-        const continuations = groupBy([...prevStarts].map((d) => getStackTracePath(d)[i2]), (v) => v);
+        const continuations = $a([...prevStarts].map((d) => getStackTracePath(d)[i2]), (v) => v);
         delete continuations[stackTracePath[i2]];
         for (const [cont, set] of Object.entries(continuations)) {
           if (set) {
@@ -2842,12 +2842,12 @@ ${stackTraceFormattedLines.join("\n")}
     return { leaks: uncoveredLeakingObjs, details: message };
   }
 };
-function setDisposableTracker(tracker) {
+function $vd(tracker) {
   disposableTracker = tracker;
 }
 if (TRACK_DISPOSABLES) {
   const __is_disposable_tracked__ = "__is_disposable_tracked__";
-  setDisposableTracker(new class {
+  $vd(new class {
     trackDisposable(x) {
       const stack = new Error("Potentially leaked disposable").stack;
       setTimeout(() => {
@@ -2857,7 +2857,7 @@ if (TRACK_DISPOSABLES) {
       }, 3e3);
     }
     setParent(child, parent) {
-      if (child && child !== Disposable.None) {
+      if (child && child !== $Fd.None) {
         try {
           child[__is_disposable_tracked__] = true;
         } catch {
@@ -2865,7 +2865,7 @@ if (TRACK_DISPOSABLES) {
       }
     }
     markAsDisposed(disposable) {
-      if (disposable && disposable !== Disposable.None) {
+      if (disposable && disposable !== $Fd.None) {
         try {
           disposable[__is_disposable_tracked__] = true;
         } catch {
@@ -2876,11 +2876,11 @@ if (TRACK_DISPOSABLES) {
     }
   }());
 }
-function trackDisposable(x) {
+function $wd(x) {
   disposableTracker?.trackDisposable(x);
   return x;
 }
-function markAsDisposed(disposable) {
+function $xd(disposable) {
   disposableTracker?.markAsDisposed(disposable);
 }
 function setParentOfDisposable(child, parent) {
@@ -2894,7 +2894,7 @@ function setParentOfDisposables(children, parent) {
     disposableTracker.setParent(child, parent);
   }
 }
-function dispose(arg) {
+function $Ad(arg) {
   if (Iterable.is(arg)) {
     const errors = [];
     for (const d of arg) {
@@ -2917,40 +2917,40 @@ function dispose(arg) {
     return arg;
   }
 }
-function combinedDisposable(...disposables) {
-  const parent = toDisposable(() => dispose(disposables));
+function $Cd(...disposables) {
+  const parent = $Dd(() => $Ad(disposables));
   setParentOfDisposables(disposables, parent);
   return parent;
 }
 var FunctionDisposable = class {
   constructor(fn) {
-    this._isDisposed = false;
-    this._fn = fn;
-    trackDisposable(this);
+    this.a = false;
+    this.b = fn;
+    $wd(this);
   }
   dispose() {
-    if (this._isDisposed) {
+    if (this.a) {
       return;
     }
-    if (!this._fn) {
+    if (!this.b) {
       throw new Error(`Unbound disposable context: Need to use an arrow function to preserve the value of this`);
     }
-    this._isDisposed = true;
-    markAsDisposed(this);
-    this._fn();
+    this.a = true;
+    $xd(this);
+    this.b();
   }
 };
-function toDisposable(fn) {
+function $Dd(fn) {
   return new FunctionDisposable(fn);
 }
-var DisposableStore = class _DisposableStore {
+var $Ed = class _$Ed {
   static {
     this.DISABLE_DISPOSED_WARNING = false;
   }
   constructor() {
-    this._toDispose = /* @__PURE__ */ new Set();
-    this._isDisposed = false;
-    trackDisposable(this);
+    this.f = /* @__PURE__ */ new Set();
+    this.g = false;
+    $wd(this);
   }
   /**
    * Dispose of all registered disposables and mark this object as disposed.
@@ -2958,49 +2958,49 @@ var DisposableStore = class _DisposableStore {
    * Any future disposables added to this object will be disposed of on `add`.
    */
   dispose() {
-    if (this._isDisposed) {
+    if (this.g) {
       return;
     }
-    markAsDisposed(this);
-    this._isDisposed = true;
+    $xd(this);
+    this.g = true;
     this.clear();
   }
   /**
    * @return `true` if this object has been disposed of.
    */
   get isDisposed() {
-    return this._isDisposed;
+    return this.g;
   }
   /**
    * Dispose of all registered disposables but do not mark this object as disposed.
    */
   clear() {
-    if (this._toDispose.size === 0) {
+    if (this.f.size === 0) {
       return;
     }
     try {
-      dispose(this._toDispose);
+      $Ad(this.f);
     } finally {
-      this._toDispose.clear();
+      this.f.clear();
     }
   }
   /**
    * Add a new {@link IDisposable disposable} to the collection.
    */
   add(o) {
-    if (!o || o === Disposable.None) {
+    if (!o || o === $Fd.None) {
       return o;
     }
     if (o === this) {
       throw new Error("Cannot register a disposable on itself!");
     }
     setParentOfDisposable(o, this);
-    if (this._isDisposed) {
-      if (!_DisposableStore.DISABLE_DISPOSED_WARNING) {
+    if (this.g) {
+      if (!_$Ed.DISABLE_DISPOSED_WARNING) {
         console.warn(new Error("Trying to add a disposable to a DisposableStore that has already been disposed of. The added object will be leaked!").stack);
       }
     } else {
-      this._toDispose.add(o);
+      this.f.add(o);
     }
     return o;
   }
@@ -3015,7 +3015,7 @@ var DisposableStore = class _DisposableStore {
     if (o === this) {
       throw new Error("Cannot dispose a disposable on itself!");
     }
-    this._toDispose.delete(o);
+    this.f.delete(o);
     o.dispose();
   }
   /**
@@ -3025,39 +3025,39 @@ var DisposableStore = class _DisposableStore {
     if (!o) {
       return;
     }
-    if (this._toDispose.has(o)) {
-      this._toDispose.delete(o);
+    if (this.f.has(o)) {
+      this.f.delete(o);
       setParentOfDisposable(o, null);
     }
   }
   assertNotDisposed() {
-    if (this._isDisposed) {
-      onUnexpectedError(new BugIndicatingError("Object disposed"));
+    if (this.g) {
+      $nb(new $Eb("Object disposed"));
     }
   }
 };
-var Disposable = class {
+var $Fd = class {
   static {
     this.None = Object.freeze({ dispose() {
     } });
   }
   constructor() {
-    this._store = new DisposableStore();
-    trackDisposable(this);
-    setParentOfDisposable(this._store, this);
+    this.B = new $Ed();
+    $wd(this);
+    setParentOfDisposable(this.B, this);
   }
   dispose() {
-    markAsDisposed(this);
-    this._store.dispose();
+    $xd(this);
+    this.B.dispose();
   }
   /**
    * Adds `o` to the collection of disposables managed by this object.
    */
-  _register(o) {
+  D(o) {
     if (o === this) {
       throw new Error("Cannot register a disposable on itself!");
     }
-    return this._store.add(o);
+    return this.B.add(o);
   }
 };
 
@@ -3075,27 +3075,27 @@ var Node = class _Node {
 
 // out-build/vs/base/common/stopwatch.js
 var performanceNow = globalThis.performance.now.bind(globalThis.performance);
-var StopWatch = class _StopWatch {
+var $kf = class _$kf {
   static create(highResolution) {
-    return new _StopWatch(highResolution);
+    return new _$kf(highResolution);
   }
   constructor(highResolution) {
-    this._now = highResolution === false ? Date.now : performanceNow;
-    this._startTime = this._now();
-    this._stopTime = -1;
+    this.c = highResolution === false ? Date.now : performanceNow;
+    this.a = this.c();
+    this.b = -1;
   }
   stop() {
-    this._stopTime = this._now();
+    this.b = this.c();
   }
   reset() {
-    this._startTime = this._now();
-    this._stopTime = -1;
+    this.a = this.c();
+    this.b = -1;
   }
   elapsed() {
-    if (this._stopTime !== -1) {
-      return this._stopTime - this._startTime;
+    if (this.b !== -1) {
+      return this.b - this.a;
     }
-    return this._now() - this._startTime;
+    return this.c() - this.a;
   }
 };
 
@@ -3104,7 +3104,7 @@ var _enableDisposeWithListenerWarning = false;
 var _enableSnapshotPotentialLeakWarning = false;
 var Event;
 (function(Event2) {
-  Event2.None = () => Disposable.None;
+  Event2.None = () => $Fd.None;
   function _addLeakageTraceLogic(options) {
     if (_enableSnapshotPotentialLeakWarning) {
       const { onDidAddListener: origListenerDidAdd } = options;
@@ -3169,7 +3169,7 @@ var Event;
   Event2.signal = signal;
   function any(...events) {
     return (listener, thisArgs = null, disposables) => {
-      const disposable = combinedDisposable(...events.map((event) => event((e) => listener.call(thisArgs, e))));
+      const disposable = $Cd(...events.map((event) => event((e) => listener.call(thisArgs, e))));
       return addAndReturnDisposable(disposable, disposables);
     };
   }
@@ -3195,7 +3195,7 @@ var Event;
     if (!disposable) {
       _addLeakageTraceLogic(options);
     }
-    const emitter = new Emitter(options);
+    const emitter = new $qf(options);
     disposable?.add(emitter);
     return emitter.event;
   }
@@ -3258,7 +3258,7 @@ var Event;
     if (!disposable) {
       _addLeakageTraceLogic(options);
     }
-    const emitter = new Emitter(options);
+    const emitter = new $qf(options);
     disposable?.add(emitter);
     return emitter.event;
   }
@@ -3307,7 +3307,7 @@ var Event;
       buffer2?.forEach((e) => emitter.fire(e));
       buffer2 = null;
     };
-    const emitter = new Emitter({
+    const emitter = new $qf({
       onWillAddFirstListener() {
         if (!listener) {
           listener = event((e) => emitter.fire(e));
@@ -3354,26 +3354,26 @@ var Event;
   const HaltChainable = Symbol("HaltChainable");
   class ChainableSynthesis {
     constructor() {
-      this.steps = [];
+      this.f = [];
     }
     map(fn) {
-      this.steps.push(fn);
+      this.f.push(fn);
       return this;
     }
     forEach(fn) {
-      this.steps.push((v) => {
+      this.f.push((v) => {
         fn(v);
         return v;
       });
       return this;
     }
     filter(fn) {
-      this.steps.push((v) => fn(v) ? v : HaltChainable);
+      this.f.push((v) => fn(v) ? v : HaltChainable);
       return this;
     }
     reduce(merge, initial) {
       let last = initial;
-      this.steps.push((v) => {
+      this.f.push((v) => {
         last = merge(last, v);
         return last;
       });
@@ -3382,7 +3382,7 @@ var Event;
     latch(equals = (a, b) => a === b) {
       let firstCall = true;
       let cache;
-      this.steps.push((value) => {
+      this.f.push((value) => {
         const shouldEmit = firstCall || !equals(value, cache);
         firstCall = false;
         cache = value;
@@ -3391,7 +3391,7 @@ var Event;
       return this;
     }
     evaluate(value) {
-      for (const step of this.steps) {
+      for (const step of this.f) {
         value = step(value);
         if (value === HaltChainable) {
           break;
@@ -3404,7 +3404,7 @@ var Event;
     const fn = (...args) => result.fire(map2(...args));
     const onFirstListenerAdd = () => emitter.on(eventName, fn);
     const onLastListenerRemove = () => emitter.removeListener(eventName, fn);
-    const result = new Emitter({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
+    const result = new $qf({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
     return result.event;
   }
   Event2.fromNodeEventEmitter = fromNodeEventEmitter;
@@ -3412,15 +3412,15 @@ var Event;
     const fn = (...args) => result.fire(map2(...args));
     const onFirstListenerAdd = () => emitter.addEventListener(eventName, fn);
     const onLastListenerRemove = () => emitter.removeEventListener(eventName, fn);
-    const result = new Emitter({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
+    const result = new $qf({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
     return result.event;
   }
   Event2.fromDOMEventEmitter = fromDOMEventEmitter;
   function toPromise(event, disposables) {
     let cancelRef;
     let listener;
-    const promise = new Promise((resolve2) => {
-      listener = once(event)(resolve2);
+    const promise = new Promise((resolve) => {
+      listener = once(event)(resolve);
       addToDisposables(listener, disposables);
       cancelRef = () => {
         disposeAndRemove(listener, disposables);
@@ -3445,8 +3445,8 @@ var Event;
   class EmitterObserver {
     constructor(_observable, store) {
       this._observable = _observable;
-      this._counter = 0;
-      this._hasChanged = false;
+      this.f = 0;
+      this.g = false;
       const options = {
         onWillAddFirstListener: () => {
           _observable.addObserver(this);
@@ -3459,25 +3459,25 @@ var Event;
       if (!store) {
         _addLeakageTraceLogic(options);
       }
-      this.emitter = new Emitter(options);
+      this.emitter = new $qf(options);
       if (store) {
         store.add(this.emitter);
       }
     }
     beginUpdate(_observable) {
-      this._counter++;
+      this.f++;
     }
     handlePossibleChange(_observable) {
     }
     handleChange(_observable, _change) {
-      this._hasChanged = true;
+      this.g = true;
     }
     endUpdate(_observable) {
-      this._counter--;
-      if (this._counter === 0) {
+      this.f--;
+      if (this.f === 0) {
         this._observable.reportChanges();
-        if (this._hasChanged) {
-          this._hasChanged = false;
+        if (this.g) {
+          this.g = false;
           this.emitter.fire(this._observable.get());
         }
       }
@@ -3525,81 +3525,81 @@ var Event;
   }
   Event2.fromObservableLight = fromObservableLight;
 })(Event || (Event = {}));
-var EventProfiling = class _EventProfiling {
+var $mf = class _$mf {
   static {
     this.all = /* @__PURE__ */ new Set();
   }
   static {
-    this._idPool = 0;
+    this.f = 0;
   }
   constructor(name) {
     this.listenerCount = 0;
     this.invocationCount = 0;
     this.elapsedOverall = 0;
     this.durations = [];
-    this.name = `${name}_${_EventProfiling._idPool++}`;
-    _EventProfiling.all.add(this);
+    this.name = `${name}_${_$mf.f++}`;
+    _$mf.all.add(this);
   }
   start(listenerCount) {
-    this._stopWatch = new StopWatch();
+    this.g = new $kf();
     this.listenerCount = listenerCount;
   }
   stop() {
-    if (this._stopWatch) {
-      const elapsed = this._stopWatch.elapsed();
+    if (this.g) {
+      const elapsed = this.g.elapsed();
       this.durations.push(elapsed);
       this.elapsedOverall += elapsed;
       this.invocationCount += 1;
-      this._stopWatch = void 0;
+      this.g = void 0;
     }
   }
 };
 var _globalLeakWarningThreshold = -1;
 var LeakageMonitor = class _LeakageMonitor {
   static {
-    this._idPool = 1;
+    this.f = 1;
   }
-  constructor(_errorHandler, threshold, name = (_LeakageMonitor._idPool++).toString(16).padStart(3, "0")) {
-    this._errorHandler = _errorHandler;
+  constructor(j, threshold, name = (_LeakageMonitor.f++).toString(16).padStart(3, "0")) {
+    this.j = j;
     this.threshold = threshold;
     this.name = name;
-    this._warnCountdown = 0;
+    this.h = 0;
   }
   dispose() {
-    this._stacks?.clear();
+    this.g?.clear();
   }
   check(stack, listenerCount) {
     const threshold = this.threshold;
     if (threshold <= 0 || listenerCount < threshold) {
       return void 0;
     }
-    if (!this._stacks) {
-      this._stacks = /* @__PURE__ */ new Map();
+    if (!this.g) {
+      this.g = /* @__PURE__ */ new Map();
     }
-    const count = this._stacks.get(stack.value) || 0;
-    this._stacks.set(stack.value, count + 1);
-    this._warnCountdown -= 1;
-    if (this._warnCountdown <= 0) {
-      this._warnCountdown = threshold * 0.5;
+    const count = this.g.get(stack.value) || 0;
+    this.g.set(stack.value, count + 1);
+    this.h -= 1;
+    if (this.h <= 0) {
+      this.h = threshold * 0.5;
       const [topStack, topCount] = this.getMostFrequentStack();
       const message = `[${this.name}] potential listener LEAK detected, having ${listenerCount} listeners already. MOST frequent listener (${topCount}):`;
       console.warn(message);
       console.warn(topStack);
-      const error = new ListenerLeakError(message, topStack);
-      this._errorHandler(error);
+      const error = new $of(message, topStack);
+      this.j(error);
     }
     return () => {
-      const count2 = this._stacks.get(stack.value) || 0;
-      this._stacks.set(stack.value, count2 - 1);
+      const count2 = this.g.get(stack.value) || 0;
+      this.g.set(stack.value, count2 - 1);
     };
   }
   getMostFrequentStack() {
-    if (!this._stacks) {
+    if (!this.g) {
       return void 0;
     }
     let topStack;
     let topCount = 0;
-    for (const [stack, count] of this._stacks) {
+    for (const [stack, count] of this.g) {
       if (!topStack || topCount < count) {
         topStack = [stack, count];
         topCount = count;
@@ -3620,14 +3620,14 @@ var Stacktrace = class _Stacktrace {
     console.warn(this.value.split("\n").slice(2).join("\n"));
   }
 };
-var ListenerLeakError = class extends Error {
+var $of = class extends Error {
   constructor(message, stack) {
     super(message);
     this.name = "ListenerLeakError";
     this.stack = stack;
   }
 };
-var ListenerRefusalError = class extends Error {
+var $pf = class extends Error {
   constructor(message, stack) {
     super(message);
     this.name = "ListenerRefusalError";
@@ -3654,32 +3654,32 @@ var forEachListener = (listeners, fn) => {
     }
   }
 };
-var Emitter = class {
+var $qf = class {
   constructor(options) {
-    this._size = 0;
-    this._options = options;
-    this._leakageMon = _globalLeakWarningThreshold > 0 || this._options?.leakWarningThreshold ? new LeakageMonitor(options?.onListenerError ?? onUnexpectedError, this._options?.leakWarningThreshold ?? _globalLeakWarningThreshold) : void 0;
-    this._perfMon = this._options?._profName ? new EventProfiling(this._options._profName) : void 0;
-    this._deliveryQueue = this._options?.deliveryQueue;
+    this.A = 0;
+    this.g = options;
+    this.j = _globalLeakWarningThreshold > 0 || this.g?.leakWarningThreshold ? new LeakageMonitor(options?.onListenerError ?? $nb, this.g?.leakWarningThreshold ?? _globalLeakWarningThreshold) : void 0;
+    this.m = this.g?._profName ? new $mf(this.g._profName) : void 0;
+    this.z = this.g?.deliveryQueue;
   }
   dispose() {
-    if (!this._disposed) {
-      this._disposed = true;
-      if (this._deliveryQueue?.current === this) {
-        this._deliveryQueue.reset();
+    if (!this.q) {
+      this.q = true;
+      if (this.z?.current === this) {
+        this.z.reset();
       }
-      if (this._listeners) {
+      if (this.w) {
         if (_enableDisposeWithListenerWarning) {
-          const listeners = this._listeners;
+          const listeners = this.w;
           queueMicrotask(() => {
             forEachListener(listeners, (l) => l.stack?.print());
           });
         }
-        this._listeners = void 0;
-        this._size = 0;
+        this.w = void 0;
+        this.A = 0;
       }
-      this._options?.onDidRemoveLastListener?.();
-      this._leakageMon?.dispose();
+      this.g?.onDidRemoveLastListener?.();
+      this.j?.dispose();
     }
   }
   /**
@@ -3687,18 +3687,18 @@ var Emitter = class {
    * to events from this Emitter
    */
   get event() {
-    this._event ??= (callback, thisArgs, disposables) => {
-      if (this._leakageMon && this._size > this._leakageMon.threshold ** 2) {
-        const message = `[${this._leakageMon.name}] REFUSES to accept new listeners because it exceeded its threshold by far (${this._size} vs ${this._leakageMon.threshold})`;
+    this.u ??= (callback, thisArgs, disposables) => {
+      if (this.j && this.A > this.j.threshold ** 2) {
+        const message = `[${this.j.name}] REFUSES to accept new listeners because it exceeded its threshold by far (${this.A} vs ${this.j.threshold})`;
         console.warn(message);
-        const tuple = this._leakageMon.getMostFrequentStack() ?? ["UNKNOWN stack", -1];
-        const error = new ListenerRefusalError(`${message}. HINT: Stack shows most frequent listener (${tuple[1]}-times)`, tuple[0]);
-        const errorHandler2 = this._options?.onListenerError || onUnexpectedError;
-        errorHandler2(error);
-        return Disposable.None;
+        const tuple = this.j.getMostFrequentStack() ?? ["UNKNOWN stack", -1];
+        const error = new $pf(`${message}. HINT: Stack shows most frequent listener (${tuple[1]}-times)`, tuple[0]);
+        const errorHandler = this.g?.onListenerError || $nb;
+        errorHandler(error);
+        return $Fd.None;
       }
-      if (this._disposed) {
-        return Disposable.None;
+      if (this.q) {
+        return $Fd.None;
       }
       if (thisArgs) {
         callback = callback.bind(thisArgs);
@@ -3706,91 +3706,91 @@ var Emitter = class {
       const contained = new UniqueContainer(callback);
       let removeMonitor;
       let stack;
-      if (this._leakageMon && this._size >= Math.ceil(this._leakageMon.threshold * 0.2)) {
+      if (this.j && this.A >= Math.ceil(this.j.threshold * 0.2)) {
         contained.stack = Stacktrace.create();
-        removeMonitor = this._leakageMon.check(contained.stack, this._size + 1);
+        removeMonitor = this.j.check(contained.stack, this.A + 1);
       }
       if (_enableDisposeWithListenerWarning) {
         contained.stack = stack ?? Stacktrace.create();
       }
-      if (!this._listeners) {
-        this._options?.onWillAddFirstListener?.(this);
-        this._listeners = contained;
-        this._options?.onDidAddFirstListener?.(this);
-      } else if (this._listeners instanceof UniqueContainer) {
-        this._deliveryQueue ??= new EventDeliveryQueuePrivate();
-        this._listeners = [this._listeners, contained];
+      if (!this.w) {
+        this.g?.onWillAddFirstListener?.(this);
+        this.w = contained;
+        this.g?.onDidAddFirstListener?.(this);
+      } else if (this.w instanceof UniqueContainer) {
+        this.z ??= new EventDeliveryQueuePrivate();
+        this.w = [this.w, contained];
       } else {
-        this._listeners.push(contained);
+        this.w.push(contained);
       }
-      this._options?.onDidAddListener?.(this);
-      this._size++;
-      const result = toDisposable(() => {
+      this.g?.onDidAddListener?.(this);
+      this.A++;
+      const result = $Dd(() => {
         removeMonitor?.();
-        this._removeListener(contained);
+        this.B(contained);
       });
       addToDisposables(result, disposables);
       return result;
     };
-    return this._event;
+    return this.u;
   }
-  _removeListener(listener) {
-    this._options?.onWillRemoveListener?.(this);
-    if (!this._listeners) {
+  B(listener) {
+    this.g?.onWillRemoveListener?.(this);
+    if (!this.w) {
       return;
     }
-    if (this._size === 1) {
-      this._listeners = void 0;
-      this._options?.onDidRemoveLastListener?.(this);
-      this._size = 0;
+    if (this.A === 1) {
+      this.w = void 0;
+      this.g?.onDidRemoveLastListener?.(this);
+      this.A = 0;
       return;
     }
-    const listeners = this._listeners;
+    const listeners = this.w;
     const index = listeners.indexOf(listener);
     if (index === -1) {
-      console.log("disposed?", this._disposed);
-      console.log("size?", this._size);
-      console.log("arr?", JSON.stringify(this._listeners));
+      console.log("disposed?", this.q);
+      console.log("size?", this.A);
+      console.log("arr?", JSON.stringify(this.w));
       throw new Error("Attempted to dispose unknown listener");
     }
-    this._size--;
+    this.A--;
     listeners[index] = void 0;
-    const adjustDeliveryQueue = this._deliveryQueue.current === this;
-    if (this._size * compactionThreshold <= listeners.length) {
+    const adjustDeliveryQueue = this.z.current === this;
+    if (this.A * compactionThreshold <= listeners.length) {
       let n = 0;
       for (let i = 0; i < listeners.length; i++) {
         if (listeners[i]) {
           listeners[n++] = listeners[i];
-        } else if (adjustDeliveryQueue && n < this._deliveryQueue.end) {
-          this._deliveryQueue.end--;
-          if (n < this._deliveryQueue.i) {
-            this._deliveryQueue.i--;
+        } else if (adjustDeliveryQueue && n < this.z.end) {
+          this.z.end--;
+          if (n < this.z.i) {
+            this.z.i--;
           }
         }
       }
       listeners.length = n;
     }
   }
-  _deliver(listener, value) {
+  C(listener, value) {
     if (!listener) {
       return;
     }
-    const errorHandler2 = this._options?.onListenerError || onUnexpectedError;
-    if (!errorHandler2) {
+    const errorHandler = this.g?.onListenerError || $nb;
+    if (!errorHandler) {
       listener.value(value);
       return;
     }
     try {
       listener.value(value);
     } catch (e) {
-      errorHandler2(e);
+      errorHandler(e);
     }
   }
   /** Delivers items in the queue. Assumes the queue is ready to go. */
-  _deliverQueue(dq) {
-    const listeners = dq.current._listeners;
+  D(dq) {
+    const listeners = dq.current.w;
     while (dq.i < dq.end) {
-      this._deliver(listeners[dq.i++], dq.value);
+      this.C(listeners[dq.i++], dq.value);
     }
     dq.reset();
   }
@@ -3799,23 +3799,23 @@ var Emitter = class {
    * subscribers
    */
   fire(event) {
-    if (this._deliveryQueue?.current) {
-      this._deliverQueue(this._deliveryQueue);
-      this._perfMon?.stop();
+    if (this.z?.current) {
+      this.D(this.z);
+      this.m?.stop();
     }
-    this._perfMon?.start(this._size);
-    if (!this._listeners) {
-    } else if (this._listeners instanceof UniqueContainer) {
-      this._deliver(this._listeners, event);
+    this.m?.start(this.A);
+    if (!this.w) {
+    } else if (this.w instanceof UniqueContainer) {
+      this.C(this.w, event);
     } else {
-      const dq = this._deliveryQueue;
-      dq.enqueue(this, event, this._listeners.length);
-      this._deliverQueue(dq);
+      const dq = this.z;
+      dq.enqueue(this, event, this.w.length);
+      this.D(dq);
     }
-    this._perfMon?.stop();
+    this.m?.stop();
   }
   hasListeners() {
-    return this._size > 0;
+    return this.A > 0;
   }
 };
 var EventDeliveryQueuePrivate = class {
@@ -3836,14 +3836,14 @@ var EventDeliveryQueuePrivate = class {
   }
 };
 function addToDisposables(result, disposables) {
-  if (disposables instanceof DisposableStore) {
+  if (disposables instanceof $Ed) {
     disposables.add(result);
   } else if (Array.isArray(disposables)) {
     disposables.push(result);
   }
 }
 function disposeAndRemove(result, disposables) {
-  if (disposables instanceof DisposableStore) {
+  if (disposables instanceof $Ed) {
     disposables.delete(result);
   } else if (Array.isArray(disposables)) {
     const index = disposables.indexOf(result);
@@ -3887,61 +3887,61 @@ var CancellationToken;
 })(CancellationToken || (CancellationToken = {}));
 var MutableToken = class {
   constructor() {
-    this._isCancelled = false;
-    this._emitter = null;
+    this.a = false;
+    this.b = null;
   }
   cancel() {
-    if (!this._isCancelled) {
-      this._isCancelled = true;
-      if (this._emitter) {
-        this._emitter.fire(void 0);
+    if (!this.a) {
+      this.a = true;
+      if (this.b) {
+        this.b.fire(void 0);
         this.dispose();
       }
     }
   }
   get isCancellationRequested() {
-    return this._isCancelled;
+    return this.a;
   }
   get onCancellationRequested() {
-    if (this._isCancelled) {
+    if (this.a) {
       return shortcutEvent;
     }
-    if (!this._emitter) {
-      this._emitter = new Emitter();
+    if (!this.b) {
+      this.b = new $qf();
     }
-    return this._emitter.event;
+    return this.b.event;
   }
   dispose() {
-    if (this._emitter) {
-      this._emitter.dispose();
-      this._emitter = null;
+    if (this.b) {
+      this.b.dispose();
+      this.b = null;
     }
   }
 };
 
 // out-build/vs/base/common/cache.js
-function identity(t) {
+function $Gf(t) {
   return t;
 }
-var LRUCachedFunction = class {
+var $Hf = class {
   constructor(arg1, arg2) {
-    this.lastCache = void 0;
-    this.lastArgKey = void 0;
+    this.a = void 0;
+    this.b = void 0;
     if (typeof arg1 === "function") {
-      this._fn = arg1;
-      this._computeKey = identity;
+      this.c = arg1;
+      this.d = $Gf;
     } else {
-      this._fn = arg2;
-      this._computeKey = arg1.getCacheKey;
+      this.c = arg2;
+      this.d = arg1.getCacheKey;
     }
   }
   get(arg) {
-    const key = this._computeKey(arg);
-    if (this.lastArgKey !== key) {
-      this.lastArgKey = key;
-      this.lastCache = this._fn(arg);
+    const key = this.d(arg);
+    if (this.b !== key) {
+      this.b = key;
+      this.a = this.c(arg);
     }
-    return this.lastCache;
+    return this.a;
   }
 };
 
@@ -3952,16 +3952,16 @@ var LazyValueState;
   LazyValueState2[LazyValueState2["Running"] = 1] = "Running";
   LazyValueState2[LazyValueState2["Completed"] = 2] = "Completed";
 })(LazyValueState || (LazyValueState = {}));
-var Lazy = class {
-  constructor(executor) {
-    this.executor = executor;
-    this._state = LazyValueState.Uninitialized;
+var $Kf = class {
+  constructor(d) {
+    this.d = d;
+    this.a = LazyValueState.Uninitialized;
   }
   /**
    * True if the lazy value has been resolved.
    */
   get hasValue() {
-    return this._state === LazyValueState.Completed;
+    return this.a === LazyValueState.Completed;
   }
   /**
    * Get the wrapped value.
@@ -3970,33 +3970,33 @@ var Lazy = class {
    * resolved once. `getValue` will re-throw exceptions that are hit while resolving the value
    */
   get value() {
-    if (this._state === LazyValueState.Uninitialized) {
-      this._state = LazyValueState.Running;
+    if (this.a === LazyValueState.Uninitialized) {
+      this.a = LazyValueState.Running;
       try {
-        this._value = this.executor();
+        this.b = this.d();
       } catch (err) {
-        this._error = err;
+        this.c = err;
       } finally {
-        this._state = LazyValueState.Completed;
+        this.a = LazyValueState.Completed;
       }
-    } else if (this._state === LazyValueState.Running) {
+    } else if (this.a === LazyValueState.Running) {
       throw new Error("Cannot read the value of a lazy that is being initialized");
     }
-    if (this._error) {
-      throw this._error;
+    if (this.c) {
+      throw this.c;
     }
-    return this._value;
+    return this.b;
   }
   /**
    * Get the wrapped value without forcing evaluation.
    */
   get rawValue() {
-    return this._value;
+    return this.b;
   }
 };
 
 // out-build/vs/base/common/strings.js
-function compare(a, b) {
+function $_f(a, b) {
   if (a < b) {
     return -1;
   } else if (a > b) {
@@ -4005,7 +4005,7 @@ function compare(a, b) {
     return 0;
   }
 }
-function compareSubstring(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
+function $ag(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   for (; aStart < aEnd && bStart < bEnd; aStart++, bStart++) {
     const codeA = a.charCodeAt(aStart);
     const codeB = b.charCodeAt(bStart);
@@ -4024,10 +4024,10 @@ function compareSubstring(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = 
   }
   return 0;
 }
-function compareIgnoreCase(a, b) {
-  return compareSubstringIgnoreCase(a, b, 0, a.length, 0, b.length);
+function $bg(a, b) {
+  return $cg(a, b, 0, a.length, 0, b.length);
 }
-function compareSubstringIgnoreCase(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
+function $cg(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   for (; aStart < aEnd && bStart < bEnd; aStart++, bStart++) {
     let codeA = a.charCodeAt(aStart);
     let codeB = b.charCodeAt(bStart);
@@ -4035,12 +4035,12 @@ function compareSubstringIgnoreCase(a, b, aStart = 0, aEnd = a.length, bStart = 
       continue;
     }
     if (codeA >= 128 || codeB >= 128) {
-      return compareSubstring(a.toLowerCase(), b.toLowerCase(), aStart, aEnd, bStart, bEnd);
+      return $ag(a.toLowerCase(), b.toLowerCase(), aStart, aEnd, bStart, bEnd);
     }
-    if (isLowerAsciiLetter(codeA)) {
+    if ($eg(codeA)) {
       codeA -= 32;
     }
-    if (isLowerAsciiLetter(codeB)) {
+    if ($eg(codeB)) {
       codeB -= 32;
     }
     const diff = codeA - codeB;
@@ -4058,10 +4058,10 @@ function compareSubstringIgnoreCase(a, b, aStart = 0, aEnd = a.length, bStart = 
   }
   return 0;
 }
-function isLowerAsciiLetter(code) {
+function $eg(code) {
   return code >= 97 && code <= 122;
 }
-function isUpperAsciiLetter(code) {
+function $fg(code) {
   return code >= 65 && code <= 90;
 }
 var CSI_SEQUENCE = /(?:\x1b\[|\x9b)[=?>!]?[\d;:]*["$#'* ]?[a-zA-Z@^`{}|~]/;
@@ -4072,7 +4072,7 @@ var CONTROL_SEQUENCES = new RegExp("(?:" + [
   OSC_SEQUENCE.source,
   ESC_SEQUENCE.source
 ].join("|") + ")", "g");
-var UTF8_BOM_CHARACTER = String.fromCharCode(
+var $Gg = String.fromCharCode(
   65279
   /* CharCode.UTF8_BOM */
 );
@@ -4096,16 +4096,16 @@ var GraphemeBreakType;
 })(GraphemeBreakType || (GraphemeBreakType = {}));
 var GraphemeBreakTree = class _GraphemeBreakTree {
   static {
-    this._INSTANCE = null;
+    this.c = null;
   }
   static getInstance() {
-    if (!_GraphemeBreakTree._INSTANCE) {
-      _GraphemeBreakTree._INSTANCE = new _GraphemeBreakTree();
+    if (!_GraphemeBreakTree.c) {
+      _GraphemeBreakTree.c = new _GraphemeBreakTree();
     }
-    return _GraphemeBreakTree._INSTANCE;
+    return _GraphemeBreakTree.c;
   }
   constructor() {
-    this._data = getGraphemeBreakRawData();
+    this.d = getGraphemeBreakRawData();
   }
   getGraphemeBreakType(codePoint) {
     if (codePoint < 32) {
@@ -4120,7 +4120,7 @@ var GraphemeBreakTree = class _GraphemeBreakTree {
     if (codePoint < 127) {
       return 0;
     }
-    const data = this._data;
+    const data = this.d;
     const nodeCount = data.length / 3;
     let nodeIndex = 1;
     while (nodeIndex <= nodeCount) {
@@ -4145,14 +4145,14 @@ var CodePoint;
   CodePoint2[CodePoint2["enclosingKeyCap"] = 8419] = "enclosingKeyCap";
   CodePoint2[CodePoint2["space"] = 32] = "space";
 })(CodePoint || (CodePoint = {}));
-var AmbiguousCharacters = class _AmbiguousCharacters {
+var $Rg = class _$Rg {
   static {
-    this.ambiguousCharacterData = new Lazy(() => {
+    this.c = new $Kf(() => {
       return JSON.parse('{"_common":[8232,32,8233,32,5760,32,8192,32,8193,32,8194,32,8195,32,8196,32,8197,32,8198,32,8200,32,8201,32,8202,32,8287,32,8199,32,8239,32,2042,95,65101,95,65102,95,65103,95,8208,45,8209,45,8210,45,65112,45,1748,45,8259,45,727,45,8722,45,10134,45,11450,45,1549,44,1643,44,184,44,42233,44,894,59,2307,58,2691,58,1417,58,1795,58,1796,58,5868,58,65072,58,6147,58,6153,58,8282,58,1475,58,760,58,42889,58,8758,58,720,58,42237,58,451,33,11601,33,660,63,577,63,2429,63,5038,63,42731,63,119149,46,8228,46,1793,46,1794,46,42510,46,68176,46,1632,46,1776,46,42232,46,1373,96,65287,96,8219,96,1523,96,8242,96,1370,96,8175,96,65344,96,900,96,8189,96,8125,96,8127,96,8190,96,697,96,884,96,712,96,714,96,715,96,756,96,699,96,701,96,700,96,702,96,42892,96,1497,96,2036,96,2037,96,5194,96,5836,96,94033,96,94034,96,65339,91,10088,40,10098,40,12308,40,64830,40,65341,93,10089,41,10099,41,12309,41,64831,41,10100,123,119060,123,10101,125,65342,94,8270,42,1645,42,8727,42,66335,42,5941,47,8257,47,8725,47,8260,47,9585,47,10187,47,10744,47,119354,47,12755,47,12339,47,11462,47,20031,47,12035,47,65340,92,65128,92,8726,92,10189,92,10741,92,10745,92,119311,92,119355,92,12756,92,20022,92,12034,92,42872,38,708,94,710,94,5869,43,10133,43,66203,43,8249,60,10094,60,706,60,119350,60,5176,60,5810,60,5120,61,11840,61,12448,61,42239,61,8250,62,10095,62,707,62,119351,62,5171,62,94015,62,8275,126,732,126,8128,126,8764,126,65372,124,65293,45,118002,50,120784,50,120794,50,120804,50,120814,50,120824,50,130034,50,42842,50,423,50,1000,50,42564,50,5311,50,42735,50,119302,51,118003,51,120785,51,120795,51,120805,51,120815,51,120825,51,130035,51,42923,51,540,51,439,51,42858,51,11468,51,1248,51,94011,51,71882,51,118004,52,120786,52,120796,52,120806,52,120816,52,120826,52,130036,52,5070,52,71855,52,118005,53,120787,53,120797,53,120807,53,120817,53,120827,53,130037,53,444,53,71867,53,118006,54,120788,54,120798,54,120808,54,120818,54,120828,54,130038,54,11474,54,5102,54,71893,54,119314,55,118007,55,120789,55,120799,55,120809,55,120819,55,120829,55,130039,55,66770,55,71878,55,2819,56,2538,56,2666,56,125131,56,118008,56,120790,56,120800,56,120810,56,120820,56,120830,56,130040,56,547,56,546,56,66330,56,2663,57,2920,57,2541,57,3437,57,118009,57,120791,57,120801,57,120811,57,120821,57,120831,57,130041,57,42862,57,11466,57,71884,57,71852,57,71894,57,9082,97,65345,97,119834,97,119886,97,119938,97,119990,97,120042,97,120094,97,120146,97,120198,97,120250,97,120302,97,120354,97,120406,97,120458,97,593,97,945,97,120514,97,120572,97,120630,97,120688,97,120746,97,65313,65,117974,65,119808,65,119860,65,119912,65,119964,65,120016,65,120068,65,120120,65,120172,65,120224,65,120276,65,120328,65,120380,65,120432,65,913,65,120488,65,120546,65,120604,65,120662,65,120720,65,5034,65,5573,65,42222,65,94016,65,66208,65,119835,98,119887,98,119939,98,119991,98,120043,98,120095,98,120147,98,120199,98,120251,98,120303,98,120355,98,120407,98,120459,98,388,98,5071,98,5234,98,5551,98,65314,66,8492,66,117975,66,119809,66,119861,66,119913,66,120017,66,120069,66,120121,66,120173,66,120225,66,120277,66,120329,66,120381,66,120433,66,42932,66,914,66,120489,66,120547,66,120605,66,120663,66,120721,66,5108,66,5623,66,42192,66,66178,66,66209,66,66305,66,65347,99,8573,99,119836,99,119888,99,119940,99,119992,99,120044,99,120096,99,120148,99,120200,99,120252,99,120304,99,120356,99,120408,99,120460,99,7428,99,1010,99,11429,99,43951,99,66621,99,128844,67,71913,67,71922,67,65315,67,8557,67,8450,67,8493,67,117976,67,119810,67,119862,67,119914,67,119966,67,120018,67,120174,67,120226,67,120278,67,120330,67,120382,67,120434,67,1017,67,11428,67,5087,67,42202,67,66210,67,66306,67,66581,67,66844,67,8574,100,8518,100,119837,100,119889,100,119941,100,119993,100,120045,100,120097,100,120149,100,120201,100,120253,100,120305,100,120357,100,120409,100,120461,100,1281,100,5095,100,5231,100,42194,100,8558,68,8517,68,117977,68,119811,68,119863,68,119915,68,119967,68,120019,68,120071,68,120123,68,120175,68,120227,68,120279,68,120331,68,120383,68,120435,68,5024,68,5598,68,5610,68,42195,68,8494,101,65349,101,8495,101,8519,101,119838,101,119890,101,119942,101,120046,101,120098,101,120150,101,120202,101,120254,101,120306,101,120358,101,120410,101,120462,101,43826,101,1213,101,8959,69,65317,69,8496,69,117978,69,119812,69,119864,69,119916,69,120020,69,120072,69,120124,69,120176,69,120228,69,120280,69,120332,69,120384,69,120436,69,917,69,120492,69,120550,69,120608,69,120666,69,120724,69,11577,69,5036,69,42224,69,71846,69,71854,69,66182,69,119839,102,119891,102,119943,102,119995,102,120047,102,120099,102,120151,102,120203,102,120255,102,120307,102,120359,102,120411,102,120463,102,43829,102,42905,102,383,102,7837,102,1412,102,119315,70,8497,70,117979,70,119813,70,119865,70,119917,70,120021,70,120073,70,120125,70,120177,70,120229,70,120281,70,120333,70,120385,70,120437,70,42904,70,988,70,120778,70,5556,70,42205,70,71874,70,71842,70,66183,70,66213,70,66853,70,65351,103,8458,103,119840,103,119892,103,119944,103,120048,103,120100,103,120152,103,120204,103,120256,103,120308,103,120360,103,120412,103,120464,103,609,103,7555,103,397,103,1409,103,117980,71,119814,71,119866,71,119918,71,119970,71,120022,71,120074,71,120126,71,120178,71,120230,71,120282,71,120334,71,120386,71,120438,71,1292,71,5056,71,5107,71,42198,71,65352,104,8462,104,119841,104,119945,104,119997,104,120049,104,120101,104,120153,104,120205,104,120257,104,120309,104,120361,104,120413,104,120465,104,1211,104,1392,104,5058,104,65320,72,8459,72,8460,72,8461,72,117981,72,119815,72,119867,72,119919,72,120023,72,120179,72,120231,72,120283,72,120335,72,120387,72,120439,72,919,72,120494,72,120552,72,120610,72,120668,72,120726,72,11406,72,5051,72,5500,72,42215,72,66255,72,731,105,9075,105,65353,105,8560,105,8505,105,8520,105,119842,105,119894,105,119946,105,119998,105,120050,105,120102,105,120154,105,120206,105,120258,105,120310,105,120362,105,120414,105,120466,105,120484,105,618,105,617,105,953,105,8126,105,890,105,120522,105,120580,105,120638,105,120696,105,120754,105,1110,105,42567,105,1231,105,43893,105,5029,105,71875,105,65354,106,8521,106,119843,106,119895,106,119947,106,119999,106,120051,106,120103,106,120155,106,120207,106,120259,106,120311,106,120363,106,120415,106,120467,106,1011,106,1112,106,65322,74,117983,74,119817,74,119869,74,119921,74,119973,74,120025,74,120077,74,120129,74,120181,74,120233,74,120285,74,120337,74,120389,74,120441,74,42930,74,895,74,1032,74,5035,74,5261,74,42201,74,119844,107,119896,107,119948,107,120000,107,120052,107,120104,107,120156,107,120208,107,120260,107,120312,107,120364,107,120416,107,120468,107,8490,75,65323,75,117984,75,119818,75,119870,75,119922,75,119974,75,120026,75,120078,75,120130,75,120182,75,120234,75,120286,75,120338,75,120390,75,120442,75,922,75,120497,75,120555,75,120613,75,120671,75,120729,75,11412,75,5094,75,5845,75,42199,75,66840,75,1472,108,8739,73,9213,73,65512,73,1633,108,1777,73,66336,108,125127,108,118001,108,120783,73,120793,73,120803,73,120813,73,120823,73,130033,73,65321,73,8544,73,8464,73,8465,73,117982,108,119816,73,119868,73,119920,73,120024,73,120128,73,120180,73,120232,73,120284,73,120336,73,120388,73,120440,73,65356,108,8572,73,8467,108,119845,108,119897,108,119949,108,120001,108,120053,108,120105,73,120157,73,120209,73,120261,73,120313,73,120365,73,120417,73,120469,73,448,73,120496,73,120554,73,120612,73,120670,73,120728,73,11410,73,1030,73,1216,73,1493,108,1503,108,1575,108,126464,108,126592,108,65166,108,65165,108,1994,108,11599,73,5825,73,42226,73,93992,73,66186,124,66313,124,119338,76,8556,76,8466,76,117985,76,119819,76,119871,76,119923,76,120027,76,120079,76,120131,76,120183,76,120235,76,120287,76,120339,76,120391,76,120443,76,11472,76,5086,76,5290,76,42209,76,93974,76,71843,76,71858,76,66587,76,66854,76,65325,77,8559,77,8499,77,117986,77,119820,77,119872,77,119924,77,120028,77,120080,77,120132,77,120184,77,120236,77,120288,77,120340,77,120392,77,120444,77,924,77,120499,77,120557,77,120615,77,120673,77,120731,77,1018,77,11416,77,5047,77,5616,77,5846,77,42207,77,66224,77,66321,77,119847,110,119899,110,119951,110,120003,110,120055,110,120107,110,120159,110,120211,110,120263,110,120315,110,120367,110,120419,110,120471,110,1400,110,1404,110,65326,78,8469,78,117987,78,119821,78,119873,78,119925,78,119977,78,120029,78,120081,78,120185,78,120237,78,120289,78,120341,78,120393,78,120445,78,925,78,120500,78,120558,78,120616,78,120674,78,120732,78,11418,78,42208,78,66835,78,3074,111,3202,111,3330,111,3458,111,2406,111,2662,111,2790,111,3046,111,3174,111,3302,111,3430,111,3664,111,3792,111,4160,111,1637,111,1781,111,65359,111,8500,111,119848,111,119900,111,119952,111,120056,111,120108,111,120160,111,120212,111,120264,111,120316,111,120368,111,120420,111,120472,111,7439,111,7441,111,43837,111,959,111,120528,111,120586,111,120644,111,120702,111,120760,111,963,111,120532,111,120590,111,120648,111,120706,111,120764,111,11423,111,4351,111,1413,111,1505,111,1607,111,126500,111,126564,111,126596,111,65259,111,65260,111,65258,111,65257,111,1726,111,64428,111,64429,111,64427,111,64426,111,1729,111,64424,111,64425,111,64423,111,64422,111,1749,111,3360,111,4125,111,66794,111,71880,111,71895,111,66604,111,1984,79,2534,79,2918,79,12295,79,70864,79,71904,79,118000,79,120782,79,120792,79,120802,79,120812,79,120822,79,130032,79,65327,79,117988,79,119822,79,119874,79,119926,79,119978,79,120030,79,120082,79,120134,79,120186,79,120238,79,120290,79,120342,79,120394,79,120446,79,927,79,120502,79,120560,79,120618,79,120676,79,120734,79,11422,79,1365,79,11604,79,4816,79,2848,79,66754,79,42227,79,71861,79,66194,79,66219,79,66564,79,66838,79,9076,112,65360,112,119849,112,119901,112,119953,112,120005,112,120057,112,120109,112,120161,112,120213,112,120265,112,120317,112,120369,112,120421,112,120473,112,961,112,120530,112,120544,112,120588,112,120602,112,120646,112,120660,112,120704,112,120718,112,120762,112,120776,112,11427,112,65328,80,8473,80,117989,80,119823,80,119875,80,119927,80,119979,80,120031,80,120083,80,120187,80,120239,80,120291,80,120343,80,120395,80,120447,80,929,80,120504,80,120562,80,120620,80,120678,80,120736,80,11426,80,5090,80,5229,80,42193,80,66197,80,119850,113,119902,113,119954,113,120006,113,120058,113,120110,113,120162,113,120214,113,120266,113,120318,113,120370,113,120422,113,120474,113,1307,113,1379,113,1382,113,8474,81,117990,81,119824,81,119876,81,119928,81,119980,81,120032,81,120084,81,120188,81,120240,81,120292,81,120344,81,120396,81,120448,81,11605,81,119851,114,119903,114,119955,114,120007,114,120059,114,120111,114,120163,114,120215,114,120267,114,120319,114,120371,114,120423,114,120475,114,43847,114,43848,114,7462,114,11397,114,43905,114,119318,82,8475,82,8476,82,8477,82,117991,82,119825,82,119877,82,119929,82,120033,82,120189,82,120241,82,120293,82,120345,82,120397,82,120449,82,422,82,5025,82,5074,82,66740,82,5511,82,42211,82,94005,82,65363,115,119852,115,119904,115,119956,115,120008,115,120060,115,120112,115,120164,115,120216,115,120268,115,120320,115,120372,115,120424,115,120476,115,42801,115,445,115,1109,115,43946,115,71873,115,66632,115,65331,83,117992,83,119826,83,119878,83,119930,83,119982,83,120034,83,120086,83,120138,83,120190,83,120242,83,120294,83,120346,83,120398,83,120450,83,1029,83,1359,83,5077,83,5082,83,42210,83,94010,83,66198,83,66592,83,119853,116,119905,116,119957,116,120009,116,120061,116,120113,116,120165,116,120217,116,120269,116,120321,116,120373,116,120425,116,120477,116,8868,84,10201,84,128872,84,65332,84,117993,84,119827,84,119879,84,119931,84,119983,84,120035,84,120087,84,120139,84,120191,84,120243,84,120295,84,120347,84,120399,84,120451,84,932,84,120507,84,120565,84,120623,84,120681,84,120739,84,11430,84,5026,84,42196,84,93962,84,71868,84,66199,84,66225,84,66325,84,119854,117,119906,117,119958,117,120010,117,120062,117,120114,117,120166,117,120218,117,120270,117,120322,117,120374,117,120426,117,120478,117,42911,117,7452,117,43854,117,43858,117,651,117,965,117,120534,117,120592,117,120650,117,120708,117,120766,117,1405,117,66806,117,71896,117,8746,85,8899,85,117994,85,119828,85,119880,85,119932,85,119984,85,120036,85,120088,85,120140,85,120192,85,120244,85,120296,85,120348,85,120400,85,120452,85,1357,85,4608,85,66766,85,5196,85,42228,85,94018,85,71864,85,8744,118,8897,118,65366,118,8564,118,119855,118,119907,118,119959,118,120011,118,120063,118,120115,118,120167,118,120219,118,120271,118,120323,118,120375,118,120427,118,120479,118,7456,118,957,118,120526,118,120584,118,120642,118,120700,118,120758,118,1141,118,1496,118,71430,118,43945,118,71872,118,119309,86,1639,86,1783,86,8548,86,117995,86,119829,86,119881,86,119933,86,119985,86,120037,86,120089,86,120141,86,120193,86,120245,86,120297,86,120349,86,120401,86,120453,86,1140,86,11576,86,5081,86,5167,86,42719,86,42214,86,93960,86,71840,86,66845,86,623,119,119856,119,119908,119,119960,119,120012,119,120064,119,120116,119,120168,119,120220,119,120272,119,120324,119,120376,119,120428,119,120480,119,7457,119,1121,119,1309,119,1377,119,71434,119,71438,119,71439,119,43907,119,71910,87,71919,87,117996,87,119830,87,119882,87,119934,87,119986,87,120038,87,120090,87,120142,87,120194,87,120246,87,120298,87,120350,87,120402,87,120454,87,1308,87,5043,87,5076,87,42218,87,5742,120,10539,120,10540,120,10799,120,65368,120,8569,120,119857,120,119909,120,119961,120,120013,120,120065,120,120117,120,120169,120,120221,120,120273,120,120325,120,120377,120,120429,120,120481,120,5441,120,5501,120,5741,88,9587,88,66338,88,71916,88,65336,88,8553,88,117997,88,119831,88,119883,88,119935,88,119987,88,120039,88,120091,88,120143,88,120195,88,120247,88,120299,88,120351,88,120403,88,120455,88,42931,88,935,88,120510,88,120568,88,120626,88,120684,88,120742,88,11436,88,11613,88,5815,88,42219,88,66192,88,66228,88,66327,88,66855,88,611,121,7564,121,65369,121,119858,121,119910,121,119962,121,120014,121,120066,121,120118,121,120170,121,120222,121,120274,121,120326,121,120378,121,120430,121,120482,121,655,121,7935,121,43866,121,947,121,8509,121,120516,121,120574,121,120632,121,120690,121,120748,121,1199,121,4327,121,71900,121,65337,89,117998,89,119832,89,119884,89,119936,89,119988,89,120040,89,120092,89,120144,89,120196,89,120248,89,120300,89,120352,89,120404,89,120456,89,933,89,978,89,120508,89,120566,89,120624,89,120682,89,120740,89,11432,89,1198,89,5033,89,5053,89,42220,89,94019,89,71844,89,66226,89,119859,122,119911,122,119963,122,120015,122,120067,122,120119,122,120171,122,120223,122,120275,122,120327,122,120379,122,120431,122,120483,122,7458,122,43923,122,71876,122,71909,90,66293,90,65338,90,8484,90,8488,90,117999,90,119833,90,119885,90,119937,90,119989,90,120041,90,120197,90,120249,90,120301,90,120353,90,120405,90,120457,90,918,90,120493,90,120551,90,120609,90,120667,90,120725,90,5059,90,42204,90,71849,90,65282,34,65283,35,65284,36,65285,37,65286,38,65290,42,65291,43,65294,46,65295,47,65296,48,65298,50,65299,51,65300,52,65301,53,65302,54,65303,55,65304,56,65305,57,65308,60,65309,61,65310,62,65312,64,65316,68,65318,70,65319,71,65324,76,65329,81,65330,82,65333,85,65334,86,65335,87,65343,95,65346,98,65348,100,65350,102,65355,107,65357,109,65358,110,65361,113,65362,114,65364,116,65365,117,65367,119,65370,122,65371,123,65373,125,119846,109],"_default":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8216,96,8217,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"cs":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"de":[65374,126,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"es":[8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"fr":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"it":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"ja":[8211,45,8218,44,65281,33,8216,96,8245,96,180,96,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65292,44,65297,49,65307,59],"ko":[8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"pl":[65374,126,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"pt-BR":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"qps-ploc":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"ru":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,305,105,921,73,1009,112,215,120,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"tr":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"zh-hans":[160,32,65374,126,8218,44,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65297,49],"zh-hant":[8211,45,65374,126,8218,44,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89]}');
     });
   }
   static {
-    this.cache = new LRUCachedFunction((localesStr) => {
+    this.d = new $Hf((localesStr) => {
       const locales = localesStr.split(",");
       function arrayToMap(arr) {
         const result = /* @__PURE__ */ new Map();
@@ -4180,7 +4180,7 @@ var AmbiguousCharacters = class _AmbiguousCharacters {
         }
         return result;
       }
-      const data = this.ambiguousCharacterData.value;
+      const data = this.c.value;
       let filteredLocales = locales.filter((l) => !l.startsWith("_") && Object.hasOwn(data, l));
       if (filteredLocales.length === 0) {
         filteredLocales = ["_default"];
@@ -4192,23 +4192,23 @@ var AmbiguousCharacters = class _AmbiguousCharacters {
       }
       const commonMap = arrayToMap(data["_common"]);
       const map = mergeMaps(commonMap, languageSpecificMap);
-      return new _AmbiguousCharacters(map);
+      return new _$Rg(map);
     });
   }
   static getInstance(locales) {
-    return _AmbiguousCharacters.cache.get(Array.from(locales).join(","));
+    return _$Rg.d.get(Array.from(locales).join(","));
   }
   static {
-    this._locales = new Lazy(() => Object.keys(_AmbiguousCharacters.ambiguousCharacterData.value).filter((k) => !k.startsWith("_")));
+    this.e = new $Kf(() => Object.keys(_$Rg.c.value).filter((k) => !k.startsWith("_")));
   }
   static getLocales() {
-    return _AmbiguousCharacters._locales.value;
+    return _$Rg.e.value;
   }
-  constructor(confusableDictionary) {
-    this.confusableDictionary = confusableDictionary;
+  constructor(f) {
+    this.f = f;
   }
   isAmbiguous(codePoint) {
-    return this.confusableDictionary.has(codePoint);
+    return this.f.has(codePoint);
   }
   containsAmbiguousCharacter(str) {
     for (let i = 0; i < str.length; i++) {
@@ -4224,90 +4224,90 @@ var AmbiguousCharacters = class _AmbiguousCharacters {
    * or undefined if such code point does note exist.
    */
   getPrimaryConfusable(codePoint) {
-    return this.confusableDictionary.get(codePoint);
+    return this.f.get(codePoint);
   }
   getConfusableCodePoints() {
-    return new Set(this.confusableDictionary.keys());
+    return new Set(this.f.keys());
   }
 };
-var InvisibleCharacters = class _InvisibleCharacters {
-  static getRawData() {
+var $Sg = class _$Sg {
+  static c() {
     return JSON.parse('{"_common":[11,12,13,127,847,1564,4447,4448,6068,6069,6155,6156,6157,6158,7355,7356,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8204,8205,8206,8207,8234,8235,8236,8237,8238,8239,8287,8288,8289,8290,8291,8292,8293,8294,8295,8296,8297,8298,8299,8300,8301,8302,8303,10240,12644,65024,65025,65026,65027,65028,65029,65030,65031,65032,65033,65034,65035,65036,65037,65038,65039,65279,65440,65520,65521,65522,65523,65524,65525,65526,65527,65528,65532,78844,119155,119156,119157,119158,119159,119160,119161,119162,917504,917505,917506,917507,917508,917509,917510,917511,917512,917513,917514,917515,917516,917517,917518,917519,917520,917521,917522,917523,917524,917525,917526,917527,917528,917529,917530,917531,917532,917533,917534,917535,917536,917537,917538,917539,917540,917541,917542,917543,917544,917545,917546,917547,917548,917549,917550,917551,917552,917553,917554,917555,917556,917557,917558,917559,917560,917561,917562,917563,917564,917565,917566,917567,917568,917569,917570,917571,917572,917573,917574,917575,917576,917577,917578,917579,917580,917581,917582,917583,917584,917585,917586,917587,917588,917589,917590,917591,917592,917593,917594,917595,917596,917597,917598,917599,917600,917601,917602,917603,917604,917605,917606,917607,917608,917609,917610,917611,917612,917613,917614,917615,917616,917617,917618,917619,917620,917621,917622,917623,917624,917625,917626,917627,917628,917629,917630,917631,917760,917761,917762,917763,917764,917765,917766,917767,917768,917769,917770,917771,917772,917773,917774,917775,917776,917777,917778,917779,917780,917781,917782,917783,917784,917785,917786,917787,917788,917789,917790,917791,917792,917793,917794,917795,917796,917797,917798,917799,917800,917801,917802,917803,917804,917805,917806,917807,917808,917809,917810,917811,917812,917813,917814,917815,917816,917817,917818,917819,917820,917821,917822,917823,917824,917825,917826,917827,917828,917829,917830,917831,917832,917833,917834,917835,917836,917837,917838,917839,917840,917841,917842,917843,917844,917845,917846,917847,917848,917849,917850,917851,917852,917853,917854,917855,917856,917857,917858,917859,917860,917861,917862,917863,917864,917865,917866,917867,917868,917869,917870,917871,917872,917873,917874,917875,917876,917877,917878,917879,917880,917881,917882,917883,917884,917885,917886,917887,917888,917889,917890,917891,917892,917893,917894,917895,917896,917897,917898,917899,917900,917901,917902,917903,917904,917905,917906,917907,917908,917909,917910,917911,917912,917913,917914,917915,917916,917917,917918,917919,917920,917921,917922,917923,917924,917925,917926,917927,917928,917929,917930,917931,917932,917933,917934,917935,917936,917937,917938,917939,917940,917941,917942,917943,917944,917945,917946,917947,917948,917949,917950,917951,917952,917953,917954,917955,917956,917957,917958,917959,917960,917961,917962,917963,917964,917965,917966,917967,917968,917969,917970,917971,917972,917973,917974,917975,917976,917977,917978,917979,917980,917981,917982,917983,917984,917985,917986,917987,917988,917989,917990,917991,917992,917993,917994,917995,917996,917997,917998,917999],"cs":[173,8203,12288],"de":[173,8203,12288],"es":[8203,12288],"fr":[173,8203,12288],"it":[160,173,12288],"ja":[173],"ko":[173,12288],"pl":[173,8203,12288],"pt-BR":[173,8203,12288],"qps-ploc":[160,173,8203,12288],"ru":[173,12288],"tr":[160,173,8203,12288],"zh-hans":[160,173,8203,12288],"zh-hant":[173,12288]}');
   }
   static {
-    this._data = void 0;
+    this.d = void 0;
   }
-  static getData() {
-    if (!this._data) {
-      this._data = new Set([...Object.values(_InvisibleCharacters.getRawData())].flat());
+  static e() {
+    if (!this.d) {
+      this.d = new Set([...Object.values(_$Sg.c())].flat());
     }
-    return this._data;
+    return this.d;
   }
   static isInvisibleCharacter(codePoint) {
-    return _InvisibleCharacters.getData().has(codePoint);
+    return _$Sg.e().has(codePoint);
   }
   static containsInvisibleCharacter(str) {
     for (let i = 0; i < str.length; i++) {
       const codePoint = str.codePointAt(i);
-      if (typeof codePoint === "number" && (_InvisibleCharacters.isInvisibleCharacter(codePoint) || codePoint === 32)) {
+      if (typeof codePoint === "number" && (_$Sg.isInvisibleCharacter(codePoint) || codePoint === 32)) {
         return true;
       }
     }
     return false;
   }
   static get codePoints() {
-    return _InvisibleCharacters.getData();
+    return _$Sg.e();
   }
 };
 
 // out-build/vs/base/common/ternarySearchTree.js
-var StringIterator = class {
+var $xj = class {
   constructor() {
-    this._value = "";
-    this._pos = 0;
+    this.b = "";
+    this.c = 0;
   }
   reset(key) {
-    this._value = key;
-    this._pos = 0;
+    this.b = key;
+    this.c = 0;
     return this;
   }
   next() {
-    this._pos += 1;
+    this.c += 1;
     return this;
   }
   hasNext() {
-    return this._pos < this._value.length - 1;
+    return this.c < this.b.length - 1;
   }
   cmp(a) {
     const aCode = a.charCodeAt(0);
-    const thisCode = this._value.charCodeAt(this._pos);
+    const thisCode = this.b.charCodeAt(this.c);
     return aCode - thisCode;
   }
   value() {
-    return this._value[this._pos];
+    return this.b[this.c];
   }
 };
-var ConfigKeysIterator = class {
-  constructor(_caseSensitive = true) {
-    this._caseSensitive = _caseSensitive;
+var $yj = class {
+  constructor(e = true) {
+    this.e = e;
   }
   reset(key) {
-    this._value = key;
-    this._from = 0;
-    this._to = 0;
+    this.b = key;
+    this.c = 0;
+    this.d = 0;
     return this.next();
   }
   hasNext() {
-    return this._to < this._value.length;
+    return this.d < this.b.length;
   }
   next() {
-    this._from = this._to;
+    this.c = this.d;
     let justSeps = true;
-    for (; this._to < this._value.length; this._to++) {
-      const ch = this._value.charCodeAt(this._to);
+    for (; this.d < this.b.length; this.d++) {
+      const ch = this.b.charCodeAt(this.d);
       if (ch === 46) {
         if (justSeps) {
-          this._from++;
+          this.c++;
         } else {
           break;
         }
@@ -4318,41 +4318,41 @@ var ConfigKeysIterator = class {
     return this;
   }
   cmp(a) {
-    return this._caseSensitive ? compareSubstring(a, this._value, 0, a.length, this._from, this._to) : compareSubstringIgnoreCase(a, this._value, 0, a.length, this._from, this._to);
+    return this.e ? $ag(a, this.b, 0, a.length, this.c, this.d) : $cg(a, this.b, 0, a.length, this.c, this.d);
   }
   value() {
-    return this._value.substring(this._from, this._to);
+    return this.b.substring(this.c, this.d);
   }
 };
-var PathIterator = class {
-  constructor(_splitOnBackslash = true, _caseSensitive = true) {
-    this._splitOnBackslash = _splitOnBackslash;
-    this._caseSensitive = _caseSensitive;
+var $zj = class {
+  constructor(f = true, g = true) {
+    this.f = f;
+    this.g = g;
   }
   reset(key) {
-    this._from = 0;
-    this._to = 0;
-    this._value = key;
-    this._valueLen = key.length;
-    for (let pos = key.length - 1; pos >= 0; pos--, this._valueLen--) {
-      const ch = this._value.charCodeAt(pos);
-      if (!(ch === 47 || this._splitOnBackslash && ch === 92)) {
+    this.d = 0;
+    this.e = 0;
+    this.b = key;
+    this.c = key.length;
+    for (let pos = key.length - 1; pos >= 0; pos--, this.c--) {
+      const ch = this.b.charCodeAt(pos);
+      if (!(ch === 47 || this.f && ch === 92)) {
         break;
       }
     }
     return this.next();
   }
   hasNext() {
-    return this._to < this._valueLen;
+    return this.e < this.c;
   }
   next() {
-    this._from = this._to;
+    this.d = this.e;
     let justSeps = true;
-    for (; this._to < this._valueLen; this._to++) {
-      const ch = this._value.charCodeAt(this._to);
-      if (ch === 47 || this._splitOnBackslash && ch === 92) {
+    for (; this.e < this.c; this.e++) {
+      const ch = this.b.charCodeAt(this.e);
+      if (ch === 47 || this.f && ch === 92) {
         if (justSeps) {
-          this._from++;
+          this.d++;
         } else {
           break;
         }
@@ -4363,10 +4363,10 @@ var PathIterator = class {
     return this;
   }
   cmp(a) {
-    return this._caseSensitive ? compareSubstring(a, this._value, 0, a.length, this._from, this._to) : compareSubstringIgnoreCase(a, this._value, 0, a.length, this._from, this._to);
+    return this.g ? $ag(a, this.b, 0, a.length, this.d, this.e) : $cg(a, this.b, 0, a.length, this.d, this.e);
   }
   value() {
-    return this._value.substring(this._from, this._to);
+    return this.b.substring(this.d, this.e);
   }
 };
 var UriIteratorState;
@@ -4377,91 +4377,91 @@ var UriIteratorState;
   UriIteratorState2[UriIteratorState2["Query"] = 4] = "Query";
   UriIteratorState2[UriIteratorState2["Fragment"] = 5] = "Fragment";
 })(UriIteratorState || (UriIteratorState = {}));
-var UriIterator = class {
-  constructor(_ignorePathCasing, _ignoreQueryAndFragment) {
-    this._ignorePathCasing = _ignorePathCasing;
-    this._ignoreQueryAndFragment = _ignoreQueryAndFragment;
-    this._states = [];
-    this._stateIdx = 0;
+var $Aj = class {
+  constructor(f, g) {
+    this.f = f;
+    this.g = g;
+    this.d = [];
+    this.e = 0;
   }
   reset(key) {
-    this._value = key;
-    this._states = [];
-    if (this._value.scheme) {
-      this._states.push(
+    this.c = key;
+    this.d = [];
+    if (this.c.scheme) {
+      this.d.push(
         1
         /* UriIteratorState.Scheme */
       );
     }
-    if (this._value.authority) {
-      this._states.push(
+    if (this.c.authority) {
+      this.d.push(
         2
         /* UriIteratorState.Authority */
       );
     }
-    if (this._value.path) {
-      this._pathIterator = new PathIterator(false, !this._ignorePathCasing(key));
-      this._pathIterator.reset(key.path);
-      if (this._pathIterator.value()) {
-        this._states.push(
+    if (this.c.path) {
+      this.b = new $zj(false, !this.f(key));
+      this.b.reset(key.path);
+      if (this.b.value()) {
+        this.d.push(
           3
           /* UriIteratorState.Path */
         );
       }
     }
-    if (!this._ignoreQueryAndFragment(key)) {
-      if (this._value.query) {
-        this._states.push(
+    if (!this.g(key)) {
+      if (this.c.query) {
+        this.d.push(
           4
           /* UriIteratorState.Query */
         );
       }
-      if (this._value.fragment) {
-        this._states.push(
+      if (this.c.fragment) {
+        this.d.push(
           5
           /* UriIteratorState.Fragment */
         );
       }
     }
-    this._stateIdx = 0;
+    this.e = 0;
     return this;
   }
   next() {
-    if (this._states[this._stateIdx] === 3 && this._pathIterator.hasNext()) {
-      this._pathIterator.next();
+    if (this.d[this.e] === 3 && this.b.hasNext()) {
+      this.b.next();
     } else {
-      this._stateIdx += 1;
+      this.e += 1;
     }
     return this;
   }
   hasNext() {
-    return this._states[this._stateIdx] === 3 && this._pathIterator.hasNext() || this._stateIdx < this._states.length - 1;
+    return this.d[this.e] === 3 && this.b.hasNext() || this.e < this.d.length - 1;
   }
   cmp(a) {
-    if (this._states[this._stateIdx] === 1) {
-      return compareIgnoreCase(a, this._value.scheme);
-    } else if (this._states[this._stateIdx] === 2) {
-      return compareIgnoreCase(a, this._value.authority);
-    } else if (this._states[this._stateIdx] === 3) {
-      return this._pathIterator.cmp(a);
-    } else if (this._states[this._stateIdx] === 4) {
-      return compare(a, this._value.query);
-    } else if (this._states[this._stateIdx] === 5) {
-      return compare(a, this._value.fragment);
+    if (this.d[this.e] === 1) {
+      return $bg(a, this.c.scheme);
+    } else if (this.d[this.e] === 2) {
+      return $bg(a, this.c.authority);
+    } else if (this.d[this.e] === 3) {
+      return this.b.cmp(a);
+    } else if (this.d[this.e] === 4) {
+      return $_f(a, this.c.query);
+    } else if (this.d[this.e] === 5) {
+      return $_f(a, this.c.fragment);
     }
     throw new Error();
   }
   value() {
-    if (this._states[this._stateIdx] === 1) {
-      return this._value.scheme;
-    } else if (this._states[this._stateIdx] === 2) {
-      return this._value.authority;
-    } else if (this._states[this._stateIdx] === 3) {
-      return this._pathIterator.value();
-    } else if (this._states[this._stateIdx] === 4) {
-      return this._value.query;
-    } else if (this._states[this._stateIdx] === 5) {
-      return this._value.fragment;
+    if (this.d[this.e] === 1) {
+      return this.c.scheme;
+    } else if (this.d[this.e] === 2) {
+      return this.c.authority;
+    } else if (this.d[this.e] === 3) {
+      return this.b.value();
+    } else if (this.d[this.e] === 4) {
+      return this.c.query;
+    } else if (this.d[this.e] === 5) {
+      return this.c.fragment;
     }
     throw new Error();
   }
@@ -4524,49 +4524,49 @@ var Dir;
   Dir2[Dir2["Mid"] = 0] = "Mid";
   Dir2[Dir2["Right"] = 1] = "Right";
 })(Dir || (Dir = {}));
-var TernarySearchTree = class _TernarySearchTree {
+var $Bj = class _$Bj {
   static forUris(ignorePathCasing = () => false, ignoreQueryAndFragment = () => false) {
-    return new _TernarySearchTree(new UriIterator(ignorePathCasing, ignoreQueryAndFragment));
+    return new _$Bj(new $Aj(ignorePathCasing, ignoreQueryAndFragment));
   }
   static forPaths(ignorePathCasing = false) {
-    return new _TernarySearchTree(new PathIterator(void 0, !ignorePathCasing));
+    return new _$Bj(new $zj(void 0, !ignorePathCasing));
   }
   static forStrings() {
-    return new _TernarySearchTree(new StringIterator());
+    return new _$Bj(new $xj());
   }
   static forConfigKeys() {
-    return new _TernarySearchTree(new ConfigKeysIterator());
+    return new _$Bj(new $yj());
   }
   constructor(segments) {
-    this._iter = segments;
+    this.b = segments;
   }
   clear() {
-    this._root = void 0;
+    this.c = void 0;
   }
   fill(values, keys) {
     if (keys) {
       const arr = keys.slice(0);
-      shuffle(arr);
+      $mc(arr);
       for (const k of arr) {
         this.set(k, values);
       }
     } else {
       const arr = values.slice(0);
-      shuffle(arr);
+      $mc(arr);
       for (const entry of arr) {
         this.set(entry[0], entry[1]);
       }
     }
   }
   set(key, element) {
-    const iter = this._iter.reset(key);
+    const iter = this.b.reset(key);
     let node;
-    if (!this._root) {
-      this._root = new TernarySearchTreeNode();
-      this._root.segment = iter.value();
+    if (!this.c) {
+      this.c = new TernarySearchTreeNode();
+      this.c.segment = iter.value();
     }
     const stack = [];
-    node = this._root;
+    node = this.c;
     while (true) {
       const val = iter.cmp(node.segment);
       if (val > 0) {
@@ -4631,18 +4631,18 @@ var TernarySearchTree = class _TernarySearchTree {
               break;
           }
         } else {
-          this._root = stack[0][1];
+          this.c = stack[0][1];
         }
       }
     }
     return oldElement;
   }
   get(key) {
-    return Undef.unwrap(this._getNode(key)?.value);
+    return Undef.unwrap(this.d(key)?.value);
   }
-  _getNode(key) {
-    const iter = this._iter.reset(key);
-    let node = this._root;
+  d(key) {
+    const iter = this.b.reset(key);
+    let node = this.c;
     while (node) {
       const val = iter.cmp(node.segment);
       if (val > 0) {
@@ -4659,19 +4659,19 @@ var TernarySearchTree = class _TernarySearchTree {
     return node;
   }
   has(key) {
-    const node = this._getNode(key);
+    const node = this.d(key);
     return !(node?.value === void 0 && node?.mid === void 0);
   }
   delete(key) {
-    return this._delete(key, false);
+    return this.e(key, false);
   }
   deleteSuperstr(key) {
-    return this._delete(key, true);
+    return this.e(key, true);
   }
-  _delete(key, superStr) {
-    const iter = this._iter.reset(key);
+  e(key, superStr) {
+    const iter = this.b.reset(key);
     const stack = [];
-    let node = this._root;
+    let node = this.c;
     while (node) {
       const val = iter.cmp(node.segment);
       if (val > 0) {
@@ -4703,7 +4703,7 @@ var TernarySearchTree = class _TernarySearchTree {
     if (!node.mid && !node.value) {
       if (node.left && node.right) {
         const stack2 = [[1, node]];
-        const min = this._min(node.right, stack2);
+        const min = this.f(node.right, stack2);
         if (min.key) {
           node.key = min.key;
           node.value = min.value;
@@ -4716,14 +4716,14 @@ var TernarySearchTree = class _TernarySearchTree {
                 parent.left = newChild;
                 break;
               case 0:
-                assert(false);
+                $3c(false);
               case 1:
-                assert(false);
+                $3c(false);
             }
           } else {
             node.right = newChild;
           }
-          const newChild2 = this._balanceByStack(stack2);
+          const newChild2 = this.g(stack2);
           if (stack.length > 0) {
             const [dir, parent] = stack[stack.length - 1];
             switch (dir) {
@@ -4738,7 +4738,7 @@ var TernarySearchTree = class _TernarySearchTree {
                 break;
             }
           } else {
-            this._root = newChild2;
+            this.c = newChild2;
           }
         }
       } else {
@@ -4757,20 +4757,20 @@ var TernarySearchTree = class _TernarySearchTree {
               break;
           }
         } else {
-          this._root = newChild;
+          this.c = newChild;
         }
       }
     }
-    this._root = this._balanceByStack(stack) ?? this._root;
+    this.c = this.g(stack) ?? this.c;
   }
-  _min(node, stack) {
+  f(node, stack) {
     while (node.left) {
       stack.push([-1, node]);
       node = node.left;
     }
     return node;
   }
-  _balanceByStack(stack) {
+  g(stack) {
     for (let i = stack.length - 1; i >= 0; i--) {
       const node = stack[i][1];
       node.updateHeight();
@@ -4809,8 +4809,8 @@ var TernarySearchTree = class _TernarySearchTree {
     return void 0;
   }
   findSubstr(key) {
-    const iter = this._iter.reset(key);
-    let node = this._root;
+    const iter = this.b.reset(key);
+    let node = this.c;
     let candidate = void 0;
     while (node) {
       const val = iter.cmp(node.segment);
@@ -4829,11 +4829,11 @@ var TernarySearchTree = class _TernarySearchTree {
     return node && Undef.unwrap(node.value) || candidate;
   }
   findSuperstr(key) {
-    return this._findSuperstrOrElement(key, false);
+    return this.h(key, false);
   }
-  _findSuperstrOrElement(key, allowValue) {
-    const iter = this._iter.reset(key);
-    let node = this._root;
+  h(key, allowValue) {
+    const iter = this.b.reset(key);
+    let node = this.c;
     while (node) {
       const val = iter.cmp(node.segment);
       if (val > 0) {
@@ -4851,14 +4851,14 @@ var TernarySearchTree = class _TernarySearchTree {
             return void 0;
           }
         } else {
-          return this._entries(node.mid);
+          return this.j(node.mid);
         }
       }
     }
     return void 0;
   }
   hasElementOrSubtree(key) {
-    return this._findSuperstrOrElement(key, true) !== void 0;
+    return this.h(key, true) !== void 0;
   }
   forEach(callback) {
     for (const [key, value] of this) {
@@ -4866,28 +4866,28 @@ var TernarySearchTree = class _TernarySearchTree {
     }
   }
   *[Symbol.iterator]() {
-    yield* this._entries(this._root);
+    yield* this.j(this.c);
   }
-  _entries(node) {
+  j(node) {
     const result = [];
-    this._dfsEntries(node, result);
+    this.l(node, result);
     return result[Symbol.iterator]();
   }
-  _dfsEntries(node, bucket) {
+  l(node, bucket) {
     if (!node) {
       return;
     }
     if (node.left) {
-      this._dfsEntries(node.left, bucket);
+      this.l(node.left, bucket);
     }
     if (node.value !== void 0) {
       bucket.push([node.key, Undef.unwrap(node.value)]);
     }
     if (node.mid) {
-      this._dfsEntries(node.mid, bucket);
+      this.l(node.mid, bucket);
     }
     if (node.right) {
-      this._dfsEntries(node.right, bucket);
+      this.l(node.right, bucket);
     }
   }
   // for debug/testing
@@ -4902,7 +4902,7 @@ var TernarySearchTree = class _TernarySearchTree {
       }
       return nodeIsBalanced(node.left) && nodeIsBalanced(node.right);
     };
-    return nodeIsBalanced(this._root);
+    return nodeIsBalanced(this.c);
   }
 };
 
@@ -5007,7 +5007,7 @@ var URI = class _URI {
    * with URIs that represent files on disk (`file` scheme).
    */
   get fsPath() {
-    return uriToFsPath(this, false);
+    return $Lc(this, false);
   }
   // ---- modify to new -------------------------
   with(change) {
@@ -5082,7 +5082,7 @@ var URI = class _URI {
    */
   static file(path) {
     let authority = _empty;
-    if (isWindows) {
+    if ($m) {
       path = path.replace(/\\/g, _slash);
     }
     if (path[0] === _slash && path[1] === _slash) {
@@ -5120,10 +5120,10 @@ var URI = class _URI {
       throw new Error(`[UriError]: cannot call joinPath on URI without path`);
     }
     let newPath;
-    if (isWindows && uri.scheme === "file") {
-      newPath = _URI.file(win32.join(uriToFsPath(uri, true), ...pathFragment)).path;
+    if ($m && uri.scheme === "file") {
+      newPath = _URI.file($6.join($Lc(uri, true), ...pathFragment)).path;
     } else {
-      newPath = posix.join(uri.path, ...pathFragment);
+      newPath = $7.join(uri.path, ...pathFragment);
     }
     return uri.with({ path: newPath });
   }
@@ -5161,7 +5161,7 @@ var URI = class _URI {
     return `URI(${this.toString()})`;
   }
 };
-var _pathSepMarker = isWindows ? 1 : void 0;
+var _pathSepMarker = $m ? 1 : void 0;
 var Uri = class extends URI {
   constructor() {
     super(...arguments);
@@ -5170,7 +5170,7 @@ var Uri = class extends URI {
   }
   get fsPath() {
     if (!this._fsPath) {
-      this._fsPath = uriToFsPath(this, false);
+      this._fsPath = $Lc(this, false);
     }
     return this._fsPath;
   }
@@ -5345,7 +5345,7 @@ function encodeURIComponentMinimal(path) {
   }
   return res !== void 0 ? res : path;
 }
-function uriToFsPath(uri, keepDriveLetterCasing) {
+function $Lc(uri, keepDriveLetterCasing) {
   let value;
   if (uri.authority && uri.path.length > 1 && uri.scheme === "file") {
     value = `//${uri.authority}${uri.path}`;
@@ -5358,7 +5358,7 @@ function uriToFsPath(uri, keepDriveLetterCasing) {
   } else {
     value = uri.path;
   }
-  if (isWindows) {
+  if ($m) {
     value = value.replace(/\//g, "\\");
   }
   return value;
@@ -5453,7 +5453,7 @@ var _util;
   }
   _util2.getServiceDependencies = getServiceDependencies;
 })(_util || (_util = {}));
-var IInstantiationService = createDecorator("instantiationService");
+var $Ej = $Fj("instantiationService");
 function storeServiceDependency(id2, target, index) {
   if (target[_util.DI_TARGET] === target) {
     target[_util.DI_DEPENDENCIES].push({ id: id2, index });
@@ -5462,7 +5462,7 @@ function storeServiceDependency(id2, target, index) {
     target[_util.DI_TARGET] = target;
   }
 }
-function createDecorator(serviceId) {
+function $Fj(serviceId) {
   if (_util.serviceIds.has(serviceId)) {
     return _util.serviceIds.get(serviceId);
   }
@@ -5478,7 +5478,7 @@ function createDecorator(serviceId) {
 }
 
 // out-build/vs/platform/profiling/common/profiling.js
-var IV8InspectProfilingService = createDecorator("IV8InspectProfilingService");
+var $ql = $Fj("IV8InspectProfilingService");
 var Utils;
 (function(Utils2) {
   function isValidProfile(profile) {
@@ -5488,8 +5488,8 @@ var Utils;
   function rewriteAbsolutePaths(profile, replace = "noAbsolutePaths") {
     for (const node of profile.nodes) {
       if (node.callFrame && node.callFrame.url) {
-        if (isAbsolute(node.callFrame.url) || /^\w[\w\d+.-]*:\/\/\/?/.test(node.callFrame.url)) {
-          node.callFrame.url = join(replace, basename(node.callFrame.url));
+        if ($9(node.callFrame.url) || /^\w[\w\d+.-]*:\/\/\/?/.test(node.callFrame.url)) {
+          node.callFrame.url = $0(replace, $bb(node.callFrame.url));
         }
       }
     }
@@ -5562,7 +5562,7 @@ var ensureSourceLocations = (profile) => {
   }
   return [...locationsByRef.values()].sort((a, b) => a.id - b.id).map((l) => ({ locations: [l.location], callFrame: l.callFrame }));
 };
-var buildModel = (profile) => {
+var $6Oc = (profile) => {
   if (!profile.timeDeltas || !profile.samples) {
     return {
       nodes: [],
@@ -5644,9 +5644,9 @@ var buildModel = (profile) => {
     duration
   };
 };
-var BottomUpNode = class _BottomUpNode {
+var $7Oc = class _$7Oc {
   static root() {
-    return new _BottomUpNode({
+    return new _$7Oc({
       id: -1,
       selfTime: 0,
       aggregateTime: 0,
@@ -5683,21 +5683,21 @@ var BottomUpNode = class _BottomUpNode {
     this.aggregateTime += node.aggregateTime;
   }
 };
-var processNode = (aggregate, node, model, initialNode = node) => {
+var $8Oc = (aggregate, node, model, initialNode = node) => {
   let child = aggregate.children[node.locationId];
   if (!child) {
-    child = new BottomUpNode(model.locations[node.locationId], aggregate);
+    child = new $7Oc(model.locations[node.locationId], aggregate);
     aggregate.childrenSize++;
     aggregate.children[node.locationId] = child;
   }
   child.addNode(initialNode);
   if (node.parent) {
-    processNode(child, model.nodes[node.parent], model, initialNode);
+    $8Oc(child, model.nodes[node.parent], model, initialNode);
   }
 };
 
 // out-build/vs/platform/profiling/electron-browser/profileAnalysisWorker.js
-function create() {
+function $$Oc() {
   return new ProfileAnalysisWorker();
 }
 var ProfileAnalysisWorker = class {
@@ -5708,7 +5708,7 @@ var ProfileAnalysisWorker = class {
     if (!Utils.isValidProfile(profile)) {
       return { kind: 1, samples: [] };
     }
-    const model = buildModel(profile);
+    const model = $6Oc(profile);
     const samples = bottomUp(model, 5).filter((s) => !s.isSpecial);
     if (samples.length === 0 || samples[0].percentage < 10) {
       return { kind: 1, samples: [] };
@@ -5716,9 +5716,9 @@ var ProfileAnalysisWorker = class {
     return { kind: 2, samples };
   }
   $analyseByUrlCategory(profile, categories) {
-    const searchTree = TernarySearchTree.forUris();
+    const searchTree = $Bj.forUris();
     searchTree.fill(categories);
-    const model = buildModel(profile);
+    const model = $6Oc(profile);
     const aggegrateByCategory = /* @__PURE__ */ new Map();
     for (const node of model.nodes) {
       const loc = model.locations[node.locationId];
@@ -5748,7 +5748,7 @@ function printCallFrameShort(frame) {
   let result = frame.functionName || "(anonymous)";
   if (frame.url) {
     result += "#";
-    result += basename(frame.url);
+    result += $bb(frame.url);
     if (frame.lineNumber >= 0) {
       result += ":";
       result += frame.lineNumber + 1;
@@ -5786,11 +5786,11 @@ function getHeaviestLocationIds(model, topN) {
   return new Set(locationIds);
 }
 function bottomUp(model, topN) {
-  const root = BottomUpNode.root();
+  const root = $7Oc.root();
   const locationIds = getHeaviestLocationIds(model, topN);
   for (const node of model.nodes) {
     if (locationIds.has(node.locationId)) {
-      processNode(root, node, model);
+      $8Oc(root, node, model);
       root.addNode(node);
     }
   }
@@ -5888,37 +5888,37 @@ var UnsubscribeEventMessage = class {
 };
 var WebWorkerProtocol = class {
   constructor(handler) {
-    this._workerId = -1;
-    this._handler = handler;
-    this._lastSentReq = 0;
-    this._pendingReplies = /* @__PURE__ */ Object.create(null);
-    this._pendingEmitters = /* @__PURE__ */ new Map();
-    this._pendingEvents = /* @__PURE__ */ new Map();
+    this.a = -1;
+    this.g = handler;
+    this.b = 0;
+    this.c = /* @__PURE__ */ Object.create(null);
+    this.d = /* @__PURE__ */ new Map();
+    this.f = /* @__PURE__ */ new Map();
   }
   setWorkerId(workerId) {
-    this._workerId = workerId;
+    this.a = workerId;
   }
   async sendMessage(channel, method, args) {
-    const req = String(++this._lastSentReq);
-    return new Promise((resolve2, reject) => {
-      this._pendingReplies[req] = {
-        resolve: resolve2,
+    const req = String(++this.b);
+    return new Promise((resolve, reject) => {
+      this.c[req] = {
+        resolve,
         reject
       };
-      this._send(new RequestMessage(this._workerId, req, channel, method, args));
+      this.o(new RequestMessage(this.a, req, channel, method, args));
     });
   }
   listen(channel, eventName, arg) {
     let req = null;
-    const emitter = new Emitter({
+    const emitter = new $qf({
       onWillAddFirstListener: () => {
-        req = String(++this._lastSentReq);
-        this._pendingEmitters.set(req, emitter);
-        this._send(new SubscribeEventMessage(this._workerId, req, channel, eventName, arg));
+        req = String(++this.b);
+        this.d.set(req, emitter);
+        this.o(new SubscribeEventMessage(this.a, req, channel, eventName, arg));
       },
       onDidRemoveLastListener: () => {
-        this._pendingEmitters.delete(req);
-        this._send(new UnsubscribeEventMessage(this._workerId, req));
+        this.d.delete(req);
+        this.o(new UnsubscribeEventMessage(this.a, req));
         req = null;
       }
     });
@@ -5928,10 +5928,10 @@ var WebWorkerProtocol = class {
     if (!message || !message.vsWorker) {
       return;
     }
-    if (this._workerId !== -1 && message.vsWorker !== this._workerId) {
+    if (this.a !== -1 && message.vsWorker !== this.a) {
       return;
     }
-    this._handleMessage(message);
+    this.h(message);
   }
   createProxyToRemoteChannel(channel, sendMessageBarrier) {
     const handler = {
@@ -5955,27 +5955,27 @@ var WebWorkerProtocol = class {
     };
     return new Proxy(/* @__PURE__ */ Object.create(null), handler);
   }
-  _handleMessage(msg) {
+  h(msg) {
     switch (msg.type) {
       case 1:
-        return this._handleReplyMessage(msg);
+        return this.j(msg);
       case 0:
-        return this._handleRequestMessage(msg);
+        return this.k(msg);
       case 2:
-        return this._handleSubscribeEventMessage(msg);
+        return this.l(msg);
       case 3:
-        return this._handleEventMessage(msg);
+        return this.m(msg);
       case 4:
-        return this._handleUnsubscribeEventMessage(msg);
+        return this.n(msg);
     }
   }
-  _handleReplyMessage(replyMessage) {
-    if (!this._pendingReplies[replyMessage.seq]) {
+  j(replyMessage) {
+    if (!this.c[replyMessage.seq]) {
       console.warn("Got reply to unknown seq");
       return;
     }
-    const reply = this._pendingReplies[replyMessage.seq];
-    delete this._pendingReplies[replyMessage.seq];
+    const reply = this.c[replyMessage.seq];
+    delete this.c[replyMessage.seq];
     if (replyMessage.err) {
       let err = replyMessage.err;
       if (replyMessage.err.$isError) {
@@ -5990,41 +5990,41 @@ var WebWorkerProtocol = class {
     }
     reply.resolve(replyMessage.res);
   }
-  _handleRequestMessage(requestMessage) {
+  k(requestMessage) {
     const req = requestMessage.req;
-    const result = this._handler.handleMessage(requestMessage.channel, requestMessage.method, requestMessage.args);
+    const result = this.g.handleMessage(requestMessage.channel, requestMessage.method, requestMessage.args);
     result.then((r) => {
-      this._send(new ReplyMessage(this._workerId, req, r, void 0));
+      this.o(new ReplyMessage(this.a, req, r, void 0));
     }, (e) => {
       if (e.detail instanceof Error) {
-        e.detail = transformErrorForSerialization(e.detail);
+        e.detail = $pb(e.detail);
       }
-      this._send(new ReplyMessage(this._workerId, req, void 0, transformErrorForSerialization(e)));
+      this.o(new ReplyMessage(this.a, req, void 0, $pb(e)));
     });
   }
-  _handleSubscribeEventMessage(msg) {
+  l(msg) {
     const req = msg.req;
-    const disposable = this._handler.handleEvent(msg.channel, msg.eventName, msg.arg)((event) => {
-      this._send(new EventMessage(this._workerId, req, event));
+    const disposable = this.g.handleEvent(msg.channel, msg.eventName, msg.arg)((event) => {
+      this.o(new EventMessage(this.a, req, event));
     });
-    this._pendingEvents.set(req, disposable);
+    this.f.set(req, disposable);
   }
-  _handleEventMessage(msg) {
-    if (!this._pendingEmitters.has(msg.req)) {
+  m(msg) {
+    if (!this.d.has(msg.req)) {
       console.warn("Got event for unknown req");
       return;
     }
-    this._pendingEmitters.get(msg.req).fire(msg.event);
+    this.d.get(msg.req).fire(msg.event);
   }
-  _handleUnsubscribeEventMessage(msg) {
-    if (!this._pendingEvents.has(msg.req)) {
+  n(msg) {
+    if (!this.f.has(msg.req)) {
       console.warn("Got unsubscribe for unknown req");
       return;
     }
-    this._pendingEvents.get(msg.req).dispose();
-    this._pendingEvents.delete(msg.req);
+    this.f.get(msg.req).dispose();
+    this.f.delete(msg.req);
   }
-  _send(msg) {
+  o(msg) {
     const transfer = [];
     if (msg.type === 0) {
       for (let i = 0; i < msg.args.length; i++) {
@@ -6038,36 +6038,36 @@ var WebWorkerProtocol = class {
         transfer.push(msg.res);
       }
     }
-    this._handler.sendMessage(msg, transfer);
+    this.g.sendMessage(msg, transfer);
   }
 };
 function propertyIsEvent(name) {
-  return name[0] === "o" && name[1] === "n" && isUpperAsciiLetter(name.charCodeAt(2));
+  return name[0] === "o" && name[1] === "n" && $fg(name.charCodeAt(2));
 }
 function propertyIsDynamicEvent(name) {
-  return /^onDynamic/.test(name) && isUpperAsciiLetter(name.charCodeAt(9));
+  return /^onDynamic/.test(name) && $fg(name.charCodeAt(9));
 }
-var WebWorkerServer = class {
+var $1$ = class {
   constructor(postMessage, requestHandlerFactory) {
-    this._localChannels = /* @__PURE__ */ new Map();
-    this._remoteChannels = /* @__PURE__ */ new Map();
-    this._protocol = new WebWorkerProtocol({
+    this.b = /* @__PURE__ */ new Map();
+    this.c = /* @__PURE__ */ new Map();
+    this.a = new WebWorkerProtocol({
       sendMessage: (msg, transfer) => {
         postMessage(msg, transfer);
       },
-      handleMessage: (channel, method, args) => this._handleMessage(channel, method, args),
-      handleEvent: (channel, eventName, arg) => this._handleEvent(channel, eventName, arg)
+      handleMessage: (channel, method, args) => this.d(channel, method, args),
+      handleEvent: (channel, eventName, arg) => this.f(channel, eventName, arg)
     });
     this.requestHandler = requestHandlerFactory(this);
   }
   onmessage(msg) {
-    this._protocol.handleMessage(msg);
+    this.a.handleMessage(msg);
   }
-  _handleMessage(channel, method, args) {
+  d(channel, method, args) {
     if (channel === DEFAULT_CHANNEL && method === INITIALIZE) {
-      return this.initialize(args[0]);
+      return this.g(args[0]);
     }
-    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this._localChannels.get(channel);
+    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this.b.get(channel);
     if (!requestHandler) {
       return Promise.reject(new Error(`Missing channel ${channel} on worker thread`));
     }
@@ -6081,8 +6081,8 @@ var WebWorkerServer = class {
       return Promise.reject(e);
     }
   }
-  _handleEvent(channel, eventName, arg) {
-    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this._localChannels.get(channel);
+  f(channel, eventName, arg) {
+    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this.b.get(channel);
     if (!requestHandler) {
       throw new Error(`Missing channel ${channel} on worker thread`);
     }
@@ -6107,42 +6107,42 @@ var WebWorkerServer = class {
     throw new Error(`Malformed event name ${eventName}`);
   }
   setChannel(channel, handler) {
-    this._localChannels.set(channel, handler);
+    this.b.set(channel, handler);
   }
   getChannel(channel) {
-    if (!this._remoteChannels.has(channel)) {
-      const inst = this._protocol.createProxyToRemoteChannel(channel);
-      this._remoteChannels.set(channel, inst);
+    if (!this.c.has(channel)) {
+      const inst = this.a.createProxyToRemoteChannel(channel);
+      this.c.set(channel, inst);
     }
-    return this._remoteChannels.get(channel);
+    return this.c.get(channel);
   }
-  async initialize(workerId) {
-    this._protocol.setWorkerId(workerId);
+  async g(workerId) {
+    this.a.setWorkerId(workerId);
   }
 };
 
 // out-build/vs/base/common/worker/webWorkerBootstrap.js
 var initialized = false;
-function initialize(factory) {
+function $2$(factory) {
   if (initialized) {
     throw new Error("WebWorker already initialized!");
   }
   initialized = true;
-  const webWorkerServer = new WebWorkerServer((msg) => globalThis.postMessage(msg), (workerServer) => factory(workerServer));
+  const webWorkerServer = new $1$((msg) => globalThis.postMessage(msg), (workerServer) => factory(workerServer));
   globalThis.onmessage = (e) => {
     webWorkerServer.onmessage(e.data);
   };
   return webWorkerServer;
 }
-function bootstrapWebWorker(factory) {
+function $3$(factory) {
   globalThis.onmessage = (_e) => {
     if (!initialized) {
-      initialize(factory);
+      $2$(factory);
     }
   };
 }
 
 // out-build/vs/platform/profiling/electron-browser/profileAnalysisWorkerMain.js
-bootstrapWebWorker(create);
+$3$($$Oc);
 
 //# sourceMappingURL=profileAnalysisWorkerMain.js.map
