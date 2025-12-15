@@ -120,7 +120,7 @@ jobs:
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
         with:
-          name: puku-editor-macos-arm64
+          name: puku-editor-macos-arm64-${{ github.run_id }}
           path: |
             *.dmg
           retention-days: 1
@@ -233,7 +233,7 @@ jobs:
       - name: Upload DMG artifact
         uses: actions/upload-artifact@v4
         with:
-          name: puku-editor-macos-x64
+          name: puku-editor-macos-x64-${{ github.run_id }}
           path: |
             *.dmg
           retention-days: 1

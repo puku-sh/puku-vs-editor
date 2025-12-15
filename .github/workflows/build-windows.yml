@@ -129,7 +129,7 @@ jobs:
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: puku-editor-windows-x64
+          name: puku-editor-windows-x64-${{ github.run_id }}
           path: |
             *.exe
             *.zip
@@ -254,7 +254,7 @@ jobs:
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: puku-editor-windows-arm64
+          name: puku-editor-windows-arm64-${{ github.run_id }}
           path: |
             *.exe
             *.zip

@@ -125,7 +125,7 @@ jobs:
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: puku-editor-linux-x64
+          name: puku-editor-linux-x64-${{ github.run_id }}
           path: |
             *.deb
             *.rpm
@@ -249,7 +249,7 @@ jobs:
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: puku-editor-linux-arm64
+          name: puku-editor-linux-arm64-${{ github.run_id }}
           path: |
             *.deb
             *.rpm
