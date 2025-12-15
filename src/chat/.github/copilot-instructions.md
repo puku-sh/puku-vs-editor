@@ -1,8 +1,10 @@
-# GitHub Copilot Chat Extension - Copilot Instructions
+# Puku Editor Extension - Development Instructions
+
+> **Note**: This project was originally forked from GitHub Copilot Chat. For current project structure and deployment, see [../../CLAUDE.md](../../CLAUDE.md).
 
 ## Project Overview
 
-This is the **GitHub Copilot Chat** extension for Visual Studio Code - a VS Code extension that provides conversational AI assistance, a coding agent with many tools, inline editing capabilities, and advanced AI-powered features for VS Code.
+This is the **Puku Editor** extension - a VS Code extension that provides AI-powered coding assistance including inline completions (FIM), chat interface, semantic search, and agent mode.
 
 ### Key Features
 - **Chat Interface**: Conversational AI assistance with chat participants, variables, and slash commands

@@ -1,4 +1,6 @@
-# Contributing to GitHub Copilot Chat
+# Contributing to Puku Editor
+
+> **Note**: This project was originally forked from GitHub Copilot Chat. For the latest build and deployment information, see [../../CLAUDE.md](../../CLAUDE.md) and [../../README.md](../../README.md).
 
 * [Creating good issues](#creating-good-issues)
   * [Look For an Existing Issue](#look-for-an-existing-issue)
