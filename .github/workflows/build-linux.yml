@@ -156,7 +156,7 @@ jobs:
 
   build-linux-arm64:
     name: Build Linux (ARM64)
-    runs-on: ubuntu-22.04  # 🚀 Standard 4-core runner
+    runs-on: namespace-profile-default-arm64-linux  # 🚀 Namespace.so AmpereOne
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.architecture == 'arm64' }}
     env:
       VSCODE_ARCH: arm64
