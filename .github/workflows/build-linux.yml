@@ -35,16 +35,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js with nvm
-        run: |
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          nvm install 23.5.0
-          nvm install 22.20.0
-          nvm alias default 22.20.0
-          echo "$HOME/.nvm/versions/node/v22.20.0/bin" >> $GITHUB_PATH
-          echo "$HOME/.nvm/versions/node/v23.5.0/bin" >> $GITHUB_PATH
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23.5.0'
+          cache: 'npm'
+          cache-dependency-path: |
+            src/chat/package-lock.json
+            src/vscode/package-lock.json
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -150,16 +148,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js with nvm
-        run: |
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          nvm install 23.5.0
-          nvm install 22.20.0
-          nvm alias default 22.20.0
-          echo "$HOME/.nvm/versions/node/v22.20.0/bin" >> $GITHUB_PATH
-          echo "$HOME/.nvm/versions/node/v23.5.0/bin" >> $GITHUB_PATH
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23.5.0'
+          cache: 'npm'
+          cache-dependency-path: |
+            src/chat/package-lock.json
+            src/vscode/package-lock.json
 
       - name: Setup Python
         uses: actions/setup-python@v5
