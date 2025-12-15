@@ -105,19 +105,11 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Extension
-        shell: powershell
-        run: |
-          cd src/chat
-          npm run compile
-
-      - name: Build VS Code
-        shell: powershell
-        run: |
-          cd src/vscode
-          npm run gulp vscode-win32-x64-min
+      - name: Build using Makefile
+        shell: bash
+        run: make build
         env:
-          VSCODE_ARCH: ${{ env.VSCODE_ARCH }}
+          VSCODE_ARCH: x64
 
       - name: Package Windows builds
         shell: powershell
@@ -229,19 +221,11 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Extension
-        shell: powershell
-        run: |
-          cd src/chat
-          npm run compile
-
-      - name: Build VS Code
-        shell: powershell
-        run: |
-          cd src/vscode
-          npm run gulp vscode-win32-arm64-min
+      - name: Build using Makefile
+        shell: bash
+        run: make build
         env:
-          VSCODE_ARCH: ${{ env.VSCODE_ARCH }}
+          VSCODE_ARCH: arm64
 
       - name: Package Windows builds
         shell: powershell

@@ -104,17 +104,10 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Extension
-        run: |
-          cd src/chat
-          npm run compile
-
-      - name: Build VS Code
-        run: |
-          cd src/vscode
-          npm run gulp vscode-linux-x64-min
+      - name: Build using Makefile
+        run: make build
         env:
-          VSCODE_ARCH: ${{ env.VSCODE_ARCH }}
+          VSCODE_ARCH: x64
 
       - name: Package Linux builds
         run: ./build-linux-optimized.sh
@@ -227,17 +220,10 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Extension
-        run: |
-          cd src/chat
-          npm run compile
-
-      - name: Build VS Code
-        run: |
-          cd src/vscode
-          npm run gulp vscode-linux-arm64-min
+      - name: Build using Makefile
+        run: make build
         env:
-          VSCODE_ARCH: ${{ env.VSCODE_ARCH }}
+          VSCODE_ARCH: arm64
 
       - name: Package Linux builds
         run: ./build-linux-optimized.sh
