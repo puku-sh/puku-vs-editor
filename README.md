@@ -1,262 +1,201 @@
 # Puku Editor
 
-AI-powered code editor built on VS Code (Code-OSS) with integrated Puku authentication and semantic search.
+AI-powered VS Code extension and standalone editor with inline completions, chat, and semantic search.
 
-## 🚀 Quick Start (One Command)
+## 🚀 Quick Start
 
 ```bash
-# Clone and run everything automatically
+# Clone repository
 git clone https://github.com/puku-sh/puku-vs-editor.git
 cd puku-vs-editor/puku-editor
-make setup
+
+# Install dependencies
+cd src/chat && npm install
+cd ../vscode && npm install
+
+# Build and run
+cd ../..
+make build                    # Build extension + VS Code
+./build-dmg-optimized.sh     # Create macOS installer (optional)
 ```
 
-That's it! The Makefile will:
-1. Clone the VS Code fork (if needed)
-2. Install all dependencies
-3. Compile everything
-4. Launch the editor
-
-**📖 Full documentation:** See [SETUP.md](SETUP.md)
+**📖 Full documentation:** See [CLAUDE.md](CLAUDE.md)
 
 ---
 
 ## Prerequisites
 
-### Required Node.js Versions
-
-**IMPORTANT**: Different Node versions are required for different components:
-
-- **Extension (src/chat)**: Node.js **23.5.0** (required for sqlite-vec)
-- **VS Code (src/vscode)**: Node.js **22.20.0** (as specified in .nvmrc)
-
-The Makefile handles this automatically by switching Node versions for each build step.
-
-### Other Requirements
-
-- **Python 3.10-3.12**
-- **nvm** (Node version manager)
+- **Node.js**: 23.5.0+ for extension, 22.20.0 for VS Code (use nvm)
+- **Python**: 3.10-3.12 (for VS Code native modules)
+- **Platform-specific**:
+  - macOS: Xcode Command Line Tools
+  - Linux: libx11-dev, libxkbfile-dev, libsecret-1-dev
+  - Windows: Visual Studio Build Tools >=2019
 
 ```bash
-# Install nvm
+# Install nvm (if needed)
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
 
-# Install both required Node versions
+# Install Node versions
 nvm install 23.5.0
 nvm install 22.20.0
-
-# Default to 22.20.0 for VS Code
-nvm use 22.20.0
 ```
 
 ---
 
-## Development Workflow
+## Development
 
-### Using Makefile (Recommended)
-
-```bash
-# First time setup (automatic)
-make setup
-
-# Compile and launch
-make all
-
-# Quick rebuild
-make compile-ext && make quick
-
-# View all commands
-make help
-```
-
-### Manual Setup
-
-See [SETUP.md](SETUP.md) for detailed manual setup instructions.
-cd ../chat
-npm run compile
-
-cd ../vscode
-npm run compile  # Takes ~2 minutes first time
-
-# 3. Launch with extension
-cd ../..
-./launch.sh
-```
-
-### Makefile Commands
-
-| Command | Description |
-|---------|-------------|
-| `make install` | Install all dependencies (extension + VS Code) |
-| `make run` | Kill existing processes, compile everything, and launch |
-| `make run FOLDER=/path` | Kill, compile, and launch with specific folder |
-| `make compile` | Compile both extension and VS Code |
-| `make compile-ext` | Compile only the Puku Editor extension (alias) |
-| `make compile-vs` | Compile only VS Code (alias) |
-| `make compile-extension` | Compile only the Puku Editor extension |
-| `make compile-vscode` | Compile only VS Code (Code-OSS) |
-| `make launch` | Launch Code-OSS with extension |
-| `make launch FOLDER=/path` | Launch with specific folder |
-| `make quick` | Kill and launch without compilation |
-| `make kill` | Kill all Electron processes |
-| `make clean` | Clean build artifacts |
-| `make watch-extension` | Watch mode for extension development |
-| `make dmg` | Build Puku.app (development, fast) |
-| `make dmg-production` | Build production DMG installer |
-
-**Examples:**
-```bash
-# First time setup
-make install                      # Install all dependencies
-
-# Quick builds
-make compile-ext                  # Just rebuild extension
-make compile-vs                   # Just rebuild VS Code
-
-# Launch with specific folder
-make launch FOLDER=src/chat
-make run FOLDER=/Users/name/my-project
-```
-
-**Note:** All commands use Node 23.5.0 (required for sqlite-vec extension support)
-
-### Launch Options
+### Build Commands
 
 ```bash
-# Development launch (uses launch.sh in project root)
-./launch.sh
+# Build extension (~2s)
+make build-ext
 
-# Or specify a folder to open
-./launch.sh /path/to/project
+# Build VS Code (~5-10 min first time)
+make build-vs
+
+# Build both
+make build
+
+# Create macOS DMG (~20s)
+./build-dmg-optimized.sh
+# Output: Puku-1.107.0.dmg (~311MB)
 ```
+
+### Development Workflow
+
+```bash
+# Terminal 1: Watch extension
+cd src/chat && npm run watch
+
+# Terminal 2: Run Code-OSS with extension
+cd src/vscode
+./scripts/code.sh --extensionDevelopmentPath=$(pwd)/../chat
+```
+
+### Testing
+
+```bash
+cd src/chat
+npm run test:unit         # Unit tests
+npm run test:extension    # Integration tests
+npm test                  # All tests
+npm run lint              # ESLint
+```
+
+### Debugging
+
+- Use "Show Chat Debug View" command to inspect prompts and tool calls
+- Extension debug port: 5870
+- See [CLAUDE.md](CLAUDE.md) for detailed debugging setup
 
 ## Project Structure
 
 ```
-puku-editor/
+puku-vs-editor/puku-editor/
 ├── src/
-│   ├── chat/                # Puku Editor extension source
-│   │   ├── src/extension/   # Extension code
-│   │   ├── docs/            # PRDs and documentation
-│   │   └── dist/            # Compiled extension (generated)
-│   └── vscode/              # Forked VS Code (Code-OSS)
-│       ├── src/             # VS Code source code
-│       └── out/             # Compiled VS Code (generated)
-├── Makefile                 # Build automation
-├── launch.sh                # Development launcher
-└── README.md                # This file
+│   ├── chat/                    # Puku Editor extension
+│   │   ├── src/extension/       # Extension source code
+│   │   ├── dist/                # Compiled bundles (22MB+)
+│   │   ├── package.json         # 120 dependencies
+│   │   └── .esbuild.ts          # Build configuration
+│   └── vscode/                  # Forked VS Code (Code-OSS)
+│       ├── src/                 # VS Code source
+│       └── .nvmrc               # Node 22.20.0
+├── .github/workflows/           # CI/CD (6 platforms)
+├── Makefile                     # Build automation
+├── build-dmg-optimized.sh       # macOS packaging
+└── CLAUDE.md                    # Full documentation
 ```
 
 ## Features
 
-### Authentication
-- **Google OAuth** - Direct sign-in via `https://api.puku.sh/auth/google`
-- **Puku Account** - Integrated authentication at both VS Code and extension layers
-- **Token Bridging** - Seamless auth between workbench and extension
+### 🤖 AI-Powered Coding
 
-### AI Capabilities
-- **AI Chat** - Powered by Puku API with usage quotas
-- **Semantic Search** - AST-based code chunking with vector embeddings
-- **Code Indexing** - Automatic workspace indexing with SQLite cache
+**Inline Completions (FIM)**:
+- Context-aware code completions with Codestral Mamba (256k context)
+- Language hints to prevent hallucinations
+- Speculative caching for instant follow-ups (<1ms)
+- Smart debouncing (800ms) to reduce API calls
 
-### Commands
-- `puku.auth.signIn` - Sign in with Google
-- `puku.auth.signOut` - Sign out
-- `puku.auth.status` - View auth status
+**Chat Interface**:
+- AI chat powered by GLM-4.6 (tool calling + vision)
+- Agent mode with tool calling
+- Context from imports + semantic search
+
+**Semantic Search**:
+- AST-based code chunking
+- Vector embeddings with sqlite-vec
+- Automatic workspace indexing
+- Cache: `{workspace}/.puku/puku-embeddings.db`
+
+### 🔧 Commands
+
+- `puku.auth.signIn` / `puku.auth.signOut` - Authentication
 - `puku.semanticSearch` - Search codebase semantically
 - `puku.reindex` - Force re-index workspace
+- `puku.clearIndexCache` - Clear embeddings cache
 
-## Authentication Architecture
+### ⚙️ Configuration
 
-The editor uses a two-layer authentication system:
+In VS Code settings (`.vscode/settings.json`):
 
-1. **VS Code Layer** (`src/vs/workbench/services/chat/common/pukuAuthService.ts`)
-   - Handles Google OAuth flow
-   - Manages session storage
-   - Exposes commands: `_puku.workbench.getSessionToken`, `_puku.workbench.getUserInfo`
-
-2. **Extension Layer** (`github/editor/src/extension/pukuAuth/`)
-   - Implements `vscode.AuthenticationProvider`
-   - Bridges to VS Code layer via fallback commands
-   - Provides token to indexing and other services
-
-## Configuration
-
-The editor works out of the box with Puku authentication. For advanced configuration, see `CLAUDE.md`.
-
-## Development
-
-```bash
-# Watch mode for extension (Terminal 1)
-cd src/chat
-npm run watch
-
-# Launch Code-OSS with extension (Terminal 2)
-cd ../..
-./launch.sh
-
-# Or use Makefile for everything
-make watch-extension  # Terminal 1: watch mode
-make launch          # Terminal 2: launch
+```json
+{
+  "puku.apiKey": "pk_your_api_key_here",
+  "puku.apiEndpoint": "https://api.puku.sh"
+}
 ```
-
-### Debugging
-- Extension debug port: `5870`
-- Use "Show Chat Debug View" command for AI debugging
-- Check logs in Developer Tools console
 
 ---
 
-## Building macOS App
+## CI/CD & Releases
 
-You can build Puku as a standalone macOS application in two ways:
+### Automated Builds
 
-### Development Build (Fast)
+GitHub Actions builds for 6 platforms on every release tag:
 
-For local testing and development:
+| Platform | Architectures |
+|----------|--------------|
+| macOS | arm64, x64 |
+| Linux | x64, arm64 |
+| Windows | x64, arm64 |
 
-```bash
-# Build Puku.app with symlinks (fast, ~5 seconds)
-make dmg
-```
-
-This creates `build/Puku.app` using symlinks to your compiled code. Great for testing changes quickly.
-
-### Production Build (Distributable)
-
-For distribution to other users:
+**Creating a Release**:
 
 ```bash
-# Build self-contained DMG installer (~2-5 minutes)
-make dmg-production
+# Tag and push
+git tag -a v0.43.7 -m "Release v0.43.7 - Description"
+git push origin v0.43.7
+
+# Monitor builds at:
+# https://github.com/puku-sh/puku-vs-editor/actions
 ```
 
-This creates:
-- `build-production/Puku.app` - Self-contained app bundle with all dependencies
-- `dist/Puku-{version}.dmg` - DMG installer for distribution
+### Local macOS Build
 
-**To install the production build:**
+```bash
+# Create DMG installer (~20s)
+./build-dmg-optimized.sh
 
-1. Open the DMG: `open dist/Puku-*.dmg`
-2. Drag Puku.app to Applications folder
-3. Launch from Spotlight or Applications
+# Output: Puku-1.107.0.dmg (~311MB)
+```
 
-**App Features:**
-- ✅ Custom Puku icon (`puku.icns`)
-- ✅ Bundle ID: `sh.puku.editor`
-- ✅ App name: "Puku" (not "Code - OSS")
+**DMG Features**:
+- ✅ Self-contained app bundle (872MB)
+- ✅ Compressed DMG (311MB)
 - ✅ Puku Editor extension pre-installed
-- ✅ All built-in VS Code extensions included
+- ✅ 29 core VS Code extensions included
+- ✅ Custom Puku branding and icons
 
 ---
 
-## Recent Updates
+## Documentation
 
-- ✅ Fixed authentication token bridging between VS Code and extension layers
-- ✅ Implemented Google OAuth with `api.puku.sh`
-- ✅ Removed permission dialogs for direct OAuth flow
-- ✅ Added workbench commands for token/user info access
+- **[CLAUDE.md](CLAUDE.md)** - Complete development guide
+- **[src/chat/CONTRIBUTING.md](src/chat/CONTRIBUTING.md)** - Architecture details
+- **[src/chat/.github/copilot-instructions.md](src/chat/.github/copilot-instructions.md)** - Coding standards
 
 ## License
 
-See individual project directories for license information.
+MIT License - See individual project directories for details.

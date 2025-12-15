@@ -4,332 +4,227 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This workspace contains multiple projects:
+This is the **Puku Editor** monorepo containing:
 
-- **`src/chat`** - **Puku Editor** - AI-powered code editor extension built on GitHub Copilot Chat architecture with support for Z.AI's GLM models. Provides chat interfaces, inline completions (FIM), agent mode, and tool calling.
-- **`src/vscode`** - **Forked VS Code** (Code-OSS) from `poridhiAILab/vscode`. Custom VS Code build for UI modifications and extension debugging.
-- **`../puku-worker`** - **Puku Backend API** - Cloudflare Worker that provides API endpoints for completions, FIM, embeddings, and authentication. Located at `/Users/sahamed/Desktop/puku-vs-editor/puku-worker`.
+- **`src/chat`** - **Puku Editor Extension** - AI-powered VS Code extension built on GitHub Copilot Chat architecture. Provides chat interface, inline completions (FIM), agent mode, and tool calling.
+- **`src/vscode`** - **Forked VS Code** (Code-OSS) - Custom VS Code build for bundling and packaging the extension as a standalone application.
+- **Backend API** - Puku backend API (separate repo at `../puku-worker`) provides completions, FIM, embeddings, and authentication endpoints.
+
+## Repository Structure
+
+```
+puku-vs-editor/puku-editor/
+├── src/
+│   ├── chat/              # Puku Editor extension source
+│   │   ├── src/           # TypeScript source
+│   │   ├── dist/          # Compiled bundles (22MB+)
+│   │   ├── package.json   # Extension dependencies (120 deps)
+│   │   └── .esbuild.ts    # esbuild bundler configuration
+│   └── vscode/            # Forked VS Code (Code-OSS)
+│       ├── src/           # VS Code source
+│       ├── build/         # Build scripts
+│       └── .nvmrc         # Node 22.20.0
+├── .github/
+│   └── workflows/         # CI/CD for 6 platforms
+│       ├── build-macos.yml
+│       ├── build-linux.yml
+│       └── build-windows.yml
+├── Makefile              # Build automation
+├── build-dmg-optimized.sh # macOS DMG packaging
+└── CLAUDE.md             # This file
+```
 
 ## Requirements
 
-- Node 23.5.0+ (use `nvm install 23.5.0 && nvm use 23.5.0`) - Required for sqlite-vec extension support
-- Python >= 3.10, <= 3.12
-- Git Large File Storage (LFS) - for running tests
-- (Windows) Visual Studio Build Tools >=2019 - for building with node-gyp
+- **Node.js**: 23.5.0+ for extension, 22.20.0 for VS Code (managed by nvm)
+- **Python**: >= 3.10, <= 3.12 (for VS Code native modules)
+- **Git LFS**: For running tests
+- **Platform-specific**:
+  - macOS: Xcode Command Line Tools
+  - Linux: libx11-dev, libxkbfile-dev, libsecret-1-dev
+  - Windows: Visual Studio Build Tools >=2019
 
-## Common Commands
+## Quick Start
 
-### Setup
+### Local Development
 
 ```bash
-npm install
-npm run get_token
+# Install dependencies (run from repo root)
+cd src/chat && npm install
+cd ../vscode && npm install
+
+# Build extension (~2s)
+make build-ext
+
+# Build VS Code (~5-10 min first time)
+make build-vs
+
+# Run VS Code with extension
+cd src/vscode
+./scripts/code.sh --extensionDevelopmentPath=$(pwd)/../chat
 ```
 
-**Z.AI API Key** (for GLM 4.6 model):
+### Build & Package
 
-```text
-bb67b33d81b74ae7a5882c94f222f2a8.ZNWzVkKE0V1rz0m9
+```bash
+# Full build (extension + VS Code)
+make build
+
+# Create macOS DMG (~20s)
+./build-dmg-optimized.sh
+# Output: Puku-1.107.0.dmg (~311MB)
 ```
 
-**Copilot Proxy Features:**
+## CI/CD & Releases
 
-- `/v1/chat/completions` - Chat interface (works with Copilot Chat panel) ✅ Working
-- `/v1/completions` - Fill-In-Middle (FIM) for inline code suggestions ✅ Working
-- Ollama API compatible endpoints (`/api/tags`, `/api/show`, etc.)
-- Supports GLM-4.6, GLM-4.5, GLM-4.5-Air models
+### GitHub Actions Workflows
 
-**Using Puku Editor:**
+The project builds for 6 platforms via GitHub Actions:
 
-Puku Editor (in `src/chat`) has built-in Puku AI support. To use GLM models:
+| Platform | Architectures | Workflow |
+|----------|--------------|----------|
+| macOS | arm64, x64 | `build-macos.yml` |
+| Linux | x64, arm64 | `build-linux.yml` |
+| Windows | x64, arm64 | `build-windows.yml` |
 
-1. **Build and run the extension:**
+**Trigger**: Push tags matching `v*.*.*` (e.g., `v0.43.6`)
 
-   ```bash
-   cd src/chat
-   npm install
-   npm run compile
-   ```
+**Build Process**:
+1. Checkout code
+2. Setup Node.js 22.20.0 (from `.nvmrc`)
+3. Cache node_modules
+4. Install dependencies (if cache miss)
+5. Run `make build` (builds extension + VS Code)
+6. Create platform-specific package
+7. Upload artifacts (1-day retention)
+8. Create GitHub release (on success)
 
-2. **Configure VS Code to use the proxy:**
+### Creating a Release
 
-   Add to `.vscode/settings.json` or user settings:
+```bash
+# Ensure everything is committed and pushed
+git add . && git commit -m "Your changes"
+git push origin main
 
-   ```json
-   {
-     "github.copilot.chat.byok.ollamaEndpoint": "http://localhost:11434"
-   }
-   ```
+# Create and push tag
+git tag -a v0.43.7 -m "Release v0.43.7 - Description"
+git push origin v0.43.7
 
-   The extension will automatically discover GLM models from the proxy:
+# Monitor builds at:
+# https://github.com/puku-sh/puku-vs-editor/actions
+```
 
-   - GLM-4.6 (flagship with tool calling and vision)
-   - GLM-4.5 (balanced performance)
-   - GLM-4.5-Air (lightweight, faster)
+**Note**: Repository is public to get unlimited CI/CD minutes and artifact storage.
 
-3. **Select Ollama provider in Chat:**
+## Puku AI Backend Integration
 
-   - Open Copilot Chat panel
-   - Click on the current model name
-   - Click "Manage Models..."
-   - Select "Ollama" from the list of providers
-   - Choose your preferred GLM model
+**Backend API** (separate repo at `../puku-worker`):
 
-**How it works:**
+The Puku backend is a Cloudflare Worker providing AI endpoints:
 
-The extension's `OllamaLMProvider` (in `src/extension/byok/vscode-node/ollamaProvider.ts`) will:
+- **`/v1/fim/context`** - Fill-in-middle with context (used by inline completions)
+- **`/v1/completions`** - Standard FIM endpoint
+- **`/v1/chat/completions`** - Chat interface (used by Chat panel)
+- **`/v1/summarize/batch`** - Code summarization for semantic search
 
-- Query `/api/version` to check compatibility (our proxy returns 0.6.4)
-- Fetch models from `/api/tags` (returns GLM-4.6, GLM-4.5, GLM-4.5-Air)
-- Get model details from `/api/show` (returns capabilities: tools, vision, context length)
-- Send chat requests to `/v1/chat/completions` for Chat panel
-- Send completion requests to `/v1/completions` for inline suggestions
+**Models**:
+- **Codestral Mamba** (`mistralai/codestral-2501`) - FIM with 256k context
+- **GLM-4.6** - Chat with tool calling and vision (via Z.AI)
 
-**FIM Implementation (Enhanced Copilot Approach with Context):**
+**Authentication**: Uses API key from `puku.apiKey` setting or environment
 
-Puku uses an enhanced approach inspired by Copilot and Cursor with smart context gathering:
+### Configuring Puku AI
 
-- **Model**: Codestral Mamba (`mistralai/codestral-2501`) with 256k context window
-- **Client**: Prefix/suffix extraction + import-based context + semantic search
-- **Backend**: `/v1/fim/context` endpoint with language hints and context support
-- **Rate Limiting**: 800ms debounce + single-char change skip + speculative caching
-- **Intelligence**: Combines model's 256k context with relevant code snippets
+In VS Code settings (`.vscode/settings.json`):
 
-**Architecture:**
-```typescript
-// Client (pukuInlineCompletionProvider.ts):
-// 1. Check speculative cache FIRST (bypass debounce if hit)
-if (cache.has(lastCompletionId)) {
-    return await cache.request(lastCompletionId); // Instant!
+```json
+{
+  "puku.apiKey": "pk_your_api_key_here",
+  "puku.apiEndpoint": "https://api.puku.sh"
 }
-
-// 2. Debounce check (only for cache misses)
-if (now - lastRequestTime < 800ms) return null;
-
-// 3. Gather context
-const importedFiles = await getImportedFilesContent(document, 3, 500);
-const semanticFiles = await semanticSearch(currentLine, 2, languageId);
-
-// 4. Call FIM with context + language hint
-await fetch('/v1/fim/context', {
-    prompt: prefix,
-    suffix: suffix,
-    openFiles: [...importedFiles, ...semanticFiles],
-    language: document.languageId, // NEW: Language hint for model
-    max_tokens: 100,
-    temperature: 0.1
-});
-
-// Backend (puku-worker):
-// Prepends language comment: "// Language: Go"
-// Includes context from openFiles
-// Calls Codestral Mamba with enhanced prompt
 ```
 
-**Backend API (puku-worker):**
+The extension will:
+- Send inline completion requests to `/v1/fim/context` with context
+- Send chat requests to `/v1/chat/completions`
+- Include language hints, imported files, and semantic search results
 
-The backend is a Cloudflare Worker located at `../puku-worker`. Key endpoints:
+### Inline Completions (FIM)
 
-- `/v1/fim/context` - FIM with context support (used by Puku Editor)
-  - **Location**: `src/routes/completions.ts:222-392`
-  - **Accepts**: `{ prompt, suffix, language, openFiles, max_tokens, temperature, n }`
-  - **Returns**: `{ choices: [{ text, index, finish_reason }] }`
-  - **Model**: Mistral Codestral via `env.CODESTRAL_FIM_URL`
+**Architecture**: Enhanced approach inspired by GitHub Copilot and Cursor
 
-- `/v1/completions` - Standard FIM endpoint
-  - **Location**: `src/routes/completions.ts:119-219`
+**Key Features**:
+1. **Language-aware**: Sends language hints to prevent wrong-language hallucinations
+2. **Context-aware**: Includes imported files (3 max) + semantic search results (2 chunks)
+3. **Speculative caching**: Prefetches next completion for instant follow-ups (<1ms)
+4. **Smart debouncing**: 800ms delay + skip single-char changes to reduce API calls
 
-- `/v1/chat/completions` - Chat completions (for Chat panel)
-  - **Location**: `src/routes/completions.ts:9-116`
+**Performance**:
+- Cache hit: ~0ms (instant)
+- Cache miss: 800-1000ms (debounce + API)
+- Overall UX: Competitive with Copilot
 
-- `/v1/summarize/batch` - Code summarization for semantic search
-  - **Location**: `src/routes/completions.ts:536-642`
+**Implementation**:
+- Client: `src/chat/src/extension/pukuai/vscode-node/pukuInlineCompletionProvider.ts`
+- Backend: `../puku-worker/src/routes/completions.ts` → `/v1/fim/context`
+- Model: Codestral Mamba (256k context)
+- Tests: `src/chat/src/extension/pukuai/test/pukuInlineCompletionCache.spec.ts`
 
-**To modify backend code:**
-```bash
-cd ../puku-worker
-# Edit src/routes/completions.ts
-npm run deploy  # Deploy to Cloudflare Workers
-```
+**Feature Gaps vs GitHub Copilot**: 12 missing features tracked in issues [#55-#66](https://github.com/puku-sh/puku-vs-editor/issues?q=is%3Aissue+is%3Aopen+label%3Aarea%3Ainline-completions)
 
-**Example:**
-```bash
-# With language hint and context
-curl -X POST https://api.puku.sh/v1/fim/context \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer pk_xxx" \
-  -d '{
-    "prompt": "func main() {\n\t",
-    "suffix": "",
-    "language": "go",
-    "openFiles": [
-      {"filepath": "user.go", "content": "type User struct {...}"}
-    ],
-    "max_tokens": 100,
-    "temperature": 0.1
-  }'
-```
+## Development Workflow
 
-**Key Features (2025-11-28 Updates):**
-
-1. **Language-Aware Completions** ✅
-   - Client sends `language: "go"` to backend
-   - Backend prepends `// Language: Go` to prompt
-   - Fixes wrong-language hallucinations (Kotlin in Go files)
-
-2. **Smart Context Filtering** ✅
-   - **Import-based**: Extracts and includes imported files (up to 3 files, 500 chars each)
-   - **Semantic search**: Finds similar code chunks using embeddings (2 chunks max)
-   - **Overlap detection**: Excludes chunks containing cursor position
-   - Filters out duplicates to avoid confusing model
-
-3. **Speculative Caching (Copilot-style)** ✅
-   - Stores REQUEST FUNCTIONS, not results
-   - Cache check happens BEFORE debounce
-   - Cache hit → Instant completion (bypasses 800ms debounce)
-   - Cache miss → Apply debounce + fetch from API
-   - Automatically prefetches next completion after user accepts
-
-4. **Aggressive Rate Limiting** ✅
-   - 800ms debounce between requests (up from 200ms)
-   - Skip single-character changes (user still typing)
-   - Reduces API calls while maintaining responsiveness
-
-**Performance Characteristics:**
-- **Cache hit**: ~0ms (instant, bypasses debounce)
-- **Cache miss**: 800ms debounce + 500-1000ms API call
-- **Context gathering**: <50ms (import extraction + semantic search)
-- **Overall UX**: Competitive with Copilot (783-1883ms average)
-
-**Why this approach:**
-- ✅ Language hints eliminate hallucinations
-- ✅ Import context improves relevance
-- ✅ Semantic search finds similar patterns
-- ✅ Speculative caching enables instant follow-up completions
-- ✅ Smart debounce reduces API costs without hurting UX
-- ✅ Overlap filtering avoids duplicate suggestions
-- ✅ Proven architecture (Copilot + Cursor hybrid)
-
-**Tests:**
-- Speculative caching flow: `src/chat/src/extension/pukuai/test/pukuInlineCompletionCache.spec.ts`
-- 11 tests covering cache behavior, debounce, and request flow
-
-See `test-supermaven/FINDINGS.md` for research and rationale.
-
-**Feature Gaps vs GitHub Copilot:**
-
-We've analyzed Puku's inline completion system against Copilot and identified 12 missing features. See:
-- **GitHub Issues**: [#55-#66](https://github.com/puku-sh/puku-vs-editor/issues?q=is%3Aissue+is%3Aopen+label%3Aarea%3Ainline-completions)
-- **PRD Example**: `src/chat/docs/prd-forward-stability.md` (enableForwardStability flag)
-
-**Priority Roadmap:**
-1. 🔴 **Critical**: Forward stability (#55), Rejection tracking (#56), Typing-as-suggested (#57)
-2. 🟠 **High**: Edit rebasing cache (#58), Reduce diagnostics delay (#59), Streaming responses (#60)
-3. 🟡 **Medium**: 3-provider racing (#61), Server-side trimming (#62), Indentation hints (#63), Multiple completions (#64)
-4. 🟢 **Low**: Edit survival tracking (#65), Advanced telemetry (#66)
-
-### Build & Development
+### Build Commands
 
 ```bash
+# Extension only (~2s)
+cd src/chat
 npm run compile          # Development build
 npm run build           # Production build
-npm run watch           # Watch all (runs watch:* scripts in parallel)
+npm run watch           # Watch mode
+
+# Or use Makefile from repo root
+make build-ext          # Build extension
+make build-vs           # Build VS Code
+make build              # Build both
 ```
-
-Use the `start-watch-tasks` VS Code task to monitor compilation errors in real-time. This runs:
-
-- `npm: watch:tsc-extension`
-- `npm: watch:tsc-extension-web`
-- `npm: watch:tsc-simulation-workbench`
-- `npm: watch:esbuild`
 
 ### Testing
 
 ```bash
+cd src/chat
 npm run test:unit              # Unit tests (Node.js)
 npm run test:extension         # Integration tests (VS Code)
 npm run simulate              # Simulation tests (LLM-based, cached)
-npm run simulate-require-cache # Verify simulation cache is populated
-npm run simulate-update-baseline # Update simulation baseline
 npm test                      # Run all tests
-```
-
-### Code Quality
-
-```bash
-npm run lint               # ESLint with zero warnings policy
+npm run lint                  # ESLint (zero warnings policy)
 ```
 
 ### Debugging
 
-There are two ways to debug the Puku Editor extension:
+**Option 1: VS Code Insiders (Quick)**
+- Run `cmd+shift+B` to start build
+- Press F5 to launch extension host
 
-#### Option 1: Debug with VS Code Insiders (Quick)
-
-- Use "Launch Puku Editor Extension - Watch Mode" debug configuration
-- Run `cmd+shift+B` to start build task
-- Press F5 to launch
-
-#### Option 2: Debug with Forked VS Code (Code-OSS) - Recommended
-
-Use this for full development workflow with UI modifications and extension debugging.
-
-**Setup forked VS Code (first time only):**
+**Option 2: Forked VS Code (Recommended)**
 
 ```bash
+# Terminal 1: Watch extension
+cd src/chat && npm run watch
+
+# Terminal 2: Run Code-OSS with extension
 cd src/vscode
-source ~/.nvm/nvm.sh && nvm use 22.20.0
-npm i                    # Install dependencies
-npm run compile          # Build VS Code (takes ~5-10 min first time)
-```
-
-**Running forked VS Code with Puku Editor extension:**
-
-```bash
-# Terminal 1: Watch and build the extension
-cd src/chat
-npm run watch
-
-# Terminal 2: Run forked VS Code with extension loaded
-cd src/vscode
-source ~/.nvm/nvm.sh && nvm use 22.20.0
-./scripts/code.sh --extensionDevelopmentPath=/path/to/puku-editor/src/chat
-```
-
-Or use the full path:
-```bash
-./scripts/code.sh --extensionDevelopmentPath=/Users/sahamed/Desktop/puku-vs-editor/puku-editor/src/chat
-```
-
-**Debug configurations (from `src/chat/.vscode/launch.json`):**
-
-| Configuration | Description |
-|--------------|-------------|
-| "Launch Puku Editor Extension - Watch Mode - Code OSS" | Launches forked VS Code with extension and debugger attached |
-| "Attach to Extension Host - Code OSS" | Attach debugger to already running Code-OSS (port 5870) |
-
-**To debug with breakpoints:**
-
-1. Open `src/chat` in your regular VS Code
-2. Run `npm run watch` in terminal (or use `cmd+shift+B`)
-3. Select **"Launch Puku Editor Extension - Watch Mode - Code OSS"** from debug panel
-4. Press F5 - forked VS Code launches with extension loaded
-5. Set breakpoints in your extension code - they will hit when triggered in Code-OSS
-
-**Quick Start (all-in-one command):**
-
-```bash
-# From puku-editor root
-cd src/vscode && source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
 ./scripts/code.sh --extensionDevelopmentPath=$(pwd)/../chat
 ```
 
-#### Debugging Tips
+**Debug Configurations**:
+- **Launch - Code OSS**: F5 to start Code-OSS with debugger attached
+- **Attach - Code OSS**: Attach to running Code-OSS (port 5870)
 
-- Use "Show Chat Debug View" command to inspect prompts, tool calls, and responses
-- Debug port for Code-OSS extension host: `5870`
-- Debug port for TypeScript Server: `9223`
-- If Code-OSS fails to start, ensure Node 22.20.0+ is active (`node -v`)
+**Tips**:
+- Use "Show Chat Debug View" command to inspect prompts and tool calls
+- Debug ports: Extension Host (5870), TypeScript Server (9223)
+- Monitor `start-watch-tasks` VS Code task for real-time compilation errors
 
 ## Puku Indexing (Semantic Search)
 
