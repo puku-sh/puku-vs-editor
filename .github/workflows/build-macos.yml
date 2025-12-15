@@ -99,17 +99,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GYP_DEFINES: "kerberos_use_rtld=false"
 
-      - name: Build Extension
-        run: |
-          cd src/chat
-          npm run compile
-
-      - name: Build VS Code
-        run: |
-          cd src/vscode
-          npm run gulp vscode-darwin-arm64-min
+      - name: Build using Makefile
+        run: make build
         env:
-          VSCODE_ARCH: ${{ env.VSCODE_ARCH }}
+          VSCODE_ARCH: arm64
 
       - name: Package DMG
         run: ./build-dmg-optimized.sh
