@@ -22934,7 +22934,7 @@ var DEFAULT_OPTIONS = {
     includeViewedFiles: false
   },
   languageContext: {
-    enabled: false,
+    enabled: true,
     maxTokens: 2e3
   },
   diffHistory: {
@@ -22946,9 +22946,9 @@ var DEFAULT_OPTIONS = {
   includePostScript: true
 };
 var LANGUAGE_CONTEXT_ENABLED_LANGUAGES = {
-  "prompt": true,
-  "instructions": true,
-  "chatagent": true
+  // Currently empty - all languages enabled by default via languageContext.enabled=true
+  // Add entries here only to override specific languages, e.g.:
+  // 'plaintext': false,  // disable for plaintext files
 };
 var MODEL_CONFIGURATION_VALIDATOR = vObj({
   "modelName": vRequired(vString()),

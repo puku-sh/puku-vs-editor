@@ -98,7 +98,7 @@ export const DEFAULT_OPTIONS: PromptOptions = {
 		includeViewedFiles: false,
 	},
 	languageContext: {
-		enabled: false,
+		enabled: true,
 		maxTokens: 2000,
 	},
 	diffHistory: {
@@ -110,11 +110,13 @@ export const DEFAULT_OPTIONS: PromptOptions = {
 	includePostScript: true,
 };
 
-// TODO: consider a better per language setting/experiment approach
+// Language-specific overrides for language context
+// NOTE: When languageContext.enabled=true, ALL languages are supported by default
+// This map only provides per-language overrides if needed (e.g., to disable specific languages)
 export const LANGUAGE_CONTEXT_ENABLED_LANGUAGES: LanguageContextLanguages = {
-	'prompt': true,
-	'instructions': true,
-	'chatagent': true,
+	// Currently empty - all languages enabled by default via languageContext.enabled=true
+	// Add entries here only to override specific languages, e.g.:
+	// 'plaintext': false,  // disable for plaintext files
 };
 
 export interface ModelConfiguration {

@@ -1,51 +1,7 @@
-// add user model with gorm 
+// add user model with gorm tags
+
 type User struct {
-	ID    uint   `gorm:"primaryKey"`
-	Name  string `gorm:"not null"`
-	Email string `gorm:"unique;not null"`
-}
-
-// add user repository with gorm
-type UserRepository struct {
-	db *gorm.DB
-}
-
-func (r *UserRepository) Create(user *User) error {
-	return r.db.Create(user).Error
-}
-
-func (r *UserRepository) Get(id uint) (User, error) {
-	var user User
-	return user, r.db.First(&user, id).Error
-}
-
-func (r *UserRepository) Update(id uint, user *User) error {
-	return r.db.Model(&User{}).Where("id = ?", id).Updates(user).Error
-}
-
-func (r *UserRepository) GetAll() []User {
-	var users []User
-	r.db.Find(&users)
-	return users
-}
-
-// delete user based on gorm db
-func deleteUser(db *gorm.DB, id int) {
-	var user User
-	db.Where("id = ?", id).Delete(&user)
-}
-
-// update user based on gorm db 
-func updateUser(db *gorm.DB, id int, name string, email string) {
-	var user User
-	db.Where("id = ?", id).First(&user)
-	user.Name = name
-	user.Email = email
-	db.Save(&user)
-}
-// get user based on gorm db
-func getUser(db *gorm.DB, id int) User {
-	var user User
-	db.Where("id = ?", id).First(&user)
-	return user
+    gorm.Model
+    Name string `gorm:"type:varchar(100);not null"`
+    Email string `gorm:"type:varchar(100);uniqueIndex;not null"`
 }

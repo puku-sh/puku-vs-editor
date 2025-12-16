@@ -141,7 +141,7 @@ jobs:
         with:
           name: puku-editor-macos-arm64-${{ github.run_id }}
           path: |
-            *.dmg
+            dist/*.dmg
           retention-days: 1
           if-no-files-found: error
 
@@ -277,7 +277,7 @@ jobs:
         with:
           name: puku-editor-macos-x64-${{ github.run_id }}
           path: |
-            *.dmg
+            dist/*.dmg
           retention-days: 1
           if-no-files-found: error
 

@@ -143,6 +143,10 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 					insertText: fix.newText,
 					range: fix.range, // Line 0 - top of file
 				};
+
+				// Track diagnostics completion for lifecycle handling
+				this.completionsByText.set(fix.newText, { document, position });
+
 				console.log('[PukuUnifiedProvider] ✅ Returning import completion item to VS Code with forward stability');
 				// Return InlineCompletionList with enableForwardStability (Issue #55)
 				return {
@@ -161,6 +165,10 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 						kind: vscode.InlineCompletionDisplayLocationKind.Code
 					}
 				};
+
+				// Track diagnostics completion for lifecycle handling
+				this.completionsByText.set(fix.newText, { document, position });
+
 				// Return InlineCompletionList with enableForwardStability (Issue #55)
 				return {
 					items: [item],

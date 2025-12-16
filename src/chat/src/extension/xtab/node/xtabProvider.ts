@@ -6,6 +6,7 @@
 import { RequestType } from '../../../platform/api/common/pukuRequestTypes';
 import { Raw } from '@vscode/prompt-tsx';
 import { ChatCompletionContentPartKind } from '@vscode/prompt-tsx/dist/base/output/rawTypes';
+import { IAuthenticationService } from '../../../platform/authentication/common/authentication';
 import { FetchStreamSource } from '../../../platform/chat/common/chatMLFetcher';
 import { ChatFetchError, ChatFetchResponseType, ChatLocation } from '../../../platform/chat/common/commonTypes';
 import { toTextParts } from '../../../platform/chat/common/globalStringUtils';
@@ -97,7 +98,8 @@ export class XtabProvider implements IStatelessNextEditProvider {
 		@ILanguageContextProviderService private readonly langCtxService: ILanguageContextProviderService,
 		@ILanguageDiagnosticsService private readonly langDiagService: ILanguageDiagnosticsService,
 		@IIgnoreService private readonly ignoreService: IIgnoreService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService
+		@ITelemetryService private readonly telemetryService: ITelemetryService,
+		@IAuthenticationService private readonly authService: IAuthenticationService
 	) {
 		this.delayer = new Delayer(this.configService, this.expService);
 		this.tracer = createTracer(['NES', 'XtabProvider'], (s) => this.logService.trace(s));
@@ -223,6 +225,20 @@ export class XtabProvider implements IStatelessNextEditProvider {
 	): Promise<Result<void, NoNextEditReason>> {
 
 		const tracer = this.tracer.sub('doGetNextEditWithSelection');
+
+		// Check authentication - don't call any API if not logged in (same as FIM)
+		try {
+			const authToken = await this.authService.getCopilotToken();
+			if (!authToken) {
+				tracer.trace('Not authenticated - skipping NES completion');
+				return Result.error(new NoNextEditReason.Uncategorized(new Error('Not authenticated')));
+			}
+			tracer.trace('Authenticated');
+		} catch (error) {
+			// getCopilotToken throws when not authenticated
+			tracer.trace('Not authenticated - skipping NES completion');
+			return Result.error(new NoNextEditReason.Uncategorized(new Error('Not authenticated')));
+		}
 
 		const activeDocument = request.getActiveDocument();
 
@@ -1012,6 +1028,15 @@ export class XtabProvider implements IStatelessNextEditProvider {
 	}
 
 	private static mapChatFetcherErrorToNoNextEditReason(fetchError: ChatFetchError): NoNextEditReason {
+		// Check for authentication errors and handle silently (don't log as error)
+		if (fetchError.type === ChatFetchResponseType.BadRequest) {
+			const errorMessage = JSON.stringify(fetchError);
+			if (errorMessage.includes('Authentication required') || errorMessage.includes('Please login')) {
+				// Return uncategorized error without the wrapped error (prevents error logging)
+				return new NoNextEditReason.Uncategorized(new Error('Not authenticated'));
+			}
+		}
+
 		switch (fetchError.type) {
 			case ChatFetchResponseType.Canceled:
 				return new NoNextEditReason.GotCancelled('afterFetchCall');
@@ -1270,22 +1295,23 @@ export class XtabProvider implements IStatelessNextEditProvider {
 	}
 
 	private determineLanguageContextOptions(languageId: LanguageId, { enabled, enabledLanguages, maxTokens }: { enabled: boolean; enabledLanguages: LanguageContextLanguages; maxTokens: number }): LanguageContextOptions {
-		// Some languages are
+		// Check if language has specific override, otherwise use global enabled setting
+		// This allows language context for ALL languages by default when enabled=true
 		if (languageId in enabledLanguages) {
 			return { enabled: enabledLanguages[languageId], maxTokens };
 		}
 
+		// Default: enable for all languages when globally enabled
 		return { enabled, maxTokens };
 	}
 
 	private getEndpoint(configuredModelName: string | undefined): ChatEndpoint {
 		const url = this.configService.getConfig(ConfigKey.Internal.InlineEditsXtabProviderUrl)
 			|| 'https://api.puku.sh/v1/nes/edits';
-		const apiKey = this.configService.getConfig(ConfigKey.Internal.InlineEditsXtabProviderApiKey)
-			|| 'pk_54599884ee8e43ff5c94d77bf4eb9e8c1c5737388caba20e85fb8d30a27044f5314188a920760a656185b6571d0f5c58';
 
-		// Always use XtabEndpoint with Puku API key (no more Copilot dependency)
-		return this.instaService.createInstance(XtabEndpoint, url, apiKey, configuredModelName);
+		// XtabEndpoint will use auth service to get token (same as FIM)
+		// Fallback API key can be configured via puku.chat.advanced.inlineEdits.xtabProvider.apiKey
+		return this.instaService.createInstance(XtabEndpoint, url, '', configuredModelName);
 	}
 
 	private getPredictedOutput(editWindowLines: string[], responseFormat: xtabPromptOptions.ResponseFormat): Prediction | undefined {

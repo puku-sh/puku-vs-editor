@@ -55,7 +55,7 @@ export class XtabEndpoint extends ChatEndpoint {
 		@IFetcherService _fetcherService: IFetcherService,
 		@ICAPIClientService _capiClientService: ICAPIClientService,
 		@ITelemetryService _telemetryService: ITelemetryService,
-		@IAuthenticationService _authService: IAuthenticationService,
+		@IAuthenticationService private readonly _authService: IAuthenticationService,
 		@IChatMLFetcher _chatMLFetcher: IChatMLFetcher,
 		@ITokenizerProvider _tokenizerProvider: ITokenizerProvider,
 		@IInstantiationService _instantiationService: IInstantiationService,
@@ -84,10 +84,22 @@ export class XtabEndpoint extends ChatEndpoint {
 	}
 
 
-	public override getExtraHeaders(): Record<string, string> {
+	public override async getExtraHeaders(): Promise<Record<string, string>> {
+		// Try to get auth token from Puku auth service (same as FIM)
+		const authToken = await this._authService.getCopilotToken();
+
+		if (authToken && authToken.token) {
+			// Use Puku auth token (logged in user)
+			return {
+				'Authorization': `Bearer ${authToken.token}`,
+				'api-key': authToken.token,
+			};
+		}
+
+		// Fallback to configured API key
 		const apiKey = this._configService.getConfig(ConfigKey.Internal.InlineEditsXtabProviderApiKey) || this._apiKey;
 		if (!apiKey) {
-			const message = `Missing API key for custom URL (${this.urlOrRequestMetadata}). Provide the API key using vscode setting \`puku.chat.advanced.inlineEdits.xtabProvider.apiKey\` or, if in simulations using \`--nes-api-key\` or \`--config-file\``;
+			const message = `Missing API key for custom URL (${this.urlOrRequestMetadata}). Not authenticated and no fallback API key configured. Please log in or provide an API key using \`puku.chat.advanced.inlineEdits.xtabProvider.apiKey\``;
 			console.error(message);
 			throw new Error(message);
 		}

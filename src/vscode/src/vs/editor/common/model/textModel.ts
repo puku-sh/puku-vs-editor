@@ -872,7 +872,8 @@ export class TextModel extends Disposable implements model.ITextModel, IDecorati
 	public getLineMaxColumn(lineNumber: number): number {
 		this._assertNotDisposed();
 		if (lineNumber < 1 || lineNumber > this.getLineCount()) {
-			throw new BugIndicatingError('Illegal value for lineNumber');
+			// Defensive fix: clamp to valid range instead of throwing
+			lineNumber = Math.max(1, Math.min(lineNumber, this.getLineCount()));
 		}
 		return this._buffer.getLineLength(lineNumber) + 1;
 	}

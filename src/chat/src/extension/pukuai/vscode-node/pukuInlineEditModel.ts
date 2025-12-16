@@ -134,9 +134,9 @@ export class PukuInlineEditModel extends Disposable {
 			const diagnosticsSettled = diagnosticsResult !== undefined;
 			const nesSettled = nesResult !== undefined;
 
-			const fimHasResult = fimResult !== null && fimResult !== undefined && fimResult.completion;
+			const fimHasResult = fimResult !== null && fimResult !== undefined && fimResult.completion && (Array.isArray(fimResult.completion) ? fimResult.completion.length > 0 : true);
 			const diagnosticsHasResult = diagnosticsResult !== null && diagnosticsResult !== undefined;
-			const nesHasResult = nesResult !== null && nesResult !== undefined && nesResult.completion;
+			const nesHasResult = nesResult !== null && nesResult !== undefined && nesResult.completion && (Array.isArray(nesResult.completion) ? nesResult.completion.length > 0 : true);
 
 			// Wait for all if:
 			// 1. FIM hasn't settled yet (still fetching from API), OR
@@ -174,22 +174,34 @@ export class PukuInlineEditModel extends Disposable {
 			// Don't cancel FIM - let it complete and cache the result
 			// fimCts.cancel();
 
+			// Recalculate hasResult flags based on CURRENT result values (after await all)
+			// This ensures flags reflect the actual state after promises complete (Issue #108)
+			const fimHasActualResult = fimResult !== null && fimResult !== undefined && fimResult.completion && (Array.isArray(fimResult.completion) ? fimResult.completion.length > 0 : true);
+			const nesHasActualResult = nesResult !== null && nesResult !== undefined && nesResult.completion && (Array.isArray(nesResult.completion) ? nesResult.completion.length > 0 : true);
+			const diagnosticsHasActualResult = diagnosticsResult !== null && diagnosticsResult !== undefined;
+
+			console.log('[PukuInlineEditModel] 🔍 Fresh hasResult checks:', {
+				fimHasActualResult,
+				nesHasActualResult,
+				diagnosticsHasActualResult
+			});
+
 			// Track lifecycle events
 			let winningResult: PukuNextEditResult = null;
 			const losingResults: PukuNextEditResult[] = [];
 
 			// Priority logic: FIM > NES > Diagnostics (Copilot's approach)
-			// Use hasResult checks (not truthiness) to avoid empty results blocking others (Issue #106)
-			if (fimHasResult) {
+			// Use fresh hasResult checks (not stale flags from line 137-139) - Issue #108
+			if (fimHasActualResult) {
 				this.logService.info('[PukuInlineEditModel] ✅ Using FIM result (won race)');
 				winningResult = fimResult;
 				if (diagnosticsResult) { losingResults.push(diagnosticsResult); }
 				if (nesResult) { losingResults.push(nesResult); }
-			} else if (nesHasResult) {
+			} else if (nesHasActualResult) {
 				this.logService.info('[PukuInlineEditModel] ✅ Using NES result (FIM has no completions)');
 				winningResult = nesResult;
 				if (diagnosticsResult) { losingResults.push(diagnosticsResult); }
-			} else if (diagnosticsHasResult) {
+			} else if (diagnosticsHasActualResult) {
 				this.logService.info('[PukuInlineEditModel] ✅ Using diagnostics result (FIM and NES have no completions)');
 				winningResult = diagnosticsResult;
 			}
@@ -224,8 +236,8 @@ export class PukuInlineEditModel extends Disposable {
 			}
 
 			// Convert to backwards-compatible format (priority: FIM > NES > Diagnostics)
-			// Use hasResult checks (not truthiness) to avoid empty results blocking others (Issue #106)
-			if (fimHasResult) {
+			// Use fresh hasResult checks (not stale flags from line 137-139) - Issue #108
+			if (fimHasActualResult) {
 				return {
 					type: 'fim',
 					completion: fimResult.completion,
@@ -234,7 +246,7 @@ export class PukuInlineEditModel extends Disposable {
 				};
 			}
 
-			if (nesHasResult) {
+			if (nesHasActualResult) {
 				return {
 					type: 'nes',
 					completion: nesResult.completion,
@@ -242,7 +254,7 @@ export class PukuInlineEditModel extends Disposable {
 				};
 			}
 
-			if (diagnosticsHasResult) {
+			if (diagnosticsHasActualResult) {
 				return diagnosticsResult;
 			}
 

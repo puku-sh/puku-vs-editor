@@ -161,8 +161,23 @@ if [ -d "$EXTENSION_DIR/node_modules" ]; then
                 cp -R "node_modules/$dep" "$PUKU_EXT_DIR/node_modules/"
             fi
         done
+
+        # Copy native modules (sqlite-vec)
+        echo "    - Copying native modules..."
+        if [ -d "node_modules/sqlite-vec-darwin-arm64" ]; then
+            cp -R "node_modules/sqlite-vec-darwin-arm64" "$PUKU_EXT_DIR/node_modules/"
+        fi
     fi
     cd "$SCRIPT_DIR"
+fi
+
+# Fix TypeScript extension - copy node_modules from source
+echo "  - Fixing TypeScript extension..."
+TS_EXT_SRC="$VSCODE_DIR/extensions/typescript-language-features"
+TS_EXT_DEST="$APP_EXTENSIONS/typescript-language-features"
+if [ -d "$TS_EXT_SRC/node_modules" ] && [ -d "$TS_EXT_DEST" ]; then
+    echo "    - Copying TypeScript dependencies..."
+    cp -R "$TS_EXT_SRC/node_modules" "$TS_EXT_DEST/"
 fi
 
 # Update app metadata

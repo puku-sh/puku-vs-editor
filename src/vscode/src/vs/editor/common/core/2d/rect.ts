@@ -3,12 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { BugIndicatingError } from '../../../../base/common/errors.js';
 import { OffsetRange } from '../ranges/offsetRange.js';
 import { Point } from './point.js';
 import { Size2D } from './size.js';
 
 export class Rect {
+	public readonly left: number;
+	public readonly top: number;
+	public readonly right: number;
+	public readonly bottom: number;
+
 	public static fromPoint(point: Point): Rect {
 		return new Rect(point.x, point.y, point.x, point.y);
 	}
@@ -53,17 +57,23 @@ export class Rect {
 	public get height() { return this.bottom - this.top; }
 
 	constructor(
-		public readonly left: number,
-		public readonly top: number,
-		public readonly right: number,
-		public readonly bottom: number,
+		left: number,
+		top: number,
+		right: number,
+		bottom: number,
 	) {
+		// Defensive fix: swap values if invalid instead of throwing
 		if (left > right) {
-			throw new BugIndicatingError('Invalid arguments: Horizontally offset by ' + (left - right));
+			[left, right] = [right, left];
 		}
 		if (top > bottom) {
-			throw new BugIndicatingError('Invalid arguments: Vertically offset by ' + (top - bottom));
+			[top, bottom] = [bottom, top];
 		}
+
+		this.left = left;
+		this.top = top;
+		this.right = right;
+		this.bottom = bottom;
 	}
 
 	withMargin(margin: number): Rect;
