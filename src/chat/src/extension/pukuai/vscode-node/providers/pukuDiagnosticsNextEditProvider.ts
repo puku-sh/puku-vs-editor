@@ -129,6 +129,14 @@ export class PukuDiagnosticsNextEditProvider extends Disposable implements IPuku
 		const diagnostics = this._getDiagnosticsNearCursor(document, position);
 		console.log(`[PukuDiagnosticsNextEdit][${reqId}] Found ${diagnostics.length} diagnostics near cursor`);
 
+		// Check for 0 diagnostics FIRST (before cache) - Issue #107
+		// This prevents returning stale cached fixes when diagnostics are cleared
+		if (diagnostics.length === 0) {
+			console.log(`[PukuDiagnosticsNextEdit][${reqId}] No diagnostics near cursor`);
+			this._cache.setCachedFix(null);
+			return null;
+		}
+
 		// Check cache: only recompute if diagnostics changed (Copilot's approach)
 		const diagnosticsChanged = this._cache.isEqualAndUpdate(diagnostics, document.uri);
 		console.log(`[PukuDiagnosticsNextEdit][${reqId}] Diagnostics changed: ${diagnosticsChanged}`);
@@ -153,12 +161,7 @@ export class PukuDiagnosticsNextEditProvider extends Disposable implements IPuku
 			return cachedFix;
 		}
 
-		// Diagnostics changed, recompute
-		if (diagnostics.length === 0) {
-			console.log(`[PukuDiagnosticsNextEdit][${reqId}] No diagnostics near cursor`);
-			this._cache.setCachedFix(null);
-			return null;
-		}
+		// Diagnostics exist and changed, recompute fix
 
 		// Check indexing is ready
 		if (this._indexingService.status !== PukuIndexingStatus.Ready) {
