@@ -121,13 +121,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GYP_DEFINES: "kerberos_use_rtld=false"
 
-      - name: Download and cache Electron
-        run: |
-          cd src/vscode
-          node build/lib/electron.js
-        env:
-          VSCODE_ARCH: arm64
-
       # 🚀 Build with optimizations
       - name: Build VS Code (includes extension)
         run: |
@@ -263,13 +256,6 @@ jobs:
 
       - name: Build Extension
         run: make compile-extension
-
-      - name: Download and cache Electron
-        run: |
-          cd src/vscode
-          node build/lib/electron.js
-        env:
-          VSCODE_ARCH: x64
 
       # 🚀 Build with optimizations
       - name: Build VS Code
