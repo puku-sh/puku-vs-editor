@@ -121,6 +121,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GYP_DEFINES: "kerberos_use_rtld=false"
 
+      # Patch @vscode/gulp-electron to skip checksum validation for Electron 39.2.3
+      - name: Patch Electron checksum validation
+        run: |
+          cd src/vscode/node_modules/@vscode/gulp-electron/src
+          sed -i.bak 's/if (opts\.validateChecksum) {/if (false \&\& opts.validateChecksum) { \/\/ PUKU: Skip checksum for Electron 39.2.3/' download.js
+
       # 🚀 Build with optimizations
       - name: Build VS Code (includes extension)
         run: |
@@ -256,6 +262,12 @@ jobs:
 
       - name: Build Extension
         run: make compile-extension
+
+      # Patch @vscode/gulp-electron to skip checksum validation for Electron 39.2.3
+      - name: Patch Electron checksum validation
+        run: |
+          cd src/vscode/node_modules/@vscode/gulp-electron/src
+          sed -i.bak 's/if (opts\.validateChecksum) {/if (false \&\& opts.validateChecksum) { \/\/ PUKU: Skip checksum for Electron 39.2.3/' download.js
 
       # 🚀 Build with optimizations
       - name: Build VS Code
