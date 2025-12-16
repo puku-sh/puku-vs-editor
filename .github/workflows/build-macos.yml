@@ -78,6 +78,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-arm64-vscode-build-
 
+      # 🚀 Cache Electron binaries
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/electron
+          key: ${{ runner.os }}-arm64-electron-${{ hashFiles('src/vscode/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-arm64-electron-
+
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
@@ -112,6 +121,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GYP_DEFINES: "kerberos_use_rtld=false"
 
+      - name: Download and cache Electron
+        run: |
+          cd src/vscode
+          node build/lib/electron.js
+        env:
+          VSCODE_ARCH: arm64
+
       # 🚀 Build with optimizations
       - name: Build VS Code (includes extension)
         run: |
@@ -121,7 +137,6 @@ jobs:
           VSCODE_ARCH: arm64
           UV_THREADPOOL_SIZE: 128
           VSCODE_USE_ESBUILD: 1
-          ELECTRON_SKIP_CHECKSUM_VALIDATION: 1
 
       - name: Package DMG
         run: ./build-dmg-optimized.sh
@@ -203,6 +218,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-x64-vscode-build-
 
+      # 🚀 Cache Electron binaries
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/electron
+          key: ${{ runner.os }}-x64-electron-${{ hashFiles('src/vscode/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-x64-electron-
+
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
@@ -240,6 +264,13 @@ jobs:
       - name: Build Extension
         run: make compile-extension
 
+      - name: Download and cache Electron
+        run: |
+          cd src/vscode
+          node build/lib/electron.js
+        env:
+          VSCODE_ARCH: x64
+
       # 🚀 Build with optimizations
       - name: Build VS Code
         run: |
@@ -249,7 +280,6 @@ jobs:
           VSCODE_ARCH: ${{ env.VSCODE_ARCH }}
           UV_THREADPOOL_SIZE: 128
           VSCODE_USE_ESBUILD: 1
-          ELECTRON_SKIP_CHECKSUM_VALIDATION: 1
 
       - name: Package DMG
         run: ./build-dmg-optimized.sh
