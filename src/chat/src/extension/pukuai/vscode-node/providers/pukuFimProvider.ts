@@ -133,6 +133,18 @@ class SpeculativeRequestCache {
 }
 
 /**
+ * Pending FIM request wrapper - stores cancellation token and result promise
+ * Based on Copilot's StatelessNextEditRequest pattern
+ * Reference: vscode-copilot-chat/src/platform/inlineEdits/common/statelessNextEditProvider.ts:44-64
+ */
+interface PendingFimRequest {
+	cancellationTokenSource: vscode.CancellationTokenSource;
+	resultPromise: Promise<PukuFimResult | null>;
+	fileUri: string; // For validation (like Copilot's activeDoc.id)
+	prefix: string;  // For validation (like Copilot's documentBeforeEdits.value)
+}
+
+/**
  * Puku FIM Provider - Implements racing provider architecture
  * Extracted from PukuInlineCompletionProvider for separation of concerns
  */
@@ -146,7 +158,8 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 	private _lastCompletionIdByFile = new Map<string, string>(); // File URI -> completion ID
 	private _lastPrefix = '';
 	private _lastFileUri = ''; // Track last file to skip debounce on file switch
-	private _requestsInFlightByFile = new Map<string, boolean>(); // Per-file locks for concurrent requests
+	// Global single pending request (Copilot pattern - nextEditProvider.ts:70)
+	private _pendingFimRequest: PendingFimRequest | null = null;
 	// CurrentGhostText cache (Layer 1) - instant forward typing through current completion
 	// File-aware: separate cache per file
 	private _currentGhostTextByFile = new Map<string, CurrentGhostText>();
@@ -314,22 +327,22 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		// Check speculative cache FIRST (before debounce) - Copilot-style prefetching
 		const lastCompletionId = this._lastCompletionIdByFile.get(fileUri);
 		if (lastCompletionId && this._speculativeCache.has(lastCompletionId)) {
+			console.log(`[PukuFimProvider][${reqId}] 🔮 Speculative cache found, attempting to use...`);
 
-			// Set per-file lock to prevent concurrent requests for this file while cache executes
-			if (this._requestsInFlightByFile.get(fileUri)) {
-				return null;
+			// Check for existing pending request (Copilot pattern - nextEditProvider.ts:425-431)
+			if (this._pendingFimRequest) {
+				const fileMatches = this._pendingFimRequest.fileUri === fileUri;
+				const prefixMatches = this._pendingFimRequest.prefix === prefix;
+				const notCancelled = !this._pendingFimRequest.cancellationTokenSource.token.isCancellationRequested;
+
+				if (fileMatches && prefixMatches && notCancelled) {
+					console.log(`[PukuFimProvider][${reqId}] 🔁 Reusing pending request (file + prefix match)`);
+					return await this._pendingFimRequest.resultPromise;
+				}
 			}
-			this._requestsInFlightByFile.set(fileUri, true);
 
 			const cachedCompletionId = lastCompletionId;
-			let completions: string[] = [];
-
-			try {
-				completions = await this._speculativeCache.request(cachedCompletionId);
-			} finally {
-				// Always release lock
-				this._requestsInFlightByFile.delete(fileUri);
-			}
+			const completions: string[] = await this._speculativeCache.request(cachedCompletionId);
 
 			if (completions && completions.length > 0 && !token.isCancellationRequested) {
 				// Update tracking for cache hits
@@ -377,12 +390,18 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			}
 		}
 
-		// Block concurrent requests for this file
-		if (this._requestsInFlightByFile.get(fileUri)) {
-			console.log(`[PukuFimProvider][${reqId}] ❌ Request already in flight for this file`);
-			return null;
+		// Check for existing pending request (Copilot pattern - nextEditProvider.ts:425-431)
+		if (this._pendingFimRequest) {
+			const fileMatches = this._pendingFimRequest.fileUri === fileUri;
+			const prefixMatches = this._pendingFimRequest.prefix === completionPrefix;
+			const notCancelled = !this._pendingFimRequest.cancellationTokenSource.token.isCancellationRequested;
+
+			if (fileMatches && prefixMatches && notCancelled) {
+				console.log(`[PukuFimProvider][${reqId}] 🔁 Reusing pending request (file + prefix match)`);
+				return await this._pendingFimRequest.resultPromise;
+			}
 		}
-		console.log(`[PukuFimProvider][${reqId}] ✓ No request in flight for this file`);
+		console.log(`[PukuFimProvider][${reqId}] ✓ No reusable pending request, starting new request`);
 
 		this._lastRequestTime = now;
 		this._lastFileUri = fileUri;
@@ -485,79 +504,108 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		console.log(`[PukuFimProvider][${reqId}] 🌐 Requesting ${n} completion(s) from API (cycling: ${isCycling})...`);
 		this._logService.debug(`[PukuFimProvider][${reqId}] Requesting completion at ${document.fileName}:${position.line} (n=${n})`);
 
-		// Mark request as in flight for this file
-		this._requestsInFlightByFile.set(fileUri, true);
-
-		let completions: string[] | null = null;
-		try {
-			const openFiles = [...importedFiles, ...semanticFiles];
-			console.log(`[PukuFimProvider][${reqId}] Context: ${importedFiles.length} imports + ${semanticFiles.length} semantic files`);
-
-			completions = await this._fetchContextAwareCompletion(completionPrefix, completionSuffix, openFiles, document.languageId, token, n);
-			console.log(`[PukuFimProvider][${reqId}] 📊 Fetch returned ${completions?.length || 0} completion(s)`);
-
-			if (!completions || completions.length === 0) {
-				console.log(`[PukuFimProvider][${reqId}] ❌ API returned null/empty completions`);
-				return null;
-			}
-			console.log(`[PukuFimProvider][${reqId}] ✓ Got ${completions.length} completion(s)`);
-
-			if (token.isCancellationRequested) {
-				console.log(`[PukuFimProvider][${reqId}] ❌ Cancelled after API call`);
-				return null;
-			}
-			console.log(`[PukuFimProvider][${reqId}] ✓ Not cancelled`);
-			console.log(`[PukuFimProvider][${reqId}] ✅ API returned ${completions.length} completion(s), first: "${completions[0].substring(0, 50)}..."`);
-		} catch (error) {
-			console.error(`[PukuFimProvider][${reqId}] ❌ API error: ${error}`);
-			this._logService.error(`[PukuFimProvider][${reqId}] Error: ${error}`);
-			return null;
-		} finally {
-			// Always release the lock for this file
-			this._requestsInFlightByFile.delete(fileUri);
+		// Cancel any stale pending request (Copilot pattern - nextEditProvider.ts:545-547)
+		if (this._pendingFimRequest) {
+			console.log(`[PukuFimProvider][${reqId}] 🚫 Cancelling stale pending request`);
+			this._pendingFimRequest.cancellationTokenSource.cancel();
+			this._pendingFimRequest = null;
 		}
 
-		// Store speculative request for next completion
-		console.log(`[PukuFimProvider][${reqId}] 💾 Storing speculative request...`);
-		this._storeSpeculativeRequest(completionId, document);
+		// Create cancellation token source for this request (Copilot pattern)
+		const requestCts = new vscode.CancellationTokenSource(token);
 
-		// Store ALL completions in Radix Trie cache for future lookups (Feature #64)
-		console.log(`[PukuFimProvider][${reqId}] 💾 Storing ${completions.length} completion(s) in Radix Trie cache (prefixLen=${prefix.length})`);
-		completionsCache.append(prefix, suffix, completions);
+		// Create promise wrapper (self-cleaning like Copilot's removeFromPending)
+		const resultPromise = (async (): Promise<PukuFimResult | null> => {
+			try {
+				// Mark request start time
+				this._lastRequestTime = now;
+				this._lastFileUri = fileUri;
+				this._lastPrefix = prefix;
 
-		// Store position for validation
-		console.log(`[PukuFimProvider][${reqId}] 💾 Updating position validator...`);
-		this._positionValidator.update(fileUri, position);
+				// Fetch completion from API
+				const openFiles = [...importedFiles, ...semanticFiles];
+				console.log(`[PukuFimProvider][${reqId}] Context: ${importedFiles.length} imports + ${semanticFiles.length} semantic files`);
 
-		// Calculate replacement range
-		let finalRange: vscode.Range;
-		if (replaceRange) {
-			finalRange = replaceRange;
-			console.log(`[PukuFimProvider][${reqId}] 📐 Using replace range: ${replaceRange.start.line}:${replaceRange.start.character} -> ${replaceRange.end.line}:${replaceRange.end.character}`);
-		} else if (suffix && suffix.trim().length > 0) {
-			const lineEndPos = document.lineAt(position.line).range.end;
-			finalRange = new vscode.Range(position, lineEndPos);
-			console.log(`[PukuFimProvider][${reqId}] 📐 Using line-end range: ${position.line}:${position.character} -> ${lineEndPos.line}:${lineEndPos.character}`);
-		} else {
-			finalRange = new vscode.Range(position, position);
-			console.log(`[PukuFimProvider][${reqId}] 📐 Using cursor position range: ${position.line}:${position.character}`);
-		}
+				const completions = await this._fetchContextAwareCompletion(completionPrefix, completionSuffix, openFiles, document.languageId, requestCts.token, n);
+				console.log(`[PukuFimProvider][${reqId}] 📊 Fetch returned ${completions?.length || 0} completion(s)`);
 
-		// Store context for handleShown (use first completion for CurrentGhostText)
-		this._storeShownContext(fileUri, prefix, suffix, completions[0], reqId);
+				if (!completions || completions.length === 0) {
+					console.log(`[PukuFimProvider][${reqId}] ❌ API returned null/empty completions`);
+					return null;
+				}
+				console.log(`[PukuFimProvider][${reqId}] ✓ Got ${completions.length} completion(s)`);
 
-		// Feature #64: Create multiple completion items (one for each completion)
-		console.log(`[PukuFimProvider][${reqId}] 🎨 Creating ${completions.length} completion item(s)...`);
-		const completionItems = completions.map(completion =>
-			this._createCompletionItem(completion, finalRange, position, document.uri)
-		);
+				if (requestCts.token.isCancellationRequested) {
+					console.log(`[PukuFimProvider][${reqId}] ❌ Cancelled after API call`);
+					return null;
+				}
+				console.log(`[PukuFimProvider][${reqId}] ✓ Not cancelled`);
+				console.log(`[PukuFimProvider][${reqId}] ✅ API returned ${completions.length} completion(s), first: "${completions[0].substring(0, 50)}..."`);
 
-		console.log(`[PukuFimProvider][${reqId}] ✅ Returning ${completionItems.length} completion item(s) to racing model`);
-		return {
-			type: 'fim',
-			completion: completionItems, // Always return array (Feature #64)
-			requestId: reqId
+				// Store speculative request for next completion
+				console.log(`[PukuFimProvider][${reqId}] 💾 Storing speculative request...`);
+				this._storeSpeculativeRequest(completionId, document);
+
+				// Store ALL completions in Radix Trie cache for future lookups (Feature #64)
+				console.log(`[PukuFimProvider][${reqId}] 💾 Storing ${completions.length} completion(s) in Radix Trie cache (prefixLen=${prefix.length})`);
+				completionsCache.append(prefix, suffix, completions);
+
+				// Store position for validation
+				console.log(`[PukuFimProvider][${reqId}] 💾 Updating position validator...`);
+				this._positionValidator.update(fileUri, position);
+
+				// Calculate replacement range
+				let finalRange: vscode.Range;
+				if (replaceRange) {
+					finalRange = replaceRange;
+					console.log(`[PukuFimProvider][${reqId}] 📐 Using replace range: ${replaceRange.start.line}:${replaceRange.start.character} -> ${replaceRange.end.line}:${replaceRange.end.character}`);
+				} else if (suffix && suffix.trim().length > 0) {
+					const lineEndPos = document.lineAt(position.line).range.end;
+					finalRange = new vscode.Range(position, lineEndPos);
+					console.log(`[PukuFimProvider][${reqId}] 📐 Using line-end range: ${position.line}:${position.character} -> ${lineEndPos.line}:${lineEndPos.character}`);
+				} else {
+					finalRange = new vscode.Range(position, position);
+					console.log(`[PukuFimProvider][${reqId}] 📐 Using cursor position range: ${position.line}:${position.character}`);
+				}
+
+				// Store context for handleShown (use first completion for CurrentGhostText)
+				this._storeShownContext(fileUri, prefix, suffix, completions[0], reqId);
+
+				// Feature #64: Create multiple completion items (one for each completion)
+				console.log(`[PukuFimProvider][${reqId}] 🎨 Creating ${completions.length} completion item(s)...`);
+				const completionItems = completions.map(completion =>
+					this._createCompletionItem(completion, finalRange, position, document.uri)
+				);
+
+				console.log(`[PukuFimProvider][${reqId}] ✅ Returning ${completionItems.length} completion item(s) to racing model`);
+				return {
+					type: 'fim',
+					completion: completionItems, // Always return array (Feature #64)
+					requestId: reqId
+				};
+			} catch (error) {
+				console.error(`[PukuFimProvider][${reqId}] ❌ API error: ${error}`);
+				this._logService.error(`[PukuFimProvider][${reqId}] Error: ${error}`);
+				return null;
+			} finally {
+				// Self-cleanup (Copilot pattern - removeFromPending at lines 552-556)
+				if (this._pendingFimRequest?.resultPromise === resultPromise) {
+					this._pendingFimRequest = null;
+				}
+				requestCts.dispose();
+			}
+		})();
+
+		// Store pending request for reuse (Copilot pattern - line 550)
+		this._pendingFimRequest = {
+			cancellationTokenSource: requestCts,
+			resultPromise,
+			fileUri,
+			prefix: completionPrefix
 		};
+
+		// Await and return
+		return await resultPromise;
 	}
 
 	/**
@@ -645,13 +693,15 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		};
 
 		console.log(`[FetchCompletion] 📤 Calling API: ${url} (language=${languageId})`);
-		console.log(`[FetchCompletion] 📝 Request body:`, {
-			prefixLength: prefix.length,
-			suffixLength: suffix.length,
-			openFilesCount: openFiles.length,
-			prefixPreview: prefix.substring(Math.max(0, prefix.length - 100)),
-			suffixPreview: suffix.substring(0, 100)
-		});
+		console.log(`[FetchCompletion] 📝 Request body:`, JSON.stringify({
+			...requestBody,
+			prompt: (requestBody.prompt.substring(Math.max(0, requestBody.prompt.length - 150)) + '...'),
+			suffix: (requestBody.suffix?.substring(0, 150) || '') + '...',
+			openFiles: requestBody.openFiles.map((f: any) => ({
+				filepath: f.filepath,
+				contentLength: f.content?.length || 0
+			}))
+		}, null, 2));
 		const response = await this._fetcherService.fetch(url, {
 			method: 'POST',
 			headers,
