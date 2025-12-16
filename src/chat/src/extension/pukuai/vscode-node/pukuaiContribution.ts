@@ -10,11 +10,14 @@ import { IFetcherService } from '../../../platform/networking/common/fetcherServ
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
 import { IExtensionContribution } from '../../common/contributions';
+import { XtabProvider } from '../../xtab/node/xtabProvider';
 import { PukuAILanguageModelProvider } from './pukuaiProvider';
 import { PukuDiagnosticsProvider } from './pukuDiagnosticsProvider';
 import { PukuDiagnosticsNextEditProvider } from './providers/pukuDiagnosticsNextEditProvider';
 import { PukuFimProvider } from './providers/pukuFimProvider';
+import { PukuNesNextEditProvider } from './providers/pukuNesNextEditProvider';
 import { PukuUnifiedInlineProvider } from './pukuUnifiedInlineProvider';
+import { PukuAutoTrigger } from './pukuAutoTrigger';
 
 export class PukuAIContribution extends Disposable implements IExtensionContribution {
 	public readonly id: string = 'pukuai-contribution';
@@ -123,20 +126,41 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 			endpoint
 		);
 
-		// Create diagnostics next edit provider (racing provider)
+		// Create diagnostics next edit provider (racing provider #2)
 		const diagnosticsNextEditProvider = this._instantiationService.createInstance(PukuDiagnosticsNextEditProvider);
+
+		// Create NES/Xtab provider (racing provider #3 - refactoring suggestions)
+		const xtabProvider = this._instantiationService.createInstance(XtabProvider);
+		const nesProvider = this._instantiationService.createInstance(PukuNesNextEditProvider, xtabProvider);
+
+		// Create auto-trigger service (Issue #88 - auto-triggering system)
+		// Reference: vscode-copilot-chat/src/extension/inlineEdits/vscode-node/inlineEditModel.ts:61
+		const autoTrigger = this._instantiationService.createInstance(
+			PukuAutoTrigger,
+			() => {
+				// Trigger callback: invoke VS Code's inline suggestion API
+				// This causes provideInlineCompletionItems to be called
+				// Command reference: src/vscode/src/vs/editor/contrib/inlineCompletions/browser/controller/commands.ts:88
+				vscode.commands.executeCommand('editor.action.inlineSuggest.trigger');
+			}
+		);
 
 		// Create diagnostics provider (CodeActionProvider) - delegates to next edit provider
 		const diagnosticsProvider = this._instantiationService.createInstance(PukuDiagnosticsProvider, diagnosticsNextEditProvider);
 
-		// Create unified provider that coordinates between them
+		// Create unified provider that coordinates between them (3-way racing)
 		const unifiedProvider = this._instantiationService.createInstance(
 			PukuUnifiedInlineProvider,
 			fimProvider,
 			diagnosticsNextEditProvider,
+			nesProvider,
+			autoTrigger,
 			this._logService,
 			this._instantiationService
 		);
+
+		// Register auto-trigger as disposable
+		this._register(autoTrigger);
 
 		// Register for all file types - let Codestral Mamba handle any language
 		const selector: vscode.DocumentSelector = [

@@ -106,6 +106,15 @@ export interface PukuDiagnosticsResult {
 }
 
 /**
+ * NES (Next Edit Suggestions) result - refactoring suggestions
+ */
+export interface PukuNesResult {
+	type: 'nes';
+	completion: vscode.InlineCompletionItem | vscode.InlineCompletionItem[];
+	requestId: number;
+}
+
+/**
  * Union type for all completion results
  */
-export type PukuNextEditResult = PukuFimResult | PukuDiagnosticsResult | null;
+export type PukuNextEditResult = PukuFimResult | PukuDiagnosticsResult | PukuNesResult | null;

@@ -8,18 +8,18 @@
 import * as vscode from 'vscode';
 import { ILogService } from '../../../platform/log/common/logService';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
-import { IPukuNextEditProvider, PukuFimResult, PukuDiagnosticsResult, PukuNextEditResult, DocumentId } from '../common/nextEditProvider';
+import { IPukuNextEditProvider, PukuFimResult, PukuDiagnosticsResult, PukuNesResult, PukuNextEditResult, DocumentId } from '../common/nextEditProvider';
 import { IPukuConfigService } from '../../pukuIndexing/common/pukuConfig';
 
 /**
  * Result type discriminator (kept for backwards compatibility)
  */
-export type PukuCompletionResultType = 'diagnostics' | 'fim';
+export type PukuCompletionResultType = 'diagnostics' | 'fim' | 'nes';
 
 /**
  * Union type for all completion results (kept for backwards compatibility)
  */
-export type PukuCompletionResult = PukuDiagnosticsResult | PukuFimResult | null;
+export type PukuCompletionResult = PukuDiagnosticsResult | PukuFimResult | PukuNesResult | null;
 
 /**
  * Legacy provider interfaces (kept for backwards compatibility)
@@ -44,7 +44,7 @@ export interface IPukuDiagnosticsProvider {
 }
 
 /**
- * Model that coordinates between FIM and diagnostics providers
+ * Model that coordinates between FIM, diagnostics, and NES providers
  * Uses Copilot's racing architecture with IPukuNextEditProvider
  */
 export class PukuInlineEditModel extends Disposable {
@@ -53,17 +53,23 @@ export class PukuInlineEditModel extends Disposable {
 	constructor(
 		private readonly fimProvider: IPukuNextEditProvider<PukuFimResult>,
 		private readonly diagnosticsProvider: IPukuNextEditProvider<PukuDiagnosticsResult> | undefined,
+		private readonly nesProvider: IPukuNextEditProvider<PukuNesResult> | undefined,
 		@ILogService private readonly logService: ILogService,
 		@IPukuConfigService private readonly configService: IPukuConfigService
 	) {
 		super();
-		console.log('[PukuInlineEditModel] Model constructor called with racing providers');
-		this.logService.info('[PukuInlineEditModel] Model initialized with racing providers');
+		console.log('[PukuInlineEditModel] Model constructor called with 3-way racing providers (FIM + Diagnostics + NES)');
+		this.logService.info('[PukuInlineEditModel] Model initialized with 3-way racing providers');
 	}
 
 	/**
-	 * Get completion by racing FIM and diagnostics providers
-	 * Uses Copilot's racing strategy: FIM starts immediately, diagnostics with delay
+	 * Get completion by racing FIM, diagnostics, and NES providers
+	 * Uses Copilot's racing strategy: FIM starts immediately, diagnostics + NES with delays
+	 *
+	 * Racing priorities:
+	 * 1. FIM (0ms delay) - fastest, speculative cache
+	 * 2. NES (75ms delay) - refactoring suggestions
+	 * 3. Diagnostics (50ms delay) - import fixes
 	 *
 	 * Based on Copilot's approach in inlineCompletionProvider.ts:181-224
 	 */
@@ -74,8 +80,8 @@ export class PukuInlineEditModel extends Disposable {
 		token: vscode.CancellationToken,
 		isCycling: boolean = false // Feature #64: Multiple completions
 	): Promise<PukuCompletionResult> {
-		console.log(`[PukuInlineEditModel] ⚡ getCompletion called (racing mode, cycling: ${isCycling})`);
-		this.logService.info(`[PukuInlineEditModel] getCompletion called (racing mode, cycling: ${isCycling})`);
+		console.log(`[PukuInlineEditModel] ⚡ getCompletion called (3-way racing mode, cycling: ${isCycling})`);
+		this.logService.info(`[PukuInlineEditModel] getCompletion called (3-way racing mode, cycling: ${isCycling})`);
 
 		if (token.isCancellationRequested) {
 			console.log('[PukuInlineEditModel] Token already cancelled');
@@ -87,6 +93,7 @@ export class PukuInlineEditModel extends Disposable {
 
 		// Create cancellation tokens for coordination
 		const diagnosticsCts = new vscode.CancellationTokenSource(token);
+		const nesCts = new vscode.CancellationTokenSource(token);
 		const fimCts = new vscode.CancellationTokenSource(); // Independent token - FIM continues even if cancelled
 
 		try {
@@ -94,23 +101,30 @@ export class PukuInlineEditModel extends Disposable {
 			const fimPromise = this.fimProvider.getNextEdit(docId, context, fimCts.token);
 
 			// Start diagnostics with delay (Copilot pattern - give FIM priority)
-			// Use config value for delay (default 50ms, matching Copilot)
-			const delayMs = this.configService.getConfig()?.diagnostics?.delayBeforeFixMs ?? 50;
-			console.log(`[PukuInlineEditModel] 🏁 Starting race: FIM vs Diagnostics (delay: ${delayMs}ms)`);
+			const diagnosticsDelayMs = this.configService.getConfig()?.diagnostics?.delayBeforeFixMs ?? 50;
 			const diagnosticsPromise = this.diagnosticsProvider
-				? this.diagnosticsProvider.runUntilNextEdit?.(docId, context, delayMs, diagnosticsCts.token) ||
+				? this.diagnosticsProvider.runUntilNextEdit?.(docId, context, diagnosticsDelayMs, diagnosticsCts.token) ||
 				  this.diagnosticsProvider.getNextEdit(docId, context, diagnosticsCts.token)
 				: Promise.resolve(null);
 
-			// Use raceAndAll pattern from Copilot
-			const { first, all } = this.raceAndAll([fimPromise, diagnosticsPromise]);
+			// Start NES with delay (give FIM priority, but slightly longer delay than diagnostics)
+			const nesDelayMs = 75; // NES gets 75ms delay (diagnostics is 50ms)
+			console.log(`[PukuInlineEditModel] 🏁 Starting 3-way race: FIM (0ms) vs Diagnostics (${diagnosticsDelayMs}ms) vs NES (${nesDelayMs}ms)`);
+			const nesPromise = this.nesProvider
+				? this.nesProvider.runUntilNextEdit?.(docId, context, nesDelayMs, nesCts.token) ||
+				  this.nesProvider.getNextEdit(docId, context, nesCts.token)
+				: Promise.resolve(null);
+
+			// Use raceAndAll pattern from Copilot (now with 3 providers)
+			const { first, all } = this.raceAndAll([fimPromise, diagnosticsPromise, nesPromise]);
 
 			// Wait for first result
-			let [fimResult, diagnosticsResult] = await first;
+			let [fimResult, diagnosticsResult, nesResult] = await first;
 
 			console.log('[PukuInlineEditModel] 🔍 Race results:', {
 				fimResult: fimResult ? `type=${fimResult.type}, hasCompletion=${!!fimResult.completion}` : 'null/undefined',
-				diagnosticsResult: diagnosticsResult ? 'has result' : 'null/undefined'
+				diagnosticsResult: diagnosticsResult ? 'has result' : 'null/undefined',
+				nesResult: nesResult ? `type=${nesResult.type}, hasCompletion=${!!nesResult.completion}` : 'null/undefined'
 			});
 
 			// Distinguish between "settled" (promise resolved) vs "has result" (has actual completion)
@@ -118,19 +132,21 @@ export class PukuInlineEditModel extends Disposable {
 			// null = provider completed but returned nothing
 			const fimSettled = fimResult !== undefined;
 			const diagnosticsSettled = diagnosticsResult !== undefined;
+			const nesSettled = nesResult !== undefined;
 
 			const fimHasResult = fimResult !== null && fimResult !== undefined && fimResult.completion;
 			const diagnosticsHasResult = diagnosticsResult !== null && diagnosticsResult !== undefined;
+			const nesHasResult = nesResult !== null && nesResult !== undefined && nesResult.completion;
 
 			// Wait for all if:
 			// 1. FIM hasn't settled yet (still fetching from API), OR
-			// 2. Both settled but neither has results (give diagnostics more time)
-			const shouldWaitForAll = !fimSettled || (!fimHasResult && !diagnosticsHasResult);
+			// 2. All settled but none has results (give providers more time)
+			const shouldWaitForAll = !fimSettled || (!fimHasResult && !diagnosticsHasResult && !nesHasResult);
 
 			if (shouldWaitForAll) {
 				const reason = !fimSettled
 					? 'FIM still fetching'
-					: 'both returned null, giving diagnostics 1s more';
+					: 'all returned null, giving providers 1s more';
 
 				this.logService.info(`[PukuInlineEditModel] Waiting for all promises: ${reason}`);
 				console.log(`[PukuInlineEditModel] ⏳ Waiting for all promises: ${reason}`);
@@ -138,45 +154,56 @@ export class PukuInlineEditModel extends Disposable {
 				// Set timeout to cancel after 1 second
 				this.timeout(1000).then(() => {
 					diagnosticsCts.cancel();
+					nesCts.cancel();
 					// Don't cancel FIM - let it complete and cache
 				});
 
 				// Wait for all results
-				[fimResult, diagnosticsResult] = await all;
+				[fimResult, diagnosticsResult, nesResult] = await all;
 
 				console.log('[PukuInlineEditModel] 📊 Final results after wait:', {
 					fimResult: fimResult ? `type=${fimResult.type}, hasCompletion=${!!fimResult.completion}` : 'null/undefined',
-					diagnosticsResult: diagnosticsResult ? 'has result' : 'null/undefined'
+					diagnosticsResult: diagnosticsResult ? 'has result' : 'null/undefined',
+					nesResult: nesResult ? `type=${nesResult.type}, hasCompletion=${!!nesResult.completion}` : 'null/undefined'
 				});
 			}
 
 			// Cancel ongoing requests (but FIM will complete anyway due to independent token)
 			diagnosticsCts.cancel();
+			nesCts.cancel();
 			// Don't cancel FIM - let it complete and cache the result
 			// fimCts.cancel();
 
 			// Track lifecycle events
 			let winningResult: PukuNextEditResult = null;
-			let losingResult: PukuNextEditResult = null;
+			const losingResults: PukuNextEditResult[] = [];
 
-			// Priority logic: FIM > Diagnostics (Copilot's approach)
+			// Priority logic: FIM > NES > Diagnostics (Copilot's approach)
 			if (fimResult) {
 				this.logService.info('[PukuInlineEditModel] ✅ Using FIM result (won race)');
 				winningResult = fimResult;
-				losingResult = diagnosticsResult;
+				if (diagnosticsResult) { losingResults.push(diagnosticsResult); }
+				if (nesResult) { losingResults.push(nesResult); }
+			} else if (nesResult) {
+				this.logService.info('[PukuInlineEditModel] ✅ Using NES result (FIM returned null)');
+				winningResult = nesResult;
+				if (diagnosticsResult) { losingResults.push(diagnosticsResult); }
 			} else if (diagnosticsResult) {
-				this.logService.info('[PukuInlineEditModel] ✅ Using diagnostics result (FIM returned null)');
+				this.logService.info('[PukuInlineEditModel] ✅ Using diagnostics result (FIM and NES returned null)');
 				winningResult = diagnosticsResult;
-				losingResult = fimResult; // Should be null
 			}
 
-			// Handle ignored results (losing provider)
-			if (losingResult) {
-				console.log('[PukuInlineEditModel] Handling ignored result from losing provider');
+			// Handle ignored results (losing providers)
+			for (const losingResult of losingResults) {
+				if (!losingResult) { continue; }
+
+				console.log(`[PukuInlineEditModel] Handling ignored result from ${losingResult.type} provider`);
 				if (losingResult.type === 'fim') {
 					this.fimProvider.handleIgnored(docId, losingResult, winningResult || undefined);
 				} else if (losingResult.type === 'diagnostics' && this.diagnosticsProvider) {
 					this.diagnosticsProvider.handleIgnored(docId, losingResult, winningResult || undefined);
+				} else if (losingResult.type === 'nes' && this.nesProvider) {
+					this.nesProvider.handleIgnored(docId, losingResult, winningResult || undefined);
 				}
 			}
 
@@ -190,10 +217,12 @@ export class PukuInlineEditModel extends Disposable {
 					this.fimProvider.handleShown(winningResult);
 				} else if (winningResult.type === 'diagnostics' && this.diagnosticsProvider) {
 					this.diagnosticsProvider.handleShown(winningResult);
+				} else if (winningResult.type === 'nes' && this.nesProvider) {
+					this.nesProvider.handleShown(winningResult);
 				}
 			}
 
-			// Convert to backwards-compatible format
+			// Convert to backwards-compatible format (priority: FIM > NES > Diagnostics)
 			if (fimResult) {
 				return {
 					type: 'fim',
@@ -203,11 +232,19 @@ export class PukuInlineEditModel extends Disposable {
 				};
 			}
 
+			if (nesResult) {
+				return {
+					type: 'nes',
+					completion: nesResult.completion,
+					requestId: nesResult.requestId
+				};
+			}
+
 			if (diagnosticsResult) {
 				return diagnosticsResult;
 			}
 
-			this.logService.info('[PukuInlineEditModel] No results from either provider');
+			this.logService.info('[PukuInlineEditModel] No results from any provider');
 			return null;
 		} catch (error) {
 			this.logService.error('[PukuInlineEditModel] Error getting completion:', error);
@@ -215,6 +252,7 @@ export class PukuInlineEditModel extends Disposable {
 		} finally {
 			// Cleanup
 			diagnosticsCts.dispose();
+			nesCts.dispose();
 			fimCts.dispose();
 		}
 	}
@@ -234,6 +272,8 @@ export class PukuInlineEditModel extends Disposable {
 			this.fimProvider.handleAcceptance(docId, this._lastShownResult);
 		} else if (this._lastShownResult.type === 'diagnostics' && this.diagnosticsProvider) {
 			this.diagnosticsProvider.handleAcceptance(docId, this._lastShownResult);
+		} else if (this._lastShownResult.type === 'nes' && this.nesProvider) {
+			this.nesProvider.handleAcceptance(docId, this._lastShownResult);
 		}
 
 		this._lastShownResult = null;
@@ -254,6 +294,8 @@ export class PukuInlineEditModel extends Disposable {
 			this.fimProvider.handleRejection(docId, this._lastShownResult);
 		} else if (this._lastShownResult.type === 'diagnostics' && this.diagnosticsProvider) {
 			this.diagnosticsProvider.handleRejection(docId, this._lastShownResult);
+		} else if (this._lastShownResult.type === 'nes' && this.nesProvider) {
+			this.nesProvider.handleRejection(docId, this._lastShownResult);
 		}
 
 		this._lastShownResult = null;

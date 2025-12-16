@@ -11,17 +11,19 @@ import { IInstantiationService } from '../../../util/vs/platform/instantiation/c
 import { PukuInlineEditModel } from './pukuInlineEditModel';
 import { PukuFimProvider } from './providers/pukuFimProvider';
 import { PukuDiagnosticsNextEditProvider } from './providers/pukuDiagnosticsNextEditProvider';
+import { PukuNesNextEditProvider } from './providers/pukuNesNextEditProvider';
 import { RejectionCollector } from '../common/rejectionCollector';
+import { PukuAutoTrigger } from './pukuAutoTrigger';
 
 /**
- * Unified provider that coordinates between diagnostics and FIM providers
+ * Unified provider that coordinates between FIM, diagnostics, and NES providers
  * Now uses Copilot-style racing architecture with IPukuNextEditProvider
  *
  * Architecture:
  * - Single provider registered with VS Code
- * - Internal model coordinates racing between FIM and diagnostics
- * - FIM starts immediately, diagnostics with delay (Copilot pattern)
- * - Priority: FIM > Diagnostics (first wins)
+ * - Internal model coordinates 3-way racing between FIM, diagnostics, and NES
+ * - FIM starts immediately, diagnostics + NES with delays (Copilot pattern)
+ * - Priority: FIM > NES > Diagnostics (first wins)
  */
 export class PukuUnifiedInlineProvider extends Disposable implements vscode.InlineCompletionItemProvider {
 	private readonly model: PukuInlineEditModel;
@@ -33,29 +35,32 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 	constructor(
 		private readonly fimProvider: PukuFimProvider,
 		private readonly diagnosticsProvider: PukuDiagnosticsNextEditProvider | undefined,
+		private readonly nesProvider: PukuNesNextEditProvider | undefined,
+		private readonly autoTrigger: PukuAutoTrigger | undefined,
 		private readonly logService: ILogService,
 		private readonly instantiationService: IInstantiationService
 	) {
 		super();
 
-		console.log('[PukuUnifiedProvider] Constructor called (racing architecture)');
-		this.logService.info('[PukuUnifiedProvider] Constructor called (racing architecture)');
+		console.log('[PukuUnifiedProvider] Constructor called (3-way racing architecture with auto-trigger)');
+		this.logService.info('[PukuUnifiedProvider] Constructor called (3-way racing architecture with auto-trigger)');
 
 		// Initialize rejection collector (Issue #56)
 		this.rejectionCollector = new RejectionCollector();
 
-		// Create coordinating model with racing providers
+		// Create coordinating model with 3-way racing providers
 		// Don't pass logService - it's injected by instantiationService
 		this.model = this._register(
 			this.instantiationService.createInstance(
 				PukuInlineEditModel,
 				fimProvider,
-				diagnosticsProvider
+				diagnosticsProvider,
+				nesProvider
 			)
 		);
 
-		console.log('[PukuUnifiedProvider] Provider initialized with racing model');
-		this.logService.info('[PukuUnifiedProvider] Provider initialized with racing model');
+		console.log('[PukuUnifiedProvider] Provider initialized with 3-way racing model (FIM + Diagnostics + NES)');
+		this.logService.info('[PukuUnifiedProvider] Provider initialized with 3-way racing model');
 	}
 
 	async provideInlineCompletionItems(
@@ -170,6 +175,16 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 			const items = Array.isArray(result.completion) ? result.completion : [result.completion];
 			this.logService.info(`[PukuUnifiedProvider] Returning ${items.length} FIM completion(s) with forward stability`);
 
+			// Log what we're returning to VS Code for debugging
+			console.log('[PukuUnifiedProvider] 📤 Returning to VS Code:', {
+				itemCount: items.length,
+				firstItem: items[0] ? {
+					insertText: typeof items[0].insertText === 'string' ? items[0].insertText.substring(0, 50) : 'SnippetString',
+					range: items[0].range ? `${items[0].range.start.line}:${items[0].range.start.character} -> ${items[0].range.end.line}:${items[0].range.end.character}` : 'undefined'
+				} : null,
+				enableForwardStability: true
+			});
+
 			// Track completions for rejection tracking (Issue #56)
 			for (const item of items) {
 				const text = typeof item.insertText === 'string' ? item.insertText : '';
@@ -180,6 +195,25 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 			return {
 				items,
 				enableForwardStability: true
+			};
+		}
+
+		// Handle NES result
+		if (result.type === 'nes') {
+			// Support multiple completions (Feature #64)
+			const items = Array.isArray(result.completion) ? result.completion : [result.completion];
+			this.logService.info(`[PukuUnifiedProvider] Returning ${items.length} NES refactoring suggestion(s)`);
+
+			// Track completions for rejection tracking (Issue #56)
+			for (const item of items) {
+				const text = typeof item.insertText === 'string' ? item.insertText : '';
+				this.completionsByText.set(text, { document, position });
+			}
+
+			// Return InlineCompletionList (NES suggestions don't need forward stability)
+			return {
+				items,
+				enableForwardStability: false
 			};
 		}
 
@@ -225,6 +259,10 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 				this.rejectionCollector.reject(metadata.document, text, metadata.position);
 				// Issue #57: Clear ghost text on rejection
 				this.fimProvider.clearGhostText(fileUri);
+				// Issue #88: Notify auto-trigger about rejection (5s cooldown)
+				if (this.autoTrigger) {
+					this.autoTrigger.lastRejectionTime = Date.now();
+				}
 				// TODO: Send rejection telemetry (Issue #56 - future work)
 				break;
 
