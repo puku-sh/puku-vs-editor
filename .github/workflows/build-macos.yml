@@ -121,6 +121,7 @@ jobs:
           VSCODE_ARCH: arm64
           UV_THREADPOOL_SIZE: 128
           VSCODE_USE_ESBUILD: 1
+          ELECTRON_SKIP_CHECKSUM_VALIDATION: 1
 
       - name: Package DMG
         run: ./build-dmg-optimized.sh
@@ -248,6 +249,7 @@ jobs:
           VSCODE_ARCH: ${{ env.VSCODE_ARCH }}
           UV_THREADPOOL_SIZE: 128
           VSCODE_USE_ESBUILD: 1
+          ELECTRON_SKIP_CHECKSUM_VALIDATION: 1
 
       - name: Package DMG
         run: ./build-dmg-optimized.sh
