@@ -179,17 +179,18 @@ export class PukuInlineEditModel extends Disposable {
 			const losingResults: PukuNextEditResult[] = [];
 
 			// Priority logic: FIM > NES > Diagnostics (Copilot's approach)
-			if (fimResult) {
+			// Use hasResult checks (not truthiness) to avoid empty results blocking others (Issue #106)
+			if (fimHasResult) {
 				this.logService.info('[PukuInlineEditModel] ✅ Using FIM result (won race)');
 				winningResult = fimResult;
 				if (diagnosticsResult) { losingResults.push(diagnosticsResult); }
 				if (nesResult) { losingResults.push(nesResult); }
-			} else if (nesResult) {
-				this.logService.info('[PukuInlineEditModel] ✅ Using NES result (FIM returned null)');
+			} else if (nesHasResult) {
+				this.logService.info('[PukuInlineEditModel] ✅ Using NES result (FIM has no completions)');
 				winningResult = nesResult;
 				if (diagnosticsResult) { losingResults.push(diagnosticsResult); }
-			} else if (diagnosticsResult) {
-				this.logService.info('[PukuInlineEditModel] ✅ Using diagnostics result (FIM and NES returned null)');
+			} else if (diagnosticsHasResult) {
+				this.logService.info('[PukuInlineEditModel] ✅ Using diagnostics result (FIM and NES have no completions)');
 				winningResult = diagnosticsResult;
 			}
 
@@ -223,7 +224,8 @@ export class PukuInlineEditModel extends Disposable {
 			}
 
 			// Convert to backwards-compatible format (priority: FIM > NES > Diagnostics)
-			if (fimResult) {
+			// Use hasResult checks (not truthiness) to avoid empty results blocking others (Issue #106)
+			if (fimHasResult) {
 				return {
 					type: 'fim',
 					completion: fimResult.completion,
@@ -232,7 +234,7 @@ export class PukuInlineEditModel extends Disposable {
 				};
 			}
 
-			if (nesResult) {
+			if (nesHasResult) {
 				return {
 					type: 'nes',
 					completion: nesResult.completion,
@@ -240,7 +242,7 @@ export class PukuInlineEditModel extends Disposable {
 				};
 			}
 
-			if (diagnosticsResult) {
+			if (diagnosticsHasResult) {
 				return diagnosticsResult;
 			}
 
