@@ -18,6 +18,10 @@ import { PukuFimProvider } from './providers/pukuFimProvider';
 import { PukuNesNextEditProvider } from './providers/pukuNesNextEditProvider';
 import { PukuUnifiedInlineProvider } from './pukuUnifiedInlineProvider';
 import { PukuAutoTrigger } from './pukuAutoTrigger';
+import { VSCodeWorkspace } from '../../inlineEdits/vscode-node/parts/vscodeWorkspace';
+import { NesHistoryContextProvider } from '../../../platform/inlineEdits/common/workspaceEditTracker/nesHistoryContextProvider';
+import { NesXtabHistoryTracker } from '../../../platform/inlineEdits/common/workspaceEditTracker/nesXtabHistoryTracker';
+import { ObservableGit } from '../../../platform/inlineEdits/common/observableGit';
 
 export class PukuAIContribution extends Disposable implements IExtensionContribution {
 	public readonly id: string = 'pukuai-contribution';
@@ -130,8 +134,25 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 		const diagnosticsNextEditProvider = this._instantiationService.createInstance(PukuDiagnosticsNextEditProvider);
 
 		// Create NES/Xtab provider (racing provider #3 - refactoring suggestions)
+		// Register NES infrastructure components (Issue #114)
+		const workspace = this._instantiationService.createInstance(VSCodeWorkspace);
+		const observableGit = this._instantiationService.createInstance(ObservableGit);
+		const historyProvider = this._instantiationService.createInstance(NesHistoryContextProvider, workspace, observableGit);
+		const xtabHistoryTracker = this._instantiationService.createInstance(NesXtabHistoryTracker, workspace);
 		const xtabProvider = this._instantiationService.createInstance(XtabProvider);
-		const nesProvider = this._instantiationService.createInstance(PukuNesNextEditProvider, xtabProvider);
+		const nesProvider = this._instantiationService.createInstance(
+			PukuNesNextEditProvider,
+			xtabProvider,
+			historyProvider,
+			xtabHistoryTracker,
+			workspace
+		);
+
+		// Register NES components as disposables
+		this._register(workspace);
+		this._register(observableGit);
+		this._register(historyProvider);
+		this._register(xtabHistoryTracker);
 
 		// Create auto-trigger service (Issue #88 - auto-triggering system)
 		// Reference: vscode-copilot-chat/src/extension/inlineEdits/vscode-node/inlineEditModel.ts:61
