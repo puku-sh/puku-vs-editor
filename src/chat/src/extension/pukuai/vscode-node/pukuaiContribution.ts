@@ -125,10 +125,7 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 		this._logService.info('Puku AI: Registering unified inline completion provider');
 
 		// Create FIM provider (racing provider)
-		const fimProvider = this._instantiationService.createInstance(
-			PukuFimProvider,
-			endpoint
-		);
+		const fimProvider = this._instantiationService.createInstance(PukuFimProvider);
 
 		// Create diagnostics next edit provider (racing provider #2)
 		const diagnosticsNextEditProvider = this._instantiationService.createInstance(PukuDiagnosticsNextEditProvider);

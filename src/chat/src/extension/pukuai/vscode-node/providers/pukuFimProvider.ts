@@ -18,6 +18,7 @@ import { ImportContextFlow } from '../flows/importContext';
 import { SemanticSearchFlow } from '../flows/semanticSearch';
 import { isInsideComment } from '../helpers/commentDetection';
 import { PositionValidator } from '../helpers/positionValidation';
+import { ImportFilteringAspect } from '../../node/importFiltering';
 
 interface CompletionResponse {
 	id: string;
@@ -156,8 +157,8 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 	private _completionId = 0;
 	private _speculativeCache = new SpeculativeRequestCache();
 	private _lastCompletionIdByFile = new Map<string, string>(); // File URI -> completion ID
-	private _lastPrefix = '';
 	private _lastFileUri = ''; // Track last file to skip debounce on file switch
+	private _lastPrefix = ''; // Track last prefix for optimization
 	// Global single pending request (Copilot pattern - nextEditProvider.ts:70)
 	private _pendingFimRequest: PendingFimRequest | null = null;
 	// CurrentGhostText cache (Layer 1) - instant forward typing through current completion
@@ -178,7 +179,6 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 	private _positionValidator: PositionValidator;
 
 	constructor(
-		private readonly _endpoint: string,
 		@IFetcherService private readonly _fetcherService: IFetcherService,
 		@ILogService private readonly _logService: ILogService,
 		@IPukuAuthService private readonly _authService: IPukuAuthService,
@@ -187,7 +187,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 	) {
 		super();
 		const config = this._configService.getConfig();
-		this._logService.info(`[PukuFimProvider] Provider created with endpoint: ${_endpoint}`);
+		this._logService.info(`[PukuFimProvider] Provider created`);
 		this._logService.info(`[PukuFimProvider] Config: FIM endpoint=${config.endpoints.fim}, model=${config.models.fim}, debounce=${config.performance.debounceMs}ms`);
 		console.log(`[PukuFimProvider] Config loaded: debounce=${config.performance.debounceMs}ms, model=${config.models.fim}`);
 		this._commentFlow = new CommentCompletionFlow(_indexingService);
@@ -393,7 +393,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		// Check for existing pending request (Copilot pattern - nextEditProvider.ts:425-431)
 		if (this._pendingFimRequest) {
 			const fileMatches = this._pendingFimRequest.fileUri === fileUri;
-			const prefixMatches = this._pendingFimRequest.prefix === completionPrefix;
+			const prefixMatches = this._pendingFimRequest.prefix === prefix;
 			const notCancelled = !this._pendingFimRequest.cancellationTokenSource.token.isCancellationRequested;
 
 			if (fileMatches && prefixMatches && notCancelled) {
@@ -405,7 +405,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 
 		this._lastRequestTime = now;
 		this._lastFileUri = fileUri;
-		this._lastPrefix = prefix;
+
 
 		// Check for comment-based completion
 		const isCommentCompletion = await this._commentFlow.isCommentBasedCompletion(document, position);
@@ -475,7 +475,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		const shouldCheckRange = await this._refactoringFlow.shouldCheckForRefactoring(document, position);
 		let replaceRange: vscode.Range | undefined;
 		let completionPrefix = prefix;
-		let completionSuffix = suffix;
+	
 
 		if (shouldCheckRange) {
 			const openFiles = [...importedFiles, ...semanticFiles];
@@ -512,7 +512,12 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		}
 
 		// Create cancellation token source for this request (Copilot pattern)
-		const requestCts = new vscode.CancellationTokenSource(token);
+		const requestCts = new vscode.CancellationTokenSource();
+		// Link to parent token for cancellation propagation
+		token.onCancellationRequested(() => requestCts.cancel());
+
+		// Store pending request placeholder (will be updated with resultPromise)
+		let pendingRequest: PendingFimRequest | null = null;
 
 		// Create promise wrapper (self-cleaning like Copilot's removeFromPending)
 		const resultPromise = (async (): Promise<PukuFimResult | null> => {
@@ -520,13 +525,12 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 				// Mark request start time
 				this._lastRequestTime = now;
 				this._lastFileUri = fileUri;
-				this._lastPrefix = prefix;
 
 				// Fetch completion from API
 				const openFiles = [...importedFiles, ...semanticFiles];
 				console.log(`[PukuFimProvider][${reqId}] Context: ${importedFiles.length} imports + ${semanticFiles.length} semantic files`);
 
-				const completions = await this._fetchContextAwareCompletion(completionPrefix, completionSuffix, openFiles, document.languageId, requestCts.token, n);
+				const completions = await this._fetchContextAwareCompletion(prefix, suffix, openFiles, document.languageId, requestCts.token, n);
 				console.log(`[PukuFimProvider][${reqId}] 📊 Fetch returned ${completions?.length || 0} completion(s)`);
 
 				if (!completions || completions.length === 0) {
@@ -588,8 +592,8 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 				this._logService.error(`[PukuFimProvider][${reqId}] Error: ${error}`);
 				return null;
 			} finally {
-				// Self-cleanup (Copilot pattern - removeFromPending at lines 552-556)
-				if (this._pendingFimRequest?.resultPromise === resultPromise) {
+				// Self-cleanup (Copilot pattern - removeFromPending at lines 698-703)
+				if (this._pendingFimRequest === pendingRequest) {
 					this._pendingFimRequest = null;
 				}
 				requestCts.dispose();
@@ -597,12 +601,13 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		})();
 
 		// Store pending request for reuse (Copilot pattern - line 550)
-		this._pendingFimRequest = {
+		pendingRequest = {
 			cancellationTokenSource: requestCts,
 			resultPromise,
 			fileUri,
 			prefix: completionPrefix
 		};
+		this._pendingFimRequest = pendingRequest;
 
 		// Await and return
 		return await resultPromise;
@@ -639,7 +644,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 						const searchResults = await this._indexingService.search(currentLine, 2, currentDoc.languageId);
 						semanticFiles = searchResults
 							.filter(result => {
-								if (result.uri.fsPath !== currentDoc.uri.fsPath) return true;
+								if (result.uri.fsPath !== currentDoc.uri.fsPath) {return true;}
 								const cursorInChunk = currentPos.line >= result.lineStart && currentPos.line <= result.lineEnd;
 								return !cursorInChunk;
 							})
@@ -650,8 +655,9 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 				}
 			}
 
-			const openFiles = [...importedFiles, ...semanticFiles];
-			return await this._fetchContextAwareCompletion(freshPrefix, freshSuffix, openFiles, currentDoc.languageId, new vscode.CancellationTokenSource().token);
+			const openFiles: Array<{ filepath: string; content: string }> = [...importedFiles, ...semanticFiles];
+			const result = await this._fetchContextAwareCompletion(freshPrefix, freshSuffix, openFiles, currentDoc.languageId, new vscode.CancellationTokenSource().token);
+			return result || [];
 		};
 
 		this._speculativeCache.set(completionId, speculativeRequestFn);
@@ -675,10 +681,16 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		const authToken = await this._authService.getToken();
 		const headers: Record<string, string> = {
 			'Content-Type': 'application/json',
+
 		};
 
+		// DEBUG: Log auth token status (Issue #109 debugging)
+		console.log(`[FetchCompletion] 🔑 Auth token status: ${authToken ? 'PRESENT' : 'MISSING'}`);
 		if (authToken) {
+			console.log(`[FetchCompletion] 🔑 Token length: ${authToken.token?.length || 0}, starts with: "${authToken.token?.substring(0, 10)}..."`);
 			headers['Authorization'] = `Bearer ${authToken.token}`;
+		} else {
+			console.error(`[FetchCompletion] ⚠️ NO AUTH TOKEN - API call will likely fail!`);
 		}
 
 		const requestBody = {
@@ -752,8 +764,19 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 				continue;
 			}
 
+			// Filter import statements (Copilot's approach - importFiltering.ts)
+			// Models often hallucinate wrong imports - let IDE handle this
+			const filteredText = ImportFilteringAspect.filterCompletion(trimmed, languageId);
+			if (!filteredText || filteredText.trim().length === 0) {
+				console.log(`[FetchCompletion] ⚠️ Choice ${i + 1} contains only imports, filtering out`);
+				continue;
+			}
+
+			// Use filtered text (with imports removed) for further processing
+			const completionText = filteredText.trim();
+
 			// Check for internal repetition
-			const completionLines = trimmed.split('\n');
+			const completionLines = completionText.split('\n');
 			const lineFrequency = new Map<string, number>();
 			for (const line of completionLines) {
 				const cleanLine = line.trim();
@@ -775,8 +798,8 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 				continue;
 			}
 
-			console.log(`[FetchCompletion] ✅ Choice ${i + 1} is valid: "${trimmed.substring(0, 50)}..."`);
-			validCompletions.push(trimmed);
+			console.log(`[FetchCompletion] ✅ Choice ${i + 1} is valid: "${completionText.substring(0, 50)}..."`);
+			validCompletions.push(completionText);
 		}
 
 		if (validCompletions.length === 0) {

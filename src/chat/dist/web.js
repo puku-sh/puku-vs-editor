@@ -7756,6 +7756,15 @@ var require_package = __commonJS({
                   "onExp"
                 ]
               },
+              "puku.nes.enabled": {
+                type: "boolean",
+                default: false,
+                markdownDescription: "Enable NES (Next Edit Suggestions) for intelligent refactoring based on edit history. This experimental feature provides context-aware code suggestions by analyzing recent edits across your workspace.",
+                tags: [
+                  "advanced",
+                  "experimental"
+                ]
+              },
               "puku.chat.suggestRelatedFilesFromGitHistory.useEmbeddings": {
                 type: "boolean",
                 default: false,
