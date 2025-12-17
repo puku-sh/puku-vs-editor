@@ -46,67 +46,47 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 
 		console.log(`[PukuNesNextEdit][${reqId}] ⚡ getNextEdit called at ${document.fileName}:${position.line}:${position.character}`);
 
-		// Convert VS Code types to internal types
-		const doc: StatelessNextEditDocument = {
-			uri: document.uri,
-			languageId: document.languageId as any,
-			version: document.version,
-			getLine: (line: number) => document.lineAt(line).text,
-			lineCount: document.lineCount,
-		};
-
-		const internalPosition = new Position(position.line + 1, position.character + 1); // 1-indexed
-
-		const request: StatelessNextEditRequest = {
-			document: doc,
-			position: internalPosition,
-		};
-
-		// Create log context for telemetry
-		const logContext = new InlineEditRequestLogContext(reqId, document.uri, position.line);
-
-		// Create pushEdit callback (no-op for now, we just wait for final result)
-		const pushEdit: PushEdit = (_result) => {
-			// Intentionally empty - we don't handle streaming edits in the adapter
-		};
-
-		try {
-			// Call XtabProvider with proper parameters
-			const result = await this.xtabProvider.provideNextEdit(request, pushEdit, logContext, token);
-
-			if (!result || !result.result || !result.result.isOk()) {
-				console.log(`[PukuNesNextEdit][${reqId}] No result from XtabProvider`);
-				return null;
-			}
-
-			const okResult = result.result.val;
-			console.log(`[PukuNesNextEdit][${reqId}] Got result from XtabProvider:`, {
-				hasEdit: !!okResult.edit
-			});
-
-			// Convert result to inline completion item
-			const completionItem = this._convertToInlineCompletion(okResult.edit, document, position);
-
-			if (!completionItem) {
-				console.log(`[PukuNesNextEdit][${reqId}] Failed to convert result to inline completion`);
-				return null;
-			}
-
-			// Return as PukuNesResult
-			const nesResult: PukuNesResult = {
-				type: 'nes',
-				completion: completionItem,
-				requestId: reqId
-			};
-
-			console.log(`[PukuNesNextEdit][${reqId}] ✅ Returning NES result`);
-			return nesResult;
-
-		} catch (error) {
-			console.log(`[PukuNesNextEdit][${reqId}] Error:`, error);
-			this._logService.error(`[PukuNesNextEdit][${reqId}] Error:`, error);
-			return null;
-		}
+		/**
+		 * TODO: Implement full NES (Next Edit Suggestions) provider
+		 *
+		 * Requirements for proper implementation:
+		 *
+		 * 1. Edit History Tracking:
+		 *    - Track document edits over time (LineEdit, Edits, RootedLineEdit)
+		 *    - Maintain xtab edit history (IXtabHistoryEntry[])
+		 *    - See: vscode-copilot-chat/src/extension/inlineEdits/node/nextEditProvider.ts:514
+		 *
+		 * 2. Document Processing:
+		 *    - Convert VS Code documents to StatelessNextEditDocument instances
+		 *    - Calculate recent edits, document before/after states
+		 *    - See: vscode-copilot-chat/src/extension/inlineEdits/node/nextEditProvider.ts:381-406
+		 *
+		 * 3. Request Construction:
+		 *    - Create StatelessNextEditRequest with 12 required parameters:
+		 *      * headerRequestId, opportunityId (string IDs)
+		 *      * documentBeforeEdits (StringText)
+		 *      * documents (StatelessNextEditDocument[])
+		 *      * activeDocumentIdx, xtabEditHistory
+		 *      * firstEdit (DeferredPromise), nLinesEditWindow
+		 *      * logContext, recordingBookmark, recording, providerRequestStartDateTime
+		 *    - See: vscode-copilot-chat/src/extension/inlineEdits/node/nextEditProvider.ts:529-542
+		 *
+		 * 4. Result Processing:
+		 *    - Handle PushEdit callback for streaming results
+		 *    - Convert LineEdit results to VS Code InlineCompletionItem
+		 *    - Handle caching and rebasing
+		 *
+		 * 5. Dependencies needed:
+		 *    - HistoryContext, IObservableDocument
+		 *    - XtabHistoryTracker
+		 *    - StringText, LineEdit, RootedLineEdit, Edits
+		 *    - DebugRecorder for recording/playback
+		 *
+		 * This is complex infrastructure - consider whether NES racing is needed
+		 * or if FIM + Diagnostics providers are sufficient for MVP.
+		 */
+		console.log(`[PukuNesNextEdit][${reqId}] ⚠️ NES provider not implemented - requires edit history infrastructure`);
+		return null;
 	}
 
 	/**

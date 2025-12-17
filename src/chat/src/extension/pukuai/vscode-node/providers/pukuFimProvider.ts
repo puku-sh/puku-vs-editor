@@ -728,8 +728,6 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 
 		// Feature #64: Process ALL choices (not just the first one)
 		const validCompletions: string[] = [];
-		const prefixLines = prefix.split('\n');
-		const lastLines = prefixLines.slice(-10).join('\n');
 
 		// DEBUG: Log raw API response
 		console.log(`[FetchCompletion] 🔍 Raw API response:`, JSON.stringify(data, null, 2));
@@ -746,24 +744,16 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 				continue;
 			}
 
-			// Check for duplicates with prefix
-			const completionLines = trimmed.split('\n');
-			let hasDuplicates = false;
-
-			for (const line of completionLines) {
-				const cleanLine = line.trim();
-				if (cleanLine.length > 10 && lastLines.includes(cleanLine)) {
-					console.log(`[FetchCompletion] ⚠️ Choice ${i + 1} has duplicate: "${cleanLine.substring(0, 50)}..."`);
-					hasDuplicates = true;
-					break;
-				}
-			}
-
-			if (hasDuplicates) {
+			// Check for duplicates with SUFFIX (Copilot's approach - Issue #109)
+			// Only filter out if completion EXACTLY matches text that's already AFTER the cursor
+			const suffixTrimmed = suffix.trimStart();
+			if (suffixTrimmed.startsWith(trimmed)) {
+				console.log(`[FetchCompletion] ⚠️ Choice ${i + 1} is duplicate of suffix: "${trimmed.substring(0, 50)}..."`);
 				continue;
 			}
 
 			// Check for internal repetition
+			const completionLines = trimmed.split('\n');
 			const lineFrequency = new Map<string, number>();
 			for (const line of completionLines) {
 				const cleanLine = line.trim();

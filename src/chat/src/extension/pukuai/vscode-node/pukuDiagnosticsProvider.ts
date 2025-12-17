@@ -87,9 +87,13 @@ export class PukuDiagnosticsProvider implements vscode.CodeActionProvider, IPuku
 			const docId: DocumentId = { document, position };
 
 			// Delegate to next edit provider for fix generation
+			const context: vscode.InlineCompletionContext = {
+				triggerKind: vscode.InlineCompletionTriggerKind.Automatic,
+				selectedCompletionInfo: undefined
+			};
 			const result = await this._nextEditProvider.getNextEdit(
 				docId,
-				{ triggerKind: vscode.InlineCompletionTriggerKind.Automatic, selectedCompletionInfo: undefined },
+				context,
 				token
 			);
 

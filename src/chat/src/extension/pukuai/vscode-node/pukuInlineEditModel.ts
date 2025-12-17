@@ -192,18 +192,28 @@ export class PukuInlineEditModel extends Disposable {
 
 			// Priority logic: FIM > NES > Diagnostics (Copilot's approach)
 			// Use fresh hasResult checks (not stale flags from line 137-139) - Issue #108
+			console.log('[PukuInlineEditModel] 🔍 Checking winner selection with flags:', {
+				fimHasActualResult,
+				nesHasActualResult,
+				diagnosticsHasActualResult
+			});
 			if (fimHasActualResult) {
+				console.log('[PukuInlineEditModel] ✅ FIM wins the race!');
 				this.logService.info('[PukuInlineEditModel] ✅ Using FIM result (won race)');
 				winningResult = fimResult;
 				if (diagnosticsResult) { losingResults.push(diagnosticsResult); }
 				if (nesResult) { losingResults.push(nesResult); }
 			} else if (nesHasActualResult) {
+				console.log('[PukuInlineEditModel] ✅ NES wins the race!');
 				this.logService.info('[PukuInlineEditModel] ✅ Using NES result (FIM has no completions)');
 				winningResult = nesResult;
 				if (diagnosticsResult) { losingResults.push(diagnosticsResult); }
 			} else if (diagnosticsHasActualResult) {
+				console.log('[PukuInlineEditModel] ✅ Diagnostics wins the race!');
 				this.logService.info('[PukuInlineEditModel] ✅ Using diagnostics result (FIM and NES have no completions)');
 				winningResult = diagnosticsResult;
+			} else {
+				console.log('[PukuInlineEditModel] ❌ No provider has results');
 			}
 
 			// Handle ignored results (losing providers)

@@ -309,7 +309,7 @@ export class PukuDiagnosticsNextEditProvider extends Disposable implements IPuku
 				return null;
 			}
 
-			const result: DiagnosticFixResponse = await response.json();
+			const result = await response.json() as DiagnosticFixResponse;
 			console.log(`[PukuDiagnosticsNextEdit][${reqId}] Got fix from worker: ${result.fix?.label}`);
 			return result.fix;
 
