@@ -6,6 +6,8 @@ import * as vscode from 'vscode';
 import { ILogService } from '../../../../platform/log/common/logService';
 import { Disposable } from '../../../../util/vs/base/common/lifecycle';
 import { IPukuNextEditProvider, PukuNesResult, DocumentId as PukuDocumentId } from '../../common/nextEditProvider';
+import { ConfigKey, IConfigurationService } from '../../../../platform/configuration/common/configurationService';
+import { isInlineSuggestion } from '../utils/isInlineSuggestion';
 import { IStatelessNextEditProvider, StatelessNextEditDocument, StatelessNextEditRequest, PushEdit, NoNextEditReason } from '../../../../platform/inlineEdits/common/statelessNextEditProvider';
 import { InlineEditRequestLogContext } from '../../../../platform/inlineEdits/common/inlineEditLogContext';
 import { IHistoryContextProvider, HistoryContext, DocumentHistory } from '../../../../platform/inlineEdits/common/workspaceEditTracker/historyContextProvider';
@@ -58,14 +60,18 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 
 	private _requestId = 0;
 
+	private readonly inlineEditsInlineCompletionsEnabled;
+
 	constructor(
 		private readonly xtabProvider: IStatelessNextEditProvider,
 		private readonly historyContextProvider: IHistoryContextProvider,
 		private readonly xtabHistoryTracker: NesXtabHistoryTracker,
 		private readonly workspace: ObservableWorkspace,
-		@ILogService private readonly _logService: ILogService
+		@ILogService private readonly _logService: ILogService,
+		@IConfigurationService private readonly _configurationService: IConfigurationService
 	) {
 		super();
+		this.inlineEditsInlineCompletionsEnabled = this._configurationService.getConfigObservable(ConfigKey.Internal.InlineEditsInlineCompletionsEnabled);
 		this._logService.info('[PukuNesNextEdit] Provider initialized');
 	}
 
@@ -81,20 +87,30 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 		const document = pukuDocId.document;
 		const position = pukuDocId.position;
 
+		console.log(`[PukuNesNextEdit][${reqId}] getNextEdit called at ${document.fileName}:${position.line}:${position.character}`);
 		this._logService.trace(`[PukuNesNextEdit][${reqId}] getNextEdit called at ${document.fileName}:${position.line}:${position.character}`);
 
 		try {
 			// Convert Puku DocumentId to NES DocumentId
-			const docId = new DocumentId(document.uri);
+			const docId = DocumentId.create(document.uri.toString());
+			console.log(`[PukuNesNextEdit][${reqId}] 🔍 Looking for docId: ${docId.toString()}`);
+			console.log(`[PukuNesNextEdit][${reqId}] 🔍 Workspace has ${this.workspace.openDocuments.get().length} open documents`);
+			this.workspace.openDocuments.get().forEach((d, idx) => {
+				console.log(`[PukuNesNextEdit][${reqId}] 🔍 Doc ${idx}: ${d.id.toString()}`);
+			});
+
 			const doc = this.workspace.getDocument(docId);
 			if (!doc) {
+				console.log(`[PukuNesNextEdit][${reqId}] ❌ Document not found in workspace`);
 				this._logService.warn(`[PukuNesNextEdit][${reqId}] Document not found in workspace`);
 				return null;
 			}
+			console.log(`[PukuNesNextEdit][${reqId}] ✅ Document found in workspace!`);
 
 			// Get history context
 			const historyContext = this.historyContextProvider.getHistoryContext(docId);
 			if (!historyContext) {
+				console.log(`[PukuNesNextEdit][${reqId}] ❌ No history context available (no edits made yet)`);
 				this._logService.warn(`[PukuNesNextEdit][${reqId}] No history context available`);
 				return null;
 			}
@@ -329,12 +345,24 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 		const endPos = document.positionAt(replaceRange.endExclusive);
 		const range = new vscode.Range(startPos, endPos);
 
+		// Check if this is a simple inline suggestion or a complex multi-line edit
+		// Based on reference implementation line 250-251, 295
+		const allowInlineCompletions = this.inlineEditsInlineCompletionsEnabled.get();
+		const isSimpleInlineSuggestion = allowInlineCompletions && isInlineSuggestion(position, document, range, edit.newText);
+
+		console.log(`[PukuNesNextEdit] isInlineSuggestion=${isSimpleInlineSuggestion}, allowInlineCompletions=${allowInlineCompletions}`);
+		this._logService.trace(`[PukuNesNextEdit] Edit type: ${isSimpleInlineSuggestion ? 'simple inline suggestion' : 'complex multi-line edit'}`);
+
 		// Create inline completion item with the new text and range
-		return new vscode.InlineCompletionItem(
-			edit.newText,
-			range,
-			{ title: 'NES Refactoring Suggestion', command: 'puku.acceptNesSuggestion' }
-		);
+		// Set isInlineEdit=true for complex edits to trigger Next Edit Suggestions UI
+		const item = new vscode.InlineCompletionItem(edit.newText, range);
+		(item as any).isInlineEdit = !isSimpleInlineSuggestion;
+		(item as any).showInlineEditMenu = true;
+		(item as any).action = { title: 'NES Refactoring Suggestion', command: 'puku.acceptNesSuggestion' };
+
+		console.log(`[PukuNesNextEdit] Created InlineCompletionItem with isInlineEdit=${(item as any).isInlineEdit}`);
+
+		return item;
 	}
 
 	/**
