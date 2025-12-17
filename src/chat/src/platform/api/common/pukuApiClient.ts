@@ -112,7 +112,7 @@ export class CAPIClient {
 		return this._fetcherService.fetch(url, options) as Promise<T>;
 	}
 
-	private _getUrlForRequest(metadata: RequestMetadata): string {
+	protected _getUrlForRequest(metadata: RequestMetadata): string {
 		const baseUrl = this._domainService.capiUrl;
 		const proxyUrl = this._domainService.proxyUrl;
 

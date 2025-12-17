@@ -6,18 +6,21 @@
 import { IEnvService } from '../../env/common/envService';
 import { IFetcherService } from '../../networking/common/fetcherService';
 import { BaseCAPIClientService } from '../common/capiClient';
+import { IConfigurationService } from '../../configuration/common/configurationService';
 
 export class CAPIClientImpl extends BaseCAPIClientService {
 
 	constructor(
 		@IFetcherService fetcherService: IFetcherService,
-		@IEnvService envService: IEnvService
+		@IEnvService envService: IEnvService,
+		@IConfigurationService configurationService: IConfigurationService
 	) {
 		super(
 			process.env.HMAC_SECRET,
 			!!process.env.FORCE_DEV_INTEGRATION,
 			fetcherService,
-			envService
+			envService,
+			configurationService
 		);
 	}
 }
