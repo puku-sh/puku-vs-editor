@@ -2441,36 +2441,6 @@
 						"default": true,
 						"markdownDescription": "%puku.config.useProjectTemplates%"
 					},
-					"puku.nextEditSuggestions.enabled": {
-						"type": "boolean",
-						"default": false,
-						"tags": [
-							"nextEditSuggestions",
-							"onExp"
-						],
-						"markdownDescription": "%puku.nextEditSuggestions.enabled%",
-						"scope": "language-overridable"
-					},
-					"puku.nextEditSuggestions.fixes": {
-						"type": "boolean",
-						"default": true,
-						"tags": [
-							"nextEditSuggestions",
-							"onExp"
-						],
-						"markdownDescription": "%puku.nextEditSuggestions.fixes%",
-						"scope": "language-overridable"
-					},
-					"puku.nextEditSuggestions.allowWhitespaceOnlyChanges": {
-						"type": "boolean",
-						"default": true,
-						"tags": [
-							"nextEditSuggestions",
-							"onExp"
-						],
-						"markdownDescription": "%puku.nextEditSuggestions.allowWhitespaceOnlyChanges%",
-						"scope": "language-overridable"
-					},
 					"puku.chat.agent.autoFix": {
 						"type": "boolean",
 						"default": true,
@@ -4668,18 +4638,6 @@
 				"*.copilotmd": "vscode.markdown.preview.editor"
 			}
 		},
-		"commands": [
-			{
-				"command": "puku.acceptNextEdit",
-				"title": "Accept Next Edit Suggestion",
-				"category": "Puku AI"
-			},
-			{
-				"command": "puku.rejectNextEdit",
-				"title": "Reject Next Edit Suggestion",
-				"category": "Puku AI"
-			}
-		],
 		"keybindings": [
 			{
 				"command": "puku.chat.rerunWithCopilotDebug",

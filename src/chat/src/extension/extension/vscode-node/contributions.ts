@@ -7,7 +7,6 @@ import { AuthenticationContrib } from '../../authentication/vscode-node/authenti
 import { ChatQuotaContribution } from '../../chat/vscode-node/chatQuota.contribution';
 import { ChatSessionsContrib } from '../../chatSessions/vscode-node/chatSessions';
 import { PukuAIContribution } from '../../pukuai/vscode-node/pukuaiContribution';
-import { NextEditContribution } from '../../pukuai/vscode-node/nextEdit.contribution';
 import * as chatBlockLanguageContribution from '../../codeBlocks/vscode-node/chatBlockLanguageFeatures.contribution';
 import { IExtensionContributionFactory, asContributionFactory } from '../../common/contributions';
 import { CompletionsCoreContribution } from '../../completions/vscode-node/completionsCoreContribution';
@@ -77,7 +76,6 @@ export const vscodeNodeContributions: IExtensionContributionFactory[] = [
 	asContributionFactory(DebugCommandsContribution),
 	asContributionFactory(PukuAIContribution),
 	asContributionFactory(LanguageModelAccess),
-	asContributionFactory(NextEditContribution),
 	asContributionFactory(WalkthroughCommandContribution),
 	asContributionFactory(InlineEditProviderFeature),
 	asContributionFactory(SettingsSchemaFeature),
