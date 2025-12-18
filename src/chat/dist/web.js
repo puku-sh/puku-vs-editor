@@ -25049,7 +25049,7 @@ var ConfigKey;
   ConfigKey2.Test2SrcRelatedFilesProvider = defineSetting("chat.edits.suggestRelatedFilesForTests", true);
   ConfigKey2.TerminalToDebuggerEnabled = defineSetting("chat.copilotDebugCommand.enabled", true);
   ConfigKey2.CodeSearchAgentEnabled = defineSetting("chat.codesearch.enabled", false);
-  ConfigKey2.InlineEditsEnabled = defineExpSetting("nextEditSuggestions.enabled", { defaultValue: false, teamDefaultValue: true });
+  ConfigKey2.InlineEditsEnabled = defineExpSetting("nextEditSuggestions.enabled", { defaultValue: true, teamDefaultValue: true });
   ConfigKey2.InlineEditsEnableDiagnosticsProvider = defineExpSetting("nextEditSuggestions.fixes", { defaultValue: true, teamDefaultValue: true });
   ConfigKey2.InlineEditsAllowWhitespaceOnlyChanges = defineExpSetting("nextEditSuggestions.allowWhitespaceOnlyChanges", true);
   ConfigKey2.NewWorkspaceCreationAgentEnabled = defineSetting("chat.newWorkspaceCreation.enabled", true);
