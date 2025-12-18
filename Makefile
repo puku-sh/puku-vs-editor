@@ -96,8 +96,11 @@ compile-extension:
 compile-vscode:
 	@echo "=== Compiling VS Code (Node 22.20.0) ==="
 	@cd src/vscode && \
-	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
-	npm run compile
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 22.20.0 && npm run compile"; \
+	else \
+		npm run compile; \
+	fi
 
 # Compile both in sequence
 compile:
@@ -176,15 +179,21 @@ clean-all: clean clean-package
 install-extension:
 	@echo "=== Installing Extension Dependencies (Node 23.5.0) ==="
 	@cd src/chat && \
-	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
-	npm install
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 23.5.0 && npm install"; \
+	else \
+		npm install; \
+	fi
 
 # Install dependencies for VS Code (requires Node 22.20.0)
 install-vscode:
 	@echo "=== Installing VS Code Dependencies (Node 22.20.0) ==="
 	@cd src/vscode && \
-	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
-	npm install
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 22.20.0 && npm install"; \
+	else \
+		npm install; \
+	fi
 
 # Install all dependencies (extension + VS Code)
 install:
@@ -214,9 +223,12 @@ package: compile-extension
 	@echo "  3. Create production build in src/VSCode-darwin-arm64/"
 	@echo ""
 	@cd src/vscode && \
-	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
-	export NODE_OPTIONS="--max-old-space-size=16384" && \
-	npx gulp vscode-darwin-arm64-min 2>&1 | tee /tmp/puku-package-full.log
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 22.20.0 && export NODE_OPTIONS=\"--max-old-space-size=16384\" && npx gulp vscode-darwin-arm64-min 2>&1 | tee /tmp/puku-package-full.log"; \
+	else \
+		export NODE_OPTIONS="--max-old-space-size=16384" && \
+		npx gulp vscode-darwin-arm64-min 2>&1 | tee /tmp/puku-package-full.log; \
+	fi
 	@echo ""
 	@echo "✅ Packaging complete! App location: src/VSCode-darwin-arm64/Puku.app"
 	@echo "   Launch with: make launch-package"
@@ -238,9 +250,12 @@ package-ci: compile-extension
 	@echo "  3. Package in ~11 seconds"
 	@echo ""
 	@cd src/vscode && \
-	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
-	export NODE_OPTIONS="--max-old-space-size=16384" && \
-	npx gulp vscode-darwin-arm64-min-ci 2>&1 | tee /tmp/puku-package-ci.log
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 22.20.0 && export NODE_OPTIONS=\"--max-old-space-size=16384\" && npx gulp vscode-darwin-arm64-min-ci 2>&1 | tee /tmp/puku-package-ci.log"; \
+	else \
+		export NODE_OPTIONS="--max-old-space-size=16384" && \
+		npx gulp vscode-darwin-arm64-min-ci 2>&1 | tee /tmp/puku-package-ci.log; \
+	fi
 	@echo ""
 	@echo "✅ Packaging complete! App location: src/VSCode-darwin-arm64/Puku.app"
 	@echo "   Launch with: make launch-package"
@@ -328,15 +343,21 @@ compile-vs: compile-vscode
 watch-extension:
 	@echo "=== Starting Extension Watch Mode ==="
 	@cd src/chat && \
-	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
-	npm run watch
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 23.5.0 && npm run watch"; \
+	else \
+		npm run watch; \
+	fi
 
 # Test target
 test:
 	@echo "=== Running Tests ==="
 	@cd src/chat && \
-	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
-	npm test
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 23.5.0 && npm test"; \
+	else \
+		npm test; \
+	fi
 
 # ============================================================================
 # Incremental Builds (Smart + Fast)
@@ -397,26 +418,38 @@ build-watch:
 	@sleep 3
 	@# Start extension watch in background
 	@cd src/chat && \
-	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
-	npm run watch &
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 23.5.0 && npm run watch" & \
+	else \
+		npm run watch & \
+	fi
 	@# Start VS Code watch in foreground
 	@cd src/vscode && \
-	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
-	npm run watch
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 22.20.0 && npm run watch"; \
+	else \
+		npm run watch; \
+	fi
 
 # Watch mode for extension only
 watch-ext:
 	@echo "=== Extension Watch Mode ==="
 	@cd src/chat && \
-	source ~/.nvm/nvm.sh && nvm use 23.5.0 && \
-	npm run watch
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 23.5.0 && npm run watch"; \
+	else \
+		npm run watch; \
+	fi
 
 # Watch mode for VS Code only
 watch-vs:
 	@echo "=== VS Code Watch Mode ==="
 	@cd src/vscode && \
-	source ~/.nvm/nvm.sh && nvm use 22.20.0 && \
-	npm run watch
+	if [ -f ~/.nvm/nvm.sh ]; then \
+		bash -c "source ~/.nvm/nvm.sh && nvm use 22.20.0 && npm run watch"; \
+	else \
+		npm run watch; \
+	fi
 
 # Smart build: detect what changed and only build that
 build-smart:

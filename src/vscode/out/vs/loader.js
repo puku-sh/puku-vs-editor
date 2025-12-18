@@ -1890,4 +1890,4 @@ var AMDLoader;
 	}
 })(AMDLoader || (AMDLoader = {}));
 
-//# sourceURL=file:///Users/sahamed/Desktop/puku-vs-editor/puku-editor/src/vscode/src/vs/loader.js
+//# sourceURL=file:///home/poridhi/development/puku-vs-editor/src/vscode/src/vs/loader.js
