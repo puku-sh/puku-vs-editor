@@ -110,8 +110,10 @@ export interface PukuDiagnosticsResult {
  */
 export interface PukuNesResult {
 	type: 'nes';
-	completion: vscode.InlineCompletionItem | vscode.InlineCompletionItem[];
-	requestId: number;
+	items: vscode.InlineCompletionItem[];
+	requestId: string;
+	enableForwardStability?: boolean;
+	completionList?: vscode.InlineCompletionList; // Optional: Store the class instance for lifecycle tracking
 }
 
 /**

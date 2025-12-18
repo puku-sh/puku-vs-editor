@@ -52,6 +52,7 @@ import { PukuIndexingContribution } from '../../pukuIndexing/vscode-node/pukuInd
 import { PukuSemanticContextProvider } from '../../pukuIndexing/vscode-node/pukuSemanticContextProvider';
 import { PukuChatContribution } from '../../pukuChat/vscode-node/pukuChat.contribution';
 import { PukuAuthContribution } from '../../pukuAuth/vscode-node/pukuAuth.contribution';
+import { PukuNesContribution } from '../../pukuai/vscode-node/pukuNes.contribution';
 import vscodeContributions from '../vscode/contributions';
 
 // ###################################################################################################
@@ -96,6 +97,7 @@ export const vscodeNodeContributions: IExtensionContributionFactory[] = [
 	asContributionFactory(PukuIndexingContribution),
 	asContributionFactory(PukuSemanticContextProvider),
 	asContributionFactory(PukuChatContribution),
+	asContributionFactory(PukuNesContribution),
 ];
 
 /**

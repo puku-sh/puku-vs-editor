@@ -7,6 +7,7 @@ import { ILogService } from '../../../../platform/log/common/logService';
 import { Disposable } from '../../../../util/vs/base/common/lifecycle';
 import { IPukuNextEditProvider, PukuNesResult, DocumentId as PukuDocumentId } from '../../common/nextEditProvider';
 import { ConfigKey, IConfigurationService } from '../../../../platform/configuration/common/configurationService';
+import { Delayer } from '../../common/delayer';
 import { isInlineSuggestion } from '../utils/isInlineSuggestion';
 import { IStatelessNextEditProvider, StatelessNextEditDocument, StatelessNextEditRequest, PushEdit, NoNextEditReason } from '../../../../platform/inlineEdits/common/statelessNextEditProvider';
 import { InlineEditRequestLogContext } from '../../../../platform/inlineEdits/common/inlineEditLogContext';
@@ -47,6 +48,26 @@ interface ProcessedDoc {
 }
 
 /**
+ * NES Completion List - extends VS Code's InlineCompletionList
+ * Based on reference: vscode-copilot-chat/inlineCompletionProvider.ts:56-68
+ *
+ * This class enables:
+ * - Forward stability (suggestions persist when cursor moves forward)
+ * - Menu commands (Learn More, etc.)
+ * - Telemetry tracking across suggestion lifecycle
+ */
+class PukuNesCompletionList extends vscode.InlineCompletionList {
+	public override enableForwardStability = true;
+
+	constructor(
+		public readonly requestUuid: string,
+		item: vscode.InlineCompletionItem | undefined,
+	) {
+		super(item === undefined ? [] : [item]);
+	}
+}
+
+/**
  * NES (Next Edit Suggestions) Next Edit Provider
  * Adapts XtabProvider to IPukuNextEditProvider interface for racing
  *
@@ -62,6 +83,12 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 
 	private readonly inlineEditsInlineCompletionsEnabled;
 
+	/**
+	 * Delayer for adaptive debouncing based on user acceptance/rejection patterns
+	 * Reference: vscode-copilot-chat/src/extension/inlineEdits/common/delayer.ts
+	 */
+	private readonly _delayer: Delayer;
+
 	constructor(
 		private readonly xtabProvider: IStatelessNextEditProvider,
 		private readonly historyContextProvider: IHistoryContextProvider,
@@ -72,7 +99,8 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 	) {
 		super();
 		this.inlineEditsInlineCompletionsEnabled = this._configurationService.getConfigObservable(ConfigKey.Internal.InlineEditsInlineCompletionsEnabled);
-		this._logService.info('[PukuNesNextEdit] Provider initialized');
+		this._delayer = new Delayer(500, true); // 500ms base debounce, backoff enabled
+		this._logService.info('[PukuNesNextEdit] Provider initialized with adaptive delayer');
 	}
 
 	/**
@@ -186,10 +214,19 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 			}
 
 			this._logService.trace(`[PukuNesNextEdit][${reqId}] Returning NES suggestion`);
+
+			// Create NesCompletionList instance (Issue #116: Match reference architecture)
+			const completionList = new PukuNesCompletionList(
+				reqId.toString(),
+				inlineCompletion
+			);
+
 			return {
 				type: 'nes',
-				items: [inlineCompletion],
-				requestId: reqId.toString()
+				items: completionList.items,
+				requestId: completionList.requestUuid,
+				enableForwardStability: completionList.enableForwardStability,
+				completionList // Store the class instance for lifecycle tracking
 			};
 
 		} catch (error) {
@@ -377,12 +414,16 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 
 	handleAcceptance(docId: PukuDocumentId, result: PukuNesResult): void {
 		this._logService.trace(`[PukuNesNextEdit] NES suggestion accepted (requestId: ${result.requestId})`);
+		// Record acceptance in delayer for adaptive debouncing
+		this._delayer.handleAcceptance();
 		// Delegate to xtabProvider if it has acceptance handler
 		this.xtabProvider.handleAcceptance?.();
 	}
 
 	handleRejection(docId: PukuDocumentId, result: PukuNesResult): void {
 		this._logService.trace(`[PukuNesNextEdit] NES suggestion rejected (requestId: ${result.requestId})`);
+		// Record rejection in delayer for adaptive debouncing
+		this._delayer.handleRejection();
 		// Delegate to xtabProvider if it has rejection handler
 		this.xtabProvider.handleRejection?.();
 	}

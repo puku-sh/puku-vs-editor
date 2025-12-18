@@ -1,19 +1,13 @@
 
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState(null);
-const [data, setData] = useState(null);
 
-const fetchData = async (url) => {
+const [loading, setLoading] = useState(false);
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
   setLoading(true);
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    const jsonData = await response.json();
-    setData(jsonData);
-  } catch (err) {
-    setError(err);
+    await axios.post('/api/submit', formData);
+  } catch (error) {
+    console.error(error);
   } finally {
     setLoading(false);
   }

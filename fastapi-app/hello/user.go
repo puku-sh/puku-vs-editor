@@ -1,7 +1,13 @@
-// add user model with gorm tags
+// add user model with gorm 
+package models
+
+
 type User struct {
-    gorm.Model
-    Name string `gorm:"type:varchar(100);not null"`
-    Email string `gorm:"type:varchar(100);uniqueIndex;not null"`
+	gorm.Model
+	Username string `gorm:"unique;not null"`
+	Email    string `gorm:"unique;not null"`
+	Password string `gorm:"not null"`
 }
+
+
 
