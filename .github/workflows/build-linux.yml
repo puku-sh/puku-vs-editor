@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - 'feat/ubunut'
   workflow_dispatch:
     inputs:
       architecture:
