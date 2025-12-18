@@ -6315,6 +6315,32 @@ var require_package = __commonJS({
                 default: true,
                 description: "%puku.config.renameSuggestions.triggerAutomatically%"
               },
+              "puku.nextEditSuggestions.enabled": {
+                type: "boolean",
+                default: true,
+                description: "Enable Next Edit Suggestions (NES) that provide context-aware suggestions for the next logical edit after making changes"
+              },
+              "puku.nextEditSuggestions.timeout": {
+                type: "number",
+                default: 3e3,
+                minimum: 1e3,
+                maximum: 1e4,
+                description: "Timeout for Next Edit Suggestions requests in milliseconds"
+              },
+              "puku.nextEditSuggestions.nesDelay": {
+                type: "number",
+                default: 500,
+                minimum: 0,
+                maximum: 2e3,
+                description: "Delay before starting NES requests to allow FIM to go first (in milliseconds)"
+              },
+              "puku.nextEditSuggestions.diagnosticsDelay": {
+                type: "number",
+                default: 200,
+                minimum: 0,
+                maximum: 1e3,
+                description: "Delay before starting diagnostics-based suggestions (in milliseconds)"
+              },
               "puku.chat.localeOverride": {
                 type: "string",
                 enum: [
@@ -8606,6 +8632,18 @@ var require_package = __commonJS({
             "*.copilotmd": "vscode.markdown.preview.editor"
           }
         },
+        commands: [
+          {
+            command: "puku.acceptNextEdit",
+            title: "Accept Next Edit Suggestion",
+            category: "Puku AI"
+          },
+          {
+            command: "puku.rejectNextEdit",
+            title: "Reject Next Edit Suggestion",
+            category: "Puku AI"
+          }
+        ],
         keybindings: [
           {
             command: "puku.chat.rerunWithCopilotDebug",
