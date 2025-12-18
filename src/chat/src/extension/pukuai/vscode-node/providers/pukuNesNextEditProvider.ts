@@ -26,6 +26,8 @@ import { RootedEdit } from '../../../../platform/inlineEdits/common/dataTypes/ed
 import { generateUuid } from '../../../../util/vs/base/common/uuid';
 import { CachedFunction } from '../../../../util/vs/base/common/cache';
 import { BugIndicatingError } from '../../../../util/vs/base/common/errors';
+import { NextEditCache, CachedOrRebasedEdit as NESCachedOrRebasedEdit } from '../../node/nextEditCache';
+import { RejectionCollector } from '../../../inlineEdits/common/rejectionCollector';
 
 /**
  * Cached or rebased edit result
@@ -89,6 +91,18 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 	 */
 	private readonly _delayer: Delayer;
 
+	/**
+	 * NextEditCache for caching edit suggestions (Issue #129)
+	 * Reference: vscode-copilot-chat/src/extension/inlineEdits/node/nextEditCache.ts
+	 */
+	private readonly _cache: NextEditCache;
+
+	/**
+	 * RejectionCollector for tracking rejected edits (Issue #130)
+	 * Reference: vscode-copilot-chat/src/extension/inlineEdits/common/rejectionCollector.ts
+	 */
+	private readonly _rejectionCollector: RejectionCollector;
+
 	constructor(
 		private readonly xtabProvider: IStatelessNextEditProvider,
 		private readonly historyContextProvider: IHistoryContextProvider,
@@ -100,7 +114,11 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 		super();
 		this.inlineEditsInlineCompletionsEnabled = this._configurationService.getConfigObservable(ConfigKey.Internal.InlineEditsInlineCompletionsEnabled);
 		this._delayer = new Delayer(500, true); // 500ms base debounce, backoff enabled
-		this._logService.info('[PukuNesNextEdit] Provider initialized with adaptive delayer');
+		this._cache = this._register(new NextEditCache(this._logService));
+		this._rejectionCollector = this._register(
+			new RejectionCollector(this.workspace, (s) => this._logService.trace(s))
+		);
+		this._logService.info('[PukuNesNextEdit] Provider initialized with adaptive delayer, NextEditCache, and RejectionCollector');
 	}
 
 	/**
@@ -134,6 +152,47 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 				return null;
 			}
 			console.log(`[PukuNesNextEdit][${reqId}] ✅ Document found in workspace!`);
+
+			// NEW: Try cache lookup first (Issue #129)
+			const currentDocText = doc.value.get();
+			const currentSelection = [OffsetRange.ofSelection(document.offsetAt(position))];
+			const cachedEdit = this._cache.lookupNextEdit(docId, currentDocText, currentSelection);
+
+			if (cachedEdit) {
+				// Check if cached edit was previously rejected (Issue #130)
+				if (this._rejectionCollector.isRejected(docId, cachedEdit.edit)) {
+					this._logService.info(`[PukuNesNextEdit][${reqId}] ⛔ Cached edit was previously rejected, skipping`);
+					return null;
+				}
+
+				this._logService.info(`[PukuNesNextEdit][${reqId}] ⚡ CACHE HIT - returning cached edit`);
+
+				// Convert cached edit to InlineCompletionItem
+				const inlineCompletion = this._convertToInlineCompletion(
+					{
+						edit: cachedEdit.edit,
+						stringEdit: StringEdit.single(cachedEdit.edit),
+						documentId: cachedEdit.docId,
+						isFromCache: true,
+						showLabel: cachedEdit.showLabel
+					},
+					document,
+					position
+				);
+
+				if (inlineCompletion) {
+					const completionList = new PukuNesCompletionList(reqId.toString(), inlineCompletion);
+					return {
+						type: 'nes',
+						items: completionList.items,
+						requestId: completionList.requestUuid,
+						enableForwardStability: completionList.enableForwardStability,
+						completionList
+					};
+				}
+			}
+
+			this._logService.trace(`[PukuNesNextEdit][${reqId}] Cache miss - fetching from API`);
 
 			// Get history context
 			const historyContext = this.historyContextProvider.getHistoryContext(docId);
@@ -205,12 +264,32 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 			}
 
 			// Convert to InlineCompletionItem
-			const cachedEdit = firstEditResult.val;
-			const inlineCompletion = this._convertToInlineCompletion(cachedEdit, document, position);
+			const resultEdit = firstEditResult.val;
+
+			// Check if this edit was previously rejected (Issue #130)
+			if (this._rejectionCollector.isRejected(docId, resultEdit.edit)) {
+				this._logService.info(`[PukuNesNextEdit][${reqId}] ⛔ Edit was previously rejected, skipping`);
+				return null;
+			}
+
+			const inlineCompletion = this._convertToInlineCompletion(resultEdit, document, position);
 
 			if (!inlineCompletion) {
 				this._logService.warn(`[PukuNesNextEdit][${reqId}] Failed to convert edit to inline completion`);
 				return null;
+			}
+
+			// NEW: Cache the edit for future requests (Issue #129)
+			if (resultEdit.edit && !resultEdit.isFromCache) {
+				this._cache.cacheEdit(
+					docId,
+					currentDocText,
+					undefined, // editWindow - will add later with rebasing support
+					resultEdit.edit,
+					undefined, // edits array - will add when supporting multiple edits
+					undefined  // userEditSince - will add with edit tracking
+				);
+				this._logService.trace(`[PukuNesNextEdit][${reqId}] Cached edit for future requests`);
 			}
 
 			this._logService.trace(`[PukuNesNextEdit][${reqId}] Returning NES suggestion`);
@@ -424,6 +503,20 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 		this._logService.trace(`[PukuNesNextEdit] NES suggestion rejected (requestId: ${result.requestId})`);
 		// Record rejection in delayer for adaptive debouncing
 		this._delayer.handleRejection();
+
+		// Track rejection in RejectionCollector (Issue #130)
+		// This prevents re-showing the same rejected edit across document changes
+		if (result.items.length > 0) {
+			const item = result.items[0];
+			const nesDocId = DocumentId.create(docId.document.uri.toString());
+			const edit = StringReplacement.replace(
+				OffsetRange.ofLength(0, 0), // We don't have the exact range here
+				item.insertText as string
+			);
+			this._rejectionCollector.reject(nesDocId, edit);
+			this._logService.trace(`[PukuNesNextEdit] Tracked rejection in RejectionCollector`);
+		}
+
 		// Delegate to xtabProvider if it has rejection handler
 		this.xtabProvider.handleRejection?.();
 	}

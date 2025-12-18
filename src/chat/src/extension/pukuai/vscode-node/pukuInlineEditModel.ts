@@ -10,6 +10,7 @@ import { ILogService } from '../../../platform/log/common/logService';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IPukuNextEditProvider, PukuFimResult, PukuDiagnosticsResult, PukuNesResult, PukuNextEditResult, DocumentId } from '../common/nextEditProvider';
 import { IPukuConfigService } from '../../pukuIndexing/common/pukuConfig';
+import { InlineEditRequestLogContext } from '../common/inlineEditLogContext';
 
 /**
  * Result type discriminator (kept for backwards compatibility)
@@ -80,7 +81,7 @@ export class PukuInlineEditModel extends Disposable {
 		token: vscode.CancellationToken,
 		isCycling: boolean = false // Feature #64: Multiple completions
 	): Promise<PukuCompletionResult> {
-		console.log(`[PukuInlineEditModel] ⚡ getCompletion called (3-way racing mode, cycling: ${isCycling})`);
+		console.log('[PukuInlineEditModel] XXX RACING MODEL START XXX - getCompletion called, cycling:', isCycling);
 		this.logService.info(`[PukuInlineEditModel] getCompletion called (3-way racing mode, cycling: ${isCycling})`);
 
 		if (token.isCancellationRequested) {
@@ -90,6 +91,9 @@ export class PukuInlineEditModel extends Disposable {
 
 		// Create DocumentId for provider interface
 		const docId: DocumentId = { document, position, isCycling }; // Pass cycling state
+
+		// Create logContext following Copilot's pattern (inlineCompletionProvider.ts:167)
+		const logContext = new InlineEditRequestLogContext(document.uri.toString(), document.version, context);
 
 		// Create cancellation tokens for coordination
 		const diagnosticsCts = new vscode.CancellationTokenSource(token);
@@ -101,9 +105,10 @@ export class PukuInlineEditModel extends Disposable {
 			const fimPromise = this.fimProvider.getNextEdit(docId, context, fimCts.token);
 
 			// Start diagnostics with delay (Copilot pattern - give FIM priority)
+			// Pass logContext following Copilot's pattern (inlineCompletionProvider.ts:183)
 			const diagnosticsDelayMs = this.configService.getConfig()?.diagnostics?.delayBeforeFixMs ?? 50;
 			const diagnosticsPromise = this.diagnosticsProvider
-				? this.diagnosticsProvider.runUntilNextEdit?.(docId, context, diagnosticsDelayMs, diagnosticsCts.token) ||
+				? this.diagnosticsProvider.runUntilNextEdit?.(docId, context, logContext, diagnosticsDelayMs, diagnosticsCts.token) ||
 				  this.diagnosticsProvider.getNextEdit(docId, context, diagnosticsCts.token)
 				: Promise.resolve(null);
 
@@ -327,17 +332,34 @@ export class PukuInlineEditModel extends Disposable {
 
 	/**
 	 * Race promises and get both first and all results
-	 * Based on Copilot's raceAndAll utility
+	 * Copied from Copilot's raceAndAll utility (inlineCompletionProvider.ts:556-596)
+	 * Returns sparse array for `first` - only the winning index is filled, others are undefined
 	 */
-	private raceAndAll<T>(promises: Promise<T>[]): { first: Promise<T[]>, all: Promise<T[]> } {
-		return {
-			first: Promise.race(promises.map((p, i) => p.then(result => {
-				const results: T[] = new Array(promises.length);
-				results[i] = result;
-				return results;
-			}))),
-			all: Promise.all(promises)
-		};
+	private raceAndAll<T>(promises: Promise<T>[]): { first: Promise<(T | undefined)[]>, all: Promise<T[]> } {
+		let settled = false;
+
+		const first = new Promise<(T | undefined)[]>((resolve, reject) => {
+			promises.forEach((promise, index) => {
+				promise.then(result => {
+					if (settled) {
+						return;
+					}
+					settled = true;
+					const output: (T | undefined)[] = Array(promises.length).fill(undefined);
+					output[index] = result;
+					resolve(output);
+				}, error => {
+					settled = true;
+					console.error('[PukuInlineEditModel] Promise error in race:', error);
+					const output: (T | undefined)[] = Array(promises.length).fill(undefined);
+					resolve(output);
+				});
+			});
+		});
+
+		const all = Promise.all(promises);
+
+		return { first, all };
 	}
 
 	/**

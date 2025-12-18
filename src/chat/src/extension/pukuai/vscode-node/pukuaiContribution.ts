@@ -13,7 +13,7 @@ import { IExtensionContribution } from '../../common/contributions';
 import { XtabProvider } from '../../xtab/node/xtabProvider';
 import { PukuAILanguageModelProvider } from './pukuaiProvider';
 import { PukuDiagnosticsProvider } from './pukuDiagnosticsProvider';
-import { PukuDiagnosticsNextEditProvider } from './providers/pukuDiagnosticsNextEditProvider';
+import { DiagnosticsNextEditProvider } from '../../inlineEdits/vscode-node/features/diagnosticsInlineEditProvider';
 import { PukuFimProvider } from './providers/pukuFimProvider';
 import { PukuNesNextEditProvider } from './providers/pukuNesNextEditProvider';
 import { PukuUnifiedInlineProvider } from './pukuUnifiedInlineProvider';
@@ -127,13 +127,19 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 		// Create FIM provider (racing provider)
 		const fimProvider = this._instantiationService.createInstance(PukuFimProvider);
 
-		// Create diagnostics next edit provider (racing provider #2)
-		const diagnosticsNextEditProvider = this._instantiationService.createInstance(PukuDiagnosticsNextEditProvider);
-
-		// Create NES/Xtab provider (racing provider #3 - refactoring suggestions)
-		// Register NES infrastructure components (Issue #114)
+		// Register NES infrastructure components (Issue #114) - shared by diagnostics and NES providers
 		const workspace = this._instantiationService.createInstance(VSCodeWorkspace);
 		const observableGit = this._instantiationService.createInstance(ObservableGit);
+
+		// Create diagnostics next edit provider (racing provider #2)
+		// Issue #131: Use instant language server diagnostics (<10ms) instead of API-based (~1000ms)
+		const diagnosticsNextEditProvider = this._instantiationService.createInstance(
+			DiagnosticsNextEditProvider,
+			workspace,
+			observableGit
+		);
+
+		// Create NES/Xtab provider (racing provider #3 - refactoring suggestions)
 		const historyProvider = this._instantiationService.createInstance(NesHistoryContextProvider, workspace, observableGit);
 		const xtabHistoryTracker = this._instantiationService.createInstance(NesXtabHistoryTracker, workspace);
 		const xtabProvider = this._instantiationService.createInstance(XtabProvider);
@@ -164,7 +170,8 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 		);
 
 		// Create diagnostics provider (CodeActionProvider) - delegates to next edit provider
-		const diagnosticsProvider = this._instantiationService.createInstance(PukuDiagnosticsProvider, diagnosticsNextEditProvider);
+		// TODO: Disabled temporarily - DiagnosticsNextEditProvider is not compatible with CodeActionProvider API
+		// const diagnosticsProvider = this._instantiationService.createInstance(PukuDiagnosticsProvider, diagnosticsNextEditProvider);
 
 		// Create unified provider that coordinates between them (3-way racing)
 		const unifiedProvider = this._instantiationService.createInstance(
@@ -209,18 +216,19 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 		}
 
 		// Register diagnostics provider as CodeActionProvider (lightbulb menu 💡)
-		// This provides import fixes and other refactorings like Copilot/TypeScript
-		console.log('Puku AI: Registering diagnostics provider as CodeActionProvider');
-		this._logService.info('Puku AI: Registering diagnostics provider as CodeActionProvider');
-
-		const codeActionDisposable = vscode.languages.registerCodeActionsProvider(
-			selector,
-			diagnosticsProvider,
-			{
-				providedCodeActionKinds: [vscode.CodeActionKind.QuickFix]
-			}
-		);
-		this._register(codeActionDisposable);
+		// TODO: Disabled temporarily - DiagnosticsNextEditProvider is not compatible with CodeActionProvider API
+		// The reference implementation only uses it for inline completions, not CodeActions
+		// console.log('Puku AI: Registering diagnostics provider as CodeActionProvider');
+		// this._logService.info('Puku AI: Registering diagnostics provider as CodeActionProvider');
+		//
+		// const codeActionDisposable = vscode.languages.registerCodeActionsProvider(
+		// 	selector,
+		// 	diagnosticsProvider,
+		// 	{
+		// 		providedCodeActionKinds: [vscode.CodeActionKind.QuickFix]
+		// 	}
+		// );
+		// this._register(codeActionDisposable);
 		console.log('Puku AI: CodeActionProvider registered successfully');
 
 		this._inlineProviderRegistered = true;

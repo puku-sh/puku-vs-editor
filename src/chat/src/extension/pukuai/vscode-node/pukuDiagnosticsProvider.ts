@@ -10,7 +10,7 @@ import { IPukuAuthService } from '../../pukuIndexing/common/pukuAuth';
 import { IPukuConfigService } from '../../pukuIndexing/common/pukuConfig';
 import { IPukuIndexingService } from '../../pukuIndexing/node/pukuIndexingService';
 import { IPukuDiagnosticsProvider, PukuDiagnosticsResult } from './pukuInlineEditModel';
-import { PukuDiagnosticsNextEditProvider } from './providers/pukuDiagnosticsNextEditProvider';
+import type { DiagnosticsNextEditProvider } from '../../inlineEdits/vscode-node/features/diagnosticsInlineEditProvider';
 import { DocumentId } from '../common/nextEditProvider';
 
 /**
@@ -28,7 +28,7 @@ export class PukuDiagnosticsProvider implements vscode.CodeActionProvider, IPuku
 	private _disposables: vscode.Disposable[] = [];
 
 	constructor(
-		private readonly _nextEditProvider: PukuDiagnosticsNextEditProvider,
+		private readonly _nextEditProvider: DiagnosticsNextEditProvider,
 		@IPukuAuthService private readonly _authService: IPukuAuthService,
 		@IPukuConfigService private readonly _configService: IPukuConfigService,
 		@IPukuIndexingService private readonly _indexingService: IPukuIndexingService,

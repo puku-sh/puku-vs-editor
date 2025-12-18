@@ -17,7 +17,6 @@ import { RefactoringDetectionFlow } from '../flows/refactoringDetection';
 import { ImportContextFlow } from '../flows/importContext';
 import { SemanticSearchFlow } from '../flows/semanticSearch';
 import { isInsideComment } from '../helpers/commentDetection';
-import { PositionValidator } from '../helpers/positionValidation';
 import { ImportFilteringAspect } from '../../node/importFiltering';
 
 interface CompletionResponse {
@@ -175,8 +174,6 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 	private _refactoringFlow: RefactoringDetectionFlow;
 	private _importFlow: ImportContextFlow;
 	private _semanticSearchFlow: SemanticSearchFlow;
-	// Position validation helper
-	private _positionValidator: PositionValidator;
 
 	constructor(
 		@IFetcherService private readonly _fetcherService: IFetcherService,
@@ -194,7 +191,6 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		this._refactoringFlow = new RefactoringDetectionFlow(_logService, _fetcherService, _authService);
 		this._importFlow = new ImportContextFlow();
 		this._semanticSearchFlow = new SemanticSearchFlow(_indexingService, _configService);
-		this._positionValidator = new PositionValidator();
 	}
 
 	/**
@@ -269,9 +265,9 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		}
 		console.log(`[PukuFimProvider][${reqId}] ✓ Authenticated`);
 
-		// POSITION VALIDATION: Clear stale position if cursor moved
+		// No position validation - matches Copilot's approach (completionsCache.ts has no position checks)
+		// Cache hits are determined ONLY by prefix/suffix matching, not position
 		const fileUri = document.uri.toString();
-		this._positionValidator.validate(fileUri, position, reqId);
 
 		// Extract prefix/suffix for all cache checks
 		const prefix = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
@@ -283,8 +279,6 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		if (typingAsSuggested !== undefined) {
 			console.log(`[PukuFimProvider][${reqId}] ⚡ CurrentGhostText cache HIT! Instant forward typing (0ms)`);
 			console.log(`[PukuFimProvider][${reqId}] 📄 Remaining completion: "${typingAsSuggested.substring(0, 100)}${typingAsSuggested.length > 100 ? '...' : ''}"`);
-			// Store position for validation
-			this._positionValidator.update(fileUri, position);
 			// Store context for handleShown (so CurrentGhostText can be refreshed with new position)
 			this._storeShownContext(fileUri, prefix, suffix, typingAsSuggested, reqId);
 			// Return remaining completion instantly (no API call)
@@ -305,8 +299,6 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			const completions = cached[0]; // Get first array of completions
 			console.log(`[PukuFimProvider][${reqId}] 🎯 Radix Trie cache HIT! Found ${completions.length} cached completion(s)`);
 			console.log(`[PukuFimProvider][${reqId}] 📄 First cached completion preview: "${completions[0].substring(0, 100)}${completions[0].length > 100 ? '...' : ''}"`);
-			// Store position for validation
-			this._positionValidator.update(fileUri, position);
 			// Store context for handleShown (use first completion for CurrentGhostText)
 			this._storeShownContext(fileUri, prefix, suffix, completions[0], reqId);
 			// Create completion items for all cached completions (Feature #64)
@@ -357,9 +349,6 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 				console.log(`[PukuFimProvider] 💾 Storing ${completions.length} completion(s) in Radix Trie cache (prefixLen=${prefix.length})`);
 				completionsCache.append(prefix, suffix, completions);
 
-				// Store position for validation
-				this._positionValidator.update(fileUri, position);
-
 				// Store context for handleShown (use first completion for CurrentGhostText)
 				this._storeShownContext(fileUri, prefix, suffix, completions[0], reqId);
 
@@ -383,12 +372,6 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			return null;
 		}
 		console.log(`[PukuFimProvider][${reqId}] ✓ Passed debounce check (fileChanged=${fileChanged}, timeSinceLastRequest=${now - this._lastRequestTime}ms)`);
-		if (fileChanged) {
-			// POSITION VALIDATION: Clear state for old file to prevent memory leak
-			if (this._lastFileUri) {
-				this._positionValidator.clear(this._lastFileUri);
-			}
-		}
 
 		// Check for existing pending request (Copilot pattern - nextEditProvider.ts:425-431)
 		if (this._pendingFimRequest) {
@@ -553,10 +536,6 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 				// Store ALL completions in Radix Trie cache for future lookups (Feature #64)
 				console.log(`[PukuFimProvider][${reqId}] 💾 Storing ${completions.length} completion(s) in Radix Trie cache (prefixLen=${prefix.length})`);
 				completionsCache.append(prefix, suffix, completions);
-
-				// Store position for validation
-				console.log(`[PukuFimProvider][${reqId}] 💾 Updating position validator...`);
-				this._positionValidator.update(fileUri, position);
 
 				// Calculate replacement range
 				let finalRange: vscode.Range;

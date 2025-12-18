@@ -10,7 +10,7 @@ import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
 import { PukuInlineEditModel } from './pukuInlineEditModel';
 import { PukuFimProvider } from './providers/pukuFimProvider';
-import { PukuDiagnosticsNextEditProvider } from './providers/pukuDiagnosticsNextEditProvider';
+import type { DiagnosticsNextEditProvider } from '../../inlineEdits/vscode-node/features/diagnosticsInlineEditProvider';
 import { PukuNesNextEditProvider } from './providers/pukuNesNextEditProvider';
 import { RejectionCollector } from '../common/rejectionCollector';
 import { PukuAutoTrigger } from './pukuAutoTrigger';
@@ -34,7 +34,7 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 
 	constructor(
 		private readonly fimProvider: PukuFimProvider,
-		private readonly diagnosticsProvider: PukuDiagnosticsNextEditProvider | undefined,
+		private readonly diagnosticsProvider: DiagnosticsNextEditProvider | undefined,
 		private readonly nesProvider: PukuNesNextEditProvider | undefined,
 		private readonly autoTrigger: PukuAutoTrigger | undefined,
 		private readonly logService: ILogService,
