@@ -12,11 +12,20 @@ import type { DocumentEditTracker } from './documentEditTracker';
 import * as vscode from 'vscode';
 
 /**
+ * Completion choice (inspired by GitHub Copilot's APIChoice)
+ * Issue #133: Support metadata for multi-document inline completions
+ */
+export interface CompletionChoice {
+	completionText: string;
+	metadata?: any;  // Optional metadata from backend (targetDocument, targetLine, displayType, etc.)
+}
+
+/**
  * Cache entry with edit tracking (Issue #58.3)
  */
 interface CacheEntry {
 	suffix: string;
-	completions: string[]; // Feature #64: Support multiple completions
+	choices: (CompletionChoice | string)[]; // Feature #64: Support multiple completions with metadata (Issue #133), backward compatible with old string format
 
 	// NEW: Edit tracking fields (Issue #58.3)
 	documentBeforeEdit?: string;      // Full document when cached
@@ -66,30 +75,42 @@ export class CompletionsCache {
 		suffix: string,
 		document?: vscode.TextDocument,
 		position?: vscode.Position
-	): string[][] {
+	): CompletionChoice[] {
 		// Step 1: Try exact prefix match (fast path)
-		const exactMatches = this.cache.findAll(prefix);
+		// Following Copilot's pattern from completionsCache.ts:36-50
+		const exactMatches = this.cache.findAll(prefix).flatMap(({ remainingKey, value }) =>
+			value.content
+				.filter(c => c.suffix === suffix)
+				.flatMap(c =>
+					c.choices
+						.filter(choice => {
+							// Backward compatibility: Handle old string format
+							if (typeof choice === 'string') {
+								return choice.startsWith(remainingKey) && choice.length > remainingKey.length;
+							}
+							// New format: CompletionChoice
+							return choice.completionText.startsWith(remainingKey) &&
+								choice.completionText.length > remainingKey.length;
+						})
+						.map(choice => {
+							// Backward compatibility: Convert old string format to CompletionChoice
+							if (typeof choice === 'string') {
+								return {
+									completionText: choice.slice(remainingKey.length)
+								};
+							}
+							// New format: Slice and preserve metadata
+							return {
+								...choice,
+								completionText: choice.completionText.slice(remainingKey.length)
+							};
+						})
+				)
+		);
 
-		for (const match of exactMatches) {
-			if (match.remainingKey === '') {
-				// Exact match found - filter by suffix
-				const results = match.value.content
-					.filter(c => c.suffix === suffix)
-					.map(c =>
-						c.completions
-							.filter(completion =>
-								completion.startsWith(match.remainingKey) &&
-								completion.length > match.remainingKey.length
-							)
-							.map(completion => completion.slice(match.remainingKey.length))
-					)
-					.filter(completions => completions.length > 0);
-
-				if (results.length > 0) {
-					console.log('[Cache] ✅ Exact prefix match');
-					return results;
-				}
-			}
+		if (exactMatches.length > 0) {
+			console.log('[Cache] ✅ Exact prefix match');
+			return exactMatches;
 		}
 
 		// Step 2: Try rebasing cached entries (slow path)
@@ -152,7 +173,7 @@ export class CompletionsCache {
 	append(
 		prefix: string,
 		suffix: string,
-		completions: string[],
+		choices: CompletionChoice[],
 		document?: vscode.TextDocument,  // NEW
 		position?: vscode.Position       // NEW
 	): void {
@@ -161,7 +182,7 @@ export class CompletionsCache {
 		// Create cache entry with edit tracking
 		const entry: CacheEntry = {
 			suffix,
-			completions,
+			choices,
 			documentBeforeEdit: document?.getText(),
 			userEditSince: StringEdit.empty,
 			editWindow: this.computeEditWindow(prefix, suffix, document, position),
@@ -248,22 +269,26 @@ export class CompletionsCache {
 		entry: CacheEntry,
 		currentDocContent: string,
 		currentSelection: readonly OffsetRange[]
-	): string[] | undefined {
+	): CompletionChoice[] | undefined {
 
 		if (!entry.documentBeforeEdit || !entry.userEditSince) {
 			return undefined;
 		}
 
-		const rebasedCompletions: string[] = [];
+		const rebasedChoices: CompletionChoice[] = [];
 		const tracer = new ConsoleTracer('[Cache/Rebase]');
 
-		// Rebase each completion in the entry
-		for (const completion of entry.completions) {
+		// Rebase each choice in the entry
+		for (const choice of entry.choices) {
+			// Backward compatibility: Convert old string format to CompletionChoice
+			const completionChoice: CompletionChoice = typeof choice === 'string'
+				? { completionText: choice }
+				: choice;
 
 			// Reconstruct the original edit from the cached completion
 			const originalEdit = this.reconstructOriginalEdit(
 				entry,
-				completion,
+				completionChoice.completionText,
 				entry.documentBeforeEdit
 			);
 
@@ -299,17 +324,22 @@ export class CompletionsCache {
 			}
 
 			const rebasedEdit = rebaseResult[0].rebasedEdit;
-			rebasedCompletions.push(rebasedEdit.newText);
+
+			// Preserve metadata from original choice
+			rebasedChoices.push({
+				...completionChoice,
+				completionText: rebasedEdit.newText
+			});
 
 			console.log('[Cache] Rebased completion:', {
-				original: completion.substring(0, 30) + '...',
+				original: completionChoice.completionText.substring(0, 30) + '...',
 				originalOffset: originalEdit.replaceRange.start,
 				rebasedOffset: rebasedEdit.replaceRange.start,
 				delta: rebasedEdit.replaceRange.start - originalEdit.replaceRange.start
 			});
 		}
 
-		return rebasedCompletions.length > 0 ? rebasedCompletions : undefined;
+		return rebasedChoices.length > 0 ? rebasedChoices : undefined;
 	}
 
 	/**

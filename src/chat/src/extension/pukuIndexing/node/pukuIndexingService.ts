@@ -336,7 +336,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 			// Log cache stats
 			const stats = this._cache.getStats();
-			console.log(`[PukuIndexing] Initialized - SQLite cache: ${stats.fileCount} files, ${stats.chunkCount} chunks`);
+// 			console.log(`[PukuIndexing] Initialized - SQLite cache: ${stats.fileCount} files, ${stats.chunkCount} chunks`);
 
 			// If we have cached data, load it
 			if (stats.fileCount > 0) {
@@ -439,7 +439,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 				this._onDidCompleteIndexing.fire();
 
 				const stats = this._cache.getStats();
-				console.log(`[PukuIndexing] Indexing complete. ${stats.fileCount} files (${newFilesIndexed} new, ${cachedFiles} cached), ${stats.chunkCount} chunks`);
+// 				console.log(`[PukuIndexing] Indexing complete. ${stats.fileCount} files (${newFilesIndexed} new, ${cachedFiles} cached), ${stats.chunkCount} chunks`);
 			}
 		} catch (error) {
 			console.error('[PukuIndexing] Indexing failed:', error);

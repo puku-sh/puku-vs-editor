@@ -1,11 +1,22 @@
-console.log("Hello, World!");
-
-fib = (n) => {
-  if (n <= 1) {
-    return n;
+  interface User {
+      id: number;
+      name: string;
+      email: string;
+      age: number;
   }
-  return fib(n - 1) + fib(n - 2);
-};
 
+  export function processUsers(users: User[]): void {
+      // TODO: Calculate total age, average age
+      let totalAge = 0;
+      let averageAge = 0;
 
+      for (const user of users) {
+          totalAge += user.age;
+      }
 
+      averageAge = totalAge / users.length;
+
+      console.log(`Total Age: ${totalAge}`);
+      console.log(`Average Age: ${averageAge}`);
+  }
+  

@@ -99,7 +99,7 @@ export class PukuASTChunker {
 			try {
 				const astChunks = await this._chunkWithAST(content, wasmLanguage);
 				if (astChunks.length > 0) {
-					console.log(`[PukuASTChunker] AST chunking produced ${astChunks.length} chunks for ${languageId}`);
+// 					console.log(`[PukuASTChunker] AST chunking produced ${astChunks.length} chunks for ${languageId}`);
 					return astChunks;
 				}
 			} catch (error) {
@@ -108,7 +108,7 @@ export class PukuASTChunker {
 		}
 
 		// Fallback to line-based chunking for unsupported languages
-		console.log(`[PukuASTChunker] Using line-based chunking for ${languageId}`);
+// 		console.log(`[PukuASTChunker] Using line-based chunking for ${languageId}`);
 		return this._chunkByLines(content);
 	}
 

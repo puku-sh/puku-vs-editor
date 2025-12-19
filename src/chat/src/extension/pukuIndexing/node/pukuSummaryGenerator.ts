@@ -30,7 +30,7 @@ export class PukuSummaryGenerator {
 			this._jobManager = new PukuSummaryJobManager(this._db);
 		}
 		const config = this._configService.getConfig();
-		console.log(`[SummaryGenerator] Config loaded: endpoint=${config.endpoints.summarize}, chunksPerJob=${config.performance.chunksPerJob}, maxJobs=${config.performance.maxConcurrentJobs}`);
+// 		console.log(`[SummaryGenerator] Config loaded: endpoint=${config.endpoints.summarize}, chunksPerJob=${config.performance.chunksPerJob}, maxJobs=${config.performance.maxConcurrentJobs}`);
 	}
 
 	/**

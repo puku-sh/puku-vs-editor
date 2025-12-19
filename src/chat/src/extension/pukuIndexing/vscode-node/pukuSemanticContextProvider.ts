@@ -105,7 +105,7 @@ export class PukuSemanticContextProvider extends Disposable {
 								return [];
 							}
 
-							console.log(`[PukuSemanticContext] Found ${results.length} results`);
+// 							console.log(`[PukuSemanticContext] Found ${results.length} results`);
 
 							// Convert to CodeSnippet format
 							const snippets: Copilot.CodeSnippet[] = results
@@ -120,7 +120,7 @@ export class PukuSemanticContextProvider extends Disposable {
 									id: `puku-semantic-${index}`,
 								}));
 
-							console.log(`[PukuSemanticContext] Returning ${snippets.length} snippets`);
+// 							console.log(`[PukuSemanticContext] Returning ${snippets.length} snippets`);
 							return snippets;
 						} catch (error) {
 							console.error('[PukuSemanticContext] Error resolving context:', error);

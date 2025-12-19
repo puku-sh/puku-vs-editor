@@ -22,28 +22,19 @@ export class DocumentFilter {
 	}
 
 	public async isTrackingEnabled(document: TextDocument | NotebookDocument): Promise<boolean> {
-		console.log(`[DocumentFilter] Checking ${document.uri.toString()}`);
-
 		// this should filter out documents coming from output pane, git fs, etc.
 		if (!['file', 'untitled'].includes(document.uri.scheme) && !isNotebookCellOrNotebookChatInput(document.uri)) {
-			console.log(`[DocumentFilter] ❌ URI scheme '${document.uri.scheme}' not allowed`);
 			return false;
 		}
-		console.log(`[DocumentFilter] ✅ URI scheme check passed`);
 
 		if (isTextDocument(document) && !this._isGhostTextEnabled(document.languageId)) {
-			console.log(`[DocumentFilter] ❌ Language '${document.languageId}' not enabled`);
 			return false;
 		}
-		console.log(`[DocumentFilter] ✅ Language check passed`);
 
 		const isIgnored = await this._ignoreService.isPukuIgnored(document.uri);
 		if (isIgnored) {
-			console.log(`[DocumentFilter] ❌ Document is in ignore list`);
 			return false;
 		}
-		console.log(`[DocumentFilter] ✅ Not in ignore list`);
-		console.log(`[DocumentFilter] → Tracking enabled: true`);
 
 		return true;
 	}

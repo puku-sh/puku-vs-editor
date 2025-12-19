@@ -139,7 +139,7 @@ export class PukuEmbeddingsCache {
 		const dbPath = vscode.Uri.joinPath(storageUri, 'puku-embeddings.db');
 		try {
 			await fs.promises.unlink(dbPath.fsPath);
-			console.log(`[PukuEmbeddingsCache] Deleted database at ${dbPath.fsPath}`);
+// 			console.log(`[PukuEmbeddingsCache] Deleted database at ${dbPath.fsPath}`);
 			return true;
 		} catch {
 			return false;
@@ -166,7 +166,7 @@ export class PukuEmbeddingsCache {
 			try {
 				await fs.promises.mkdir(path.dirname(dbPath.fsPath), { recursive: true });
 				this._db = new sql.DatabaseSync(dbPath.fsPath, syncOptions);
-				console.log(`[PukuEmbeddingsCache] Opened SQLite database at ${dbPath.fsPath}`);
+// 				console.log(`[PukuEmbeddingsCache] Opened SQLite database at ${dbPath.fsPath}`);
 			} catch (e) {
 				console.error('[PukuEmbeddingsCache] Failed to open SQLite database on disk:', e);
 			}
@@ -181,11 +181,11 @@ export class PukuEmbeddingsCache {
 		// Load sqlite-vec extension for vector search
 		try {
 			const vecPath = getSqliteVecPath();
-			console.log(`[PukuEmbeddingsCache] Loading sqlite-vec from: ${vecPath}`);
+// 			console.log(`[PukuEmbeddingsCache] Loading sqlite-vec from: ${vecPath}`);
 			this._db.loadExtension(vecPath);
 			this._vecEnabled = true;
 			const version = this._db.prepare('SELECT vec_version() as version').get() as { version: string };
-			console.log(`[PukuEmbeddingsCache] sqlite-vec loaded: v${version.version}`);
+// 			console.log(`[PukuEmbeddingsCache] sqlite-vec loaded: v${version.version}`);
 		} catch (e) {
 			console.warn('[PukuEmbeddingsCache] Failed to load sqlite-vec, falling back to in-memory search:', e);
 			this._vecEnabled = false;
@@ -208,7 +208,7 @@ export class PukuEmbeddingsCache {
 			const metaResult = this._db.prepare('SELECT version, model FROM CacheMeta LIMIT 1').get();
 			if (!metaResult || metaResult.version !== cacheVersion || metaResult.model !== PukuEmbeddingsCache.MODEL_ID) {
 				needsRebuild = true;
-				console.log(`[PukuEmbeddingsCache] Cache version/model mismatch (have: ${metaResult?.version}/${metaResult?.model}, need: ${cacheVersion}/${PukuEmbeddingsCache.MODEL_ID}), dropping tables`);
+// 				console.log(`[PukuEmbeddingsCache] Cache version/model mismatch (have: ${metaResult?.version}/${metaResult?.model}, need: ${cacheVersion}/${PukuEmbeddingsCache.MODEL_ID}), dropping tables`);
 			}
 		} catch {
 			// CacheMeta table doesn't exist yet - this is a new database
@@ -294,7 +294,7 @@ export class PukuEmbeddingsCache {
 		// Update metadata
 		this._db.exec('DELETE FROM CacheMeta;');
 		this._db.prepare('INSERT INTO CacheMeta (version, model) VALUES (?, ?)').run(cacheVersion, PukuEmbeddingsCache.MODEL_ID);
-		console.log(`[PukuEmbeddingsCache] Cache version: ${cacheVersion}`);
+// 		console.log(`[PukuEmbeddingsCache] Cache version: ${cacheVersion}`);
 
 		console.log('[PukuEmbeddingsCache] Database initialized');
 	}

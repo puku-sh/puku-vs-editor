@@ -139,11 +139,11 @@ export class PukuNesNextEditProvider extends Disposable implements IPukuNextEdit
 		try {
 			// Convert Puku DocumentId to NES DocumentId
 			const docId = DocumentId.create(document.uri.toString());
-			console.log(`[PukuNesNextEdit][${reqId}] 🔍 Looking for docId: ${docId.toString()}`);
-			console.log(`[PukuNesNextEdit][${reqId}] 🔍 Workspace has ${this.workspace.openDocuments.get().length} open documents`);
-			this.workspace.openDocuments.get().forEach((d, idx) => {
-				console.log(`[PukuNesNextEdit][${reqId}] 🔍 Doc ${idx}: ${d.id.toString()}`);
-			});
+// 			console.log(`[PukuNesNextEdit][${reqId}] 🔍 Looking for docId: ${docId.toString()}`);
+// 			console.log(`[PukuNesNextEdit][${reqId}] 🔍 Workspace has ${this.workspace.openDocuments.get().length} open documents`);
+			// this.workspace.openDocuments.get().forEach((d, idx) => {
+			// 	console.log(`[PukuNesNextEdit][${reqId}] 🔍 Doc ${idx}: ${d.id.toString()}`);
+			// });
 
 			const doc = this.workspace.getDocument(docId);
 			if (!doc) {

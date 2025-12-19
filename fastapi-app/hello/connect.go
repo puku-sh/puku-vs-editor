@@ -3,6 +3,7 @@
 
 package main
 
+import(
 	"fmt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -15,4 +16,5 @@ func main() {
 		panic("failed to connect database")
 	}
 	fmt.Println("Database connection successful")
+	
 }

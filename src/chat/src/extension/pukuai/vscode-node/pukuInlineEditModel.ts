@@ -114,7 +114,7 @@ export class PukuInlineEditModel extends Disposable {
 
 			// Start NES with delay (give FIM priority, but slightly longer delay than diagnostics)
 			const nesDelayMs = 75; // NES gets 75ms delay (diagnostics is 50ms)
-			console.log(`[PukuInlineEditModel] 🏁 Starting 3-way race: FIM (0ms) vs Diagnostics (${diagnosticsDelayMs}ms) vs NES (${nesDelayMs}ms)`);
+// 			console.log(`[PukuInlineEditModel] 🏁 Starting 3-way race: FIM (0ms) vs Diagnostics (${diagnosticsDelayMs}ms) vs NES (${nesDelayMs}ms)`);
 			const nesPromise = this.nesProvider
 				? this.nesProvider.runUntilNextEdit?.(docId, context, nesDelayMs, nesCts.token) ||
 				  this.nesProvider.getNextEdit(docId, context, nesCts.token)
@@ -154,7 +154,7 @@ export class PukuInlineEditModel extends Disposable {
 					: 'all returned null, giving providers 1s more';
 
 				this.logService.info(`[PukuInlineEditModel] Waiting for all promises: ${reason}`);
-				console.log(`[PukuInlineEditModel] ⏳ Waiting for all promises: ${reason}`);
+// 				console.log(`[PukuInlineEditModel] ⏳ Waiting for all promises: ${reason}`);
 
 				// Set timeout to cancel after 1 second
 				this.timeout(1000).then(() => {
