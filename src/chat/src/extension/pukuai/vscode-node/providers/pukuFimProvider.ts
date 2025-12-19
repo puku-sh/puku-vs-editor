@@ -16,8 +16,13 @@ import { CommentCompletionFlow } from '../flows/commentCompletion';
 import { RefactoringDetectionFlow } from '../flows/refactoringDetection';
 import { ImportContextFlow } from '../flows/importContext';
 import { SemanticSearchFlow } from '../flows/semanticSearch';
+import { CurrentFileContextFlow } from '../flows/currentFileContext';
 import { isInsideComment } from '../helpers/commentDetection';
 import { ImportFilteringAspect } from '../../node/importFiltering';
+import { isInlineSuggestion } from '../utils/isInlineSuggestion';
+import { DocumentResolver } from '../utils/documentResolver';
+import { DisplayLocationFactory } from '../utils/displayLocationFactory';
+import { NavigationCommandFactory } from '../utils/navigationCommandFactory';
 
 interface CompletionResponse {
 	id: string;
@@ -29,7 +34,26 @@ interface CompletionResponse {
 		message?: { content: string };
 		index: number;
 		finish_reason: string | null;
+		metadata?: {
+			targetDocument?: string;    // URI string
+			targetLine?: number;         // 0-indexed
+			targetColumn?: number;       // 0-indexed
+			displayType?: 'code' | 'label';
+		};
 	}>;
+}
+
+/**
+ * Completion with metadata for multi-document support
+ */
+interface CompletionWithMetadata {
+	text: string;
+	metadata?: {
+		targetDocument?: string;
+		targetLine?: number;
+		targetColumn?: number;
+		displayType?: 'code' | 'label';
+	};
 }
 
 /**
@@ -174,6 +198,11 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 	private _refactoringFlow: RefactoringDetectionFlow;
 	private _importFlow: ImportContextFlow;
 	private _semanticSearchFlow: SemanticSearchFlow;
+	private _currentFileContextFlow: CurrentFileContextFlow;
+	// Multi-document completion support (Copilot parity)
+	private _documentResolver: DocumentResolver;
+	private _displayLocationFactory: DisplayLocationFactory;
+	private _navigationCommandFactory: NavigationCommandFactory;
 
 	constructor(
 		@IFetcherService private readonly _fetcherService: IFetcherService,
@@ -191,6 +220,11 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		this._refactoringFlow = new RefactoringDetectionFlow(_logService, _fetcherService, _authService);
 		this._importFlow = new ImportContextFlow();
 		this._semanticSearchFlow = new SemanticSearchFlow(_indexingService, _configService);
+		this._currentFileContextFlow = new CurrentFileContextFlow();
+		// Initialize multi-document completion components (Copilot parity)
+		this._documentResolver = new DocumentResolver(vscode.workspace);
+		this._displayLocationFactory = new DisplayLocationFactory();
+		this._navigationCommandFactory = new NavigationCommandFactory();
 	}
 
 	/**
@@ -274,15 +308,17 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		const suffix = document.getText(new vscode.Range(position, document.lineAt(document.lineCount - 1).range.end));
 
 		// Check CurrentGhostText FIRST (Layer 1) - instant forward typing through current completion
+		// Skip cache when cycling (Tab key) to allow multiple completions
+		const isCycling = docId.isCycling || false;
 		const currentGhostText = this._getCurrentGhostText(fileUri);
-		const typingAsSuggested = currentGhostText.getCompletionForTyping(prefix, suffix);
+		const typingAsSuggested = !isCycling ? currentGhostText.getCompletionForTyping(prefix, suffix) : undefined;
 		if (typingAsSuggested !== undefined) {
 			console.log(`[PukuFimProvider][${reqId}] ⚡ CurrentGhostText cache HIT! Instant forward typing (0ms)`);
 			console.log(`[PukuFimProvider][${reqId}] 📄 Remaining completion: "${typingAsSuggested.substring(0, 100)}${typingAsSuggested.length > 100 ? '...' : ''}"`);
 			// Store context for handleShown (so CurrentGhostText can be refreshed with new position)
 			this._storeShownContext(fileUri, prefix, suffix, typingAsSuggested, reqId);
 			// Return remaining completion instantly (no API call)
-			const completionItems = [this._createCompletionItem(typingAsSuggested, new vscode.Range(position, position), position, document.uri)];
+			const completionItems = [this._createCompletionItem(typingAsSuggested, new vscode.Range(position, position), position, document.uri, document)];
 			return {
 				type: 'fim',
 				completion: completionItems,
@@ -293,18 +329,30 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 
 		// Check Radix Trie cache (Layer 2) - handles typing, backspace, partial edits
 		// Issue #58.5: Pass document and position for rebase support
+		// Issue #133: Returns CompletionChoice[] with metadata
 		const completionsCache = this._getCompletionsCache(fileUri);
-		const cached = completionsCache.findAll(prefix, suffix, document, position);
-		if (cached.length > 0 && cached[0].length > 0) {
-			const completions = cached[0]; // Get first array of completions
-			console.log(`[PukuFimProvider][${reqId}] 🎯 Radix Trie cache HIT! Found ${completions.length} cached completion(s)`);
-			console.log(`[PukuFimProvider][${reqId}] 📄 First cached completion preview: "${completions[0].substring(0, 100)}${completions[0].length > 100 ? '...' : ''}"`);
+		const cachedChoices = completionsCache.findAll(prefix, suffix, document, position);
+		if (cachedChoices.length > 0) {
+			console.log(`[PukuFimProvider][${reqId}] 🎯 Radix Trie cache HIT! Found ${cachedChoices.length} cached completion(s)`);
+
+			const firstChoice = cachedChoices[0];
+			console.log(`[PukuFimProvider][${reqId}] 📄 First cached completion preview: "${firstChoice.completionText.substring(0, 100)}${firstChoice.completionText.length > 100 ? '...' : ''}" (hasMetadata=${!!firstChoice.metadata})`);
+
 			// Store context for handleShown (use first completion for CurrentGhostText)
-			this._storeShownContext(fileUri, prefix, suffix, completions[0], reqId);
+			this._storeShownContext(fileUri, prefix, suffix, firstChoice.completionText, reqId);
+
 			// Create completion items for all cached completions (Feature #64)
-			const completionItems = completions.map(completion =>
-				this._createCompletionItem(completion, new vscode.Range(position, position), position, document.uri)
+			const completionItems = cachedChoices.map(choice =>
+				this._createCompletionItem(
+					choice.completionText,
+					new vscode.Range(position, position),
+					position,
+					document.uri,
+					document,
+					choice.metadata
+				)
 			);
+
 			return {
 				type: 'fim',
 				completion: completionItems,
@@ -354,7 +402,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 
 				// Create completion items for all completions (Feature #64)
 				const completionItems = completions.map(completion =>
-					this._createCompletionItem(completion, new vscode.Range(position, position), position, document.uri)
+					this._createCompletionItem(completion, new vscode.Range(position, position), position, document.uri, document)
 				);
 				return {
 					type: 'fim',
@@ -405,7 +453,16 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		}
 		console.log(`[PukuFimProvider][${reqId}] ✓ Not inside comment or is comment-based completion`);
 
-		// Gather context
+		// Gather context from current file (for style matching) - HIGHEST PRIORITY
+		let currentFileContent = '';
+		try {
+			currentFileContent = await this._currentFileContextFlow.getCurrentFileContext(document, position, 10000);
+			console.log(`[PukuFimProvider][${reqId}] Current file context: ${currentFileContent ? currentFileContent.length + ' chars' : 'none'}`);
+		} catch (error) {
+			console.log(`[PukuFimProvider][${reqId}] Failed to extract current file context:`, error);
+		}
+
+		// Gather context from imports
 		const importedFiles = await this._importFlow.getImportedFilesContent(document, 3, 500);
 
 		// Get semantic search context
@@ -482,8 +539,8 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 
 		// Fetch completion from API
 		// Feature #64: Request multiple completions if cycling
-		const isCycling = docId.isCycling || false;
-		const n = isCycling ? 3 : 1;
+		// Issue #135: Increased from 3 to 5 to account for quality filtering (repetition detection)
+		const n = isCycling ? 5 : 1;
 		console.log(`[PukuFimProvider][${reqId}] 🌐 Requesting ${n} completion(s) from API (cycling: ${isCycling})...`);
 		this._logService.debug(`[PukuFimProvider][${reqId}] Requesting completion at ${document.fileName}:${position.line} (n=${n})`);
 
@@ -513,29 +570,39 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 				const openFiles = [...importedFiles, ...semanticFiles];
 				console.log(`[PukuFimProvider][${reqId}] Context: ${importedFiles.length} imports + ${semanticFiles.length} semantic files`);
 
-				const completions = await this._fetchContextAwareCompletion(prefix, suffix, openFiles, document.languageId, requestCts.token, n);
-				console.log(`[PukuFimProvider][${reqId}] 📊 Fetch returned ${completions?.length || 0} completion(s)`);
+				const completionsWithMeta = await this._fetchContextAwareCompletion(prefix, suffix, openFiles, document.languageId, requestCts.token, n, document, position, currentFileContent);
+				console.log(`[PukuFimProvider][${reqId}] 📊 Fetch returned ${completionsWithMeta?.length || 0} completion(s)`);
 
-				if (!completions || completions.length === 0) {
+				if (!completionsWithMeta || completionsWithMeta.length === 0) {
 					console.log(`[PukuFimProvider][${reqId}] ❌ API returned null/empty completions`);
 					return null;
 				}
-				console.log(`[PukuFimProvider][${reqId}] ✓ Got ${completions.length} completion(s)`);
+				console.log(`[PukuFimProvider][${reqId}] ✓ Got ${completionsWithMeta.length} completion(s)`);
 
 				if (requestCts.token.isCancellationRequested) {
 					console.log(`[PukuFimProvider][${reqId}] ❌ Cancelled after API call`);
 					return null;
 				}
 				console.log(`[PukuFimProvider][${reqId}] ✓ Not cancelled`);
-				console.log(`[PukuFimProvider][${reqId}] ✅ API returned ${completions.length} completion(s), first: "${completions[0].substring(0, 50)}..."`);
+				console.log(`[PukuFimProvider][${reqId}] ✅ API returned ${completionsWithMeta.length} completion(s), first: "${completionsWithMeta[0].text.substring(0, 50)}..."`);
 
 				// Store speculative request for next completion
 				console.log(`[PukuFimProvider][${reqId}] 💾 Storing speculative request...`);
 				this._storeSpeculativeRequest(completionId, document);
 
 				// Store ALL completions in Radix Trie cache for future lookups (Feature #64)
-				console.log(`[PukuFimProvider][${reqId}] 💾 Storing ${completions.length} completion(s) in Radix Trie cache (prefixLen=${prefix.length})`);
-				completionsCache.append(prefix, suffix, completions);
+				// Issue #133: Convert to CompletionChoice format (Copilot pattern)
+				const choices = completionsWithMeta.map(c => ({
+					completionText: c.text,
+					metadata: c.metadata
+				}));
+				console.log(`[PukuFimProvider][${reqId}] 💾 Storing ${choices.length} completion(s) WITH METADATA in Radix Trie cache (prefixLen=${prefix.length})`);
+				console.log(`[PukuFimProvider][${reqId}] [Issue #134] completionsWithMeta array length: ${completionsWithMeta.length}`);
+				console.log(`[PukuFimProvider][${reqId}] [Issue #134] choices array length: ${choices.length}`);
+				for (let i = 0; i < choices.length; i++) {
+					console.log(`[PukuFimProvider][${reqId}] [Issue #134] Choice ${i + 1}: text="${choices[i].completionText.substring(0, 50)}...", metadata=${JSON.stringify(choices[i].metadata)}`);
+				}
+				completionsCache.append(prefix, suffix, choices, document, position);
 
 				// Calculate replacement range
 				let finalRange: vscode.Range;
@@ -552,15 +619,21 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 				}
 
 				// Store context for handleShown (use first completion for CurrentGhostText)
-				this._storeShownContext(fileUri, prefix, suffix, completions[0], reqId);
+				this._storeShownContext(fileUri, prefix, suffix, completionsWithMeta[0].text, reqId);
 
-				// Feature #64: Create multiple completion items (one for each completion)
-				console.log(`[PukuFimProvider][${reqId}] 🎨 Creating ${completions.length} completion item(s)...`);
-				const completionItems = completions.map(completion =>
-					this._createCompletionItem(completion, finalRange, position, document.uri)
-				);
+				// Feature #64: Create completion items with metadata
+				// _createCompletionItem will determine display type (ghost text vs label)
+				const completionItems = completionsWithMeta
+					.map(c => this._createCompletionItem(c.text, finalRange, position, document.uri, document, c.metadata));
 
-				console.log(`[PukuFimProvider][${reqId}] ✅ Returning ${completionItems.length} completion item(s) to racing model`);
+				console.log(`[PukuFimProvider][${reqId}] ✅ Returning ${completionItems.length}/${completionsWithMeta.length} completion item(s) to racing model`);
+				console.log(`[PukuFimProvider][${reqId}] [Issue #136] completionsWithMeta.length: ${completionsWithMeta.length}`);
+				console.log(`[PukuFimProvider][${reqId}] [Issue #136] completionItems.length: ${completionItems.length}`);
+				for (let i = 0; i < completionItems.length; i++) {
+					const item = completionItems[i];
+					const hasDisplayLocation = (item as any).displayLocation !== undefined;
+					console.log(`[PukuFimProvider][${reqId}] [Issue #136] Item ${i + 1}: hasDisplayLocation=${hasDisplayLocation}, text="${item.insertText.toString().substring(0, 50)}..."`);
+				}
 				return {
 					type: 'fim',
 					completion: completionItems, // Always return array (Feature #64)
@@ -611,6 +684,14 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			const freshPrefix = currentDoc.getText(new vscode.Range(new vscode.Position(0, 0), currentPos));
 			const freshSuffix = currentDoc.getText(new vscode.Range(currentPos, currentDoc.lineAt(currentDoc.lineCount - 1).range.end));
 
+			// Get FRESH current file context
+			let currentFileContent = '';
+			try {
+				currentFileContent = await this._currentFileContextFlow.getCurrentFileContext(currentDoc, currentPos, 10000);
+			} catch (error) {
+				// Failed to extract current file context
+			}
+
 			// Get FRESH import context
 			const importedFiles = await this._importFlow.getImportedFilesContent(currentDoc, 3, 500);
 
@@ -635,8 +716,8 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			}
 
 			const openFiles: Array<{ filepath: string; content: string }> = [...importedFiles, ...semanticFiles];
-			const result = await this._fetchContextAwareCompletion(freshPrefix, freshSuffix, openFiles, currentDoc.languageId, new vscode.CancellationTokenSource().token);
-			return result || [];
+			const result = await this._fetchContextAwareCompletion(freshPrefix, freshSuffix, openFiles, currentDoc.languageId, new vscode.CancellationTokenSource().token, 1, currentDoc, currentPos, currentFileContent);
+			return result ? result.map(c => c.text) : [];
 		};
 
 		this._speculativeCache.set(completionId, speculativeRequestFn);
@@ -653,8 +734,11 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		openFiles: Array<{ filepath: string; content: string }>,
 		languageId: string,
 		token: vscode.CancellationToken,
-		n: number = 1 // Number of completions to generate (1 for automatic, 3 for cycling)
-	): Promise<string[] | null> {
+		n: number = 1, // Number of completions to generate (1 for automatic, 3 for cycling)
+		document?: vscode.TextDocument,
+		position?: vscode.Position,
+		currentFileContent?: string // For same-file style matching (Issue #3)
+	): Promise<CompletionWithMetadata[] | null> {
 		const config = this._configService.getConfig();
 		const url = config.endpoints.fim;
 		const authToken = await this._authService.getToken();
@@ -672,7 +756,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			console.error(`[FetchCompletion] ⚠️ NO AUTH TOKEN - API call will likely fail!`);
 		}
 
-		const requestBody = {
+		const requestBody: any = {
 			prompt: prefix,
 			suffix: suffix,
 			openFiles: openFiles,
@@ -682,6 +766,23 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			stream: false, // Streaming not needed for fast FIM responses
 			n, // Feature #64: Multiple completions
 		};
+
+		// Add metadata context for multi-document completions (Issue #133)
+		if (document && position !== undefined) {
+			const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
+			requestBody.currentDocument = document.uri.toString();
+			requestBody.position = { line: position.line, column: position.character };
+			if (workspaceFolder) {
+				requestBody.workspaceRoot = workspaceFolder.uri.fsPath;
+			}
+			console.log(`[FetchCompletion] 📍 Metadata context: doc=${requestBody.currentDocument}, pos=${requestBody.position.line}:${requestBody.position.column}, workspace=${requestBody.workspaceRoot || 'N/A'}`);
+		}
+
+		// Add current file context for style matching (Issue #3)
+		if (currentFileContent && currentFileContent.length > 0) {
+			requestBody.currentFileContent = currentFileContent;
+			console.log(`[FetchCompletion] 📄 Current file context: ${currentFileContent.length} chars`);
+		}
 
 		console.log(`[FetchCompletion] 📤 Calling API: ${url} (language=${languageId})`);
 		console.log(`[FetchCompletion] 📝 Request body:`, JSON.stringify({
@@ -718,7 +819,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		}
 
 		// Feature #64: Process ALL choices (not just the first one)
-		const validCompletions: string[] = [];
+		const validCompletions: CompletionWithMetadata[] = [];
 
 		// DEBUG: Log raw API response
 		console.log(`[FetchCompletion] 🔍 Raw API response:`, JSON.stringify(data, null, 2));
@@ -727,6 +828,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			const choice = data.choices[i];
 			const text = choice.text || '';
 			const trimmed = text.trim();
+			const metadata = choice.metadata;
 
 			console.log(`[FetchCompletion] Processing choice ${i + 1}/${data.choices.length}: length=${trimmed.length}, text="${text.substring(0, 100)}..."`);
 
@@ -778,7 +880,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			}
 
 			console.log(`[FetchCompletion] ✅ Choice ${i + 1} is valid: "${completionText.substring(0, 50)}..."`);
-			validCompletions.push(completionText);
+			validCompletions.push({ text: completionText, metadata });
 		}
 
 		if (validCompletions.length === 0) {
@@ -793,18 +895,111 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 	/**
 	 * Create completion item
 	 */
+	/**
+	 * Create inline completion item with multi-document support
+	 * Based on Copilot's createNextEditorEditCompletionItem() pattern
+	 * Reference: inlineCompletionProvider.ts:320-349
+	 *
+	 * @param completion Completion text
+	 * @param range Range for insertion
+	 * @param position Current cursor position
+	 * @param documentUri Current document URI
+	 * @param metadata Completion metadata from API response
+	 * @returns InlineCompletionItem with display location and command
+	 */
 	private _createCompletionItem(
 		completion: string,
 		range: vscode.Range,
 		position: vscode.Position,
-		documentUri: vscode.Uri
+		documentUri: vscode.Uri,
+		document: vscode.TextDocument,
+		metadata?: {
+			targetDocument?: string;
+			targetLine?: number;
+			targetColumn?: number;
+			displayType?: 'code' | 'label';
+		}
 	): vscode.InlineCompletionItem {
+		console.log(`[PukuFimProvider] 🔨 _createCompletionItem called: hasMetadata=${!!metadata}, completion="${completion.substring(0, 50)}..."`);
+
+		// Resolve target document from metadata (Copilot pattern)
+		// Reference: inlineCompletionProvider.ts:238-264
+		const resolvedDocument = this._documentResolver.resolveFromMetadata(
+			metadata,
+			documentUri
+		);
+
+		// Determine if this is a simple inline suggestion (ghost text) or complex edit (label)
+		// Priority 1: If metadata says "label", always use label (backend decision)
+		// Priority 2: Multi-document edit (resolvedDocument exists)
+		// Priority 3: Use Copilot's isInlineSuggestion() logic for same-document edits
+		const hasMetadataLabel = metadata?.displayType === 'label';
+		const isInlineCompletion = !hasMetadataLabel && this._isInlineSuggestion(position, document, range, completion);
+		const isInlineEdit = !isInlineCompletion;
+
+		console.log(`[PukuFimProvider] 🔍 Display logic: hasMetadataLabel=${hasMetadataLabel}, isInlineCompletion=${isInlineCompletion}, isInlineEdit=${isInlineEdit}, resolvedDocument=${!!resolvedDocument}`);
+
+		// Use label display if:
+		// 1. Metadata explicitly says "label", OR
+		// 2. Multi-document edit (resolvedDocument exists), OR
+		// 3. It's an inline edit (not simple inline completion)
+		if (hasMetadataLabel || resolvedDocument || isInlineEdit) {
+			// For same-document label displays, use current document
+			const targetDocument = resolvedDocument?.document ?? vscode.workspace.textDocuments.find(d => d.uri.toString() === documentUri.toString())!;
+			const targetRange = resolvedDocument?.range ?? range;
+
+			// Create label-based display location (Copilot pattern)
+			// Reference: inlineCompletionProvider.ts:326-330
+			const displayLocation = this._displayLocationFactory.createLabel(
+				targetDocument,
+				targetRange,
+				position,
+				completion
+			);
+
+			// Create navigation command (Copilot pattern)
+			// Reference: inlineCompletionProvider.ts:336-340
+			const command = this._navigationCommandFactory.create(
+				targetDocument.uri,
+				targetRange
+			);
+
+			// Return completion item with label display (Copilot pattern)
+			// Reference: inlineCompletionProvider.ts:290-299
+			const item = new vscode.InlineCompletionItem(completion, range);
+			item.displayLocation = displayLocation;
+			item.isInlineEdit = true; // Same as Copilot: isInlineEdit = !isInlineCompletion
+			item.command = command;
+
+			this._logService.info(
+				`[PukuFimProvider] Created ${resolvedDocument ? 'multi-document' : 'label'} completion: ${targetDocument.uri.fsPath}:${targetRange.start.line + 1}`
+			);
+
+			return item;
+		}
+
+		// Same-document edit: use ghost text (backward compatibility)
+		// Reference: inlineCompletionProvider.ts:248-264
 		return new vscode.InlineCompletionItem(completion, range);
 	}
 
 	/**
 	 * Lifecycle handlers - IPukuNextEditProvider interface
 	 */
+
+	/**
+	 * Wrapper for isInlineSuggestion() utility function
+	 * Determines if completion should show as ghost text (true) or inline edit (false)
+	 * Based on Copilot's pattern in inlineCompletionProvider.ts:251
+	 */
+	private _isInlineSuggestion(
+		position: vscode.Position,
+		document: vscode.TextDocument,
+		range: vscode.Range,
+		completionText: string
+	): boolean {
+		return isInlineSuggestion(position, document, range, completionText);
+	}
 
 	handleShown(result: PukuFimResult): void {
 		console.log(`[PukuFimProvider] 👁️ Completion shown: reqId=${result.requestId}`);
