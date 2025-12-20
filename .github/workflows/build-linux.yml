@@ -153,7 +153,8 @@ jobs:
           echo "📦 Creating VS Code Linux production build using gulp..."
 
           # Run the gulp production build that creates the expected directory structure
-          npx gulp vscode-linux-x64
+          # Increased memory limit to prevent OOM errors
+          NODE_OPTIONS="--max-old-space-size=8192" npx gulp vscode-linux-x64
 
           # Check if the production build was created successfully
           if [ -d "../VSCode-linux-x64" ]; then
@@ -167,6 +168,7 @@ jobs:
           fi
         env:
           VSCODE_ARCH: x64
+          NODE_OPTIONS: --max-old-space-size=8192
 
       - name: Package Linux builds
         run: |
@@ -330,7 +332,8 @@ jobs:
           echo "📦 Creating VS Code Linux production build using gulp..."
 
           # Run the gulp production build that creates the expected directory structure
-          npx gulp vscode-linux-arm64
+          # Increased memory limit to prevent OOM errors
+          NODE_OPTIONS="--max-old-space-size=8192" npx gulp vscode-linux-arm64
 
           # Check if the production build was created successfully
           if [ -d "../VSCode-linux-arm64" ]; then
@@ -344,6 +347,7 @@ jobs:
           fi
         env:
           VSCODE_ARCH: arm64
+          NODE_OPTIONS: --max-old-space-size=8192
 
       - name: Package Linux builds
         run: |
