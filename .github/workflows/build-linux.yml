@@ -146,6 +146,42 @@ jobs:
           VSCODE_USE_ESBUILD: 1
           NODE_OPTIONS: --max-old-space-size=8192
 
+      # 🆕 Create VS Code Linux Binary
+      - name: Create VS Code Linux Binary
+        run: |
+          cd src/vscode
+          echo "📦 Creating VS Code-linux-x64 directory for packaging..."
+          mkdir -p ../VSCode-linux-x64
+
+          # Check for VS Code build output
+          if [ -d "out-build" ]; then
+            echo "✅ Found out-build directory, copying to VSCode-linux-x64..."
+            cp -R out-build/* ../VSCode-linux-x64/
+            echo "📁 Copied from out-build/ ($(ls -1 out-build | wc -l) items)"
+          elif [ -d "out" ]; then
+            echo "✅ Found out directory, copying to VSCode-linux-x64..."
+            cp -R out/* ../VSCode-linux-x64/
+            echo "📁 Copied from out/ ($(ls -1 out | wc -l) items)"
+          else
+            echo "❌ No VS Code build output found!"
+            echo ""
+            echo "Available directories in src/vscode:"
+            ls -la
+            echo ""
+            echo "Expected one of:"
+            echo "  - src/vscode/out-build/"
+            echo "  - src/vscode/out/"
+            echo ""
+            echo "Run 'make build' first to create the build output."
+            exit 1
+          fi
+
+          echo "🎯 VS Code-linux-x64 binary created successfully!"
+          echo "📍 Location: $(pwd)/../VSCode-linux-x64"
+          echo "📊 Contents: $(ls -la ../VSCode-linux-x64 | grep -c '^d' || echo '0') directories"
+        env:
+          VSCODE_ARCH: x64
+
       - name: Package Linux builds
         run: |
           chmod +x ./build-linux-optimized.sh
