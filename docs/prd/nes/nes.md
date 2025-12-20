@@ -1,4 +1,4 @@
-# 🔮 NES (Next Edit Suggestions) - Complete Learning Guide
+# NES (Next Edit Suggestions) - Complete Learning Guide
 
 > **Build your own AI-powered code editor that predicts what you'll type next!**
 
@@ -404,7 +404,7 @@ Understand all possible states of NES and transitions between them.
 NES can be in one of five states at any time. Each state has specific behavior.
 
 ### 📊 Diagram
-![alt text](image-9.png)
+![alt text](image-15.png)
 
 
 ### ✅ The Five States
