@@ -213,7 +213,7 @@ jobs:
           path: |
             *.deb
             *.rpm
-            *.tar.gz
+            dist/*.tar.gz
           retention-days: 1
           if-no-files-found: error
 
@@ -421,7 +421,7 @@ jobs:
           path: |
             *.deb
             *.rpm
-            *.tar.gz
+            dist/*.tar.gz
           retention-days: 1
           if-no-files-found: error
 
