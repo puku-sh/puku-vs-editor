@@ -258,9 +258,26 @@ jobs:
 
           echo "✅ Dependencies verified"
 
-    # 🚀 Build with optimizations
-      - name: Build using Makefile
-        run: make build
+    # 🚀 Build VS Code (with extension fixes)
+      - name: Build VS Code
+        run: |
+          cd src/vscode
+          echo "🚀 Building VS Code..."
+
+          # First, try to install the specific failing extension dependencies
+          echo "🔧 Installing markdown-math extension dependencies..."
+          cd extensions/markdown-math
+          npm install
+          cd ../..
+
+          echo "🔧 Installing markdown-language-features extension dependencies..."
+          cd extensions/markdown-language-features
+          npm install
+          cd ../..
+
+          # Now build using the standard VS Code compile command
+          echo "🔨 Running VS Code compile..."
+          NODE_OPTIONS="--max-old-space-size=8192" npm run compile
         env:
           VSCODE_ARCH: x64
           UV_THREADPOOL_SIZE: 128
@@ -587,9 +604,26 @@ jobs:
 
           echo "✅ Dependencies verified"
 
-    # 🚀 Build with optimizations
-      - name: Build using Makefile
-        run: make build
+    # 🚀 Build VS Code (with extension fixes)
+      - name: Build VS Code
+        run: |
+          cd src/vscode
+          echo "🚀 Building VS Code..."
+
+          # First, try to install the specific failing extension dependencies
+          echo "🔧 Installing markdown-math extension dependencies..."
+          cd extensions/markdown-math
+          npm install
+          cd ../..
+
+          echo "🔧 Installing markdown-language-features extension dependencies..."
+          cd extensions/markdown-language-features
+          npm install
+          cd ../..
+
+          # Now build using the standard VS Code compile command
+          echo "🔨 Running VS Code compile..."
+          NODE_OPTIONS="--max-old-space-size=8192" npm run compile
         env:
           VSCODE_ARCH: arm64
           UV_THREADPOOL_SIZE: 128
