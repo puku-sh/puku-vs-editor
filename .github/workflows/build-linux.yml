@@ -134,7 +134,40 @@ jobs:
 
           # Install known missing dependencies that sometimes aren't resolved properly
           echo "=== Installing Critical Build Dependencies ==="
-          npm install --no-save ternary-stream gulp esbuild @esbuild-plugins/node-modules-polyfill 2>/dev/null || echo "Some dependencies may already exist"
+          npm install --no-save \
+            ternary-stream \
+            gulp-merge-json \
+            event-stream \
+            gulp-sourcemaps \
+            gulp-filter \
+            gulp-uglify \
+            gulp-rename \
+            gulp-json-editor \
+            gulp-bom \
+            gulp-gunzip \
+            gulp-untar \
+            gulp-replace \
+            gulp-concat \
+            gulp-util \
+            gulp-flatten \
+            gulp-order \
+            gulp-insert \
+            gulp-buffer \
+            gulp-sort \
+            gulp-plumber \
+            gulp-svgmin \
+            gulp-gzip \
+            gulp-vinyl-zip \
+            gulp-flatmap \
+            webpack-stream \
+            @vscode/gulp-electron \
+            vscode-gulp-watch \
+            through2 \
+            vinyl \
+            vinyl-fs \
+            esbuild \
+            @esbuild-plugins/node-modules-polyfill \
+            2>/dev/null || echo "Some dependencies may already exist"
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
@@ -148,13 +181,43 @@ jobs:
           echo "🔍 Checking for missing dependencies..."
 
           # Check if critical build dependencies are installed
-          if ! npm list ternary-stream >/dev/null 2>&1; then
-            echo "⚠️ ternary-stream missing, installing..."
-            npm install ternary-stream
-          fi
+          CRITICAL_DEPS=(
+            "ternary-stream"
+            "gulp-merge-json"
+            "event-stream"
+            "gulp-sourcemaps"
+            "gulp-filter"
+            "gulp-uglify"
+            "gulp-rename"
+            "gulp-json-editor"
+            "gulp-bom"
+            "gulp-gunzip"
+            "gulp-untar"
+            "gulp-replace"
+            "gulp-concat"
+            "gulp-util"
+            "gulp-flatten"
+            "gulp-order"
+            "gulp-insert"
+            "gulp-buffer"
+            "gulp-sort"
+            "gulp-plumber"
+            "gulp-svgmin"
+            "gulp-gzip"
+            "gulp-vinyl-zip"
+            "gulp-flatmap"
+            "webpack-stream"
+            "@vscode/gulp-electron"
+            "vscode-gulp-watch"
+            "gulp"
+            "esbuild"
+            "@esbuild-plugins/node-modules-polyfill"
+            "through2"
+            "vinyl"
+            "vinyl-fs"
+          )
 
-          # Verify other critical build dependencies
-          for dep in "gulp" "esbuild" "@esbuild-plugins/node-modules-polyfill"; do
+          for dep in "${CRITICAL_DEPS[@]}"; do
             if ! npm list "$dep" >/dev/null 2>&1; then
               echo "⚠️ $dep missing, installing..."
               npm install "$dep"
@@ -367,7 +430,40 @@ jobs:
 
           # Install known missing dependencies that sometimes aren't resolved properly
           echo "=== Installing Critical Build Dependencies ==="
-          npm install --no-save ternary-stream gulp esbuild @esbuild-plugins/node-modules-polyfill 2>/dev/null || echo "Some dependencies may already exist"
+          npm install --no-save \
+            ternary-stream \
+            gulp-merge-json \
+            event-stream \
+            gulp-sourcemaps \
+            gulp-filter \
+            gulp-uglify \
+            gulp-rename \
+            gulp-json-editor \
+            gulp-bom \
+            gulp-gunzip \
+            gulp-untar \
+            gulp-replace \
+            gulp-concat \
+            gulp-util \
+            gulp-flatten \
+            gulp-order \
+            gulp-insert \
+            gulp-buffer \
+            gulp-sort \
+            gulp-plumber \
+            gulp-svgmin \
+            gulp-gzip \
+            gulp-vinyl-zip \
+            gulp-flatmap \
+            webpack-stream \
+            @vscode/gulp-electron \
+            vscode-gulp-watch \
+            through2 \
+            vinyl \
+            vinyl-fs \
+            esbuild \
+            @esbuild-plugins/node-modules-polyfill \
+            2>/dev/null || echo "Some dependencies may already exist"
         env:
           npm_config_arch: arm64
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
@@ -382,13 +478,43 @@ jobs:
           echo "🔍 Checking for missing dependencies..."
 
           # Check if critical build dependencies are installed
-          if ! npm list ternary-stream >/dev/null 2>&1; then
-            echo "⚠️ ternary-stream missing, installing..."
-            npm install ternary-stream
-          fi
+          CRITICAL_DEPS=(
+            "ternary-stream"
+            "gulp-merge-json"
+            "event-stream"
+            "gulp-sourcemaps"
+            "gulp-filter"
+            "gulp-uglify"
+            "gulp-rename"
+            "gulp-json-editor"
+            "gulp-bom"
+            "gulp-gunzip"
+            "gulp-untar"
+            "gulp-replace"
+            "gulp-concat"
+            "gulp-util"
+            "gulp-flatten"
+            "gulp-order"
+            "gulp-insert"
+            "gulp-buffer"
+            "gulp-sort"
+            "gulp-plumber"
+            "gulp-svgmin"
+            "gulp-gzip"
+            "gulp-vinyl-zip"
+            "gulp-flatmap"
+            "webpack-stream"
+            "@vscode/gulp-electron"
+            "vscode-gulp-watch"
+            "gulp"
+            "esbuild"
+            "@esbuild-plugins/node-modules-polyfill"
+            "through2"
+            "vinyl"
+            "vinyl-fs"
+          )
 
-          # Verify other critical build dependencies
-          for dep in "gulp" "esbuild" "@esbuild-plugins/node-modules-polyfill"; do
+          for dep in "${CRITICAL_DEPS[@]}"; do
             if ! npm list "$dep" >/dev/null 2>&1; then
               echo "⚠️ $dep missing, installing..."
               npm install "$dep"
