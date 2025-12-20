@@ -138,6 +138,7 @@ jobs:
             ternary-stream \
             gulp-merge-json \
             event-stream \
+            jsonc-parser \
             gulp-sourcemaps \
             gulp-filter \
             gulp-uglify \
@@ -167,6 +168,12 @@ jobs:
             vinyl-fs \
             esbuild \
             @esbuild-plugins/node-modules-polyfill \
+            rimraf \
+            minimist \
+            ansi-colors \
+            fancy-log \
+            pump \
+            gulp-azure-storage \
             2>/dev/null || echo "Some dependencies may already exist"
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
@@ -185,6 +192,7 @@ jobs:
             "ternary-stream"
             "gulp-merge-json"
             "event-stream"
+            "jsonc-parser"
             "gulp-sourcemaps"
             "gulp-filter"
             "gulp-uglify"
@@ -215,6 +223,12 @@ jobs:
             "through2"
             "vinyl"
             "vinyl-fs"
+            "rimraf"
+            "minimist"
+            "ansi-colors"
+            "fancy-log"
+            "pump"
+            "gulp-azure-storage"
           )
 
           for dep in "${CRITICAL_DEPS[@]}"; do
@@ -434,6 +448,7 @@ jobs:
             ternary-stream \
             gulp-merge-json \
             event-stream \
+            jsonc-parser \
             gulp-sourcemaps \
             gulp-filter \
             gulp-uglify \
@@ -463,6 +478,12 @@ jobs:
             vinyl-fs \
             esbuild \
             @esbuild-plugins/node-modules-polyfill \
+            rimraf \
+            minimist \
+            ansi-colors \
+            fancy-log \
+            pump \
+            gulp-azure-storage \
             2>/dev/null || echo "Some dependencies may already exist"
         env:
           npm_config_arch: arm64
@@ -482,6 +503,7 @@ jobs:
             "ternary-stream"
             "gulp-merge-json"
             "event-stream"
+            "jsonc-parser"
             "gulp-sourcemaps"
             "gulp-filter"
             "gulp-uglify"
@@ -512,6 +534,12 @@ jobs:
             "through2"
             "vinyl"
             "vinyl-fs"
+            "rimraf"
+            "minimist"
+            "ansi-colors"
+            "fancy-log"
+            "pump"
+            "gulp-azure-storage"
           )
 
           for dep in "${CRITICAL_DEPS[@]}"; do
