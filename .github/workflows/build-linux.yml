@@ -139,6 +139,15 @@ jobs:
             gulp-merge-json \
             event-stream \
             jsonc-parser \
+            @vscode/markdown-it-katex \
+            @vscode/extension-telemetry \
+            @vscode/emmet-helper \
+            @vscode/codicons \
+            @vscode/sync-api-client \
+            @vscode/sync-api-common \
+            @vscode/sync-api-service \
+            @vscode/ts-package-manager \
+            @vscode/l10n \
             gulp-sourcemaps \
             gulp-filter \
             gulp-uglify \
@@ -193,6 +202,15 @@ jobs:
             "gulp-merge-json"
             "event-stream"
             "jsonc-parser"
+            "@vscode/markdown-it-katex"
+            "@vscode/extension-telemetry"
+            "@vscode/emmet-helper"
+            "@vscode/codicons"
+            "@vscode/sync-api-client"
+            "@vscode/sync-api-common"
+            "@vscode/sync-api-service"
+            "@vscode/ts-package-manager"
+            "@vscode/l10n"
             "gulp-sourcemaps"
             "gulp-filter"
             "gulp-uglify"
@@ -449,6 +467,15 @@ jobs:
             gulp-merge-json \
             event-stream \
             jsonc-parser \
+            @vscode/markdown-it-katex \
+            @vscode/extension-telemetry \
+            @vscode/emmet-helper \
+            @vscode/codicons \
+            @vscode/sync-api-client \
+            @vscode/sync-api-common \
+            @vscode/sync-api-service \
+            @vscode/ts-package-manager \
+            @vscode/l10n \
             gulp-sourcemaps \
             gulp-filter \
             gulp-uglify \
@@ -504,6 +531,15 @@ jobs:
             "gulp-merge-json"
             "event-stream"
             "jsonc-parser"
+            "@vscode/markdown-it-katex"
+            "@vscode/extension-telemetry"
+            "@vscode/emmet-helper"
+            "@vscode/codicons"
+            "@vscode/sync-api-client"
+            "@vscode/sync-api-common"
+            "@vscode/sync-api-service"
+            "@vscode/ts-package-manager"
+            "@vscode/l10n"
             "gulp-sourcemaps"
             "gulp-filter"
             "gulp-uglify"
