@@ -131,13 +131,39 @@ jobs:
             sleep 5
             npm cache clean --force
           done
+
+          # Install known missing dependencies that sometimes aren't resolved properly
+          echo "=== Installing Critical Build Dependencies ==="
+          npm install --no-save ternary-stream gulp esbuild @esbuild-plugins/node-modules-polyfill 2>/dev/null || echo "Some dependencies may already exist"
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_loglevel: warn
 
-      # 🚀 Build with optimizations
+      # 🔧 Verify VS Code dependencies before build
+      - name: Verify VS Code dependencies
+        run: |
+          cd src/vscode
+          echo "🔍 Checking for missing dependencies..."
+
+          # Check if critical build dependencies are installed
+          if ! npm list ternary-stream >/dev/null 2>&1; then
+            echo "⚠️ ternary-stream missing, installing..."
+            npm install ternary-stream
+          fi
+
+          # Verify other critical build dependencies
+          for dep in "gulp" "esbuild" "@esbuild-plugins/node-modules-polyfill"; do
+            if ! npm list "$dep" >/dev/null 2>&1; then
+              echo "⚠️ $dep missing, installing..."
+              npm install "$dep"
+            fi
+          done
+
+          echo "✅ Dependencies verified"
+
+    # 🚀 Build with optimizations
       - name: Build using Makefile
         run: make build
         env:
@@ -338,6 +364,10 @@ jobs:
             sleep 5
             npm cache clean --force
           done
+
+          # Install known missing dependencies that sometimes aren't resolved properly
+          echo "=== Installing Critical Build Dependencies ==="
+          npm install --no-save ternary-stream gulp esbuild @esbuild-plugins/node-modules-polyfill 2>/dev/null || echo "Some dependencies may already exist"
         env:
           npm_config_arch: arm64
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
@@ -345,7 +375,29 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_loglevel: warn
 
-      # 🚀 Build with optimizations
+      # 🔧 Verify VS Code dependencies before build
+      - name: Verify VS Code dependencies
+        run: |
+          cd src/vscode
+          echo "🔍 Checking for missing dependencies..."
+
+          # Check if critical build dependencies are installed
+          if ! npm list ternary-stream >/dev/null 2>&1; then
+            echo "⚠️ ternary-stream missing, installing..."
+            npm install ternary-stream
+          fi
+
+          # Verify other critical build dependencies
+          for dep in "gulp" "esbuild" "@esbuild-plugins/node-modules-polyfill"; do
+            if ! npm list "$dep" >/dev/null 2>&1; then
+              echo "⚠️ $dep missing, installing..."
+              npm install "$dep"
+            fi
+          done
+
+          echo "✅ Dependencies verified"
+
+    # 🚀 Build with optimizations
       - name: Build using Makefile
         run: make build
         env:
