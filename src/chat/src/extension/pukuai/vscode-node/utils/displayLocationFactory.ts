@@ -16,11 +16,11 @@ export class DisplayLocationFactory {
 	/**
 	 * Create label-based display location for multi-document edit
 	 * Based on Copilot's createNextEditorEditCompletionItem()
-	 * Reference: inlineCompletionProvider.ts:326-330
+	 * Reference: inlineCompletionProvider.ts:326-330, anyDiagnosticsCompletionProvider.ts:88-90
 	 *
 	 * @param targetDocument Target document
-	 * @param targetRange Edit range in target document
-	 * @param currentPosition Current cursor position
+	 * @param targetRange Edit range in target document (where code will be inserted)
+	 * @param currentPosition Current cursor position (where label is shown)
 	 * @param completionText Preview text for tooltip
 	 * @returns Display location with label
 	 */
@@ -36,17 +36,24 @@ export class DisplayLocationFactory {
 		// Format line number (1-indexed for display, Copilot pattern)
 		const lineNumber = targetRange.start.line + 1;
 
+		// Calculate edit distance (for debugging)
+		const distance = Math.abs(targetRange.start.line - currentPosition.line);
+
 		// Create label text matching Copilot's format
 		// Copilot uses: "Go To Inline Edit" but we use "Go To Inline Suggestion"
-		const label = `📄 Go To Inline Suggestion (${filename}:${lineNumber})`;
+		// For distant edits, show line number in label
+		const label = distance > 12
+			? `📄 Go To Inline Suggestion (${filename}:${lineNumber})`
+			: `📄 Go To Inline Suggestion`;
 
-		// Return display location with Label kind (Copilot pattern)
-		// Reference: inlineCompletionProvider.ts:326-330
-		// Note: API definition only has range, label, and kind fields
+		// Return display location with target range (where code will be shown)
+		// Reference: inlineCompletionProvider.ts:369-373
+		// The range field indicates WHERE the suggestion will be displayed/applied
+		// For displayType: 'label', this is the TARGET location (not current cursor)
 		return {
-			range: new vscode.Range(currentPosition, currentPosition),
+			range: targetRange, // Target range (where completion will be applied)
 			label,
-			kind: vscode.InlineCompletionDisplayLocationKind.Label
+			kind: vscode.InlineCompletionDisplayLocationKind.Code // Code kind shows ghost text at target
 		};
 	}
 
