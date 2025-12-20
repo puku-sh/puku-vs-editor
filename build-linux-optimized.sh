@@ -14,6 +14,14 @@ DIST_DIR="$SCRIPT_DIR/dist"
 APP_NAME="puku"
 VERSION=$(node -p "require('$VSCODE_DIR/package.json').version")
 
+# Architecture (supports x64 and arm64)
+ARCH="${VSCODE_ARCH:-x64}"
+if [ "$ARCH" != "x64" ] && [ "$ARCH" != "arm64" ]; then
+    echo "❌ Unsupported architecture: $ARCH"
+    echo "Supported architectures: x64, arm64"
+    exit 1
+fi
+
 # Essential extensions to bundle (same as macOS)
 ESSENTIAL_EXTENSIONS=(
     # Core editing
@@ -58,23 +66,23 @@ ESSENTIAL_EXTENSIONS=(
     "microsoft-authentication"
 )
 
-echo "🚀 Building Optimized Puku Editor for Linux v${VERSION}"
+echo "🚀 Building Optimized Puku Editor for Linux v${VERSION} ($ARCH)"
 echo "📦 Using gulp production build + stripping to $(echo ${ESSENTIAL_EXTENSIONS[@]} | wc -w | tr -d ' ') essential extensions"
 echo ""
 
 # Clean previous builds
 echo "🧹 Cleaning previous builds..."
-rm -rf "$BUILD_DIR/puku-linux-x64"
-rm -f "$DIST_DIR/Puku-linux-x64-${VERSION}.tar.gz"
+rm -rf "$BUILD_DIR/puku-linux-${ARCH}"
+rm -f "$DIST_DIR/Puku-linux-${ARCH}-${VERSION}.tar.gz"
 mkdir -p "$BUILD_DIR"
 mkdir -p "$DIST_DIR"
 
 # Check for gulp production build
 echo "📦 Checking for gulp production build..."
-GULP_BUILD_DIR="$SCRIPT_DIR/src/VSCode-linux-x64"
+GULP_BUILD_DIR="$SCRIPT_DIR/src/VSCode-linux-${ARCH}"
 if [ ! -d "$GULP_BUILD_DIR" ]; then
     echo "❌ Production build not found. Run:"
-    echo "   cd src/vscode && npx gulp vscode-linux-x64"
+    echo "   cd src/vscode && npx gulp vscode-linux-${ARCH}"
     echo ""
     echo "This creates a minified production build with all required files."
     exit 1
@@ -89,10 +97,10 @@ fi
 # Copy gulp-built output and strip extensions
 echo ""
 echo "📦 Copying gulp production build..."
-cp -R "$GULP_BUILD_DIR" "$BUILD_DIR/puku-linux-x64"
+cp -R "$GULP_BUILD_DIR" "$BUILD_DIR/puku-linux-${ARCH}"
 
 # Setup paths
-APP_ROOT="$BUILD_DIR/puku-linux-x64"
+APP_ROOT="$BUILD_DIR/puku-linux-${ARCH}"
 APP_RESOURCES="$APP_ROOT/resources"
 APP_EXTENSIONS="$APP_RESOURCES/app/extensions"
 
@@ -184,11 +192,11 @@ fi
 # Create tar.gz archive with maximum compression
 echo ""
 echo "📦 Creating optimized tar.gz archive..."
-ARCHIVE_NAME="Puku-linux-x64-${VERSION}.tar.gz"
+ARCHIVE_NAME="Puku-linux-${ARCH}-${VERSION}.tar.gz"
 ARCHIVE_PATH="$DIST_DIR/$ARCHIVE_NAME"
 
 cd "$BUILD_DIR"
-tar -czf "$ARCHIVE_PATH" puku-linux-x64
+tar -czf "$ARCHIVE_PATH" puku-linux-${ARCH}
 cd "$SCRIPT_DIR"
 
 # Get sizes
