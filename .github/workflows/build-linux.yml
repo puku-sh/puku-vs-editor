@@ -352,6 +352,121 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-arm64-vscode-build-
 
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          echo "=== Installing Extension Dependencies ==="
+          cd src/chat
+
+          # Clear npm cache and use legacy peer deps to avoid conflicts
+          npm cache clean --force
+
+          for i in {1..5}; do
+            echo "Extension npm install attempt $i/5..."
+            timeout 300 npm ci --legacy-peer-deps --no-audit --no-fund && break
+            if [ $i -eq 5 ]; then
+              echo "Extension npm install failed after 5 attempts" >&2
+              echo "Last install log:"
+              npm ci --legacy-peer-deps --no-audit --no-fund --verbose || true
+              exit 1
+            fi
+            echo "Npm install failed, retry $i..."
+            sleep 5
+            npm cache clean --force
+          done
+
+          echo "=== Installing VS Code Dependencies ==="
+          cd ../vscode
+
+          # Clear npm cache
+          npm cache clean --force
+
+          for i in {1..5}; do
+            echo "VS Code npm install attempt $i/5..."
+            timeout 600 npm ci --legacy-peer-deps --no-audit --no-fund && break
+            if [ $i -eq 5 ]; then
+              echo "VS Code npm install failed after 5 attempts" >&2
+              echo "Last install log:"
+              npm ci --legacy-peer-deps --no-audit --no-fund --verbose || true
+              exit 1
+            fi
+            echo "Npm install failed, retry $i..."
+            sleep 5
+            npm cache clean --force
+          done
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm_config_loglevel: warn
+
+      # 🔧 Install missing VS Code build dependencies
+      - name: Install missing build dependencies
+        run: |
+          cd src/vscode
+          echo "🔧 Installing missing VS Code build dependencies..."
+
+          # Install critical build dependencies that might be missing from package.json or cache
+          npm install --no-save \
+            ternary-stream \
+            gulp-merge-json \
+            event-stream \
+            jsonc-parser \
+            @vscode/markdown-it-katex \
+            @vscode/extension-telemetry \
+            @vscode/emmet-helper \
+            @vscode/codicons \
+            @vscode/sync-api-client \
+            @vscode/sync-api-common \
+            @vscode/sync-api-service \
+            @vscode/ts-package-manager \
+            @vscode/l10n \
+            gulp-sourcemaps \
+            gulp-filter \
+            gulp-uglify \
+            gulp-rename \
+            gulp-json-editor \
+            gulp-bom \
+            gulp-gunzip \
+            gulp-untar \
+            gulp-replace \
+            gulp-concat \
+            gulp-util \
+            gulp-flatten \
+            gulp-order \
+            gulp-insert \
+            gulp-buffer \
+            gulp-sort \
+            gulp-plumber \
+            gulp-svgmin \
+            gulp-gzip \
+            gulp-vinyl-zip \
+            gulp-flatmap \
+            webpack-stream \
+            @vscode/gulp-electron \
+            vscode-gulp-watch \
+            through2 \
+            vinyl \
+            vinyl-fs \
+            esbuild \
+            @esbuild-plugins/node-modules-polyfill \
+            rimraf \
+            minimist \
+            ansi-colors \
+            fancy-log \
+            pump \
+            gulp-azure-storage \
+            2>/dev/null || echo "Some dependencies may already exist"
+
+      # 🚀 Build with optimizations
+      - name: Build using Makefile
+        run: make install
+        env:
+          VSCODE_ARCH: arm64
+          UV_THREADPOOL_SIZE: 128
+          VSCODE_USE_ESBUILD: 1
+          NODE_OPTIONS: --max-old-space-size=16384
       # 🆕 Create VS Code Linux Production Build
       - name: Create VS Code Linux Production Build
         run: |
@@ -360,7 +475,7 @@ jobs:
 
           # Run the gulp production build that creates the expected directory structure
           # Increased memory limit to prevent OOM errors
-          NODE_OPTIONS="--max-old-space-size=8192" npx gulp vscode-linux-arm64
+          NODE_OPTIONS="--max-old-space-size=16384" npx gulp vscode-linux-arm64
 
           # Check if the production build was created successfully
           if [ -d "../VSCode-linux-arm64" ]; then
@@ -374,7 +489,7 @@ jobs:
           fi
         env:
           VSCODE_ARCH: arm64
-          NODE_OPTIONS: --max-old-space-size=8192
+          NODE_OPTIONS: --max-old-space-size=16384
 
       # 🆕 Create Linux packages (tar.gz only, simplified)
       - name: Create Linux packages
