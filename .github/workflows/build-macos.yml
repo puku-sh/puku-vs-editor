@@ -126,11 +126,6 @@ jobs:
           done
 
           echo "✅ Extension dependencies installed successfully"
-
-          # Verify installation
-          echo "Verifying extension installation..."
-          ls -la node_modules/ | head -5
-          echo "Extension installation verified successfully"
         env:
           npm_config_arch: ${{ env.NPM_ARCH }}
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
