@@ -184,6 +184,19 @@ jobs:
             pump \
             gulp-azure-storage \
             2>/dev/null || echo "Some dependencies may already exist"
+
+          echo "=== Installing Extension Dependencies Proactively ==="
+          # Install dependencies for all extensions that have them to prevent build failures
+          echo "🔧 Installing dependencies for all extensions..."
+          find extensions -maxdepth 1 -type d -name "*" | while read -r ext_dir; do
+            if [ "$ext_dir" != "extensions" ] && [ -f "$ext_dir/package.json" ]; then
+              ext_name=$(basename "$ext_dir")
+              echo "Installing dependencies for $ext_name extension..."
+              cd "$ext_dir"
+              npm install --no-audit --no-fund 2>/dev/null || echo "No dependencies for $ext_name or install failed"
+              cd ../..
+            fi
+          done
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
@@ -274,6 +287,22 @@ jobs:
           cd extensions/markdown-language-features
           npm install
           cd ../..
+
+          echo "🔧 Installing simple-browser extension dependencies (fixes @vscode/codicons issue)..."
+          cd extensions/simple-browser
+          npm install
+          cd ../..
+
+          echo "🔧 Installing other critical extension dependencies..."
+          # Install dependencies for other extensions that might have similar issues
+          for ext in configuration-editing git git-base github-authentication; do
+            if [ -d "extensions/$ext" ] && [ -f "extensions/$ext/package.json" ]; then
+              echo "Installing dependencies for $ext extension..."
+              cd extensions/$ext
+              npm install 2>/dev/null || echo "No dependencies for $ext or install failed"
+              cd ../..
+            fi
+          done
 
           # Now build using the standard VS Code compile command
           echo "🔨 Running VS Code compile..."
@@ -529,6 +558,19 @@ jobs:
             pump \
             gulp-azure-storage \
             2>/dev/null || echo "Some dependencies may already exist"
+
+          echo "=== Installing Extension Dependencies Proactively ==="
+          # Install dependencies for all extensions that have them to prevent build failures
+          echo "🔧 Installing dependencies for all extensions..."
+          find extensions -maxdepth 1 -type d -name "*" | while read -r ext_dir; do
+            if [ "$ext_dir" != "extensions" ] && [ -f "$ext_dir/package.json" ]; then
+              ext_name=$(basename "$ext_dir")
+              echo "Installing dependencies for $ext_name extension..."
+              cd "$ext_dir"
+              npm install --no-audit --no-fund 2>/dev/null || echo "No dependencies for $ext_name or install failed"
+              cd ../..
+            fi
+          done
         env:
           npm_config_arch: arm64
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
@@ -620,6 +662,22 @@ jobs:
           cd extensions/markdown-language-features
           npm install
           cd ../..
+
+          echo "🔧 Installing simple-browser extension dependencies (fixes @vscode/codicons issue)..."
+          cd extensions/simple-browser
+          npm install
+          cd ../..
+
+          echo "🔧 Installing other critical extension dependencies..."
+          # Install dependencies for other extensions that might have similar issues
+          for ext in configuration-editing git git-base github-authentication; do
+            if [ -d "extensions/$ext" ] && [ -f "extensions/$ext/package.json" ]; then
+              echo "Installing dependencies for $ext extension..."
+              cd extensions/$ext
+              npm install 2>/dev/null || echo "No dependencies for $ext or install failed"
+              cd ../..
+            fi
+          done
 
           # Now build using the standard VS Code compile command
           echo "🔨 Running VS Code compile..."
