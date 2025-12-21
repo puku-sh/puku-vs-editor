@@ -96,12 +96,17 @@ jobs:
           cache: 'npm'
           cache-dependency-path: src/chat/package-lock.json
 
-      - name: Install extension dependencies
+      - name: Install extension dependencies with debugging
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
           set -e
           echo "=== Installing Extension Dependencies (Node 23.5.0) ==="
+          echo "Current directory: $(pwd)"
+          echo "Node version: $(node -v)"
+          echo "NPM version: $(npm -v)"
+
           cd src/chat
+          echo "Changed to directory: $(pwd)"
 
           # Clear npm cache and use legacy peer deps to avoid conflicts
           npm cache clean --force
@@ -121,6 +126,11 @@ jobs:
           done
 
           echo "✅ Extension dependencies installed successfully"
+
+          # Verify installation
+          echo "Verifying extension installation..."
+          ls -la node_modules/ | head -5
+          echo "Extension installation verified successfully"
         env:
           npm_config_arch: ${{ env.NPM_ARCH }}
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
