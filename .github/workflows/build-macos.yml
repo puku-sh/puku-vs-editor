@@ -197,12 +197,27 @@ jobs:
             2>/dev/null || echo "Some dependencies may already exist"
 
       # 🚀 Build with optimizations
-      - name: Build using Makefile
-        run: make install
+      - name: Create VS Code production build
+        run: |
+          cd src/vscode
+          echo "📦 Creating VS Code production build using gulp..."
+
+          # Run the gulp production build that creates the expected directory structure
+          # Increased memory limit to prevent OOM errors
+          NODE_OPTIONS="--max-old-space-size=16384" npx gulp vscode-darwin-arm64-min
+
+          # Check if the production build was created successfully
+          if [ -d "../VSCode-darwin-arm64" ]; then
+            echo "✅ VS Code production build created successfully!"
+            echo "📍 Location: $(pwd)/../VSCode-darwin-arm64"
+            echo "📊 Contents: $(ls -la ../VSCode-darwin-arm64 | head -10)"
+          else
+            echo "❌ VS Code production build failed!"
+            echo "Expected directory: ../VSCode-darwin-arm64 not found"
+            exit 1
+          fi
         env:
           VSCODE_ARCH: arm64
-          UV_THREADPOOL_SIZE: 128
-          VSCODE_USE_ESBUILD: 1
           NODE_OPTIONS: --max-old-space-size=16384
 
       - name: Package DMG
