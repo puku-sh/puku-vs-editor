@@ -125,7 +125,9 @@ jobs:
           set -e
           echo "=== Installing VS Code Dependencies (Node 22.20.0) ==="
           echo "Node version: $(node -v)"
-          cd ../vscode
+          echo "Current directory: $(pwd)"
+          cd src/vscode
+          echo "Changed to: $(pwd)"
           npm ci --legacy-peer-deps --no-audit --no-fund
           echo "✅ VS Code dependencies installed"
         env:
