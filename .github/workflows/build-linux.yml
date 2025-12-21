@@ -295,7 +295,7 @@ jobs:
 
           echo "🔧 Installing other critical extension dependencies..."
           # Install dependencies for other extensions that might have similar issues
-          for ext in configuration-editing git git-base github-authentication; do
+          for ext in configuration-editing git git-base github-authentication mermaid-chat-features; do
             if [ -d "extensions/$ext" ] && [ -f "extensions/$ext/package.json" ]; then
               echo "Installing dependencies for $ext extension..."
               cd extensions/$ext
@@ -670,7 +670,7 @@ jobs:
 
           echo "🔧 Installing other critical extension dependencies..."
           # Install dependencies for other extensions that might have similar issues
-          for ext in configuration-editing git git-base github-authentication; do
+          for ext in configuration-editing git git-base github-authentication mermaid-chat-features; do
             if [ -d "extensions/$ext" ] && [ -f "extensions/$ext/package.json" ]; then
               echo "Installing dependencies for $ext extension..."
               cd extensions/$ext

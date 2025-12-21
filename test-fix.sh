@@ -33,8 +33,13 @@ cd extensions/simple-browser
 npm install
 cd ../..
 
+echo "Installing mermaid-chat-features dependencies (mermaid fix)..."
+cd extensions/mermaid-chat-features
+npm install
+cd ../..
+
 echo "Installing other critical extension dependencies..."
-for ext in configuration-editing git git-base github-authentication; do
+for ext in configuration-editing git git-base github-authentication mermaid-chat-features; do
     if [ -d "extensions/$ext" ] && [ -f "extensions/$ext/package.json" ]; then
         echo "Installing dependencies for $ext extension..."
         cd extensions/$ext
@@ -84,10 +89,44 @@ else
 fi
 
 echo
+echo "🧪 Testing mermaid-chat-features extension..."
+cd ../mermaid-chat-features
+
+# Check if the required mermaid dependency exists
+if [ -f "node_modules/mermaid/dist/mermaid.js" ] || [ -f "node_modules/mermaid/package.json" ]; then
+    echo "✅ mermaid dependency found!"
+else
+    echo "❌ mermaid dependency not found!"
+    exit 1
+fi
+
+# Run the esbuild command for mermaid
+echo "🏗️  Running esbuild-chat-webview.mjs..."
+node ./esbuild-chat-webview.mjs
+
+if [ $? -eq 0 ]; then
+    echo "✅ mermaid esbuild completed successfully!"
+else
+    echo "❌ mermaid esbuild failed!"
+    exit 1
+fi
+
+# Check if the output files were created
+if [ -f "chat-webview-out/index.js" ]; then
+    echo "✅ Mermaid output files created successfully!"
+    echo "📄 Created files:"
+    ls -la chat-webview-out/
+else
+    echo "❌ Mermaid output files not found!"
+    exit 1
+fi
+
+echo
 echo "🎉 All tests passed! The fix should work in GitHub Actions."
 echo
 echo "Summary of the fix:"
 echo "1. Install extension dependencies before building VS Code"
 echo "2. Specifically target simple-browser extension for @vscode/codicons"
-echo "3. Add comprehensive extension dependency installation"
-echo "4. This prevents the 'Could not resolve codicon.css' error"
+echo "3. Add mermaid-chat-features extension for mermaid dependency"
+echo "4. Add comprehensive extension dependency installation"
+echo "5. This prevents 'Could not resolve' errors for missing dependencies"
