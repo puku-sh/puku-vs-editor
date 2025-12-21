@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*'
+    branches:
+      - 'feat/ubuntu'
   workflow_dispatch:
     inputs:
       architecture:
