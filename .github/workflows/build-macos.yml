@@ -96,26 +96,14 @@ jobs:
           cache: 'npm'
           cache-dependency-path: src/chat/package-lock.json
 
-      - name: Install dependencies
+      - name: Install extension dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
           set -e
-          echo "=== Installing All Dependencies ==="
-
-          # Extension dependencies with Node 23.5.0
+          echo "=== Installing Extension Dependencies (Node 23.5.0) ==="
           cd src/chat
           npm ci --legacy-peer-deps --no-audit --no-fund
           echo "✅ Extension dependencies installed"
-
-          # VS Code dependencies - switch to Node 22.20.0 via nvm if available
-          if command -v nvm &> /dev/null; then
-            nvm install 22.20.0
-            nvm use 22.20.0
-          fi
-
-          cd ../vscode
-          npm ci --legacy-peer-deps --no-audit --no-fund
-          echo "✅ VS Code dependencies installed"
         env:
           npm_config_arch: ${{ env.NPM_ARCH }}
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
@@ -130,6 +118,23 @@ jobs:
           node-version-file: 'src/vscode/.nvmrc'
           cache: 'npm'
           cache-dependency-path: src/vscode/package-lock.json
+
+      - name: Install VS Code dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          echo "=== Installing VS Code Dependencies (Node 22.20.0) ==="
+          echo "Node version: $(node -v)"
+          cd ../vscode
+          npm ci --legacy-peer-deps --no-audit --no-fund
+          echo "✅ VS Code dependencies installed"
+        env:
+          npm_config_arch: ${{ env.NPM_ARCH }}
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm_config_loglevel: warn
+          GYP_DEFINES: "kerberos_use_rtld=false"
 
       # 🔧 Install missing VS Code build dependencies
       - name: Install missing build dependencies
