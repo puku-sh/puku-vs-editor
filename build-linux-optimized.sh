@@ -131,6 +131,19 @@ if [ -d "$APP_EXTENSIONS" ]; then
 
         if [ "$IS_ESSENTIAL" = true ]; then
             echo "  ✓ Keeping $ext_name"
+
+            # Ensure essential extensions have their dependencies
+            if [ -d "$ext_path" ] && [ -f "$ext_path/package.json" ]; then
+                echo "    - Verifying dependencies for $ext_name..."
+                cd "$ext_path"
+                # Check if extension has node_modules, if not try to install minimal dependencies
+                if [ ! -d "node_modules" ]; then
+                    echo "    - Installing missing dependencies for $ext_name..."
+                    npm install --production --no-audit --no-fund 2>/dev/null || echo "    - No dependencies for $ext_name"
+                fi
+                cd - > /dev/null
+            fi
+
             BUNDLED_COUNT=$((BUNDLED_COUNT + 1))
         else
             echo "  ✗ Removing $ext_name"
@@ -160,7 +173,8 @@ if [ -d "$EXTENSION_DIR/node_modules" ]; then
 
     cd "$EXTENSION_DIR"
     if [ -f package.json ]; then
-        EXT_DEPS=$(node -p "Object.keys(require('./package.json').dependencies || {}).join(' ')" 2>/dev/null || echo "")
+        # Get all dependencies (both dependencies and some critical devDependencies)
+        EXT_DEPS=$(node -p "Object.keys(require('./package.json').dependencies || {}).concat(Object.keys(require('./package.json').devDependencies || {}).filter(dep => ['@vscode/codicons', '@vscode/extension-telemetry'].includes(dep))).join(' ')" 2>/dev/null || echo "")
 
         for dep in $EXT_DEPS; do
             if [ -d "node_modules/$dep" ]; then

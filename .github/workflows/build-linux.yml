@@ -294,12 +294,31 @@ jobs:
           cd ../..
 
           echo "🔧 Installing other critical extension dependencies..."
-          # Install dependencies for other extensions that might have similar issues
-          for ext in configuration-editing git git-base github-authentication mermaid-chat-features; do
+          # Install dependencies for all critical extensions that have dependencies
+          CRITICAL_EXTENSIONS=(
+            "configuration-editing"
+            "git"
+            "git-base"
+            "github-authentication"
+            "mermaid-chat-features"
+            "simple-browser"
+            "typescript-language-features"
+            "typescript-basics"
+            "javascript"
+            "json-language-features"
+            "markdown-language-features"
+            "html-language-features"
+            "css-language-features"
+            "emmet"
+            "merge-conflict"
+            "github"
+          )
+
+          for ext in "${CRITICAL_EXTENSIONS[@]}"; do
             if [ -d "extensions/$ext" ] && [ -f "extensions/$ext/package.json" ]; then
               echo "Installing dependencies for $ext extension..."
               cd extensions/$ext
-              npm install 2>/dev/null || echo "No dependencies for $ext or install failed"
+              npm install --no-audit --no-fund 2>/dev/null || echo "No dependencies for $ext or install failed"
               cd ../..
             fi
           done
@@ -669,12 +688,31 @@ jobs:
           cd ../..
 
           echo "🔧 Installing other critical extension dependencies..."
-          # Install dependencies for other extensions that might have similar issues
-          for ext in configuration-editing git git-base github-authentication mermaid-chat-features; do
+          # Install dependencies for all critical extensions that have dependencies
+          CRITICAL_EXTENSIONS=(
+            "configuration-editing"
+            "git"
+            "git-base"
+            "github-authentication"
+            "mermaid-chat-features"
+            "simple-browser"
+            "typescript-language-features"
+            "typescript-basics"
+            "javascript"
+            "json-language-features"
+            "markdown-language-features"
+            "html-language-features"
+            "css-language-features"
+            "emmet"
+            "merge-conflict"
+            "github"
+          )
+
+          for ext in "${CRITICAL_EXTENSIONS[@]}"; do
             if [ -d "extensions/$ext" ] && [ -f "extensions/$ext/package.json" ]; then
               echo "Installing dependencies for $ext extension..."
               cd extensions/$ext
-              npm install 2>/dev/null || echo "No dependencies for $ext or install failed"
+              npm install --no-audit --no-fund 2>/dev/null || echo "No dependencies for $ext or install failed"
               cd ../..
             fi
           done
