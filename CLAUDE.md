@@ -36,7 +36,7 @@ puku-vs-editor/puku-editor/
 
 ## Requirements
 
-- **Node.js**: 23.5.0+ for extension, 22.20.0 for VS Code (managed by nvm)
+- **Node.js**: 23.5.0+ for extension (sqlite-vec support), 22.20.0 for VS Code (managed by nvm)
 - **Python**: >= 3.10, <= 3.12 (for VS Code native modules)
 - **Git LFS**: For running tests
 - **Platform-specific**:
@@ -44,7 +44,36 @@ puku-vs-editor/puku-editor/
   - Linux: libx11-dev, libxkbfile-dev, libsecret-1-dev
   - Windows: Visual Studio Build Tools >=2019
 
+### Node.js Version Management
+
+The project uses different Node.js versions:
+- **Extension**: Node 23.5.0+ (required for sqlite-vec extension support)
+- **VS Code**: Node 22.20.0 (from src/vscode/.nvmrc)
+
+The build system automatically switches versions using nvm:
+```bash
+# Install required versions
+nvm install 23.5.0
+nvm install 22.20.0
+
+# The Makefile handles version switching automatically
+make build-ext    # Uses Node 23.5.0
+make build-vs     # Uses Node 22.20.0
+```
+
 ## Quick Start
+
+### First-Time Setup (Automated)
+
+```bash
+# One-command setup (install + compile + launch)
+make setup
+
+# Manual setup steps
+make install           # Install all dependencies
+make compile           # Build extension + VS Code
+make launch            # Launch the editor
+```
 
 ### Local Development
 
@@ -64,15 +93,50 @@ cd src/vscode
 ./scripts/code.sh --extensionDevelopmentPath=$(pwd)/../chat
 ```
 
+### Common Development Workflows
+
+**Fast Development Loop**:
+```bash
+# Terminal 1: Watch extension for changes
+cd src/chat && npm run watch
+
+# Terminal 2: Launch editor (no recompile)
+make quick
+```
+
+**Package Testing**:
+```bash
+# Fast edit-test cycle for packaged builds
+make build-minimal      # Build extension + package (~16s)
+make launch-package     # Test packaged build
+```
+
+**Watch Mode Development**:
+```bash
+# Auto-rebuild on file changes
+make build-watch        # Parallel watch for extension + VS Code
+```
+
 ### Build & Package
 
 ```bash
 # Full build (extension + VS Code)
 make build
 
-# Create macOS DMG (~20s)
-./build-dmg-optimized.sh
-# Output: Puku-1.107.0.dmg (~311MB)
+# Incremental builds (smart + fast)
+make build-ext          # Extension only (~5s with cache)
+make build-vs           # VS Code only
+make build-minimal      # Extension + package (~16s)
+
+# Create platform packages
+./build-dmg-optimized.sh    # macOS DMG (~20s, 311MB)
+./build-linux-optimized.sh  # Linux AppImage (~30s)
+# Output: Puku-1.107.0.dmg/AppImage
+
+# Package workflows
+make package            # Full build + package (~57min first time)
+make package-ci         # Fast package only (~11s, requires .build/)
+make clean-package      # Remove packaged apps
 ```
 
 ## CI/CD & Releases
@@ -196,8 +260,24 @@ cd src/chat
 npm run test:unit              # Unit tests (Node.js)
 npm run test:extension         # Integration tests (VS Code)
 npm run simulate              # Simulation tests (LLM-based, cached)
+npm run simulate-require-cache # Verify simulation cache is populated
+npm run simulate-update-baseline # Update simulation baseline
 npm test                      # Run all tests
 npm run lint                  # ESLint (zero warnings policy)
+```
+
+### Running Single Tests
+
+```bash
+# Run specific unit test file
+cd src/chat
+npm run test:unit -- path/to/test.spec.ts
+
+# Run specific extension test
+npm run test:extension -- --grep "test name"
+
+# Run simulation tests for specific scenario
+npm run simulate -- path/to/test.stest.ts
 ```
 
 ### Debugging
@@ -215,6 +295,9 @@ cd src/chat && npm run watch
 # Terminal 2: Run Code-OSS with extension
 cd src/vscode
 ./scripts/code.sh --extensionDevelopmentPath=$(pwd)/../chat
+
+# Or use the convenience script from repo root:
+./launch.sh
 ```
 
 **Debug Configurations**:
@@ -225,6 +308,19 @@ cd src/vscode
 - Use "Show Chat Debug View" command to inspect prompts and tool calls
 - Debug ports: Extension Host (5870), TypeScript Server (9223)
 - Monitor `start-watch-tasks` VS Code task for real-time compilation errors
+
+**Alternative Launch Methods**:
+
+```bash
+# Using Makefile (from repo root)
+make quick               # Kill existing processes and launch
+make launch              # Launch development build
+make launch-package      # Launch packaged build (if built)
+
+# With specific folder
+make launch FOLDER=/path/to/project
+./launch.sh /path/to/project
+```
 
 ## Puku Indexing (Semantic Search)
 
@@ -393,6 +489,41 @@ x => x + x                    // ✓ Correct
 - **URI-based**: Use `URI` type instead of string paths
 - **Service abstractions**: Use `IFileService` instead of node `fs`, etc.
 
+## Key Files & Entry Points
+
+### Extension Core
+- `src/chat/src/extension/extension/vscode/extension.ts` - Extension activation entry point
+- `src/chat/src/extension/extension/vscode-node/services.ts` - Service registration
+- `src/chat/src/extension/extension/vscode-node/contributions.ts` - Feature contributions
+- `src/chat/package.json` - Extension manifest and VS Code contributions
+
+### Build & Configuration
+- `Makefile` - Build automation with comprehensive targets
+- `src/chat/.esbuild.ts` - Extension bundler configuration
+- `src/chat/tsconfig.json` - TypeScript configuration
+- `launch.sh` - Convenience script for launching Code-OSS with extension
+
+### AI Integration
+- `src/chat/src/extension/pukuai/vscode-node/pukuInlineCompletionProvider.ts` - Inline completions (FIM)
+- `src/chat/src/extension/prompts/node/agent/` - Agent mode prompts and instructions
+- `src/chat/src/extension/tools/node/` - Language model tool implementations
+
+### Key Development Entry Points
+
+**For Chat/AI Features**:
+- Start in `src/chat/src/extension/conversation/` for chat participants
+- Modify `src/chat/src/extension/prompts/` for prompt engineering
+- Update `src/chat/src/extension/intents/` for slash command implementations
+
+**For Inline Completions**:
+- Edit `src/chat/src/extension/pukuai/` for FIM functionality
+- Cache logic in `src/chat/src/extension/pukuai/test/pukuInlineCompletionCache.spec.ts`
+
+**For Search & Context**:
+- Semantic search in `src/chat/src/extension/workspaceSemanticSearch/`
+- Context resolution in `src/chat/src/extension/context/`
+- AST parsing in `src/chat/src/extension/pukuIndexing/node/pukuASTChunker.ts`
+
 ## Validation Workflow
 
 **ALWAYS check compilation before declaring work complete:**
@@ -401,13 +532,56 @@ x => x + x                    // ✓ Correct
 2. Fix all compilation errors before proceeding
 3. DO NOT rely on `compile` task alone for validation
 
+## Troubleshooting
+
+### Common Issues
+
+**Build Failures**:
+- Ensure correct Node.js version: `nvm use 23.5.0` for extension, `nvm use 22.20.0` for VS Code
+- Run `make clean` before rebuilding if experiencing cache issues
+- Check `start-watch-tasks` output for real-time compilation errors
+
+**Extension Not Loading**:
+- Verify extension path: `ls -la src/chat/dist/extension.js`
+- Check VS Code version compatibility (requires ^1.107.0)
+- Use "Show Chat Debug View" command to inspect loading errors
+
+**sqlite-vec Issues**:
+- Requires Node.js 23.5.0+ for `node:sqlite` extension support
+- Falls back to in-memory cosine similarity for non-1024-dim embeddings
+- Clear cache: `rm -rf {workspace}/.puku/puku-embeddings.db`
+
+**Memory Issues**:
+- Increase Node.js memory: `export NODE_OPTIONS="--max-old-space-size=16384"`
+- Monitor memory usage during packaging builds
+
+**VS Code Fork Issues**:
+- Update fork: `make update-fork` (merges upstream VS Code changes)
+- Clean build: `make clean-all` then `make package-full`
+
+### Debug Commands
+
+```bash
+# Check extension loading
+code --extensionDevelopmentPath=$(pwd)/src/chat --verbose
+
+# Monitor compilation
+# Start "start-watch-tasks" VS Code task and watch output
+
+# Inspect prompts and tool calls
+# Run "Show Chat Debug View" command in VS Code
+
+# Test sqlite-vec functionality
+cd src/chat && npm run test:unit -- pukuEmbeddingsCache
+```
+
 ## Important Notes
 
 - **VS Code utilities**: Use `src/util/vs/` utilities from microsoft/vscode repo. To add modules, edit `script/setup/copySources.ts` and run `npx tsx script/setup/copySources.ts`
 - **Proposed APIs**: Extension uses many VS Code proposed APIs (see `.github/copilot-instructions.md` for details)
 - **Web support**: Code should work in both Node.js and Web Worker runtimes when possible
 - **Simulation tests**: LLM-based tests use cached results in `test/simulation/cache/`. Cache layers must be created by VS Code team members.
-- **Troubleshooting**: Use "Show Chat Debug View" command to inspect prompts, tool calls, and responses
+- **Performance**: Use incremental builds (`make build-ext`) for faster development cycles
 
 ## Reference Documentation
 

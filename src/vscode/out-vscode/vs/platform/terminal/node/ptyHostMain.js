@@ -405,7 +405,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var require_minimist = __commonJS({
   "node_modules/minimist/index.js"(exports, module) {
     "use strict";
-    function hasKey(obj, keys) {
+    function hasKey2(obj, keys) {
       var o = obj;
       keys.slice(0, -1).forEach(function(key2) {
         o = o[key2] || {};
@@ -413,7 +413,7 @@ var require_minimist = __commonJS({
       var key = keys[keys.length - 1];
       return key in o;
     }
-    function isNumber(x) {
+    function isNumber2(x) {
       if (typeof x === "number") {
         return true;
       }
@@ -513,7 +513,7 @@ var require_minimist = __commonJS({
             return;
           }
         }
-        var value2 = !flags.strings[key2] && isNumber(val) ? Number(val) : val;
+        var value2 = !flags.strings[key2] && isNumber2(val) ? Number(val) : val;
         setKey(argv, key2.split("."), value2);
         (aliases[key2] || []).forEach(function(x) {
           setKey(argv, x.split("."), value2);
@@ -595,7 +595,7 @@ var require_minimist = __commonJS({
           }
         } else {
           if (!flags.unknownFn || flags.unknownFn(arg) !== false) {
-            argv._.push(flags.strings._ || !isNumber(arg) ? arg : Number(arg));
+            argv._.push(flags.strings._ || !isNumber2(arg) ? arg : Number(arg));
           }
           if (opts.stopEarly) {
             argv._.push.apply(argv._, args.slice(i + 1));
@@ -604,7 +604,7 @@ var require_minimist = __commonJS({
         }
       }
       Object.keys(defaults).forEach(function(k) {
-        if (!hasKey(argv, k.split("."))) {
+        if (!hasKey2(argv, k.split("."))) {
           setKey(argv, k.split("."), defaults[k]);
           (aliases[k] || []).forEach(function(x) {
             setKey(argv, x.split("."), defaults[k]);
@@ -630,16 +630,16 @@ var LazyValueState;
   LazyValueState2[LazyValueState2["Running"] = 1] = "Running";
   LazyValueState2[LazyValueState2["Completed"] = 2] = "Completed";
 })(LazyValueState || (LazyValueState = {}));
-var $Kf = class {
-  constructor(d) {
-    this.d = d;
-    this.a = LazyValueState.Uninitialized;
+var Lazy = class {
+  constructor(executor) {
+    this.executor = executor;
+    this._state = LazyValueState.Uninitialized;
   }
   /**
    * True if the lazy value has been resolved.
    */
   get hasValue() {
-    return this.a === LazyValueState.Completed;
+    return this._state === LazyValueState.Completed;
   }
   /**
    * Get the wrapped value.
@@ -648,40 +648,40 @@ var $Kf = class {
    * resolved once. `getValue` will re-throw exceptions that are hit while resolving the value
    */
   get value() {
-    if (this.a === LazyValueState.Uninitialized) {
-      this.a = LazyValueState.Running;
+    if (this._state === LazyValueState.Uninitialized) {
+      this._state = LazyValueState.Running;
       try {
-        this.b = this.d();
+        this._value = this.executor();
       } catch (err) {
-        this.c = err;
+        this._error = err;
       } finally {
-        this.a = LazyValueState.Completed;
+        this._state = LazyValueState.Completed;
       }
-    } else if (this.a === LazyValueState.Running) {
+    } else if (this._state === LazyValueState.Running) {
       throw new Error("Cannot read the value of a lazy that is being initialized");
     }
-    if (this.c) {
-      throw this.c;
+    if (this._error) {
+      throw this._error;
     }
-    return this.b;
+    return this._value;
   }
   /**
    * Get the wrapped value without forcing evaluation.
    */
   get rawValue() {
-    return this.b;
+    return this._value;
   }
 };
 
 // out-build/vs/base/common/errors.js
-var $ib = class {
+var ErrorHandler = class {
   constructor() {
-    this.b = [];
-    this.a = function(e) {
+    this.listeners = [];
+    this.unexpectedErrorHandler = function(e) {
       setTimeout(() => {
         if (e.stack) {
-          if ($Db.isErrorNoTelemetry(e)) {
-            throw new $Db(e.message + "\n\n" + e.stack);
+          if (ErrorNoTelemetry.isErrorNoTelemetry(e)) {
+            throw new ErrorNoTelemetry(e.message + "\n\n" + e.stack);
           }
           throw new Error(e.message + "\n\n" + e.stack);
         }
@@ -690,83 +690,83 @@ var $ib = class {
     };
   }
   addListener(listener) {
-    this.b.push(listener);
+    this.listeners.push(listener);
     return () => {
-      this.d(listener);
+      this._removeListener(listener);
     };
   }
-  c(e) {
-    this.b.forEach((listener) => {
+  emit(e) {
+    this.listeners.forEach((listener) => {
       listener(e);
     });
   }
-  d(listener) {
-    this.b.splice(this.b.indexOf(listener), 1);
+  _removeListener(listener) {
+    this.listeners.splice(this.listeners.indexOf(listener), 1);
   }
   setUnexpectedErrorHandler(newUnexpectedErrorHandler) {
-    this.a = newUnexpectedErrorHandler;
+    this.unexpectedErrorHandler = newUnexpectedErrorHandler;
   }
   getUnexpectedErrorHandler() {
-    return this.a;
+    return this.unexpectedErrorHandler;
   }
   onUnexpectedError(e) {
-    this.a(e);
-    this.c(e);
+    this.unexpectedErrorHandler(e);
+    this.emit(e);
   }
   // For external errors, we don't want the listeners to be called
   onUnexpectedExternalError(e) {
-    this.a(e);
+    this.unexpectedErrorHandler(e);
   }
 };
-var $jb = new $ib();
-function $nb(e) {
-  if (!$sb(e)) {
-    $jb.onUnexpectedError(e);
+var errorHandler = new ErrorHandler();
+function onUnexpectedError(e) {
+  if (!isCancellationError(e)) {
+    errorHandler.onUnexpectedError(e);
   }
   return void 0;
 }
-var $rb = "Canceled";
-function $sb(error) {
-  if (error instanceof $tb) {
+var canceledName = "Canceled";
+function isCancellationError(error) {
+  if (error instanceof CancellationError) {
     return true;
   }
-  return error instanceof Error && error.name === $rb && error.message === $rb;
+  return error instanceof Error && error.name === canceledName && error.message === canceledName;
 }
-var $tb = class extends Error {
+var CancellationError = class extends Error {
   constructor() {
-    super($rb);
+    super(canceledName);
     this.name = this.message;
   }
 };
-var $ub = class _$ub extends Error {
+var PendingMigrationError = class _PendingMigrationError extends Error {
   static {
-    this.a = "PendingMigrationError";
+    this._name = "PendingMigrationError";
   }
   static is(error) {
-    return error instanceof _$ub || error instanceof Error && error.name === _$ub.a;
+    return error instanceof _PendingMigrationError || error instanceof Error && error.name === _PendingMigrationError._name;
   }
   constructor(message) {
     super(message);
-    this.name = _$ub.a;
+    this.name = _PendingMigrationError._name;
   }
 };
-function $xb(name) {
+function illegalState(name) {
   if (name) {
     return new Error(`Illegal state: ${name}`);
   } else {
     return new Error("Illegal state");
   }
 }
-var $Db = class _$Db extends Error {
+var ErrorNoTelemetry = class _ErrorNoTelemetry extends Error {
   constructor(msg) {
     super(msg);
     this.name = "CodeExpectedError";
   }
   static fromError(err) {
-    if (err instanceof _$Db) {
+    if (err instanceof _ErrorNoTelemetry) {
       return err;
     }
-    const result = new _$Db();
+    const result = new _ErrorNoTelemetry();
     result.message = err.message;
     result.stack = err.stack;
     return result;
@@ -775,15 +775,15 @@ var $Db = class _$Db extends Error {
     return err.name === "CodeExpectedError";
   }
 };
-var $Eb = class _$Eb extends Error {
+var BugIndicatingError = class _BugIndicatingError extends Error {
   constructor(message) {
     super(message || "An unexpected bug occurred.");
-    Object.setPrototypeOf(this, _$Eb.prototype);
+    Object.setPrototypeOf(this, _BugIndicatingError.prototype);
   }
 };
 
 // out-build/vs/base/common/arraysFind.js
-function $Lb(array, predicate, startIdx = 0, endIdxEx = array.length) {
+function findLastIdxMonotonous(array, predicate, startIdx = 0, endIdxEx = array.length) {
   let i = startIdx;
   let j = endIdxEx;
   while (i < j) {
@@ -796,40 +796,40 @@ function $Lb(array, predicate, startIdx = 0, endIdxEx = array.length) {
   }
   return i - 1;
 }
-var $Pb = class _$Pb {
+var MonotonousArray = class _MonotonousArray {
   static {
     this.assertInvariants = false;
   }
-  constructor(e) {
-    this.e = e;
-    this.c = 0;
+  constructor(_array) {
+    this._array = _array;
+    this._findLastMonotonousLastIdx = 0;
   }
   /**
    * The predicate must be monotonous, i.e. `arr.map(predicate)` must be like `[true, ..., true, false, ..., false]`!
    * For subsequent calls, current predicate must be weaker than (or equal to) the previous predicate, i.e. more entries must be `true`.
    */
   findLastMonotonous(predicate) {
-    if (_$Pb.assertInvariants) {
-      if (this.d) {
-        for (const item of this.e) {
-          if (this.d(item) && !predicate(item)) {
+    if (_MonotonousArray.assertInvariants) {
+      if (this._prevFindLastPredicate) {
+        for (const item of this._array) {
+          if (this._prevFindLastPredicate(item) && !predicate(item)) {
             throw new Error("MonotonousArray: current predicate must be weaker than (or equal to) the previous predicate.");
           }
         }
       }
-      this.d = predicate;
+      this._prevFindLastPredicate = predicate;
     }
-    const idx = $Lb(this.e, predicate, this.c);
-    this.c = idx + 1;
-    return idx === -1 ? void 0 : this.e[idx];
+    const idx = findLastIdxMonotonous(this._array, predicate, this._findLastMonotonousLastIdx);
+    this._findLastMonotonousLastIdx = idx + 1;
+    return idx === -1 ? void 0 : this._array[idx];
   }
 };
 
 // out-build/vs/base/common/arrays.js
-function $_b(array) {
+function coalesce(array) {
   return array.filter((e) => !!e);
 }
-function $mc(array, _seed) {
+function shuffle(array, _seed) {
   let rand;
   if (typeof _seed === "number") {
     let seed = _seed;
@@ -847,7 +847,7 @@ function $mc(array, _seed) {
     array[j] = temp;
   }
 }
-function $uc(arr) {
+function getRandomElement(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 var CompareResult;
@@ -872,13 +872,13 @@ var CompareResult;
   CompareResult2.lessThan = -1;
   CompareResult2.neitherLessOrGreaterThan = 0;
 })(CompareResult || (CompareResult = {}));
-function $xc(selector, comparator) {
+function compareBy(selector, comparator) {
   return (a, b) => comparator(selector(a), selector(b));
 }
-var $zc = (a, b) => a - b;
-var $Ec = class _$Ec {
+var numberComparator = (a, b) => a - b;
+var CallbackIterable = class _CallbackIterable {
   static {
-    this.empty = new _$Ec((_callback) => {
+    this.empty = new _CallbackIterable((_callback) => {
     });
   }
   constructor(iterate) {
@@ -899,10 +899,10 @@ var $Ec = class _$Ec {
     return result;
   }
   filter(predicate) {
-    return new _$Ec((cb) => this.iterate((item) => predicate(item) ? cb(item) : true));
+    return new _CallbackIterable((cb) => this.iterate((item) => predicate(item) ? cb(item) : true));
   }
   map(mapFn) {
-    return new _$Ec((cb) => this.iterate((item) => cb(mapFn(item))));
+    return new _CallbackIterable((cb) => this.iterate((item) => cb(mapFn(item))));
   }
   some(predicate) {
     let result = false;
@@ -949,7 +949,7 @@ var $Ec = class _$Ec {
 
 // out-build/vs/base/common/collections.js
 var _a;
-function $a(data, groupFn) {
+function groupBy(data, groupFn) {
   const result = /* @__PURE__ */ Object.create(null);
   for (const element of data) {
     const key = groupFn(element);
@@ -961,34 +961,34 @@ function $a(data, groupFn) {
   }
   return result;
 }
-var $f = class {
+var SetWithKey = class {
   static {
     _a = Symbol.toStringTag;
   }
-  constructor(values, b) {
-    this.b = b;
-    this.a = /* @__PURE__ */ new Map();
+  constructor(values, toKey) {
+    this.toKey = toKey;
+    this._map = /* @__PURE__ */ new Map();
     this[_a] = "SetWithKey";
     for (const value of values) {
       this.add(value);
     }
   }
   get size() {
-    return this.a.size;
+    return this._map.size;
   }
   add(value) {
-    const key = this.b(value);
-    this.a.set(key, value);
+    const key = this.toKey(value);
+    this._map.set(key, value);
     return this;
   }
   delete(value) {
-    return this.a.delete(this.b(value));
+    return this._map.delete(this.toKey(value));
   }
   has(value) {
-    return this.a.has(this.b(value));
+    return this._map.has(this.toKey(value));
   }
   *entries() {
-    for (const entry of this.a.values()) {
+    for (const entry of this._map.values()) {
       yield [entry, entry];
     }
   }
@@ -996,15 +996,15 @@ var $f = class {
     return this.values();
   }
   *values() {
-    for (const entry of this.a.values()) {
+    for (const entry of this._map.values()) {
       yield entry;
     }
   }
   clear() {
-    this.a.clear();
+    this._map.clear();
   }
   forEach(callbackfn, thisArg) {
-    this.a.forEach((entry) => callbackfn.call(thisArg, entry, entry, this));
+    this._map.forEach((entry) => callbackfn.call(thisArg, entry, entry, this));
   }
   [Symbol.iterator]() {
     return this.values();
@@ -1024,111 +1024,111 @@ var ResourceMapEntry = class {
 function isEntries(arg) {
   return Array.isArray(arg);
 }
-var $Pc = class _$Pc {
+var ResourceMap = class _ResourceMap {
   static {
-    this.c = (resource) => resource.toString();
+    this.defaultToKey = (resource) => resource.toString();
   }
   constructor(arg, toKey) {
     this[_a2] = "ResourceMap";
-    if (arg instanceof _$Pc) {
-      this.d = new Map(arg.d);
-      this.e = toKey ?? _$Pc.c;
+    if (arg instanceof _ResourceMap) {
+      this.map = new Map(arg.map);
+      this.toKey = toKey ?? _ResourceMap.defaultToKey;
     } else if (isEntries(arg)) {
-      this.d = /* @__PURE__ */ new Map();
-      this.e = toKey ?? _$Pc.c;
+      this.map = /* @__PURE__ */ new Map();
+      this.toKey = toKey ?? _ResourceMap.defaultToKey;
       for (const [resource, value] of arg) {
         this.set(resource, value);
       }
     } else {
-      this.d = /* @__PURE__ */ new Map();
-      this.e = arg ?? _$Pc.c;
+      this.map = /* @__PURE__ */ new Map();
+      this.toKey = arg ?? _ResourceMap.defaultToKey;
     }
   }
   set(resource, value) {
-    this.d.set(this.e(resource), new ResourceMapEntry(resource, value));
+    this.map.set(this.toKey(resource), new ResourceMapEntry(resource, value));
     return this;
   }
   get(resource) {
-    return this.d.get(this.e(resource))?.value;
+    return this.map.get(this.toKey(resource))?.value;
   }
   has(resource) {
-    return this.d.has(this.e(resource));
+    return this.map.has(this.toKey(resource));
   }
   get size() {
-    return this.d.size;
+    return this.map.size;
   }
   clear() {
-    this.d.clear();
+    this.map.clear();
   }
   delete(resource) {
-    return this.d.delete(this.e(resource));
+    return this.map.delete(this.toKey(resource));
   }
   forEach(clb, thisArg) {
     if (typeof thisArg !== "undefined") {
       clb = clb.bind(thisArg);
     }
-    for (const [_, entry] of this.d) {
+    for (const [_, entry] of this.map) {
       clb(entry.value, entry.uri, this);
     }
   }
   *values() {
-    for (const entry of this.d.values()) {
+    for (const entry of this.map.values()) {
       yield entry.value;
     }
   }
   *keys() {
-    for (const entry of this.d.values()) {
+    for (const entry of this.map.values()) {
       yield entry.uri;
     }
   }
   *entries() {
-    for (const entry of this.d.values()) {
+    for (const entry of this.map.values()) {
       yield [entry.uri, entry.value];
     }
   }
   *[(_a2 = Symbol.toStringTag, Symbol.iterator)]() {
-    for (const [, entry] of this.d) {
+    for (const [, entry] of this.map) {
       yield [entry.uri, entry.value];
     }
   }
 };
-var $Qc = class {
+var ResourceSet = class {
   constructor(entriesOrKey, toKey) {
     this[_b] = "ResourceSet";
     if (!entriesOrKey || typeof entriesOrKey === "function") {
-      this.c = new $Pc(entriesOrKey);
+      this._map = new ResourceMap(entriesOrKey);
     } else {
-      this.c = new $Pc(toKey);
+      this._map = new ResourceMap(toKey);
       entriesOrKey.forEach(this.add, this);
     }
   }
   get size() {
-    return this.c.size;
+    return this._map.size;
   }
   add(value) {
-    this.c.set(value, value);
+    this._map.set(value, value);
     return this;
   }
   clear() {
-    this.c.clear();
+    this._map.clear();
   }
   delete(value) {
-    return this.c.delete(value);
+    return this._map.delete(value);
   }
   forEach(callbackfn, thisArg) {
-    this.c.forEach((_value, key) => callbackfn.call(thisArg, key, key, this));
+    this._map.forEach((_value, key) => callbackfn.call(thisArg, key, key, this));
   }
   has(value) {
-    return this.c.has(value);
+    return this._map.has(value);
   }
   entries() {
-    return this.c.entries();
+    return this._map.entries();
   }
   keys() {
-    return this.c.keys();
+    return this._map.keys();
   }
   values() {
-    return this.c.keys();
+    return this._map.keys();
   }
   [(_b = Symbol.toStringTag, Symbol.iterator)]() {
     return this.keys();
@@ -1140,72 +1140,72 @@ var Touch;
   Touch2[Touch2["AsOld"] = 1] = "AsOld";
   Touch2[Touch2["AsNew"] = 2] = "AsNew";
 })(Touch || (Touch = {}));
-var $Rc = class {
+var LinkedMap = class {
   constructor() {
     this[_c] = "LinkedMap";
-    this.c = /* @__PURE__ */ new Map();
-    this.d = void 0;
-    this.e = void 0;
-    this.f = 0;
-    this.g = 0;
+    this._map = /* @__PURE__ */ new Map();
+    this._head = void 0;
+    this._tail = void 0;
+    this._size = 0;
+    this._state = 0;
   }
   clear() {
-    this.c.clear();
-    this.d = void 0;
-    this.e = void 0;
-    this.f = 0;
-    this.g++;
+    this._map.clear();
+    this._head = void 0;
+    this._tail = void 0;
+    this._size = 0;
+    this._state++;
   }
   isEmpty() {
-    return !this.d && !this.e;
+    return !this._head && !this._tail;
   }
   get size() {
-    return this.f;
+    return this._size;
   }
   get first() {
-    return this.d?.value;
+    return this._head?.value;
   }
   get last() {
-    return this.e?.value;
+    return this._tail?.value;
   }
   has(key) {
-    return this.c.has(key);
+    return this._map.has(key);
   }
   get(key, touch = 0) {
-    const item = this.c.get(key);
+    const item = this._map.get(key);
     if (!item) {
       return void 0;
     }
     if (touch !== 0) {
-      this.n(item, touch);
+      this.touch(item, touch);
     }
     return item.value;
   }
   set(key, value, touch = 0) {
-    let item = this.c.get(key);
+    let item = this._map.get(key);
     if (item) {
       item.value = value;
       if (touch !== 0) {
-        this.n(item, touch);
+        this.touch(item, touch);
       }
     } else {
       item = { key, value, next: void 0, previous: void 0 };
       switch (touch) {
         case 0:
-          this.l(item);
+          this.addItemLast(item);
           break;
         case 1:
-          this.k(item);
+          this.addItemFirst(item);
           break;
         case 2:
-          this.l(item);
+          this.addItemLast(item);
           break;
         default:
-          this.l(item);
+          this.addItemLast(item);
           break;
       }
-      this.c.set(key, item);
-      this.f++;
+      this._map.set(key, item);
+      this._size++;
     }
     return this;
   }
@@ -1213,38 +1213,38 @@ var $Rc = class {
     return !!this.remove(key);
   }
   remove(key) {
-    const item = this.c.get(key);
+    const item = this._map.get(key);
     if (!item) {
       return void 0;
     }
-    this.c.delete(key);
-    this.m(item);
-    this.f--;
+    this._map.delete(key);
+    this.removeItem(item);
+    this._size--;
     return item.value;
   }
   shift() {
-    if (!this.d && !this.e) {
+    if (!this._head && !this._tail) {
       return void 0;
     }
-    if (!this.d || !this.e) {
+    if (!this._head || !this._tail) {
       throw new Error("Invalid list");
     }
-    const item = this.d;
-    this.c.delete(item.key);
-    this.m(item);
-    this.f--;
+    const item = this._head;
+    this._map.delete(item.key);
+    this.removeItem(item);
+    this._size--;
     return item.value;
   }
   forEach(callbackfn, thisArg) {
-    const state = this.g;
-    let current = this.d;
+    const state = this._state;
+    let current = this._head;
     while (current) {
       if (thisArg) {
         callbackfn.bind(thisArg)(current.value, current.key, this);
       } else {
         callbackfn(current.value, current.key, this);
       }
-      if (this.g !== state) {
+      if (this._state !== state) {
         throw new Error(`LinkedMap got modified during iteration.`);
       }
       current = current.next;
@@ -1252,14 +1252,14 @@ var $Rc = class {
   }
   keys() {
     const map = this;
-    const state = this.g;
-    let current = this.d;
+    const state = this._state;
+    let current = this._head;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map.g !== state) {
+        if (map._state !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -1275,14 +1275,14 @@ var $Rc = class {
   }
   values() {
     const map = this;
-    const state = this.g;
-    let current = this.d;
+    const state = this._state;
+    let current = this._head;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map.g !== state) {
+        if (map._state !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -1298,14 +1298,14 @@ var $Rc = class {
   }
   entries() {
     const map = this;
-    const state = this.g;
-    let current = this.d;
+    const state = this._state;
+    let current = this._head;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map.g !== state) {
+        if (map._state !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -1322,7 +1322,7 @@ var $Rc = class {
   [(_c = Symbol.toStringTag, Symbol.iterator)]() {
     return this.entries();
   }
-  h(newSize) {
+  trimOld(newSize) {
     if (newSize >= this.size) {
       return;
     }
@@ -1330,21 +1330,21 @@ var $Rc = class {
       this.clear();
       return;
     }
-    let current = this.d;
+    let current = this._head;
     let currentSize = this.size;
     while (current && currentSize > newSize) {
-      this.c.delete(current.key);
+      this._map.delete(current.key);
       current = current.next;
       currentSize--;
     }
-    this.d = current;
-    this.f = currentSize;
+    this._head = current;
+    this._size = currentSize;
     if (current) {
       current.previous = void 0;
     }
-    this.g++;
+    this._state++;
   }
-  j(newSize) {
+  trimNew(newSize) {
     if (newSize >= this.size) {
       return;
     }
@@ -1352,60 +1352,60 @@ var $Rc = class {
       this.clear();
       return;
     }
-    let current = this.e;
+    let current = this._tail;
     let currentSize = this.size;
     while (current && currentSize > newSize) {
-      this.c.delete(current.key);
+      this._map.delete(current.key);
       current = current.previous;
       currentSize--;
     }
-    this.e = current;
-    this.f = currentSize;
+    this._tail = current;
+    this._size = currentSize;
     if (current) {
       current.next = void 0;
     }
-    this.g++;
+    this._state++;
   }
-  k(item) {
-    if (!this.d && !this.e) {
-      this.e = item;
-    } else if (!this.d) {
+  addItemFirst(item) {
+    if (!this._head && !this._tail) {
+      this._tail = item;
+    } else if (!this._head) {
       throw new Error("Invalid list");
     } else {
-      item.next = this.d;
-      this.d.previous = item;
+      item.next = this._head;
+      this._head.previous = item;
     }
-    this.d = item;
-    this.g++;
+    this._head = item;
+    this._state++;
   }
-  l(item) {
-    if (!this.d && !this.e) {
-      this.d = item;
-    } else if (!this.e) {
+  addItemLast(item) {
+    if (!this._head && !this._tail) {
+      this._head = item;
+    } else if (!this._tail) {
       throw new Error("Invalid list");
     } else {
-      item.previous = this.e;
-      this.e.next = item;
+      item.previous = this._tail;
+      this._tail.next = item;
     }
-    this.e = item;
-    this.g++;
+    this._tail = item;
+    this._state++;
   }
-  m(item) {
-    if (item === this.d && item === this.e) {
-      this.d = void 0;
-      this.e = void 0;
-    } else if (item === this.d) {
+  removeItem(item) {
+    if (item === this._head && item === this._tail) {
+      this._head = void 0;
+      this._tail = void 0;
+    } else if (item === this._head) {
       if (!item.next) {
         throw new Error("Invalid list");
       }
       item.next.previous = void 0;
-      this.d = item.next;
-    } else if (item === this.e) {
+      this._head = item.next;
+    } else if (item === this._tail) {
       if (!item.previous) {
         throw new Error("Invalid list");
       }
       item.previous.next = void 0;
-      this.e = item.previous;
+      this._tail = item.previous;
     } else {
       const next = item.next;
       const previous = item.previous;
@@ -1417,51 +1417,51 @@ var $Rc = class {
     }
     item.next = void 0;
     item.previous = void 0;
-    this.g++;
+    this._state++;
   }
-  n(item, touch) {
-    if (!this.d || !this.e) {
+  touch(item, touch) {
+    if (!this._head || !this._tail) {
       throw new Error("Invalid list");
     }
     if (touch !== 1 && touch !== 2) {
       return;
     }
     if (touch === 1) {
-      if (item === this.d) {
+      if (item === this._head) {
         return;
       }
       const next = item.next;
       const previous = item.previous;
-      if (item === this.e) {
+      if (item === this._tail) {
         previous.next = void 0;
-        this.e = previous;
+        this._tail = previous;
       } else {
         next.previous = previous;
         previous.next = next;
       }
       item.previous = void 0;
-      item.next = this.d;
-      this.d.previous = item;
-      this.d = item;
-      this.g++;
+      item.next = this._head;
+      this._head.previous = item;
+      this._head = item;
+      this._state++;
     } else if (touch === 2) {
-      if (item === this.e) {
+      if (item === this._tail) {
         return;
       }
       const next = item.next;
       const previous = item.previous;
-      if (item === this.d) {
+      if (item === this._head) {
         next.previous = void 0;
-        this.d = next;
+        this._head = next;
       } else {
         next.previous = previous;
         previous.next = next;
       }
       item.next = void 0;
-      item.previous = this.e;
-      this.e.next = item;
-      this.e = item;
-      this.g++;
+      item.previous = this._tail;
+      this._tail.next = item;
+      this._tail = item;
+      this._state++;
     }
   }
   toJSON() {
@@ -1478,25 +1478,25 @@ var $Rc = class {
     }
   }
 };
-var Cache = class extends $Rc {
+var Cache = class extends LinkedMap {
   constructor(limit, ratio = 1) {
     super();
-    this.o = limit;
-    this.p = Math.min(Math.max(0, ratio), 1);
+    this._limit = limit;
+    this._ratio = Math.min(Math.max(0, ratio), 1);
   }
   get limit() {
-    return this.o;
+    return this._limit;
   }
   set limit(limit) {
-    this.o = limit;
-    this.q();
+    this._limit = limit;
+    this.checkTrim();
   }
   get ratio() {
-    return this.p;
+    return this._ratio;
   }
   set ratio(ratio) {
-    this.p = Math.min(Math.max(0, ratio), 1);
-    this.q();
+    this._ratio = Math.min(Math.max(0, ratio), 1);
+    this.checkTrim();
   }
   get(key, touch = 2) {
     return super.get(key, touch);
@@ -1517,63 +1517,63 @@ var Cache = class extends $Rc {
     );
     return this;
   }
-  q() {
-    if (this.size > this.o) {
-      this.r(Math.round(this.o * this.p));
+  checkTrim() {
+    if (this.size > this._limit) {
+      this.trim(Math.round(this._limit * this._ratio));
     }
   }
 };
-var $Sc = class extends Cache {
+var LRUCache = class extends Cache {
   constructor(limit, ratio = 1) {
     super(limit, ratio);
   }
-  r(newSize) {
-    this.h(newSize);
+  trim(newSize) {
+    this.trimOld(newSize);
   }
   set(key, value) {
     super.set(key, value);
-    this.q();
+    this.checkTrim();
     return this;
   }
 };
-var $Wc = class {
+var SetMap = class {
   constructor() {
-    this.c = /* @__PURE__ */ new Map();
+    this.map = /* @__PURE__ */ new Map();
   }
   add(key, value) {
-    let values = this.c.get(key);
+    let values = this.map.get(key);
     if (!values) {
       values = /* @__PURE__ */ new Set();
-      this.c.set(key, values);
+      this.map.set(key, values);
     }
     values.add(value);
   }
   delete(key, value) {
-    const values = this.c.get(key);
+    const values = this.map.get(key);
     if (!values) {
       return;
     }
     values.delete(value);
     if (values.size === 0) {
-      this.c.delete(key);
+      this.map.delete(key);
     }
   }
   forEach(key, fn) {
-    const values = this.c.get(key);
+    const values = this.map.get(key);
     if (!values) {
       return;
     }
     values.forEach(fn);
   }
   get(key) {
-    const values = this.c.get(key);
+    const values = this.map.get(key);
     if (!values) {
       return /* @__PURE__ */ new Set();
     }
     return values;
   }
 };
-function $Xc(a, b) {
+function mapsStrictEqualIgnoreOrder(a, b) {
   if (a === b) {
     return true;
   }
@@ -1594,7 +1594,7 @@ function $Xc(a, b) {
 }
 
 // out-build/vs/base/common/functional.js
-function $Fb(fn, fnDidRunCallback) {
+function createSingleCallFunction(fn, fnDidRunCallback) {
   const _this = this;
   let didCall = false;
   let result;
@@ -1622,41 +1622,41 @@ function ok(value, message) {
     throw new Error(message ? `Assertion failed (${message})` : "Assertion Failed");
   }
 }
-function $3c(condition, messageOrError = "unexpected state") {
+function assert(condition, messageOrError = "unexpected state") {
   if (!condition) {
-    const errorToThrow = typeof messageOrError === "string" ? new $Eb(`Assertion Failed: ${messageOrError}`) : messageOrError;
+    const errorToThrow = typeof messageOrError === "string" ? new BugIndicatingError(`Assertion Failed: ${messageOrError}`) : messageOrError;
     throw errorToThrow;
   }
 }
 
 // out-build/vs/base/common/types.js
-function $7c(str) {
+function isString(str) {
   return typeof str === "string";
 }
-function $0c(obj) {
+function isObject(obj) {
   return typeof obj === "object" && obj !== null && !Array.isArray(obj) && !(obj instanceof RegExp) && !(obj instanceof Date);
 }
-function $_c(obj) {
+function isNumber(obj) {
   return typeof obj === "number" && !isNaN(obj);
 }
-function $ad(obj) {
+function isIterable(obj) {
   return !!obj && typeof obj[Symbol.iterator] === "function";
 }
-function $dd(obj) {
+function isUndefined(obj) {
   return typeof obj === "undefined";
 }
-function $fd(obj) {
-  return $dd(obj) || obj === null;
+function isUndefinedOrNull(obj) {
+  return isUndefined(obj) || obj === null;
 }
-function $gd(condition, type) {
+function assertType(condition, type) {
   if (!condition) {
     throw new Error(type ? `Unexpected type, expected '${type}'` : "Unexpected type");
   }
 }
-function $nd(obj) {
+function isFunction(obj) {
   return typeof obj === "function";
 }
-function $sd(x, key) {
+function hasKey(x, key) {
   for (const k in key) {
     if (!(k in x)) {
       return false;
@@ -1760,7 +1760,7 @@ var Iterable;
   Iterable2.flatMap = flatMap;
   function* concat(...iterables) {
     for (const item of iterables) {
-      if ($ad(item)) {
+      if (isIterable(item)) {
         yield* item;
       } else {
         yield item;
@@ -1840,49 +1840,49 @@ var Iterable;
 // out-build/vs/base/common/lifecycle.js
 var TRACK_DISPOSABLES = false;
 var disposableTracker = null;
-var $ud = class _$ud {
+var DisposableTracker = class _DisposableTracker {
   constructor() {
-    this.b = /* @__PURE__ */ new Map();
+    this.livingDisposables = /* @__PURE__ */ new Map();
   }
   static {
-    this.a = 0;
+    this.idx = 0;
   }
-  c(d) {
-    let val = this.b.get(d);
+  getDisposableData(d) {
+    let val = this.livingDisposables.get(d);
     if (!val) {
-      val = { parent: null, source: null, isSingleton: false, value: d, idx: _$ud.a++ };
-      this.b.set(d, val);
+      val = { parent: null, source: null, isSingleton: false, value: d, idx: _DisposableTracker.idx++ };
+      this.livingDisposables.set(d, val);
     }
     return val;
   }
   trackDisposable(d) {
-    const data = this.c(d);
+    const data = this.getDisposableData(d);
     if (!data.source) {
       data.source = new Error().stack;
     }
   }
   setParent(child, parent) {
-    const data = this.c(child);
+    const data = this.getDisposableData(child);
     data.parent = parent;
   }
   markAsDisposed(x) {
-    this.b.delete(x);
+    this.livingDisposables.delete(x);
   }
   markAsSingleton(disposable) {
-    this.c(disposable).isSingleton = true;
+    this.getDisposableData(disposable).isSingleton = true;
   }
-  f(data, cache) {
+  getRootParent(data, cache) {
     const cacheValue = cache.get(data);
     if (cacheValue) {
       return cacheValue;
     }
-    const result = data.parent ? this.f(this.c(data.parent), cache) : data;
+    const result = data.parent ? this.getRootParent(this.getDisposableData(data.parent), cache) : data;
     cache.set(data, result);
     return result;
   }
   getTrackedDisposables() {
     const rootParentCache = /* @__PURE__ */ new Map();
-    const leaking = [...this.b.entries()].filter(([, v]) => v.source !== null && !this.f(v, rootParentCache).isSingleton).flatMap(([k]) => k);
+    const leaking = [...this.livingDisposables.entries()].filter(([, v]) => v.source !== null && !this.getRootParent(v, rootParentCache).isSingleton).flatMap(([k]) => k);
     return leaking;
   }
   computeLeakingDisposables(maxReported = 10, preComputedLeaks) {
@@ -1891,7 +1891,7 @@ var $ud = class _$ud {
       uncoveredLeakingObjs = preComputedLeaks;
     } else {
       const rootParentCache = /* @__PURE__ */ new Map();
-      const leakingObjects = [...this.b.values()].filter((info) => info.source !== null && !this.f(info, rootParentCache).isSingleton);
+      const leakingObjects = [...this.livingDisposables.values()].filter((info) => info.source !== null && !this.getRootParent(info, rootParentCache).isSingleton);
       if (leakingObjects.length === 0) {
         return;
       }
@@ -1916,14 +1916,14 @@ var $ud = class _$ud {
       removePrefix(lines, ["Error", /^trackDisposable \(.*\)$/, /^DisposableTracker.trackDisposable \(.*\)$/]);
       return lines.reverse();
     }
-    const stackTraceStarts = new $Wc();
+    const stackTraceStarts = new SetMap();
     for (const leaking of uncoveredLeakingObjs) {
       const stackTracePath = getStackTracePath(leaking);
       for (let i2 = 0; i2 <= stackTracePath.length; i2++) {
         stackTraceStarts.add(stackTracePath.slice(0, i2).join("\n"), leaking);
       }
     }
-    uncoveredLeakingObjs.sort($xc((l) => l.idx, $zc));
+    uncoveredLeakingObjs.sort(compareBy((l) => l.idx, numberComparator));
     let message = "";
     let i = 0;
     for (const leaking of uncoveredLeakingObjs.slice(0, maxReported)) {
@@ -1935,7 +1935,7 @@ var $ud = class _$ud {
         const starts = stackTraceStarts.get(stackTracePath.slice(0, i2 + 1).join("\n"));
         line = `(shared with ${starts.size}/${uncoveredLeakingObjs.length} leaks) at ${line}`;
         const prevStarts = stackTraceStarts.get(stackTracePath.slice(0, i2).join("\n"));
-        const continuations = $a([...prevStarts].map((d) => getStackTracePath(d)[i2]), (v) => v);
+        const continuations = groupBy([...prevStarts].map((d) => getStackTracePath(d)[i2]), (v) => v);
         delete continuations[stackTracePath[i2]];
         for (const [cont, set] of Object.entries(continuations)) {
           if (set) {
@@ -1964,12 +1964,12 @@ ${stackTraceFormattedLines.join("\n")}
     return { leaks: uncoveredLeakingObjs, details: message };
   }
 };
-function $vd(tracker) {
+function setDisposableTracker(tracker) {
   disposableTracker = tracker;
 }
 if (TRACK_DISPOSABLES) {
   const __is_disposable_tracked__ = "__is_disposable_tracked__";
-  $vd(new class {
+  setDisposableTracker(new class {
     trackDisposable(x) {
       const stack = new Error("Potentially leaked disposable").stack;
       setTimeout(() => {
@@ -1979,7 +1979,7 @@ if (TRACK_DISPOSABLES) {
       }, 3e3);
     }
     setParent(child, parent) {
-      if (child && child !== $Fd.None) {
+      if (child && child !== Disposable.None) {
         try {
           child[__is_disposable_tracked__] = true;
         } catch {
@@ -1987,7 +1987,7 @@ if (TRACK_DISPOSABLES) {
       }
     }
     markAsDisposed(disposable) {
-      if (disposable && disposable !== $Fd.None) {
+      if (disposable && disposable !== Disposable.None) {
         try {
           disposable[__is_disposable_tracked__] = true;
         } catch {
@@ -1998,11 +1998,11 @@ if (TRACK_DISPOSABLES) {
     }
   }());
 }
-function $wd(x) {
+function trackDisposable(x) {
   disposableTracker?.trackDisposable(x);
   return x;
 }
-function $xd(disposable) {
+function markAsDisposed(disposable) {
   disposableTracker?.markAsDisposed(disposable);
 }
 function setParentOfDisposable(child, parent) {
@@ -2016,10 +2016,10 @@ function setParentOfDisposables(children, parent) {
     disposableTracker.setParent(child, parent);
   }
 }
-function $zd(thing) {
+function isDisposable(thing) {
   return typeof thing === "object" && thing !== null && typeof thing.dispose === "function" && thing.dispose.length === 0;
 }
-function $Ad(arg) {
+function dispose(arg) {
   if (Iterable.is(arg)) {
     const errors = [];
     for (const d of arg) {
@@ -2042,40 +2042,40 @@ function $Ad(arg) {
     return arg;
   }
 }
-function $Cd(...disposables) {
-  const parent = $Dd(() => $Ad(disposables));
+function combinedDisposable(...disposables) {
+  const parent = toDisposable(() => dispose(disposables));
   setParentOfDisposables(disposables, parent);
   return parent;
 }
 var FunctionDisposable = class {
   constructor(fn) {
-    this.a = false;
-    this.b = fn;
-    $wd(this);
+    this._isDisposed = false;
+    this._fn = fn;
+    trackDisposable(this);
   }
   dispose() {
-    if (this.a) {
+    if (this._isDisposed) {
       return;
     }
-    if (!this.b) {
+    if (!this._fn) {
       throw new Error(`Unbound disposable context: Need to use an arrow function to preserve the value of this`);
     }
-    this.a = true;
-    $xd(this);
-    this.b();
+    this._isDisposed = true;
+    markAsDisposed(this);
+    this._fn();
   }
 };
-function $Dd(fn) {
+function toDisposable(fn) {
   return new FunctionDisposable(fn);
 }
-var $Ed = class _$Ed {
+var DisposableStore = class _DisposableStore {
   static {
     this.DISABLE_DISPOSED_WARNING = false;
   }
   constructor() {
-    this.f = /* @__PURE__ */ new Set();
-    this.g = false;
-    $wd(this);
+    this._toDispose = /* @__PURE__ */ new Set();
+    this._isDisposed = false;
+    trackDisposable(this);
   }
   /**
    * Dispose of all registered disposables and mark this object as disposed.
@@ -2083,49 +2083,49 @@ var $Ed = class _$Ed {
    * Any future disposables added to this object will be disposed of on `add`.
    */
   dispose() {
-    if (this.g) {
+    if (this._isDisposed) {
       return;
     }
-    $xd(this);
-    this.g = true;
+    markAsDisposed(this);
+    this._isDisposed = true;
     this.clear();
   }
   /**
    * @return `true` if this object has been disposed of.
    */
   get isDisposed() {
-    return this.g;
+    return this._isDisposed;
   }
   /**
    * Dispose of all registered disposables but do not mark this object as disposed.
    */
   clear() {
-    if (this.f.size === 0) {
+    if (this._toDispose.size === 0) {
       return;
     }
     try {
-      $Ad(this.f);
+      dispose(this._toDispose);
     } finally {
-      this.f.clear();
+      this._toDispose.clear();
     }
   }
   /**
    * Add a new {@link IDisposable disposable} to the collection.
    */
   add(o) {
-    if (!o || o === $Fd.None) {
+    if (!o || o === Disposable.None) {
       return o;
     }
     if (o === this) {
       throw new Error("Cannot register a disposable on itself!");
     }
     setParentOfDisposable(o, this);
-    if (this.g) {
-      if (!_$Ed.DISABLE_DISPOSED_WARNING) {
+    if (this._isDisposed) {
+      if (!_DisposableStore.DISABLE_DISPOSED_WARNING) {
         console.warn(new Error("Trying to add a disposable to a DisposableStore that has already been disposed of. The added object will be leaked!").stack);
       }
     } else {
-      this.f.add(o);
+      this._toDispose.add(o);
     }
     return o;
   }
@@ -2140,7 +2140,7 @@ var $Ed = class _$Ed {
     if (o === this) {
       throw new Error("Cannot dispose a disposable on itself!");
     }
-    this.f.delete(o);
+    this._toDispose.delete(o);
     o.dispose();
   }
   /**
@@ -2150,51 +2150,51 @@ var $Ed = class _$Ed {
     if (!o) {
       return;
     }
-    if (this.f.has(o)) {
-      this.f.delete(o);
+    if (this._toDispose.has(o)) {
+      this._toDispose.delete(o);
       setParentOfDisposable(o, null);
     }
   }
   assertNotDisposed() {
-    if (this.g) {
-      $nb(new $Eb("Object disposed"));
+    if (this._isDisposed) {
+      onUnexpectedError(new BugIndicatingError("Object disposed"));
     }
   }
 };
-var $Fd = class {
+var Disposable = class {
   static {
     this.None = Object.freeze({ dispose() {
     } });
   }
   constructor() {
-    this.B = new $Ed();
-    $wd(this);
-    setParentOfDisposable(this.B, this);
+    this._store = new DisposableStore();
+    trackDisposable(this);
+    setParentOfDisposable(this._store, this);
   }
   dispose() {
-    $xd(this);
-    this.B.dispose();
+    markAsDisposed(this);
+    this._store.dispose();
   }
   /**
    * Adds `o` to the collection of disposables managed by this object.
    */
-  D(o) {
+  _register(o) {
     if (o === this) {
       throw new Error("Cannot register a disposable on itself!");
     }
-    return this.B.add(o);
+    return this._store.add(o);
   }
 };
-var $Gd = class {
+var MutableDisposable = class {
   constructor() {
-    this.b = false;
-    $wd(this);
+    this._isDisposed = false;
+    trackDisposable(this);
   }
   /**
    * Get the currently held disposable value, or `undefined` if this MutableDisposable has been disposed
    */
   get value() {
-    return this.b ? void 0 : this.a;
+    return this._isDisposed ? void 0 : this._value;
   }
   /**
    * Set a new disposable value.
@@ -2209,14 +2209,14 @@ var $Gd = class {
    * - clearAndLeak() returns the old value without disposing it and removes its parent.
    */
   set value(value) {
-    if (this.b || value === this.a) {
+    if (this._isDisposed || value === this._value) {
       return;
     }
-    this.a?.dispose();
+    this._value?.dispose();
     if (value) {
       setParentOfDisposable(value, this);
     }
-    this.a = value;
+    this._value = value;
   }
   /**
    * Resets the stored value and disposed of the previously stored value.
@@ -2225,49 +2225,49 @@ var $Gd = class {
     this.value = void 0;
   }
   dispose() {
-    this.b = true;
-    $xd(this);
-    this.a?.dispose();
-    this.a = void 0;
+    this._isDisposed = true;
+    markAsDisposed(this);
+    this._value?.dispose();
+    this._value = void 0;
   }
   /**
    * Clears the value, but does not dispose it.
    * The old value is returned.
   */
   clearAndLeak() {
-    const oldValue = this.a;
-    this.a = void 0;
+    const oldValue = this._value;
+    this._value = void 0;
     if (oldValue) {
       setParentOfDisposable(oldValue, null);
     }
     return oldValue;
   }
 };
-var $Hd = class {
+var MandatoryMutableDisposable = class {
   constructor(initialValue) {
-    this.a = new $Gd();
-    this.b = false;
-    this.a.value = initialValue;
+    this._disposable = new MutableDisposable();
+    this._isDisposed = false;
+    this._disposable.value = initialValue;
   }
   get value() {
-    return this.a.value;
+    return this._disposable.value;
   }
   set value(value) {
-    if (this.b || value === this.a.value) {
+    if (this._isDisposed || value === this._disposable.value) {
       return;
     }
-    this.a.value = value;
+    this._disposable.value = value;
   }
   dispose() {
-    this.b = true;
-    this.a.dispose();
+    this._isDisposed = true;
+    this._disposable.dispose();
   }
 };
-var $Nd = class {
+var DisposableMap = class {
   constructor() {
-    this.a = /* @__PURE__ */ new Map();
-    this.b = false;
-    $wd(this);
+    this._store = /* @__PURE__ */ new Map();
+    this._isDisposed = false;
+    trackDisposable(this);
   }
   /**
    * Disposes of all stored values and mark this object as disposed.
@@ -2275,87 +2275,87 @@ var $Nd = class {
    * Trying to use this object after it has been disposed of is an error.
    */
   dispose() {
-    $xd(this);
-    this.b = true;
+    markAsDisposed(this);
+    this._isDisposed = true;
     this.clearAndDisposeAll();
   }
   /**
    * Disposes of all stored values and clear the map, but DO NOT mark this object as disposed.
    */
   clearAndDisposeAll() {
-    if (!this.a.size) {
+    if (!this._store.size) {
       return;
     }
     try {
-      $Ad(this.a.values());
+      dispose(this._store.values());
     } finally {
-      this.a.clear();
+      this._store.clear();
     }
   }
   has(key) {
-    return this.a.has(key);
+    return this._store.has(key);
   }
   get size() {
-    return this.a.size;
+    return this._store.size;
   }
   get(key) {
-    return this.a.get(key);
+    return this._store.get(key);
   }
   set(key, value, skipDisposeOnOverwrite = false) {
-    if (this.b) {
+    if (this._isDisposed) {
       console.warn(new Error("Trying to add a disposable to a DisposableMap that has already been disposed of. The added object will be leaked!").stack);
     }
     if (!skipDisposeOnOverwrite) {
-      this.a.get(key)?.dispose();
+      this._store.get(key)?.dispose();
     }
-    this.a.set(key, value);
+    this._store.set(key, value);
     setParentOfDisposable(value, this);
   }
   /**
    * Delete the value stored for `key` from this map and also dispose of it.
    */
   deleteAndDispose(key) {
-    this.a.get(key)?.dispose();
-    this.a.delete(key);
+    this._store.get(key)?.dispose();
+    this._store.delete(key);
   }
   /**
    * Delete the value stored for `key` from this map but return it. The caller is
    * responsible for disposing of the value.
    */
   deleteAndLeak(key) {
-    const value = this.a.get(key);
+    const value = this._store.get(key);
     if (value) {
       setParentOfDisposable(value, null);
     }
-    this.a.delete(key);
+    this._store.delete(key);
     return value;
   }
   keys() {
-    return this.a.keys();
+    return this._store.keys();
   }
   values() {
-    return this.a.values();
+    return this._store.values();
   }
   [Symbol.iterator]() {
-    return this.a[Symbol.iterator]();
+    return this._store[Symbol.iterator]();
   }
 };
 
 // out-build/vs/base/common/buffer.js
 var hasBuffer = typeof Buffer !== "undefined";
-var indexOfTable = new $Kf(() => new Uint8Array(256));
+var indexOfTable = new Lazy(() => new Uint8Array(256));
 var textEncoder;
 var textDecoder;
-var $2i = class _$2i {
+var VSBuffer = class _VSBuffer {
   /**
    * When running in a nodejs context, the backing store for the returned `VSBuffer` instance
    * might use a nodejs Buffer allocated from node's Buffer pool, which is not transferrable.
    */
   static alloc(byteLength) {
     if (hasBuffer) {
-      return new _$2i(Buffer.allocUnsafe(byteLength));
+      return new _VSBuffer(Buffer.allocUnsafe(byteLength));
     } else {
-      return new _$2i(new Uint8Array(byteLength));
+      return new _VSBuffer(new Uint8Array(byteLength));
     }
   }
   /**
@@ -2367,7 +2367,7 @@ var $2i = class _$2i {
     if (hasBuffer && !Buffer.isBuffer(actual)) {
       actual = Buffer.from(actual.buffer, actual.byteOffset, actual.byteLength);
     }
-    return new _$2i(actual);
+    return new _VSBuffer(actual);
   }
   /**
    * When running in a nodejs context, the backing store for the returned `VSBuffer` instance
@@ -2376,12 +2376,12 @@ var $2i = class _$2i {
   static fromString(source, options) {
     const dontUseNodeBuffer = options?.dontUseNodeBuffer || false;
     if (!dontUseNodeBuffer && hasBuffer) {
-      return new _$2i(Buffer.from(source));
+      return new _VSBuffer(Buffer.from(source));
     } else {
       if (!textEncoder) {
         textEncoder = new TextEncoder();
       }
-      return new _$2i(textEncoder.encode(source));
+      return new _VSBuffer(textEncoder.encode(source));
     }
   }
   /**
@@ -2389,7 +2389,7 @@ var $2i = class _$2i {
    * might use a nodejs Buffer allocated from node's Buffer pool, which is not transferrable.
    */
   static fromByteArray(source) {
-    const result = _$2i.alloc(source.length);
+    const result = _VSBuffer.alloc(source.length);
     for (let i = 0, len = source.length; i < len; i++) {
       result.buffer[i] = source[i];
     }
@@ -2406,7 +2406,7 @@ var $2i = class _$2i {
         totalLength += buffers[i].byteLength;
       }
     }
-    const ret = _$2i.alloc(totalLength);
+    const ret = _VSBuffer.alloc(totalLength);
     let offset = 0;
     for (let i = 0, len = buffers.length; i < len; i++) {
       const element = buffers[i];
@@ -2427,7 +2427,7 @@ var $2i = class _$2i {
    * might use a nodejs Buffer allocated from node's Buffer pool, which is not transferrable.
    */
   clone() {
-    const result = _$2i.alloc(this.byteLength);
+    const result = _VSBuffer.alloc(this.byteLength);
     result.set(this);
     return result;
   }
@@ -2442,10 +2442,10 @@ var $2i = class _$2i {
     }
   }
   slice(start, end) {
-    return new _$2i(this.buffer.subarray(start, end));
+    return new _VSBuffer(this.buffer.subarray(start, end));
   }
   set(array, offset) {
-    if (array instanceof _$2i) {
+    if (array instanceof _VSBuffer) {
       this.buffer.set(array.buffer, offset);
     } else if (array instanceof Uint8Array) {
       this.buffer.set(array, offset);
@@ -2458,25 +2458,25 @@ var $2i = class _$2i {
     }
   }
   readUInt32BE(offset) {
-    return $6i(this.buffer, offset);
+    return readUInt32BE(this.buffer, offset);
   }
   writeUInt32BE(value, offset) {
-    $7i(this.buffer, value, offset);
+    writeUInt32BE(this.buffer, value, offset);
   }
   readUInt32LE(offset) {
-    return $8i(this.buffer, offset);
+    return readUInt32LE(this.buffer, offset);
   }
   writeUInt32LE(value, offset) {
-    $9i(this.buffer, value, offset);
+    writeUInt32LE(this.buffer, value, offset);
   }
   readUInt8(offset) {
-    return $0i(this.buffer, offset);
+    return readUInt8(this.buffer, offset);
   }
   writeUInt8(value, offset) {
-    $$i(this.buffer, value, offset);
+    writeUInt8(this.buffer, value, offset);
   }
   indexOf(subarray, offset = 0) {
-    return $3i(this.buffer, subarray instanceof _$2i ? subarray.buffer : subarray, offset);
+    return binaryIndexOf(this.buffer, subarray instanceof _VSBuffer ? subarray.buffer : subarray, offset);
   }
   equals(other) {
     if (this === other) {
@@ -2488,7 +2488,7 @@ var $2i = class _$2i {
     return this.buffer.every((value, index) => value === other.buffer[index]);
   }
 };
-function $3i(haystack, needle, offset = 0) {
+function binaryIndexOf(haystack, needle, offset = 0) {
   const needleLen = needle.byteLength;
   const haystackLen = haystack.byteLength;
   if (needleLen === 0) {
@@ -2523,10 +2523,10 @@ function $3i(haystack, needle, offset = 0) {
   }
   return result;
 }
-function $6i(source, offset) {
+function readUInt32BE(source, offset) {
   return source[offset] * 2 ** 24 + source[offset + 1] * 2 ** 16 + source[offset + 2] * 2 ** 8 + source[offset + 3];
 }
-function $7i(destination, value, offset) {
+function writeUInt32BE(destination, value, offset) {
   destination[offset + 3] = value;
   value = value >>> 8;
   destination[offset + 2] = value;
@@ -2535,10 +2535,10 @@ function $7i(destination, value, offset) {
   value = value >>> 8;
   destination[offset] = value;
 }
-function $8i(source, offset) {
+function readUInt32LE(source, offset) {
   return source[offset + 0] << 0 >>> 0 | source[offset + 1] << 8 >>> 0 | source[offset + 2] << 16 >>> 0 | source[offset + 3] << 24 >>> 0;
 }
-function $9i(destination, value, offset) {
+function writeUInt32LE(destination, value, offset) {
   destination[offset + 0] = value & 255;
   value = value >>> 8;
   destination[offset + 1] = value & 255;
@@ -2547,14 +2547,14 @@ function $9i(destination, value, offset) {
   value = value >>> 8;
   destination[offset + 3] = value & 255;
 }
-function $0i(source, offset) {
+function readUInt8(source, offset) {
   return source[offset];
 }
-function $$i(destination, value, offset) {
+function writeUInt8(destination, value, offset) {
   destination[offset] = value;
 }
 var hexChars = "0123456789abcdef";
-function $kj({ buffer }) {
+function encodeHex({ buffer }) {
   let result = "";
   for (let i = 0; i < buffer.length; i++) {
     const byte = buffer[i];
@@ -2565,15 +2565,15 @@ function $kj({ buffer }) {
 }
 
 // out-build/vs/nls.messages.js
-function $g() {
+function getNLSMessages() {
   return globalThis._VSCODE_NLS_MESSAGES;
 }
-function $h() {
+function getNLSLanguage() {
   return globalThis._VSCODE_NLS_LANGUAGE;
 }
 
 // out-build/vs/nls.js
-var isPseudo = $h() === "pseudo" || typeof document !== "undefined" && document.location && typeof document.location.hash === "string" && document.location.hash.indexOf("pseudo=true") >= 0;
+var isPseudo = getNLSLanguage() === "pseudo" || typeof document !== "undefined" && document.location && typeof document.location.hash === "string" && document.location.hash.indexOf("pseudo=true") >= 0;
 function _format(message, args) {
   let result;
   if (args.length === 0) {
@@ -2603,7 +2603,7 @@ function localize(data, message, ...args) {
   return _format(message, args);
 }
 function lookupMessage(index, fallback) {
-  const message = $g()?.[index];
+  const message = getNLSMessages()?.[index];
   if (typeof message !== "string") {
     if (typeof fallback === "string") {
       return fallback;
@@ -2614,7 +2614,7 @@ function lookupMessage(index, fallback) {
 }
 
 // out-build/vs/base/common/platform.js
-var $k = "en";
+var LANGUAGE_DEFAULT = "en";
 var _isWindows = false;
 var _isMacintosh = false;
 var _isLinux = false;
@@ -2626,8 +2626,8 @@ var _isIOS = false;
 var _isCI = false;
 var _isMobile = false;
 var _locale = void 0;
-var _language = $k;
-var _platformLocale = $k;
+var _language = LANGUAGE_DEFAULT;
+var _platformLocale = LANGUAGE_DEFAULT;
 var _translationsConfigFile = void 0;
 var _userAgent = void 0;
 var $globalThis = globalThis;
@@ -2646,15 +2646,15 @@ if (typeof nodeProcess === "object") {
   _isLinuxSnap = _isLinux && !!nodeProcess.env["SNAP"] && !!nodeProcess.env["SNAP_REVISION"];
   _isElectron = isElectronProcess;
   _isCI = !!nodeProcess.env["CI"] || !!nodeProcess.env["BUILD_ARTIFACTSTAGINGDIRECTORY"] || !!nodeProcess.env["GITHUB_WORKSPACE"];
-  _locale = $k;
-  _language = $k;
+  _locale = LANGUAGE_DEFAULT;
+  _language = LANGUAGE_DEFAULT;
   const rawNlsConfig = nodeProcess.env["VSCODE_NLS_CONFIG"];
   if (rawNlsConfig) {
     try {
       const nlsConfig = JSON.parse(rawNlsConfig);
       _locale = nlsConfig.userLocale;
       _platformLocale = nlsConfig.osLocale;
-      _language = nlsConfig.resolvedLanguage || $k;
+      _language = nlsConfig.resolvedLanguage || LANGUAGE_DEFAULT;
       _translationsConfigFile = nlsConfig.languagePack?.translationsConfigFile;
     } catch (e) {
     }
@@ -2668,7 +2668,7 @@ if (typeof nodeProcess === "object") {
   _isLinux = _userAgent.indexOf("Linux") >= 0;
   _isMobile = _userAgent?.indexOf("Mobi") >= 0;
   _isWeb = true;
-  _language = $h() || $k;
+  _language = getNLSLanguage() || LANGUAGE_DEFAULT;
   _locale = navigator.language.toLowerCase();
   _platformLocale = _locale;
 } else {
@@ -2689,40 +2689,40 @@ if (_isMacintosh) {
 } else if (_isLinux) {
   _platform = 2;
 }
-var $m = _isWindows;
-var $n = _isMacintosh;
-var $o = _isLinux;
-var $q = _isNative;
-var $s = _isWeb;
-var $t = _isWeb && typeof $globalThis.importScripts === "function";
-var $u = $t ? $globalThis.origin : void 0;
-var $y = _platform;
-var $z = _userAgent;
-var $A = _language;
+var isWindows = _isWindows;
+var isMacintosh = _isMacintosh;
+var isLinux = _isLinux;
+var isNative = _isNative;
+var isWeb = _isWeb;
+var isWebWorker = _isWeb && typeof $globalThis.importScripts === "function";
+var webWorkerOrigin = isWebWorker ? $globalThis.origin : void 0;
+var platform = _platform;
+var userAgent = _userAgent;
+var language = _language;
 var Language;
 (function(Language2) {
   function value() {
-    return $A;
+    return language;
   }
   Language2.value = value;
   function isDefaultVariant() {
-    if ($A.length === 2) {
-      return $A === "en";
-    } else if ($A.length >= 3) {
-      return $A[0] === "e" && $A[1] === "n" && $A[2] === "-";
+    if (language.length === 2) {
+      return language === "en";
+    } else if (language.length >= 3) {
+      return language[0] === "e" && language[1] === "n" && language[2] === "-";
     } else {
       return false;
     }
   }
   Language2.isDefaultVariant = isDefaultVariant;
   function isDefault() {
-    return $A === "en";
+    return language === "en";
   }
   Language2.isDefault = isDefault;
 })(Language || (Language = {}));
-var $E = typeof $globalThis.postMessage === "function" && !$globalThis.importScripts;
-var $F = (() => {
-  if ($E) {
+var setTimeout0IsFaster = typeof $globalThis.postMessage === "function" && !$globalThis.importScripts;
+var setTimeout0 = (() => {
+  if (setTimeout0IsFaster) {
     const pending = [];
     $globalThis.addEventListener("message", (e) => {
       if (e.data && e.data.vscodeScheduleAsyncWork) {
@@ -2755,11 +2755,11 @@ var OperatingSystem;
   OperatingSystem2[OperatingSystem2["Linux"] = 3] = "Linux";
 })(OperatingSystem || (OperatingSystem = {}));
 var OS = _isMacintosh || _isIOS ? 2 : _isWindows ? 1 : 3;
-var $I = !!($z && $z.indexOf("Chrome") >= 0);
-var $J = !!($z && $z.indexOf("Firefox") >= 0);
-var $K = !!(!$I && ($z && $z.indexOf("Safari") >= 0));
-var $L = !!($z && $z.indexOf("Edg/") >= 0);
-var $M = !!($z && $z.indexOf("Android") >= 0);
+var isChrome = !!(userAgent && userAgent.indexOf("Chrome") >= 0);
+var isFirefox = !!(userAgent && userAgent.indexOf("Firefox") >= 0);
+var isSafari = !!(!isChrome && (userAgent && userAgent.indexOf("Safari") >= 0));
+var isEdge = !!(userAgent && userAgent.indexOf("Edg/") >= 0);
+var isAndroid = !!(userAgent && userAgent.indexOf("Android") >= 0);
 
 // out-build/vs/base/common/process.js
 var safeProcess;
@@ -2799,7 +2799,7 @@ if (typeof vscodeGlobal !== "undefined" && typeof vscodeGlobal.process !== "unde
   safeProcess = {
     // Supported
     get platform() {
-      return $m ? "win32" : $n ? "darwin" : "linux";
+      return isWindows ? "win32" : isMacintosh ? "darwin" : "linux";
     },
     get arch() {
       return void 0;
@@ -2813,10 +2813,10 @@ if (typeof vscodeGlobal !== "undefined" && typeof vscodeGlobal.process !== "unde
     }
   };
 }
-var $2 = safeProcess.cwd;
-var $3 = safeProcess.env;
-var $4 = safeProcess.platform;
-var $5 = safeProcess.arch;
+var cwd = safeProcess.cwd;
+var env = safeProcess.env;
+var platform2 = safeProcess.platform;
+var arch = safeProcess.arch;
 
 // out-build/vs/base/common/path.js
 var CHAR_UPPERCASE_A = 65;
@@ -2854,7 +2854,7 @@ function validateString(value, name) {
     throw new ErrorInvalidArgType(name, "string", value);
   }
 }
-var platformIsWin32 = $4 === "win32";
+var platformIsWin32 = platform2 === "win32";
 function isPathSeparator(code) {
   return code === CHAR_FORWARD_SLASH || code === CHAR_BACKWARD_SLASH;
 }
@@ -2864,7 +2864,7 @@ function isPosixPathSeparator(code) {
 function isWindowsDeviceRoot(code) {
   return code >= CHAR_UPPERCASE_A && code <= CHAR_UPPERCASE_Z || code >= CHAR_LOWERCASE_A && code <= CHAR_LOWERCASE_Z;
 }
-function normalizeString(path, allowAboveRoot, separator, isPathSeparator2) {
+function normalizeString(path, allowAboveRoot, separator, isPathSeparator3) {
   let res = "";
   let lastSegmentLength = 0;
   let lastSlash = -1;
@@ -2873,12 +2873,12 @@ function normalizeString(path, allowAboveRoot, separator, isPathSeparator2) {
   for (let i = 0; i <= path.length; ++i) {
     if (i < path.length) {
       code = path.charCodeAt(i);
-    } else if (isPathSeparator2(code)) {
+    } else if (isPathSeparator3(code)) {
       break;
     } else {
       code = CHAR_FORWARD_SLASH;
     }
-    if (isPathSeparator2(code)) {
+    if (isPathSeparator3(code)) {
       if (lastSlash === i - 1 || dots === 1) {
       } else if (dots === 2) {
         if (res.length < 2 || lastSegmentLength !== 2 || res.charCodeAt(res.length - 1) !== CHAR_DOT || res.charCodeAt(res.length - 2) !== CHAR_DOT) {
@@ -2936,7 +2936,7 @@ function _format2(sep2, pathObject) {
   }
   return dir === pathObject.root ? `${dir}${base}` : `${dir}${sep2}${base}`;
 }
-var $6 = {
+var win32 = {
   // path.resolve([from ...], to)
   resolve(...pathSegments) {
     let resolvedDevice = "";
@@ -2951,9 +2951,9 @@ var $6 = {
           continue;
         }
       } else if (resolvedDevice.length === 0) {
-        path = $2();
+        path = cwd();
       } else {
-        path = $3[`=${resolvedDevice}`] || $2();
+        path = env[`=${resolvedDevice}`] || cwd();
         if (path === void 0 || path.slice(0, 2).toLowerCase() !== resolvedDevice.toLowerCase() && path.charCodeAt(2) === CHAR_BACKWARD_SLASH) {
           path = `${resolvedDevice}\\`;
         }
@@ -2961,15 +2961,15 @@ var $6 = {
       const len = path.length;
       let rootEnd = 0;
       let device = "";
-      let isAbsolute2 = false;
+      let isAbsolute3 = false;
       const code = path.charCodeAt(0);
       if (len === 1) {
         if (isPathSeparator(code)) {
           rootEnd = 1;
-          isAbsolute2 = true;
+          isAbsolute3 = true;
         }
       } else if (isPathSeparator(code)) {
-        isAbsolute2 = true;
+        isAbsolute3 = true;
         if (isPathSeparator(path.charCodeAt(1))) {
           let j = 2;
           let last = j;
@@ -3000,7 +3000,7 @@ var $6 = {
         device = path.slice(0, 2);
         rootEnd = 2;
         if (len > 2 && isPathSeparator(path.charCodeAt(2))) {
-          isAbsolute2 = true;
+          isAbsolute3 = true;
           rootEnd = 3;
         }
       }
@@ -3019,8 +3019,8 @@ var $6 = {
         }
       } else {
         resolvedTail = `${path.slice(rootEnd)}\\${resolvedTail}`;
-        resolvedAbsolute = isAbsolute2;
-        if (isAbsolute2 && resolvedDevice.length > 0) {
+        resolvedAbsolute = isAbsolute3;
+        if (isAbsolute3 && resolvedDevice.length > 0) {
           break;
         }
       }
@@ -3036,13 +3036,13 @@ var $6 = {
     }
     let rootEnd = 0;
     let device;
-    let isAbsolute2 = false;
+    let isAbsolute3 = false;
     const code = path.charCodeAt(0);
     if (len === 1) {
       return isPosixPathSeparator(code) ? "\\" : path;
     }
     if (isPathSeparator(code)) {
-      isAbsolute2 = true;
+      isAbsolute3 = true;
       if (isPathSeparator(path.charCodeAt(1))) {
         let j = 2;
         let last = j;
@@ -3076,18 +3076,18 @@ var $6 = {
       device = path.slice(0, 2);
       rootEnd = 2;
       if (len > 2 && isPathSeparator(path.charCodeAt(2))) {
-        isAbsolute2 = true;
+        isAbsolute3 = true;
         rootEnd = 3;
       }
     }
-    let tail = rootEnd < len ? normalizeString(path.slice(rootEnd), !isAbsolute2, "\\", isPathSeparator) : "";
-    if (tail.length === 0 && !isAbsolute2) {
+    let tail = rootEnd < len ? normalizeString(path.slice(rootEnd), !isAbsolute3, "\\", isPathSeparator) : "";
+    if (tail.length === 0 && !isAbsolute3) {
       tail = ".";
     }
     if (tail.length > 0 && isPathSeparator(path.charCodeAt(len - 1))) {
       tail += "\\";
     }
-    if (!isAbsolute2 && device === void 0 && path.includes(":")) {
+    if (!isAbsolute3 && device === void 0 && path.includes(":")) {
       if (tail.length >= 2 && isWindowsDeviceRoot(tail.charCodeAt(0)) && tail.charCodeAt(1) === CHAR_COLON) {
         return `.\\${tail}`;
       }
@@ -3099,9 +3099,9 @@ var $6 = {
       } while ((index = path.indexOf(":", index + 1)) !== -1);
     }
     if (device === void 0) {
-      return isAbsolute2 ? `\\${tail}` : tail;
+      return isAbsolute3 ? `\\${tail}` : tail;
     }
-    return isAbsolute2 ? `${device}\\${tail}` : `${device}${tail}`;
+    return isAbsolute3 ? `${device}\\${tail}` : `${device}${tail}`;
   },
   isAbsolute(path) {
     validateString(path, "path");
@@ -3157,7 +3157,7 @@ var $6 = {
         joined = `\\${joined.slice(slashCount)}`;
       }
     }
-    return $6.normalize(joined);
+    return win32.normalize(joined);
   },
   // It will solve the relative path from `from` to `to`, for instance:
   //  from = 'C:\\orandea\\test\\aaa'
@@ -3169,8 +3169,8 @@ var $6 = {
     if (from === to) {
       return "";
     }
-    const fromOrig = $6.resolve(from);
-    const toOrig = $6.resolve(to);
+    const fromOrig = win32.resolve(from);
+    const toOrig = win32.resolve(to);
     if (fromOrig === toOrig) {
       return "";
     }
@@ -3282,7 +3282,7 @@ var $6 = {
     if (typeof path !== "string" || path.length === 0) {
       return path;
     }
-    const resolvedPath = $6.resolve(path);
+    const resolvedPath = win32.resolve(path);
     if (resolvedPath.length <= 2) {
       return path;
     }
@@ -3584,13 +3584,13 @@ var posixCwd = (() => {
   if (platformIsWin32) {
     const regexp = /\\/g;
     return () => {
-      const cwd2 = $2().replace(regexp, "/");
-      return cwd2.slice(cwd2.indexOf("/"));
+      const cwd3 = cwd().replace(regexp, "/");
+      return cwd3.slice(cwd3.indexOf("/"));
     };
   }
-  return () => $2();
+  return () => cwd();
 })();
-var $7 = {
+var posix = {
   // path.resolve([from ...], to)
   resolve(...pathSegments) {
     let resolvedPath = "";
@@ -3605,9 +3605,9 @@ var $7 = {
       resolvedAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     }
     if (!resolvedAbsolute) {
-      const cwd2 = posixCwd();
-      resolvedPath = `${cwd2}/${resolvedPath}`;
-      resolvedAbsolute = cwd2.charCodeAt(0) === CHAR_FORWARD_SLASH;
+      const cwd3 = posixCwd();
+      resolvedPath = `${cwd3}/${resolvedPath}`;
+      resolvedAbsolute = cwd3.charCodeAt(0) === CHAR_FORWARD_SLASH;
     }
     resolvedPath = normalizeString(resolvedPath, !resolvedAbsolute, "/", isPosixPathSeparator);
     if (resolvedAbsolute) {
@@ -3620,11 +3620,11 @@ var $7 = {
     if (path.length === 0) {
       return ".";
     }
-    const isAbsolute2 = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+    const isAbsolute3 = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     const trailingSeparator = path.charCodeAt(path.length - 1) === CHAR_FORWARD_SLASH;
-    path = normalizeString(path, !isAbsolute2, "/", isPosixPathSeparator);
+    path = normalizeString(path, !isAbsolute3, "/", isPosixPathSeparator);
     if (path.length === 0) {
-      if (isAbsolute2) {
+      if (isAbsolute3) {
         return "/";
       }
       return trailingSeparator ? "./" : ".";
@@ -3632,7 +3632,7 @@ var $7 = {
     if (trailingSeparator) {
       path += "/";
     }
-    return isAbsolute2 ? `/${path}` : path;
+    return isAbsolute3 ? `/${path}` : path;
   },
   isAbsolute(path) {
     validateString(path, "path");
@@ -3653,7 +3653,7 @@ var $7 = {
     if (path.length === 0) {
       return ".";
     }
-    return $7.normalize(path.join("/"));
+    return posix.normalize(path.join("/"));
   },
   relative(from, to) {
     validateString(from, "from");
@@ -3661,8 +3661,8 @@ var $7 = {
     if (from === to) {
       return "";
     }
-    from = $7.resolve(from);
-    to = $7.resolve(to);
+    from = posix.resolve(from);
+    to = posix.resolve(to);
     if (from === to) {
       return "";
     }
@@ -3841,9 +3841,9 @@ var $7 = {
     if (path.length === 0) {
       return ret;
     }
-    const isAbsolute2 = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+    const isAbsolute3 = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     let start;
-    if (isAbsolute2) {
+    if (isAbsolute3) {
       ret.root = "/";
       start = 1;
     } else {
@@ -3879,7 +3879,7 @@ var $7 = {
       }
     }
     if (end !== -1) {
-      const start2 = startPart === 0 && isAbsolute2 ? 1 : startPart;
+      const start2 = startPart === 0 && isAbsolute3 ? 1 : startPart;
       if (startDot === -1 || // We saw a non-dot character immediately before the dot
       preDotState === 0 || // The (right-most) trimmed path component is exactly '..'
       preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
@@ -3892,7 +3892,7 @@ var $7 = {
     }
     if (startPart > 0) {
       ret.dir = path.slice(0, startPart - 1);
-    } else if (isAbsolute2) {
+    } else if (isAbsolute3) {
       ret.dir = "/";
     }
     return ret;
@@ -3902,21 +3902,21 @@ var $7 = {
   win32: null,
   posix: null
 };
-$7.win32 = $6.win32 = $6;
-$7.posix = $6.posix = $7;
-var $8 = platformIsWin32 ? $6.normalize : $7.normalize;
-var $9 = platformIsWin32 ? $6.isAbsolute : $7.isAbsolute;
-var $0 = platformIsWin32 ? $6.join : $7.join;
-var $$ = platformIsWin32 ? $6.resolve : $7.resolve;
-var $_ = platformIsWin32 ? $6.relative : $7.relative;
-var $ab = platformIsWin32 ? $6.dirname : $7.dirname;
-var $bb = platformIsWin32 ? $6.basename : $7.basename;
-var $cb = platformIsWin32 ? $6.extname : $7.extname;
-var $db = platformIsWin32 ? $6.format : $7.format;
-var $eb = platformIsWin32 ? $6.parse : $7.parse;
-var $fb = platformIsWin32 ? $6.toNamespacedPath : $7.toNamespacedPath;
-var sep = platformIsWin32 ? $6.sep : $7.sep;
-var $hb = platformIsWin32 ? $6.delimiter : $7.delimiter;
+posix.win32 = win32.win32 = win32;
+posix.posix = win32.posix = posix;
+var normalize = platformIsWin32 ? win32.normalize : posix.normalize;
+var isAbsolute = platformIsWin32 ? win32.isAbsolute : posix.isAbsolute;
+var join = platformIsWin32 ? win32.join : posix.join;
+var resolve = platformIsWin32 ? win32.resolve : posix.resolve;
+var relative = platformIsWin32 ? win32.relative : posix.relative;
+var dirname = platformIsWin32 ? win32.dirname : posix.dirname;
+var basename = platformIsWin32 ? win32.basename : posix.basename;
+var extname = platformIsWin32 ? win32.extname : posix.extname;
+var format = platformIsWin32 ? win32.format : posix.format;
+var parse = platformIsWin32 ? win32.parse : posix.parse;
+var toNamespacedPath = platformIsWin32 ? win32.toNamespacedPath : posix.toNamespacedPath;
+var sep = platformIsWin32 ? win32.sep : posix.sep;
+var delimiter = platformIsWin32 ? win32.delimiter : posix.delimiter;
 
 // out-build/vs/base/common/uri.js
 var _schemePattern = /^\w[\w\d+.-]*$/;
@@ -4019,7 +4019,7 @@ var URI = class _URI {
    * with URIs that represent files on disk (`file` scheme).
    */
   get fsPath() {
-    return $Lc(this, false);
+    return uriToFsPath(this, false);
   }
   // ---- modify to new -------------------------
   with(change) {
@@ -4094,7 +4094,7 @@ var URI = class _URI {
    */
   static file(path) {
     let authority = _empty;
-    if ($m) {
+    if (isWindows) {
       path = path.replace(/\\/g, _slash);
     }
     if (path[0] === _slash && path[1] === _slash) {
@@ -4132,10 +4132,10 @@ var URI = class _URI {
       throw new Error(`[UriError]: cannot call joinPath on URI without path`);
     }
     let newPath;
-    if ($m && uri.scheme === "file") {
-      newPath = _URI.file($6.join($Lc(uri, true), ...pathFragment)).path;
+    if (isWindows && uri.scheme === "file") {
+      newPath = _URI.file(win32.join(uriToFsPath(uri, true), ...pathFragment)).path;
     } else {
-      newPath = $7.join(uri.path, ...pathFragment);
+      newPath = posix.join(uri.path, ...pathFragment);
     }
     return uri.with({ path: newPath });
   }
@@ -4173,7 +4173,7 @@ var URI = class _URI {
     return `URI(${this.toString()})`;
   }
 };
-var _pathSepMarker = $m ? 1 : void 0;
+var _pathSepMarker = isWindows ? 1 : void 0;
 var Uri = class extends URI {
   constructor() {
     super(...arguments);
@@ -4182,7 +4182,7 @@ var Uri = class extends URI {
   }
   get fsPath() {
     if (!this._fsPath) {
-      this._fsPath = $Lc(this, false);
+      this._fsPath = uriToFsPath(this, false);
     }
     return this._fsPath;
   }
@@ -4357,7 +4357,7 @@ function encodeURIComponentMinimal(path) {
   }
   return res !== void 0 ? res : path;
 }
-function $Lc(uri, keepDriveLetterCasing) {
+function uriToFsPath(uri, keepDriveLetterCasing) {
   let value;
   if (uri.authority && uri.path.length > 1 && uri.scheme === "file") {
     value = `//${uri.authority}${uri.path}`;
@@ -4370,7 +4370,7 @@ function $Lc(uri, keepDriveLetterCasing) {
   } else {
     value = uri.path;
   }
-  if ($m) {
+  if (isWindows) {
     value = value.replace(/\//g, "\\");
   }
   return value;
@@ -4455,7 +4455,7 @@ function percentDecode(str) {
 }
 
 // out-build/vs/base/common/uriIpc.js
-var $wx = new class {
+var DefaultURITransformer = new class {
   transformIncoming(uri) {
     return uri;
   }
@@ -4484,27 +4484,27 @@ var Node = class _Node {
 
 // out-build/vs/base/common/stopwatch.js
 var performanceNow = globalThis.performance.now.bind(globalThis.performance);
-var $kf = class _$kf {
+var StopWatch = class _StopWatch {
   static create(highResolution) {
-    return new _$kf(highResolution);
+    return new _StopWatch(highResolution);
   }
   constructor(highResolution) {
-    this.c = highResolution === false ? Date.now : performanceNow;
-    this.a = this.c();
-    this.b = -1;
+    this._now = highResolution === false ? Date.now : performanceNow;
+    this._startTime = this._now();
+    this._stopTime = -1;
   }
   stop() {
-    this.b = this.c();
+    this._stopTime = this._now();
   }
   reset() {
-    this.a = this.c();
-    this.b = -1;
+    this._startTime = this._now();
+    this._stopTime = -1;
   }
   elapsed() {
-    if (this.b !== -1) {
-      return this.b - this.a;
+    if (this._stopTime !== -1) {
+      return this._stopTime - this._startTime;
     }
-    return this.c() - this.a;
+    return this._now() - this._startTime;
   }
 };
 
@@ -4513,7 +4513,7 @@ var _enableDisposeWithListenerWarning = false;
 var _enableSnapshotPotentialLeakWarning = false;
 var Event;
 (function(Event2) {
-  Event2.None = () => $Fd.None;
+  Event2.None = () => Disposable.None;
   function _addLeakageTraceLogic(options) {
     if (_enableSnapshotPotentialLeakWarning) {
       const { onDidAddListener: origListenerDidAdd } = options;
@@ -4529,7 +4529,7 @@ var Event;
     }
   }
   function defer(event, disposable) {
-    return debounce(event, () => void 0, 0, void 0, true, void 0, disposable);
+    return debounce2(event, () => void 0, 0, void 0, true, void 0, disposable);
   }
   Event2.defer = defer;
   function once(event) {
@@ -4578,7 +4578,7 @@ var Event;
   Event2.signal = signal;
   function any(...events) {
     return (listener, thisArgs = null, disposables) => {
-      const disposable = $Cd(...events.map((event) => event((e) => listener.call(thisArgs, e))));
+      const disposable = combinedDisposable(...events.map((event) => event((e) => listener.call(thisArgs, e))));
       return addAndReturnDisposable(disposable, disposables);
     };
   }
@@ -4604,7 +4604,7 @@ var Event;
     if (!disposable) {
       _addLeakageTraceLogic(options);
     }
-    const emitter = new $qf(options);
+    const emitter = new Emitter(options);
     disposable?.add(emitter);
     return emitter.event;
   }
@@ -4616,7 +4616,7 @@ var Event;
     }
     return d;
   }
-  function debounce(event, merge, delay = 100, leading = false, flushOnListenerRemove = false, leakWarningThreshold, disposable) {
+  function debounce2(event, merge, delay = 100, leading = false, flushOnListenerRemove = false, leakWarningThreshold, disposable) {
     let subscription;
     let output = void 0;
     let handle = void 0;
@@ -4667,11 +4667,11 @@ var Event;
     if (!disposable) {
       _addLeakageTraceLogic(options);
     }
-    const emitter = new $qf(options);
+    const emitter = new Emitter(options);
     disposable?.add(emitter);
     return emitter.event;
   }
-  Event2.debounce = debounce;
+  Event2.debounce = debounce2;
   function accumulate(event, delay = 0, disposable) {
     return Event2.debounce(event, (last, e) => {
       if (!last) {
@@ -4682,11 +4682,11 @@ var Event;
     }, delay, void 0, true, void 0, disposable);
   }
   Event2.accumulate = accumulate;
-  function latch(event, equals = (a, b) => a === b, disposable) {
+  function latch(event, equals2 = (a, b) => a === b, disposable) {
     let firstCall = true;
     let cache;
     return filter(event, (value) => {
-      const shouldEmit = firstCall || !equals(value, cache);
+      const shouldEmit = firstCall || !equals2(value, cache);
       firstCall = false;
       cache = value;
       return shouldEmit;
@@ -4716,7 +4716,7 @@ var Event;
       buffer2?.forEach((e) => emitter.fire(e));
       buffer2 = null;
     };
-    const emitter = new $qf({
+    const emitter = new Emitter({
       onWillAddFirstListener() {
         if (!listener) {
           listener = event((e) => emitter.fire(e));
@@ -4763,36 +4763,36 @@ var Event;
   const HaltChainable = Symbol("HaltChainable");
   class ChainableSynthesis {
     constructor() {
-      this.f = [];
+      this.steps = [];
     }
     map(fn) {
-      this.f.push(fn);
+      this.steps.push(fn);
       return this;
     }
     forEach(fn) {
-      this.f.push((v) => {
+      this.steps.push((v) => {
         fn(v);
         return v;
       });
       return this;
     }
     filter(fn) {
-      this.f.push((v) => fn(v) ? v : HaltChainable);
+      this.steps.push((v) => fn(v) ? v : HaltChainable);
       return this;
     }
     reduce(merge, initial) {
       let last = initial;
-      this.f.push((v) => {
+      this.steps.push((v) => {
         last = merge(last, v);
         return last;
       });
       return this;
     }
-    latch(equals = (a, b) => a === b) {
+    latch(equals2 = (a, b) => a === b) {
       let firstCall = true;
       let cache;
-      this.f.push((value) => {
-        const shouldEmit = firstCall || !equals(value, cache);
+      this.steps.push((value) => {
+        const shouldEmit = firstCall || !equals2(value, cache);
         firstCall = false;
         cache = value;
         return shouldEmit ? value : HaltChainable;
@@ -4800,7 +4800,7 @@ var Event;
       return this;
     }
     evaluate(value) {
-      for (const step of this.f) {
+      for (const step of this.steps) {
         value = step(value);
         if (value === HaltChainable) {
           break;
@@ -4813,7 +4813,7 @@ var Event;
     const fn = (...args) => result.fire(map2(...args));
     const onFirstListenerAdd = () => emitter.on(eventName, fn);
     const onLastListenerRemove = () => emitter.removeListener(eventName, fn);
-    const result = new $qf({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
+    const result = new Emitter({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
     return result.event;
   }
   Event2.fromNodeEventEmitter = fromNodeEventEmitter;
@@ -4821,15 +4821,15 @@ var Event;
     const fn = (...args) => result.fire(map2(...args));
     const onFirstListenerAdd = () => emitter.addEventListener(eventName, fn);
     const onLastListenerRemove = () => emitter.removeEventListener(eventName, fn);
-    const result = new $qf({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
+    const result = new Emitter({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
     return result.event;
   }
   Event2.fromDOMEventEmitter = fromDOMEventEmitter;
   function toPromise(event, disposables) {
     let cancelRef;
     let listener;
-    const promise = new Promise((resolve2) => {
-      listener = once(event)(resolve2);
+    const promise = new Promise((resolve3) => {
+      listener = once(event)(resolve3);
       addToDisposables(listener, disposables);
       cancelRef = () => {
         disposeAndRemove(listener, disposables);
@@ -4854,8 +4854,8 @@ var Event;
   class EmitterObserver {
     constructor(_observable, store) {
       this._observable = _observable;
-      this.f = 0;
-      this.g = false;
+      this._counter = 0;
+      this._hasChanged = false;
       const options = {
         onWillAddFirstListener: () => {
           _observable.addObserver(this);
@@ -4868,25 +4868,25 @@ var Event;
       if (!store) {
         _addLeakageTraceLogic(options);
       }
-      this.emitter = new $qf(options);
+      this.emitter = new Emitter(options);
       if (store) {
         store.add(this.emitter);
       }
     }
     beginUpdate(_observable) {
-      this.f++;
+      this._counter++;
     }
     handlePossibleChange(_observable) {
     }
     handleChange(_observable, _change) {
-      this.g = true;
+      this._hasChanged = true;
     }
     endUpdate(_observable) {
-      this.f--;
-      if (this.f === 0) {
+      this._counter--;
+      if (this._counter === 0) {
         this._observable.reportChanges();
-        if (this.g) {
-          this.g = false;
+        if (this._hasChanged) {
+          this._hasChanged = false;
           this.emitter.fire(this._observable.get());
         }
       }
@@ -4934,81 +4934,81 @@ var Event;
   }
   Event2.fromObservableLight = fromObservableLight;
 })(Event || (Event = {}));
-var $mf = class _$mf {
+var EventProfiling = class _EventProfiling {
   static {
     this.all = /* @__PURE__ */ new Set();
   }
   static {
-    this.f = 0;
+    this._idPool = 0;
   }
   constructor(name) {
     this.listenerCount = 0;
     this.invocationCount = 0;
     this.elapsedOverall = 0;
     this.durations = [];
-    this.name = `${name}_${_$mf.f++}`;
-    _$mf.all.add(this);
+    this.name = `${name}_${_EventProfiling._idPool++}`;
+    _EventProfiling.all.add(this);
   }
   start(listenerCount) {
-    this.g = new $kf();
+    this._stopWatch = new StopWatch();
     this.listenerCount = listenerCount;
   }
   stop() {
-    if (this.g) {
-      const elapsed = this.g.elapsed();
+    if (this._stopWatch) {
+      const elapsed = this._stopWatch.elapsed();
       this.durations.push(elapsed);
       this.elapsedOverall += elapsed;
       this.invocationCount += 1;
-      this.g = void 0;
+      this._stopWatch = void 0;
     }
   }
 };
 var _globalLeakWarningThreshold = -1;
 var LeakageMonitor = class _LeakageMonitor {
   static {
-    this.f = 1;
+    this._idPool = 1;
   }
-  constructor(j, threshold, name = (_LeakageMonitor.f++).toString(16).padStart(3, "0")) {
-    this.j = j;
+  constructor(_errorHandler, threshold, name = (_LeakageMonitor._idPool++).toString(16).padStart(3, "0")) {
+    this._errorHandler = _errorHandler;
     this.threshold = threshold;
     this.name = name;
-    this.h = 0;
+    this._warnCountdown = 0;
   }
   dispose() {
-    this.g?.clear();
+    this._stacks?.clear();
   }
   check(stack, listenerCount) {
     const threshold = this.threshold;
     if (threshold <= 0 || listenerCount < threshold) {
       return void 0;
     }
-    if (!this.g) {
-      this.g = /* @__PURE__ */ new Map();
+    if (!this._stacks) {
+      this._stacks = /* @__PURE__ */ new Map();
     }
-    const count = this.g.get(stack.value) || 0;
-    this.g.set(stack.value, count + 1);
-    this.h -= 1;
-    if (this.h <= 0) {
-      this.h = threshold * 0.5;
+    const count = this._stacks.get(stack.value) || 0;
+    this._stacks.set(stack.value, count + 1);
+    this._warnCountdown -= 1;
+    if (this._warnCountdown <= 0) {
+      this._warnCountdown = threshold * 0.5;
       const [topStack, topCount] = this.getMostFrequentStack();
       const message = `[${this.name}] potential listener LEAK detected, having ${listenerCount} listeners already. MOST frequent listener (${topCount}):`;
       console.warn(message);
       console.warn(topStack);
-      const error = new $of(message, topStack);
-      this.j(error);
+      const error = new ListenerLeakError(message, topStack);
+      this._errorHandler(error);
     }
     return () => {
-      const count2 = this.g.get(stack.value) || 0;
-      this.g.set(stack.value, count2 - 1);
+      const count2 = this._stacks.get(stack.value) || 0;
+      this._stacks.set(stack.value, count2 - 1);
     };
   }
   getMostFrequentStack() {
-    if (!this.g) {
+    if (!this._stacks) {
       return void 0;
     }
     let topStack;
     let topCount = 0;
-    for (const [stack, count] of this.g) {
+    for (const [stack, count] of this._stacks) {
       if (!topStack || topCount < count) {
         topStack = [stack, count];
         topCount = count;
@@ -5029,14 +5029,14 @@ var Stacktrace = class _Stacktrace {
     console.warn(this.value.split("\n").slice(2).join("\n"));
   }
 };
-var $of = class extends Error {
+var ListenerLeakError = class extends Error {
   constructor(message, stack) {
     super(message);
     this.name = "ListenerLeakError";
     this.stack = stack;
   }
 };
-var $pf = class extends Error {
+var ListenerRefusalError = class extends Error {
   constructor(message, stack) {
     super(message);
     this.name = "ListenerRefusalError";
@@ -5063,32 +5063,32 @@ var forEachListener = (listeners, fn) => {
     }
   }
 };
-var $qf = class {
+var Emitter = class {
   constructor(options) {
-    this.A = 0;
-    this.g = options;
-    this.j = _globalLeakWarningThreshold > 0 || this.g?.leakWarningThreshold ? new LeakageMonitor(options?.onListenerError ?? $nb, this.g?.leakWarningThreshold ?? _globalLeakWarningThreshold) : void 0;
-    this.m = this.g?._profName ? new $mf(this.g._profName) : void 0;
-    this.z = this.g?.deliveryQueue;
+    this._size = 0;
+    this._options = options;
+    this._leakageMon = _globalLeakWarningThreshold > 0 || this._options?.leakWarningThreshold ? new LeakageMonitor(options?.onListenerError ?? onUnexpectedError, this._options?.leakWarningThreshold ?? _globalLeakWarningThreshold) : void 0;
+    this._perfMon = this._options?._profName ? new EventProfiling(this._options._profName) : void 0;
+    this._deliveryQueue = this._options?.deliveryQueue;
   }
   dispose() {
-    if (!this.q) {
-      this.q = true;
-      if (this.z?.current === this) {
-        this.z.reset();
+    if (!this._disposed) {
+      this._disposed = true;
+      if (this._deliveryQueue?.current === this) {
+        this._deliveryQueue.reset();
       }
-      if (this.w) {
+      if (this._listeners) {
         if (_enableDisposeWithListenerWarning) {
-          const listeners = this.w;
+          const listeners = this._listeners;
           queueMicrotask(() => {
             forEachListener(listeners, (l) => l.stack?.print());
           });
         }
-        this.w = void 0;
-        this.A = 0;
+        this._listeners = void 0;
+        this._size = 0;
       }
-      this.g?.onDidRemoveLastListener?.();
-      this.j?.dispose();
+      this._options?.onDidRemoveLastListener?.();
+      this._leakageMon?.dispose();
     }
   }
   /**
@@ -5096,18 +5096,18 @@ var $qf = class {
    * to events from this Emitter
    */
   get event() {
-    this.u ??= (callback, thisArgs, disposables) => {
-      if (this.j && this.A > this.j.threshold ** 2) {
-        const message = `[${this.j.name}] REFUSES to accept new listeners because it exceeded its threshold by far (${this.A} vs ${this.j.threshold})`;
+    this._event ??= (callback, thisArgs, disposables) => {
+      if (this._leakageMon && this._size > this._leakageMon.threshold ** 2) {
+        const message = `[${this._leakageMon.name}] REFUSES to accept new listeners because it exceeded its threshold by far (${this._size} vs ${this._leakageMon.threshold})`;
         console.warn(message);
-        const tuple = this.j.getMostFrequentStack() ?? ["UNKNOWN stack", -1];
-        const error = new $pf(`${message}. HINT: Stack shows most frequent listener (${tuple[1]}-times)`, tuple[0]);
-        const errorHandler = this.g?.onListenerError || $nb;
-        errorHandler(error);
-        return $Fd.None;
+        const tuple = this._leakageMon.getMostFrequentStack() ?? ["UNKNOWN stack", -1];
+        const error = new ListenerRefusalError(`${message}. HINT: Stack shows most frequent listener (${tuple[1]}-times)`, tuple[0]);
+        const errorHandler2 = this._options?.onListenerError || onUnexpectedError;
+        errorHandler2(error);
+        return Disposable.None;
       }
-      if (this.q) {
-        return $Fd.None;
+      if (this._disposed) {
+        return Disposable.None;
       }
       if (thisArgs) {
         callback = callback.bind(thisArgs);
@@ -5115,91 +5115,91 @@ var $qf = class {
       const contained = new UniqueContainer(callback);
       let removeMonitor;
       let stack;
-      if (this.j && this.A >= Math.ceil(this.j.threshold * 0.2)) {
+      if (this._leakageMon && this._size >= Math.ceil(this._leakageMon.threshold * 0.2)) {
         contained.stack = Stacktrace.create();
-        removeMonitor = this.j.check(contained.stack, this.A + 1);
+        removeMonitor = this._leakageMon.check(contained.stack, this._size + 1);
       }
       if (_enableDisposeWithListenerWarning) {
         contained.stack = stack ?? Stacktrace.create();
       }
-      if (!this.w) {
-        this.g?.onWillAddFirstListener?.(this);
-        this.w = contained;
-        this.g?.onDidAddFirstListener?.(this);
-      } else if (this.w instanceof UniqueContainer) {
-        this.z ??= new EventDeliveryQueuePrivate();
-        this.w = [this.w, contained];
+      if (!this._listeners) {
+        this._options?.onWillAddFirstListener?.(this);
+        this._listeners = contained;
+        this._options?.onDidAddFirstListener?.(this);
+      } else if (this._listeners instanceof UniqueContainer) {
+        this._deliveryQueue ??= new EventDeliveryQueuePrivate();
+        this._listeners = [this._listeners, contained];
       } else {
-        this.w.push(contained);
+        this._listeners.push(contained);
       }
-      this.g?.onDidAddListener?.(this);
-      this.A++;
-      const result = $Dd(() => {
+      this._options?.onDidAddListener?.(this);
+      this._size++;
+      const result = toDisposable(() => {
         removeMonitor?.();
-        this.B(contained);
+        this._removeListener(contained);
       });
       addToDisposables(result, disposables);
       return result;
     };
-    return this.u;
+    return this._event;
   }
-  B(listener) {
-    this.g?.onWillRemoveListener?.(this);
-    if (!this.w) {
+  _removeListener(listener) {
+    this._options?.onWillRemoveListener?.(this);
+    if (!this._listeners) {
       return;
     }
-    if (this.A === 1) {
-      this.w = void 0;
-      this.g?.onDidRemoveLastListener?.(this);
-      this.A = 0;
+    if (this._size === 1) {
+      this._listeners = void 0;
+      this._options?.onDidRemoveLastListener?.(this);
+      this._size = 0;
       return;
     }
-    const listeners = this.w;
+    const listeners = this._listeners;
     const index = listeners.indexOf(listener);
     if (index === -1) {
-      console.log("disposed?", this.q);
-      console.log("size?", this.A);
-      console.log("arr?", JSON.stringify(this.w));
+      console.log("disposed?", this._disposed);
+      console.log("size?", this._size);
+      console.log("arr?", JSON.stringify(this._listeners));
       throw new Error("Attempted to dispose unknown listener");
     }
-    this.A--;
+    this._size--;
     listeners[index] = void 0;
-    const adjustDeliveryQueue = this.z.current === this;
-    if (this.A * compactionThreshold <= listeners.length) {
+    const adjustDeliveryQueue = this._deliveryQueue.current === this;
+    if (this._size * compactionThreshold <= listeners.length) {
       let n = 0;
       for (let i = 0; i < listeners.length; i++) {
         if (listeners[i]) {
           listeners[n++] = listeners[i];
-        } else if (adjustDeliveryQueue && n < this.z.end) {
-          this.z.end--;
-          if (n < this.z.i) {
-            this.z.i--;
+        } else if (adjustDeliveryQueue && n < this._deliveryQueue.end) {
+          this._deliveryQueue.end--;
+          if (n < this._deliveryQueue.i) {
+            this._deliveryQueue.i--;
           }
         }
       }
       listeners.length = n;
     }
   }
-  C(listener, value) {
+  _deliver(listener, value) {
     if (!listener) {
       return;
     }
-    const errorHandler = this.g?.onListenerError || $nb;
-    if (!errorHandler) {
+    const errorHandler2 = this._options?.onListenerError || onUnexpectedError;
+    if (!errorHandler2) {
       listener.value(value);
       return;
     }
     try {
       listener.value(value);
     } catch (e) {
-      errorHandler(e);
+      errorHandler2(e);
     }
   }
   /** Delivers items in the queue. Assumes the queue is ready to go. */
-  D(dq) {
-    const listeners = dq.current.w;
+  _deliverQueue(dq) {
+    const listeners = dq.current._listeners;
     while (dq.i < dq.end) {
-      this.C(listeners[dq.i++], dq.value);
+      this._deliver(listeners[dq.i++], dq.value);
     }
     dq.reset();
   }
@@ -5208,23 +5208,23 @@ var $qf = class {
    * subscribers
    */
   fire(event) {
-    if (this.z?.current) {
-      this.D(this.z);
-      this.m?.stop();
+    if (this._deliveryQueue?.current) {
+      this._deliverQueue(this._deliveryQueue);
+      this._perfMon?.stop();
     }
-    this.m?.start(this.A);
-    if (!this.w) {
-    } else if (this.w instanceof UniqueContainer) {
-      this.C(this.w, event);
+    this._perfMon?.start(this._size);
+    if (!this._listeners) {
+    } else if (this._listeners instanceof UniqueContainer) {
+      this._deliver(this._listeners, event);
     } else {
-      const dq = this.z;
-      dq.enqueue(this, event, this.w.length);
-      this.D(dq);
+      const dq = this._deliveryQueue;
+      dq.enqueue(this, event, this._listeners.length);
+      this._deliverQueue(dq);
     }
-    this.m?.stop();
+    this._perfMon?.stop();
   }
   hasListeners() {
-    return this.A > 0;
+    return this._size > 0;
   }
 };
 var EventDeliveryQueuePrivate = class {
@@ -5244,94 +5244,94 @@ var EventDeliveryQueuePrivate = class {
     this.value = void 0;
   }
 };
-var $wf = class {
+var EventMultiplexer = class {
   constructor() {
-    this.g = false;
-    this.h = [];
-    this.f = new $qf({
-      onWillAddFirstListener: () => this.j(),
-      onDidRemoveLastListener: () => this.k()
+    this.hasListeners = false;
+    this.events = [];
+    this.emitter = new Emitter({
+      onWillAddFirstListener: () => this.onFirstListenerAdd(),
+      onDidRemoveLastListener: () => this.onLastListenerRemove()
     });
   }
   get event() {
-    return this.f.event;
+    return this.emitter.event;
   }
   add(event) {
     const e = { event, listener: null };
-    this.h.push(e);
-    if (this.g) {
-      this.m(e);
+    this.events.push(e);
+    if (this.hasListeners) {
+      this.hook(e);
     }
-    const dispose = () => {
-      if (this.g) {
-        this.o(e);
+    const dispose2 = () => {
+      if (this.hasListeners) {
+        this.unhook(e);
       }
-      const idx = this.h.indexOf(e);
-      this.h.splice(idx, 1);
+      const idx = this.events.indexOf(e);
+      this.events.splice(idx, 1);
     };
-    return $Dd($Fb(dispose));
+    return toDisposable(createSingleCallFunction(dispose2));
   }
-  j() {
-    this.g = true;
-    this.h.forEach((e) => this.m(e));
+  onFirstListenerAdd() {
+    this.hasListeners = true;
+    this.events.forEach((e) => this.hook(e));
   }
-  k() {
-    this.g = false;
-    this.h.forEach((e) => this.o(e));
+  onLastListenerRemove() {
+    this.hasListeners = false;
+    this.events.forEach((e) => this.unhook(e));
   }
-  m(e) {
-    e.listener = e.event((r) => this.f.fire(r));
+  hook(e) {
+    e.listener = e.event((r) => this.emitter.fire(r));
   }
-  o(e) {
+  unhook(e) {
     e.listener?.dispose();
     e.listener = null;
   }
   dispose() {
-    this.f.dispose();
-    for (const e of this.h) {
+    this.emitter.dispose();
+    for (const e of this.events) {
       e.listener?.dispose();
     }
-    this.h = [];
+    this.events = [];
   }
 };
-var $zf = class {
+var Relay = class {
   constructor() {
-    this.f = false;
-    this.g = Event.None;
-    this.h = $Fd.None;
-    this.j = new $qf({
+    this.listening = false;
+    this.inputEvent = Event.None;
+    this.inputEventListener = Disposable.None;
+    this.emitter = new Emitter({
       onDidAddFirstListener: () => {
-        this.f = true;
-        this.h = this.g(this.j.fire, this.j);
+        this.listening = true;
+        this.inputEventListener = this.inputEvent(this.emitter.fire, this.emitter);
       },
       onDidRemoveLastListener: () => {
-        this.f = false;
-        this.h.dispose();
+        this.listening = false;
+        this.inputEventListener.dispose();
       }
     });
-    this.event = this.j.event;
+    this.event = this.emitter.event;
   }
   set input(event) {
-    this.g = event;
-    if (this.f) {
-      this.h.dispose();
-      this.h = event(this.j.fire, this.j);
+    this.inputEvent = event;
+    if (this.listening) {
+      this.inputEventListener.dispose();
+      this.inputEventListener = event(this.emitter.fire, this.emitter);
     }
   }
   dispose() {
-    this.h.dispose();
-    this.j.dispose();
+    this.inputEventListener.dispose();
+    this.emitter.dispose();
   }
 };
 function addToDisposables(result, disposables) {
-  if (disposables instanceof $Ed) {
+  if (disposables instanceof DisposableStore) {
     disposables.add(result);
   } else if (Array.isArray(disposables)) {
     disposables.push(result);
   }
 }
 function disposeAndRemove(result, disposables) {
-  if (disposables instanceof $Ed) {
+  if (disposables instanceof DisposableStore) {
     disposables.delete(result);
   } else if (Array.isArray(disposables)) {
     const index = disposables.indexOf(result);
@@ -5375,104 +5375,104 @@ var CancellationToken;
 })(CancellationToken || (CancellationToken = {}));
 var MutableToken = class {
   constructor() {
-    this.a = false;
-    this.b = null;
+    this._isCancelled = false;
+    this._emitter = null;
   }
   cancel() {
-    if (!this.a) {
-      this.a = true;
-      if (this.b) {
-        this.b.fire(void 0);
+    if (!this._isCancelled) {
+      this._isCancelled = true;
+      if (this._emitter) {
+        this._emitter.fire(void 0);
         this.dispose();
       }
     }
   }
   get isCancellationRequested() {
-    return this.a;
+    return this._isCancelled;
   }
   get onCancellationRequested() {
-    if (this.a) {
+    if (this._isCancelled) {
       return shortcutEvent;
     }
-    if (!this.b) {
-      this.b = new $qf();
+    if (!this._emitter) {
+      this._emitter = new Emitter();
     }
-    return this.b.event;
+    return this._emitter.event;
   }
   dispose() {
-    if (this.b) {
-      this.b.dispose();
-      this.b = null;
+    if (this._emitter) {
+      this._emitter.dispose();
+      this._emitter = null;
     }
   }
 };
-var $Cf = class {
+var CancellationTokenSource = class {
   constructor(parent) {
-    this.f = void 0;
-    this.g = void 0;
-    this.g = parent && parent.onCancellationRequested(this.cancel, this);
+    this._token = void 0;
+    this._parentListener = void 0;
+    this._parentListener = parent && parent.onCancellationRequested(this.cancel, this);
   }
   get token() {
-    if (!this.f) {
-      this.f = new MutableToken();
+    if (!this._token) {
+      this._token = new MutableToken();
     }
-    return this.f;
+    return this._token;
   }
   cancel() {
-    if (!this.f) {
-      this.f = CancellationToken.Cancelled;
-    } else if (this.f instanceof MutableToken) {
-      this.f.cancel();
+    if (!this._token) {
+      this._token = CancellationToken.Cancelled;
+    } else if (this._token instanceof MutableToken) {
+      this._token.cancel();
     }
   }
   dispose(cancel = false) {
     if (cancel) {
       this.cancel();
     }
-    this.g?.dispose();
-    if (!this.f) {
-      this.f = CancellationToken.None;
-    } else if (this.f instanceof MutableToken) {
-      this.f.dispose();
+    this._parentListener?.dispose();
+    if (!this._token) {
+      this._token = CancellationToken.None;
+    } else if (this._token instanceof MutableToken) {
+      this._token.dispose();
     }
   }
 };
 
 // out-build/vs/base/common/cache.js
-function $Gf(t) {
+function identity(t) {
   return t;
 }
-var $Hf = class {
+var LRUCachedFunction = class {
   constructor(arg1, arg2) {
-    this.a = void 0;
-    this.b = void 0;
+    this.lastCache = void 0;
+    this.lastArgKey = void 0;
     if (typeof arg1 === "function") {
-      this.c = arg1;
-      this.d = $Gf;
+      this._fn = arg1;
+      this._computeKey = identity;
     } else {
-      this.c = arg2;
-      this.d = arg1.getCacheKey;
+      this._fn = arg2;
+      this._computeKey = arg1.getCacheKey;
     }
   }
   get(arg) {
-    const key = this.d(arg);
-    if (this.b !== key) {
-      this.b = key;
-      this.a = this.c(arg);
+    const key = this._computeKey(arg);
+    if (this.lastArgKey !== key) {
+      this.lastArgKey = key;
+      this.lastCache = this._fn(arg);
     }
-    return this.a;
+    return this.lastCache;
   }
 };
 
 // out-build/vs/base/common/strings.js
-function $Nf(str) {
+function isFalsyOrWhitespace(str) {
   if (!str || typeof str !== "string") {
     return true;
   }
   return str.trim().length === 0;
 }
 var _formatRegexp = /{(\d+)}/g;
-function $Of(value, ...args) {
+function format2(value, ...args) {
   if (args.length === 0) {
     return value;
   }
@@ -5481,7 +5481,7 @@ function $Of(value, ...args) {
     return isNaN(idx) || idx < 0 || idx >= args.length ? match : args[idx];
   });
 }
-function $Yf(haystack, needle) {
+function rtrim(haystack, needle) {
   if (!haystack || !needle) {
     return haystack;
   }
@@ -5500,7 +5500,7 @@ function $Yf(haystack, needle) {
   }
   return haystack.substring(0, offset);
 }
-function $_f(a, b) {
+function compare(a, b) {
   if (a < b) {
     return -1;
   } else if (a > b) {
@@ -5509,7 +5509,7 @@ function $_f(a, b) {
     return 0;
   }
 }
-function $ag(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
+function compareSubstring(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   for (; aStart < aEnd && bStart < bEnd; aStart++, bStart++) {
     const codeA = a.charCodeAt(aStart);
     const codeB = b.charCodeAt(bStart);
@@ -5528,10 +5528,10 @@ function $ag(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   }
   return 0;
 }
-function $bg(a, b) {
-  return $cg(a, b, 0, a.length, 0, b.length);
+function compareIgnoreCase(a, b) {
+  return compareSubstringIgnoreCase(a, b, 0, a.length, 0, b.length);
 }
-function $cg(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
+function compareSubstringIgnoreCase(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   for (; aStart < aEnd && bStart < bEnd; aStart++, bStart++) {
     let codeA = a.charCodeAt(aStart);
     let codeB = b.charCodeAt(bStart);
@@ -5539,12 +5539,12 @@ function $cg(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
       continue;
     }
     if (codeA >= 128 || codeB >= 128) {
-      return $ag(a.toLowerCase(), b.toLowerCase(), aStart, aEnd, bStart, bEnd);
+      return compareSubstring(a.toLowerCase(), b.toLowerCase(), aStart, aEnd, bStart, bEnd);
     }
-    if ($eg(codeA)) {
+    if (isLowerAsciiLetter(codeA)) {
       codeA -= 32;
     }
-    if ($eg(codeB)) {
+    if (isLowerAsciiLetter(codeB)) {
       codeB -= 32;
     }
     const diff = codeA - codeB;
@@ -5562,26 +5562,26 @@ function $cg(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   }
   return 0;
 }
-function $eg(code) {
+function isLowerAsciiLetter(code) {
   return code >= 97 && code <= 122;
 }
-function $fg(code) {
+function isUpperAsciiLetter(code) {
   return code >= 65 && code <= 90;
 }
-function $gg(a, b) {
-  return a.length === b.length && $cg(a, b) === 0;
+function equalsIgnoreCase(a, b) {
+  return a.length === b.length && compareSubstringIgnoreCase(a, b) === 0;
 }
-function $ig(str, candidate) {
+function startsWithIgnoreCase(str, candidate) {
   const len = candidate.length;
-  return len <= str.length && $cg(str, candidate, 0, len) === 0;
+  return len <= str.length && compareSubstringIgnoreCase(str, candidate, 0, len) === 0;
 }
-function $mg(charCode) {
+function isHighSurrogate(charCode) {
   return 55296 <= charCode && charCode <= 56319;
 }
-function $ng(charCode) {
+function isLowSurrogate(charCode) {
   return 56320 <= charCode && charCode <= 57343;
 }
-function $og(highSurrogate, lowSurrogate) {
+function computeCodePoint(highSurrogate, lowSurrogate) {
   return (highSurrogate - 55296 << 10) + (lowSurrogate - 56320) + 65536;
 }
 var CSI_SEQUENCE = /(?:\x1b\[|\x9b)[=?>!]?[\d;:]*["$#'* ]?[a-zA-Z@^`{}|~]/;
@@ -5592,17 +5592,17 @@ var CONTROL_SEQUENCES = new RegExp("(?:" + [
   OSC_SEQUENCE.source,
   ESC_SEQUENCE.source
 ].join("|") + ")", "g");
-function $Eg(str) {
+function removeAnsiEscapeCodes(str) {
   if (str) {
     str = str.replace(CONTROL_SEQUENCES, "");
   }
   return str;
 }
 var PROMPT_NON_PRINTABLE = /\\\[.*?\\\]/g;
-function $Fg(str) {
-  return $Eg(str).replace(PROMPT_NON_PRINTABLE, "");
+function removeAnsiEscapeCodesFromPrompt(str) {
+  return removeAnsiEscapeCodes(str).replace(PROMPT_NON_PRINTABLE, "");
 }
-var $Gg = String.fromCharCode(
+var UTF8_BOM_CHARACTER = String.fromCharCode(
   65279
   /* CharCode.UTF8_BOM */
 );
@@ -5626,16 +5626,16 @@ var GraphemeBreakType;
 })(GraphemeBreakType || (GraphemeBreakType = {}));
 var GraphemeBreakTree = class _GraphemeBreakTree {
   static {
-    this.c = null;
+    this._INSTANCE = null;
   }
   static getInstance() {
-    if (!_GraphemeBreakTree.c) {
-      _GraphemeBreakTree.c = new _GraphemeBreakTree();
+    if (!_GraphemeBreakTree._INSTANCE) {
+      _GraphemeBreakTree._INSTANCE = new _GraphemeBreakTree();
     }
-    return _GraphemeBreakTree.c;
+    return _GraphemeBreakTree._INSTANCE;
   }
   constructor() {
-    this.d = getGraphemeBreakRawData();
+    this._data = getGraphemeBreakRawData();
   }
   getGraphemeBreakType(codePoint) {
     if (codePoint < 32) {
@@ -5650,7 +5650,7 @@ var GraphemeBreakTree = class _GraphemeBreakTree {
     if (codePoint < 127) {
       return 0;
     }
-    const data = this.d;
+    const data = this._data;
     const nodeCount = data.length / 3;
     let nodeIndex = 1;
     while (nodeIndex <= nodeCount) {
@@ -5675,14 +5675,14 @@ var CodePoint;
   CodePoint2[CodePoint2["enclosingKeyCap"] = 8419] = "enclosingKeyCap";
   CodePoint2[CodePoint2["space"] = 32] = "space";
 })(CodePoint || (CodePoint = {}));
-var $Rg = class _$Rg {
+var AmbiguousCharacters = class _AmbiguousCharacters {
   static {
-    this.c = new $Kf(() => {
+    this.ambiguousCharacterData = new Lazy(() => {
       return JSON.parse('{"_common":[8232,32,8233,32,5760,32,8192,32,8193,32,8194,32,8195,32,8196,32,8197,32,8198,32,8200,32,8201,32,8202,32,8287,32,8199,32,8239,32,2042,95,65101,95,65102,95,65103,95,8208,45,8209,45,8210,45,65112,45,1748,45,8259,45,727,45,8722,45,10134,45,11450,45,1549,44,1643,44,184,44,42233,44,894,59,2307,58,2691,58,1417,58,1795,58,1796,58,5868,58,65072,58,6147,58,6153,58,8282,58,1475,58,760,58,42889,58,8758,58,720,58,42237,58,451,33,11601,33,660,63,577,63,2429,63,5038,63,42731,63,119149,46,8228,46,1793,46,1794,46,42510,46,68176,46,1632,46,1776,46,42232,46,1373,96,65287,96,8219,96,1523,96,8242,96,1370,96,8175,96,65344,96,900,96,8189,96,8125,96,8127,96,8190,96,697,96,884,96,712,96,714,96,715,96,756,96,699,96,701,96,700,96,702,96,42892,96,1497,96,2036,96,2037,96,5194,96,5836,96,94033,96,94034,96,65339,91,10088,40,10098,40,12308,40,64830,40,65341,93,10089,41,10099,41,12309,41,64831,41,10100,123,119060,123,10101,125,65342,94,8270,42,1645,42,8727,42,66335,42,5941,47,8257,47,8725,47,8260,47,9585,47,10187,47,10744,47,119354,47,12755,47,12339,47,11462,47,20031,47,12035,47,65340,92,65128,92,8726,92,10189,92,10741,92,10745,92,119311,92,119355,92,12756,92,20022,92,12034,92,42872,38,708,94,710,94,5869,43,10133,43,66203,43,8249,60,10094,60,706,60,119350,60,5176,60,5810,60,5120,61,11840,61,12448,61,42239,61,8250,62,10095,62,707,62,119351,62,5171,62,94015,62,8275,126,732,126,8128,126,8764,126,65372,124,65293,45,118002,50,120784,50,120794,50,120804,50,120814,50,120824,50,130034,50,42842,50,423,50,1000,50,42564,50,5311,50,42735,50,119302,51,118003,51,120785,51,120795,51,120805,51,120815,51,120825,51,130035,51,42923,51,540,51,439,51,42858,51,11468,51,1248,51,94011,51,71882,51,118004,52,120786,52,120796,52,120806,52,120816,52,120826,52,130036,52,5070,52,71855,52,118005,53,120787,53,120797,53,120807,53,120817,53,120827,53,130037,53,444,53,71867,53,118006,54,120788,54,120798,54,120808,54,120818,54,120828,54,130038,54,11474,54,5102,54,71893,54,119314,55,118007,55,120789,55,120799,55,120809,55,120819,55,120829,55,130039,55,66770,55,71878,55,2819,56,2538,56,2666,56,125131,56,118008,56,120790,56,120800,56,120810,56,120820,56,120830,56,130040,56,547,56,546,56,66330,56,2663,57,2920,57,2541,57,3437,57,118009,57,120791,57,120801,57,120811,57,120821,57,120831,57,130041,57,42862,57,11466,57,71884,57,71852,57,71894,57,9082,97,65345,97,119834,97,119886,97,119938,97,119990,97,120042,97,120094,97,120146,97,120198,97,120250,97,120302,97,120354,97,120406,97,120458,97,593,97,945,97,120514,97,120572,97,120630,97,120688,97,120746,97,65313,65,117974,65,119808,65,119860,65,119912,65,119964,65,120016,65,120068,65,120120,65,120172,65,120224,65,120276,65,120328,65,120380,65,120432,65,913,65,120488,65,120546,65,120604,65,120662,65,120720,65,5034,65,5573,65,42222,65,94016,65,66208,65,119835,98,119887,98,119939,98,119991,98,120043,98,120095,98,120147,98,120199,98,120251,98,120303,98,120355,98,120407,98,120459,98,388,98,5071,98,5234,98,5551,98,65314,66,8492,66,117975,66,119809,66,119861,66,119913,66,120017,66,120069,66,120121,66,120173,66,120225,66,120277,66,120329,66,120381,66,120433,66,42932,66,914,66,120489,66,120547,66,120605,66,120663,66,120721,66,5108,66,5623,66,42192,66,66178,66,66209,66,66305,66,65347,99,8573,99,119836,99,119888,99,119940,99,119992,99,120044,99,120096,99,120148,99,120200,99,120252,99,120304,99,120356,99,120408,99,120460,99,7428,99,1010,99,11429,99,43951,99,66621,99,128844,67,71913,67,71922,67,65315,67,8557,67,8450,67,8493,67,117976,67,119810,67,119862,67,119914,67,119966,67,120018,67,120174,67,120226,67,120278,67,120330,67,120382,67,120434,67,1017,67,11428,67,5087,67,42202,67,66210,67,66306,67,66581,67,66844,67,8574,100,8518,100,119837,100,119889,100,119941,100,119993,100,120045,100,120097,100,120149,100,120201,100,120253,100,120305,100,120357,100,120409,100,120461,100,1281,100,5095,100,5231,100,42194,100,8558,68,8517,68,117977,68,119811,68,119863,68,119915,68,119967,68,120019,68,120071,68,120123,68,120175,68,120227,68,120279,68,120331,68,120383,68,120435,68,5024,68,5598,68,5610,68,42195,68,8494,101,65349,101,8495,101,8519,101,119838,101,119890,101,119942,101,120046,101,120098,101,120150,101,120202,101,120254,101,120306,101,120358,101,120410,101,120462,101,43826,101,1213,101,8959,69,65317,69,8496,69,117978,69,119812,69,119864,69,119916,69,120020,69,120072,69,120124,69,120176,69,120228,69,120280,69,120332,69,120384,69,120436,69,917,69,120492,69,120550,69,120608,69,120666,69,120724,69,11577,69,5036,69,42224,69,71846,69,71854,69,66182,69,119839,102,119891,102,119943,102,119995,102,120047,102,120099,102,120151,102,120203,102,120255,102,120307,102,120359,102,120411,102,120463,102,43829,102,42905,102,383,102,7837,102,1412,102,119315,70,8497,70,117979,70,119813,70,119865,70,119917,70,120021,70,120073,70,120125,70,120177,70,120229,70,120281,70,120333,70,120385,70,120437,70,42904,70,988,70,120778,70,5556,70,42205,70,71874,70,71842,70,66183,70,66213,70,66853,70,65351,103,8458,103,119840,103,119892,103,119944,103,120048,103,120100,103,120152,103,120204,103,120256,103,120308,103,120360,103,120412,103,120464,103,609,103,7555,103,397,103,1409,103,117980,71,119814,71,119866,71,119918,71,119970,71,120022,71,120074,71,120126,71,120178,71,120230,71,120282,71,120334,71,120386,71,120438,71,1292,71,5056,71,5107,71,42198,71,65352,104,8462,104,119841,104,119945,104,119997,104,120049,104,120101,104,120153,104,120205,104,120257,104,120309,104,120361,104,120413,104,120465,104,1211,104,1392,104,5058,104,65320,72,8459,72,8460,72,8461,72,117981,72,119815,72,119867,72,119919,72,120023,72,120179,72,120231,72,120283,72,120335,72,120387,72,120439,72,919,72,120494,72,120552,72,120610,72,120668,72,120726,72,11406,72,5051,72,5500,72,42215,72,66255,72,731,105,9075,105,65353,105,8560,105,8505,105,8520,105,119842,105,119894,105,119946,105,119998,105,120050,105,120102,105,120154,105,120206,105,120258,105,120310,105,120362,105,120414,105,120466,105,120484,105,618,105,617,105,953,105,8126,105,890,105,120522,105,120580,105,120638,105,120696,105,120754,105,1110,105,42567,105,1231,105,43893,105,5029,105,71875,105,65354,106,8521,106,119843,106,119895,106,119947,106,119999,106,120051,106,120103,106,120155,106,120207,106,120259,106,120311,106,120363,106,120415,106,120467,106,1011,106,1112,106,65322,74,117983,74,119817,74,119869,74,119921,74,119973,74,120025,74,120077,74,120129,74,120181,74,120233,74,120285,74,120337,74,120389,74,120441,74,42930,74,895,74,1032,74,5035,74,5261,74,42201,74,119844,107,119896,107,119948,107,120000,107,120052,107,120104,107,120156,107,120208,107,120260,107,120312,107,120364,107,120416,107,120468,107,8490,75,65323,75,117984,75,119818,75,119870,75,119922,75,119974,75,120026,75,120078,75,120130,75,120182,75,120234,75,120286,75,120338,75,120390,75,120442,75,922,75,120497,75,120555,75,120613,75,120671,75,120729,75,11412,75,5094,75,5845,75,42199,75,66840,75,1472,108,8739,73,9213,73,65512,73,1633,108,1777,73,66336,108,125127,108,118001,108,120783,73,120793,73,120803,73,120813,73,120823,73,130033,73,65321,73,8544,73,8464,73,8465,73,117982,108,119816,73,119868,73,119920,73,120024,73,120128,73,120180,73,120232,73,120284,73,120336,73,120388,73,120440,73,65356,108,8572,73,8467,108,119845,108,119897,108,119949,108,120001,108,120053,108,120105,73,120157,73,120209,73,120261,73,120313,73,120365,73,120417,73,120469,73,448,73,120496,73,120554,73,120612,73,120670,73,120728,73,11410,73,1030,73,1216,73,1493,108,1503,108,1575,108,126464,108,126592,108,65166,108,65165,108,1994,108,11599,73,5825,73,42226,73,93992,73,66186,124,66313,124,119338,76,8556,76,8466,76,117985,76,119819,76,119871,76,119923,76,120027,76,120079,76,120131,76,120183,76,120235,76,120287,76,120339,76,120391,76,120443,76,11472,76,5086,76,5290,76,42209,76,93974,76,71843,76,71858,76,66587,76,66854,76,65325,77,8559,77,8499,77,117986,77,119820,77,119872,77,119924,77,120028,77,120080,77,120132,77,120184,77,120236,77,120288,77,120340,77,120392,77,120444,77,924,77,120499,77,120557,77,120615,77,120673,77,120731,77,1018,77,11416,77,5047,77,5616,77,5846,77,42207,77,66224,77,66321,77,119847,110,119899,110,119951,110,120003,110,120055,110,120107,110,120159,110,120211,110,120263,110,120315,110,120367,110,120419,110,120471,110,1400,110,1404,110,65326,78,8469,78,117987,78,119821,78,119873,78,119925,78,119977,78,120029,78,120081,78,120185,78,120237,78,120289,78,120341,78,120393,78,120445,78,925,78,120500,78,120558,78,120616,78,120674,78,120732,78,11418,78,42208,78,66835,78,3074,111,3202,111,3330,111,3458,111,2406,111,2662,111,2790,111,3046,111,3174,111,3302,111,3430,111,3664,111,3792,111,4160,111,1637,111,1781,111,65359,111,8500,111,119848,111,119900,111,119952,111,120056,111,120108,111,120160,111,120212,111,120264,111,120316,111,120368,111,120420,111,120472,111,7439,111,7441,111,43837,111,959,111,120528,111,120586,111,120644,111,120702,111,120760,111,963,111,120532,111,120590,111,120648,111,120706,111,120764,111,11423,111,4351,111,1413,111,1505,111,1607,111,126500,111,126564,111,126596,111,65259,111,65260,111,65258,111,65257,111,1726,111,64428,111,64429,111,64427,111,64426,111,1729,111,64424,111,64425,111,64423,111,64422,111,1749,111,3360,111,4125,111,66794,111,71880,111,71895,111,66604,111,1984,79,2534,79,2918,79,12295,79,70864,79,71904,79,118000,79,120782,79,120792,79,120802,79,120812,79,120822,79,130032,79,65327,79,117988,79,119822,79,119874,79,119926,79,119978,79,120030,79,120082,79,120134,79,120186,79,120238,79,120290,79,120342,79,120394,79,120446,79,927,79,120502,79,120560,79,120618,79,120676,79,120734,79,11422,79,1365,79,11604,79,4816,79,2848,79,66754,79,42227,79,71861,79,66194,79,66219,79,66564,79,66838,79,9076,112,65360,112,119849,112,119901,112,119953,112,120005,112,120057,112,120109,112,120161,112,120213,112,120265,112,120317,112,120369,112,120421,112,120473,112,961,112,120530,112,120544,112,120588,112,120602,112,120646,112,120660,112,120704,112,120718,112,120762,112,120776,112,11427,112,65328,80,8473,80,117989,80,119823,80,119875,80,119927,80,119979,80,120031,80,120083,80,120187,80,120239,80,120291,80,120343,80,120395,80,120447,80,929,80,120504,80,120562,80,120620,80,120678,80,120736,80,11426,80,5090,80,5229,80,42193,80,66197,80,119850,113,119902,113,119954,113,120006,113,120058,113,120110,113,120162,113,120214,113,120266,113,120318,113,120370,113,120422,113,120474,113,1307,113,1379,113,1382,113,8474,81,117990,81,119824,81,119876,81,119928,81,119980,81,120032,81,120084,81,120188,81,120240,81,120292,81,120344,81,120396,81,120448,81,11605,81,119851,114,119903,114,119955,114,120007,114,120059,114,120111,114,120163,114,120215,114,120267,114,120319,114,120371,114,120423,114,120475,114,43847,114,43848,114,7462,114,11397,114,43905,114,119318,82,8475,82,8476,82,8477,82,117991,82,119825,82,119877,82,119929,82,120033,82,120189,82,120241,82,120293,82,120345,82,120397,82,120449,82,422,82,5025,82,5074,82,66740,82,5511,82,42211,82,94005,82,65363,115,119852,115,119904,115,119956,115,120008,115,120060,115,120112,115,120164,115,120216,115,120268,115,120320,115,120372,115,120424,115,120476,115,42801,115,445,115,1109,115,43946,115,71873,115,66632,115,65331,83,117992,83,119826,83,119878,83,119930,83,119982,83,120034,83,120086,83,120138,83,120190,83,120242,83,120294,83,120346,83,120398,83,120450,83,1029,83,1359,83,5077,83,5082,83,42210,83,94010,83,66198,83,66592,83,119853,116,119905,116,119957,116,120009,116,120061,116,120113,116,120165,116,120217,116,120269,116,120321,116,120373,116,120425,116,120477,116,8868,84,10201,84,128872,84,65332,84,117993,84,119827,84,119879,84,119931,84,119983,84,120035,84,120087,84,120139,84,120191,84,120243,84,120295,84,120347,84,120399,84,120451,84,932,84,120507,84,120565,84,120623,84,120681,84,120739,84,11430,84,5026,84,42196,84,93962,84,71868,84,66199,84,66225,84,66325,84,119854,117,119906,117,119958,117,120010,117,120062,117,120114,117,120166,117,120218,117,120270,117,120322,117,120374,117,120426,117,120478,117,42911,117,7452,117,43854,117,43858,117,651,117,965,117,120534,117,120592,117,120650,117,120708,117,120766,117,1405,117,66806,117,71896,117,8746,85,8899,85,117994,85,119828,85,119880,85,119932,85,119984,85,120036,85,120088,85,120140,85,120192,85,120244,85,120296,85,120348,85,120400,85,120452,85,1357,85,4608,85,66766,85,5196,85,42228,85,94018,85,71864,85,8744,118,8897,118,65366,118,8564,118,119855,118,119907,118,119959,118,120011,118,120063,118,120115,118,120167,118,120219,118,120271,118,120323,118,120375,118,120427,118,120479,118,7456,118,957,118,120526,118,120584,118,120642,118,120700,118,120758,118,1141,118,1496,118,71430,118,43945,118,71872,118,119309,86,1639,86,1783,86,8548,86,117995,86,119829,86,119881,86,119933,86,119985,86,120037,86,120089,86,120141,86,120193,86,120245,86,120297,86,120349,86,120401,86,120453,86,1140,86,11576,86,5081,86,5167,86,42719,86,42214,86,93960,86,71840,86,66845,86,623,119,119856,119,119908,119,119960,119,120012,119,120064,119,120116,119,120168,119,120220,119,120272,119,120324,119,120376,119,120428,119,120480,119,7457,119,1121,119,1309,119,1377,119,71434,119,71438,119,71439,119,43907,119,71910,87,71919,87,117996,87,119830,87,119882,87,119934,87,119986,87,120038,87,120090,87,120142,87,120194,87,120246,87,120298,87,120350,87,120402,87,120454,87,1308,87,5043,87,5076,87,42218,87,5742,120,10539,120,10540,120,10799,120,65368,120,8569,120,119857,120,119909,120,119961,120,120013,120,120065,120,120117,120,120169,120,120221,120,120273,120,120325,120,120377,120,120429,120,120481,120,5441,120,5501,120,5741,88,9587,88,66338,88,71916,88,65336,88,8553,88,117997,88,119831,88,119883,88,119935,88,119987,88,120039,88,120091,88,120143,88,120195,88,120247,88,120299,88,120351,88,120403,88,120455,88,42931,88,935,88,120510,88,120568,88,120626,88,120684,88,120742,88,11436,88,11613,88,5815,88,42219,88,66192,88,66228,88,66327,88,66855,88,611,121,7564,121,65369,121,119858,121,119910,121,119962,121,120014,121,120066,121,120118,121,120170,121,120222,121,120274,121,120326,121,120378,121,120430,121,120482,121,655,121,7935,121,43866,121,947,121,8509,121,120516,121,120574,121,120632,121,120690,121,120748,121,1199,121,4327,121,71900,121,65337,89,117998,89,119832,89,119884,89,119936,89,119988,89,120040,89,120092,89,120144,89,120196,89,120248,89,120300,89,120352,89,120404,89,120456,89,933,89,978,89,120508,89,120566,89,120624,89,120682,89,120740,89,11432,89,1198,89,5033,89,5053,89,42220,89,94019,89,71844,89,66226,89,119859,122,119911,122,119963,122,120015,122,120067,122,120119,122,120171,122,120223,122,120275,122,120327,122,120379,122,120431,122,120483,122,7458,122,43923,122,71876,122,71909,90,66293,90,65338,90,8484,90,8488,90,117999,90,119833,90,119885,90,119937,90,119989,90,120041,90,120197,90,120249,90,120301,90,120353,90,120405,90,120457,90,918,90,120493,90,120551,90,120609,90,120667,90,120725,90,5059,90,42204,90,71849,90,65282,34,65283,35,65284,36,65285,37,65286,38,65290,42,65291,43,65294,46,65295,47,65296,48,65298,50,65299,51,65300,52,65301,53,65302,54,65303,55,65304,56,65305,57,65308,60,65309,61,65310,62,65312,64,65316,68,65318,70,65319,71,65324,76,65329,81,65330,82,65333,85,65334,86,65335,87,65343,95,65346,98,65348,100,65350,102,65355,107,65357,109,65358,110,65361,113,65362,114,65364,116,65365,117,65367,119,65370,122,65371,123,65373,125,119846,109],"_default":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8216,96,8217,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"cs":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"de":[65374,126,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"es":[8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"fr":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"it":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"ja":[8211,45,8218,44,65281,33,8216,96,8245,96,180,96,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65292,44,65297,49,65307,59],"ko":[8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"pl":[65374,126,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"pt-BR":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"qps-ploc":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"ru":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,305,105,921,73,1009,112,215,120,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"tr":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"zh-hans":[160,32,65374,126,8218,44,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65297,49],"zh-hant":[8211,45,65374,126,8218,44,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89]}');
     });
   }
   static {
-    this.d = new $Hf((localesStr) => {
+    this.cache = new LRUCachedFunction((localesStr) => {
       const locales = localesStr.split(",");
       function arrayToMap(arr) {
         const result = /* @__PURE__ */ new Map();
@@ -5710,7 +5710,7 @@ var $Rg = class _$Rg {
         }
         return result;
       }
-      const data = this.c.value;
+      const data = this.ambiguousCharacterData.value;
       let filteredLocales = locales.filter((l) => !l.startsWith("_") && Object.hasOwn(data, l));
       if (filteredLocales.length === 0) {
         filteredLocales = ["_default"];
@@ -5722,23 +5722,23 @@ var $Rg = class _$Rg {
       }
       const commonMap = arrayToMap(data["_common"]);
       const map = mergeMaps(commonMap, languageSpecificMap);
-      return new _$Rg(map);
+      return new _AmbiguousCharacters(map);
     });
   }
   static getInstance(locales) {
-    return _$Rg.d.get(Array.from(locales).join(","));
+    return _AmbiguousCharacters.cache.get(Array.from(locales).join(","));
   }
   static {
-    this.e = new $Kf(() => Object.keys(_$Rg.c.value).filter((k) => !k.startsWith("_")));
+    this._locales = new Lazy(() => Object.keys(_AmbiguousCharacters.ambiguousCharacterData.value).filter((k) => !k.startsWith("_")));
   }
   static getLocales() {
-    return _$Rg.e.value;
+    return _AmbiguousCharacters._locales.value;
   }
-  constructor(f) {
-    this.f = f;
+  constructor(confusableDictionary) {
+    this.confusableDictionary = confusableDictionary;
   }
   isAmbiguous(codePoint) {
-    return this.f.has(codePoint);
+    return this.confusableDictionary.has(codePoint);
   }
   containsAmbiguousCharacter(str) {
     for (let i = 0; i < str.length; i++) {
@@ -5754,78 +5754,78 @@ var $Rg = class _$Rg {
    * or undefined if such code point does note exist.
    */
   getPrimaryConfusable(codePoint) {
-    return this.f.get(codePoint);
+    return this.confusableDictionary.get(codePoint);
   }
   getConfusableCodePoints() {
-    return new Set(this.f.keys());
+    return new Set(this.confusableDictionary.keys());
   }
 };
-var $Sg = class _$Sg {
-  static c() {
+var InvisibleCharacters = class _InvisibleCharacters {
+  static getRawData() {
     return JSON.parse('{"_common":[11,12,13,127,847,1564,4447,4448,6068,6069,6155,6156,6157,6158,7355,7356,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8204,8205,8206,8207,8234,8235,8236,8237,8238,8239,8287,8288,8289,8290,8291,8292,8293,8294,8295,8296,8297,8298,8299,8300,8301,8302,8303,10240,12644,65024,65025,65026,65027,65028,65029,65030,65031,65032,65033,65034,65035,65036,65037,65038,65039,65279,65440,65520,65521,65522,65523,65524,65525,65526,65527,65528,65532,78844,119155,119156,119157,119158,119159,119160,119161,119162,917504,917505,917506,917507,917508,917509,917510,917511,917512,917513,917514,917515,917516,917517,917518,917519,917520,917521,917522,917523,917524,917525,917526,917527,917528,917529,917530,917531,917532,917533,917534,917535,917536,917537,917538,917539,917540,917541,917542,917543,917544,917545,917546,917547,917548,917549,917550,917551,917552,917553,917554,917555,917556,917557,917558,917559,917560,917561,917562,917563,917564,917565,917566,917567,917568,917569,917570,917571,917572,917573,917574,917575,917576,917577,917578,917579,917580,917581,917582,917583,917584,917585,917586,917587,917588,917589,917590,917591,917592,917593,917594,917595,917596,917597,917598,917599,917600,917601,917602,917603,917604,917605,917606,917607,917608,917609,917610,917611,917612,917613,917614,917615,917616,917617,917618,917619,917620,917621,917622,917623,917624,917625,917626,917627,917628,917629,917630,917631,917760,917761,917762,917763,917764,917765,917766,917767,917768,917769,917770,917771,917772,917773,917774,917775,917776,917777,917778,917779,917780,917781,917782,917783,917784,917785,917786,917787,917788,917789,917790,917791,917792,917793,917794,917795,917796,917797,917798,917799,917800,917801,917802,917803,917804,917805,917806,917807,917808,917809,917810,917811,917812,917813,917814,917815,917816,917817,917818,917819,917820,917821,917822,917823,917824,917825,917826,917827,917828,917829,917830,917831,917832,917833,917834,917835,917836,917837,917838,917839,917840,917841,917842,917843,917844,917845,917846,917847,917848,917849,917850,917851,917852,917853,917854,917855,917856,917857,917858,917859,917860,917861,917862,917863,917864,917865,917866,917867,917868,917869,917870,917871,917872,917873,917874,917875,917876,917877,917878,917879,917880,917881,917882,917883,917884,917885,917886,917887,917888,917889,917890,917891,917892,917893,917894,917895,917896,917897,917898,917899,917900,917901,917902,917903,917904,917905,917906,917907,917908,917909,917910,917911,917912,917913,917914,917915,917916,917917,917918,917919,917920,917921,917922,917923,917924,917925,917926,917927,917928,917929,917930,917931,917932,917933,917934,917935,917936,917937,917938,917939,917940,917941,917942,917943,917944,917945,917946,917947,917948,917949,917950,917951,917952,917953,917954,917955,917956,917957,917958,917959,917960,917961,917962,917963,917964,917965,917966,917967,917968,917969,917970,917971,917972,917973,917974,917975,917976,917977,917978,917979,917980,917981,917982,917983,917984,917985,917986,917987,917988,917989,917990,917991,917992,917993,917994,917995,917996,917997,917998,917999],"cs":[173,8203,12288],"de":[173,8203,12288],"es":[8203,12288],"fr":[173,8203,12288],"it":[160,173,12288],"ja":[173],"ko":[173,12288],"pl":[173,8203,12288],"pt-BR":[173,8203,12288],"qps-ploc":[160,173,8203,12288],"ru":[173,12288],"tr":[160,173,8203,12288],"zh-hans":[160,173,8203,12288],"zh-hant":[173,12288]}');
   }
   static {
-    this.d = void 0;
+    this._data = void 0;
   }
-  static e() {
-    if (!this.d) {
-      this.d = new Set([...Object.values(_$Sg.c())].flat());
+  static getData() {
+    if (!this._data) {
+      this._data = new Set([...Object.values(_InvisibleCharacters.getRawData())].flat());
     }
-    return this.d;
+    return this._data;
   }
   static isInvisibleCharacter(codePoint) {
-    return _$Sg.e().has(codePoint);
+    return _InvisibleCharacters.getData().has(codePoint);
   }
   static containsInvisibleCharacter(str) {
     for (let i = 0; i < str.length; i++) {
       const codePoint = str.codePointAt(i);
-      if (typeof codePoint === "number" && (_$Sg.isInvisibleCharacter(codePoint) || codePoint === 32)) {
+      if (typeof codePoint === "number" && (_InvisibleCharacters.isInvisibleCharacter(codePoint) || codePoint === 32)) {
         return true;
       }
     }
     return false;
   }
   static get codePoints() {
-    return _$Sg.e();
+    return _InvisibleCharacters.getData();
   }
 };
 
 // out-build/vs/base/common/extpath.js
-function $Vg(code) {
+function isPathSeparator2(code) {
   return code === 47 || code === 92;
 }
-function $Wg(osPath) {
-  return osPath.replace(/[\\/]/g, $7.sep);
+function toSlashes(osPath) {
+  return osPath.replace(/[\\/]/g, posix.sep);
 }
-function $Xg(osPath) {
+function toPosixPath(osPath) {
   if (osPath.indexOf("/") === -1) {
-    osPath = $Wg(osPath);
+    osPath = toSlashes(osPath);
   }
   if (/^[a-zA-Z]:(\/|$)/.test(osPath)) {
     osPath = "/" + osPath;
   }
   return osPath;
 }
-function $Yg(path, sep2 = $7.sep) {
+function getRoot(path, sep2 = posix.sep) {
   if (!path) {
     return "";
   }
   const len = path.length;
   const firstLetter = path.charCodeAt(0);
-  if ($Vg(firstLetter)) {
-    if ($Vg(path.charCodeAt(1))) {
-      if (!$Vg(path.charCodeAt(2))) {
+  if (isPathSeparator2(firstLetter)) {
+    if (isPathSeparator2(path.charCodeAt(1))) {
+      if (!isPathSeparator2(path.charCodeAt(2))) {
         let pos2 = 3;
         const start = pos2;
         for (; pos2 < len; pos2++) {
-          if ($Vg(path.charCodeAt(pos2))) {
+          if (isPathSeparator2(path.charCodeAt(pos2))) {
             break;
           }
         }
-        if (start !== pos2 && !$Vg(path.charCodeAt(pos2 + 1))) {
+        if (start !== pos2 && !isPathSeparator2(path.charCodeAt(pos2 + 1))) {
           pos2 += 1;
           for (; pos2 < len; pos2++) {
-            if ($Vg(path.charCodeAt(pos2))) {
+            if (isPathSeparator2(path.charCodeAt(pos2))) {
               return path.slice(0, pos2 + 1).replace(/[\\/]/g, sep2);
             }
           }
@@ -5833,9 +5833,9 @@ function $Yg(path, sep2 = $7.sep) {
       }
     }
     return sep2;
-  } else if ($4g(firstLetter)) {
+  } else if (isWindowsDriveLetter(firstLetter)) {
     if (path.charCodeAt(1) === 58) {
-      if ($Vg(path.charCodeAt(2))) {
+      if (isPathSeparator2(path.charCodeAt(2))) {
         return path.slice(0, 2) + sep2;
       } else {
         return path.slice(0, 2);
@@ -5846,14 +5846,14 @@ function $Yg(path, sep2 = $7.sep) {
   if (pos !== -1) {
     pos += 3;
     for (; pos < len; pos++) {
-      if ($Vg(path.charCodeAt(pos))) {
+      if (isPathSeparator2(path.charCodeAt(pos))) {
         return path.slice(0, pos + 1);
       }
     }
   }
   return "";
 }
-function $3g(base, parentCandidate, ignoreCase, separator = sep) {
+function isEqualOrParent(base, parentCandidate, ignoreCase, separator = sep) {
   if (base === parentCandidate) {
     return true;
   }
@@ -5864,7 +5864,7 @@ function $3g(base, parentCandidate, ignoreCase, separator = sep) {
     return false;
   }
   if (ignoreCase) {
-    const beginsWith = $ig(base, parentCandidate);
+    const beginsWith = startsWithIgnoreCase(base, parentCandidate);
     if (!beginsWith) {
       return false;
     }
@@ -5882,32 +5882,32 @@ function $3g(base, parentCandidate, ignoreCase, separator = sep) {
   }
   return base.indexOf(parentCandidate) === 0;
 }
-function $4g(char0) {
+function isWindowsDriveLetter(char0) {
   return char0 >= 65 && char0 <= 90 || char0 >= 97 && char0 <= 122;
 }
-function $7g(path) {
-  const pathNormalized = $8(path);
-  if ($m) {
+function isRootOrDriveLetter(path) {
+  const pathNormalized = normalize(path);
+  if (isWindows) {
     if (path.length > 3) {
       return false;
     }
-    return $8g(pathNormalized) && (path.length === 2 || pathNormalized.charCodeAt(2) === 92);
+    return hasDriveLetter(pathNormalized) && (path.length === 2 || pathNormalized.charCodeAt(2) === 92);
   }
-  return pathNormalized === $7.sep;
+  return pathNormalized === posix.sep;
 }
-function $8g(path, isWindowsOS = $m) {
+function hasDriveLetter(path, isWindowsOS = isWindows) {
   if (isWindowsOS) {
-    return $4g(path.charCodeAt(0)) && path.charCodeAt(1) === 58;
+    return isWindowsDriveLetter(path.charCodeAt(0)) && path.charCodeAt(1) === 58;
   }
   return false;
 }
 var pathChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 var windowsSafePathFirstChars = "BDEFGHIJKMOQRSTUVWXYZbdefghijkmoqrstuvwxyz0123456789";
-function $_g(parent, prefix, randomLength = 8) {
+function randomPath(parent, prefix, randomLength = 8) {
   let suffix = "";
   for (let i = 0; i < randomLength; i++) {
     let pathCharsTouse;
-    if (i === 0 && $m && !prefix && (randomLength === 3 || randomLength === 4)) {
+    if (i === 0 && isWindows && !prefix && (randomLength === 3 || randomLength === 4)) {
       pathCharsTouse = windowsSafePathFirstChars;
     } else {
       pathCharsTouse = pathChars;
@@ -5921,7 +5921,7 @@ function $_g(parent, prefix, randomLength = 8) {
     randomFileName = suffix;
   }
   if (parent) {
-    return $0(parent, randomFileName);
+    return join(parent, randomFileName);
   }
   return randomFileName;
 }
@@ -5976,77 +5976,77 @@ var Schemas;
   Schemas2.chatEditingModel = "chat-editing-text-model";
   Schemas2.copilotPr = "copilot-pr";
 })(Schemas || (Schemas = {}));
-var $dh = "tkn";
+var connectionTokenQueryName = "tkn";
 var RemoteAuthoritiesImpl = class {
   constructor() {
-    this.a = /* @__PURE__ */ Object.create(null);
-    this.b = /* @__PURE__ */ Object.create(null);
-    this.c = /* @__PURE__ */ Object.create(null);
-    this.d = "http";
-    this.e = null;
-    this.f = "/";
+    this._hosts = /* @__PURE__ */ Object.create(null);
+    this._ports = /* @__PURE__ */ Object.create(null);
+    this._connectionTokens = /* @__PURE__ */ Object.create(null);
+    this._preferredWebSchema = "http";
+    this._delegate = null;
+    this._serverRootPath = "/";
   }
   setPreferredWebSchema(schema) {
-    this.d = schema;
+    this._preferredWebSchema = schema;
   }
   setDelegate(delegate) {
-    this.e = delegate;
+    this._delegate = delegate;
   }
   setServerRootPath(product2, serverBasePath) {
-    this.f = $7.join(serverBasePath ?? "/", $fh(product2));
+    this._serverRootPath = posix.join(serverBasePath ?? "/", getServerProductSegment(product2));
   }
   getServerRootPath() {
-    return this.f;
+    return this._serverRootPath;
   }
-  get g() {
-    return $7.join(this.f, Schemas.vscodeRemoteResource);
+  get _remoteResourcesPath() {
+    return posix.join(this._serverRootPath, Schemas.vscodeRemoteResource);
   }
   set(authority, host, port) {
-    this.a[authority] = host;
-    this.b[authority] = port;
+    this._hosts[authority] = host;
+    this._ports[authority] = port;
   }
   setConnectionToken(authority, connectionToken) {
-    this.c[authority] = connectionToken;
+    this._connectionTokens[authority] = connectionToken;
   }
   getPreferredWebSchema() {
-    return this.d;
+    return this._preferredWebSchema;
   }
   rewrite(uri) {
-    if (this.e) {
+    if (this._delegate) {
       try {
-        return this.e(uri);
+        return this._delegate(uri);
       } catch (err) {
-        $nb(err);
+        onUnexpectedError(err);
         return uri;
       }
     }
     const authority = uri.authority;
-    let host = this.a[authority];
+    let host = this._hosts[authority];
     if (host && host.indexOf(":") !== -1 && host.indexOf("[") === -1) {
       host = `[${host}]`;
     }
-    const port = this.b[authority];
-    const connectionToken = this.c[authority];
+    const port = this._ports[authority];
+    const connectionToken = this._connectionTokens[authority];
     let query = `path=${encodeURIComponent(uri.path)}`;
     if (typeof connectionToken === "string") {
-      query += `&${$dh}=${encodeURIComponent(connectionToken)}`;
+      query += `&${connectionTokenQueryName}=${encodeURIComponent(connectionToken)}`;
     }
     return URI.from({
-      scheme: $s ? this.d : Schemas.vscodeRemoteResource,
+      scheme: isWeb ? this._preferredWebSchema : Schemas.vscodeRemoteResource,
       authority: `${host}:${port}`,
-      path: this.g,
+      path: this._remoteResourcesPath,
       query
     });
   }
 };
-var $eh = new RemoteAuthoritiesImpl();
-function $fh(product2) {
+var RemoteAuthorities = new RemoteAuthoritiesImpl();
+function getServerProductSegment(product2) {
   return `${product2.quality ?? "oss"}-${product2.commit ?? "dev"}`;
 }
-var $kh = "vscode-app";
+var VSCODE_AUTHORITY = "vscode-app";
 var FileAccessImpl = class _FileAccessImpl {
   static {
-    this.a = $kh;
+    this.FALLBACK_AUTHORITY = VSCODE_AUTHORITY;
   }
   /**
    * Returns a URI to use in contexts where the browser is responsible
@@ -6055,7 +6055,7 @@ var FileAccessImpl = class _FileAccessImpl {
    * **Note:** use `dom.ts#asCSSUrl` whenever the URL is to be used in CSS context.
    */
   asBrowserUri(resourcePath) {
-    const uri = this.b(resourcePath);
+    const uri = this.toUri(resourcePath);
     return this.uriToBrowserUri(uri);
   }
   /**
@@ -6066,13 +6066,13 @@ var FileAccessImpl = class _FileAccessImpl {
    */
   uriToBrowserUri(uri) {
     if (uri.scheme === Schemas.vscodeRemote) {
-      return $eh.rewrite(uri);
+      return RemoteAuthorities.rewrite(uri);
     }
     if (
       // ...only ever for `file` resources
       uri.scheme === Schemas.file && // ...and we run in native environments
-      ($q || // ...or web worker extensions on desktop
-      $u === `${Schemas.vscodeFileResource}://${_FileAccessImpl.a}`)
+      (isNative || // ...or web worker extensions on desktop
+      webWorkerOrigin === `${Schemas.vscodeFileResource}://${_FileAccessImpl.FALLBACK_AUTHORITY}`)
     ) {
       return uri.with({
         scheme: Schemas.vscodeFileResource,
@@ -6080,7 +6080,7 @@ var FileAccessImpl = class _FileAccessImpl {
         // as origin for network and loading matters in chromium.
         // If the URI is not coming with an authority already, we
         // add our own
-        authority: uri.authority || _FileAccessImpl.a,
+        authority: uri.authority || _FileAccessImpl.FALLBACK_AUTHORITY,
         query: null,
         fragment: null
       });
@@ -6092,7 +6092,7 @@ var FileAccessImpl = class _FileAccessImpl {
    * is responsible for loading.
    */
   asFileUri(resourcePath) {
-    const uri = this.b(resourcePath);
+    const uri = this.toUri(resourcePath);
     return this.uriToFileUri(uri);
   }
   /**
@@ -6106,14 +6106,14 @@ var FileAccessImpl = class _FileAccessImpl {
         // Only preserve the `authority` if it is different from
         // our fallback authority. This ensures we properly preserve
         // Windows UNC paths that come with their own authority.
-        authority: uri.authority !== _FileAccessImpl.a ? uri.authority : null,
+        authority: uri.authority !== _FileAccessImpl.FALLBACK_AUTHORITY ? uri.authority : null,
         query: null,
         fragment: null
       });
     }
     return uri;
   }
-  b(uriOrModule) {
+  toUri(uriOrModule) {
     if (URI.isUri(uriOrModule)) {
       return uriOrModule;
     }
@@ -6122,17 +6122,17 @@ var FileAccessImpl = class _FileAccessImpl {
       if (/^\w[\w\d+.-]*:\/\//.test(rootUriOrPath)) {
         return URI.joinPath(URI.parse(rootUriOrPath, true), uriOrModule);
       }
-      const modulePath = $0(rootUriOrPath, uriOrModule);
+      const modulePath = join(rootUriOrPath, uriOrModule);
       return URI.file(modulePath);
     }
     throw new Error("Cannot determine URI for module id!");
   }
 };
-var $lh = new FileAccessImpl();
-var $mh = Object.freeze({
+var FileAccess = new FileAccessImpl();
+var CacheControlheaders = Object.freeze({
   "Cache-Control": "no-cache, no-store"
 });
-var $nh = Object.freeze({
+var DocumentPolicyheaders = Object.freeze({
   "Document-Policy": "include-js-call-stacks-in-crash-reports"
 });
 var COI;
@@ -6175,18 +6175,18 @@ var COI;
 })(COI || (COI = {}));
 
 // out-build/vs/base/common/resources.js
-function $oh(uri) {
-  return $Lc(uri, true);
+function originalFSPath(uri) {
+  return uriToFsPath(uri, true);
 }
-var $ph = class {
-  constructor(a) {
-    this.a = a;
+var ExtUri = class {
+  constructor(_ignorePathCasing) {
+    this._ignorePathCasing = _ignorePathCasing;
   }
   compare(uri1, uri2, ignoreFragment = false) {
     if (uri1 === uri2) {
       return 0;
     }
-    return $_f(this.getComparisonKey(uri1, ignoreFragment), this.getComparisonKey(uri2, ignoreFragment));
+    return compare(this.getComparisonKey(uri1, ignoreFragment), this.getComparisonKey(uri2, ignoreFragment));
   }
   isEqual(uri1, uri2, ignoreFragment = false) {
     if (uri1 === uri2) {
@@ -6199,20 +6199,20 @@ var $ph = class {
   }
   getComparisonKey(uri, ignoreFragment = false) {
     return uri.with({
-      path: this.a(uri) ? uri.path.toLowerCase() : void 0,
+      path: this._ignorePathCasing(uri) ? uri.path.toLowerCase() : void 0,
       fragment: ignoreFragment ? null : void 0
     }).toString();
   }
   ignorePathCasing(uri) {
-    return this.a(uri);
+    return this._ignorePathCasing(uri);
   }
   isEqualOrParent(base, parentCandidate, ignoreFragment = false) {
     if (base.scheme === parentCandidate.scheme) {
       if (base.scheme === Schemas.file) {
-        return $3g($oh(base), $oh(parentCandidate), this.a(base)) && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
+        return isEqualOrParent(originalFSPath(base), originalFSPath(parentCandidate), this._ignorePathCasing(base)) && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
       }
-      if ($Fh(base.authority, parentCandidate.authority)) {
-        return $3g(base.path, parentCandidate.path, this.a(base), "/") && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
+      if (isEqualAuthority(base.authority, parentCandidate.authority)) {
+        return isEqualOrParent(base.path, parentCandidate.path, this._ignorePathCasing(base), "/") && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
       }
     }
     return false;
@@ -6222,30 +6222,30 @@ var $ph = class {
     return URI.joinPath(resource, ...pathFragment);
   }
   basenameOrAuthority(resource) {
-    return $xh(resource) || resource.authority;
+    return basename2(resource) || resource.authority;
   }
   basename(resource) {
-    return $7.basename(resource.path);
+    return posix.basename(resource.path);
   }
   extname(resource) {
-    return $7.extname(resource.path);
+    return posix.extname(resource.path);
   }
   dirname(resource) {
     if (resource.path.length === 0) {
       return resource;
     }
-    let dirname;
+    let dirname3;
     if (resource.scheme === Schemas.file) {
-      dirname = URI.file($ab($oh(resource))).path;
+      dirname3 = URI.file(dirname(originalFSPath(resource))).path;
     } else {
-      dirname = $7.dirname(resource.path);
-      if (resource.authority && dirname.length && dirname.charCodeAt(0) !== 47) {
+      dirname3 = posix.dirname(resource.path);
+      if (resource.authority && dirname3.length && dirname3.charCodeAt(0) !== 47) {
         console.error(`dirname("${resource.toString})) resulted in a relative path`);
-        dirname = "/";
+        dirname3 = "/";
       }
     }
     return resource.with({
-      path: dirname
+      path: dirname3
     });
   }
   normalizePath(resource) {
@@ -6254,25 +6254,25 @@ var $ph = class {
     }
     let normalizedPath;
     if (resource.scheme === Schemas.file) {
-      normalizedPath = URI.file($8($oh(resource))).path;
+      normalizedPath = URI.file(normalize(originalFSPath(resource))).path;
     } else {
-      normalizedPath = $7.normalize(resource.path);
+      normalizedPath = posix.normalize(resource.path);
     }
     return resource.with({
       path: normalizedPath
     });
   }
   relativePath(from, to) {
-    if (from.scheme !== to.scheme || !$Fh(from.authority, to.authority)) {
+    if (from.scheme !== to.scheme || !isEqualAuthority(from.authority, to.authority)) {
       return void 0;
     }
     if (from.scheme === Schemas.file) {
-      const relativePath = $_($oh(from), $oh(to));
-      return $m ? $Wg(relativePath) : relativePath;
+      const relativePath2 = relative(originalFSPath(from), originalFSPath(to));
+      return isWindows ? toSlashes(relativePath2) : relativePath2;
     }
     let fromPath = from.path || "/";
     const toPath = to.path || "/";
-    if (this.a(from)) {
+    if (this._ignorePathCasing(from)) {
       let i = 0;
       for (const len = Math.min(fromPath.length, toPath.length); i < len; i++) {
         if (fromPath.charCodeAt(i) !== toPath.charCodeAt(i)) {
@@ -6283,19 +6283,19 @@ var $ph = class {
       }
       fromPath = toPath.substr(0, i) + fromPath.substr(i);
     }
-    return $7.relative(fromPath, toPath);
+    return posix.relative(fromPath, toPath);
   }
   resolvePath(base, path) {
     if (base.scheme === Schemas.file) {
-      const newURI = URI.file($$($oh(base), path));
+      const newURI = URI.file(resolve(originalFSPath(base), path));
       return base.with({
         authority: newURI.authority,
         path: newURI.path
       });
     }
-    path = $Xg(path);
+    path = toPosixPath(path);
     return base.with({
-      path: $7.resolve(base.path, path)
+      path: posix.resolve(base.path, path)
     });
   }
   // --- misc
@@ -6303,19 +6303,19 @@ var $ph = class {
     return !!resource.path && resource.path[0] === "/";
   }
   isEqualAuthority(a1, a2) {
-    return a1 === a2 || a1 !== void 0 && a2 !== void 0 && $gg(a1, a2);
+    return a1 === a2 || a1 !== void 0 && a2 !== void 0 && equalsIgnoreCase(a1, a2);
   }
   hasTrailingPathSeparator(resource, sep2 = sep) {
     if (resource.scheme === Schemas.file) {
-      const fsp = $oh(resource);
-      return fsp.length > $Yg(fsp).length && fsp[fsp.length - 1] === sep2;
+      const fsp = originalFSPath(resource);
+      return fsp.length > getRoot(fsp).length && fsp[fsp.length - 1] === sep2;
     } else {
       const p = resource.path;
       return p.length > 1 && p.charCodeAt(p.length - 1) === 47 && !/^[a-zA-Z]:(\/$|\\$)/.test(resource.fsPath);
     }
   }
   removeTrailingPathSeparator(resource, sep2 = sep) {
-    if ($Gh(resource, sep2)) {
+    if (hasTrailingPathSeparator(resource, sep2)) {
       return resource.with({ path: resource.path.substr(0, resource.path.length - 1) });
     }
     return resource;
@@ -6323,40 +6323,40 @@ var $ph = class {
   addTrailingPathSeparator(resource, sep2 = sep) {
     let isRootSep = false;
     if (resource.scheme === Schemas.file) {
-      const fsp = $oh(resource);
-      isRootSep = fsp !== void 0 && fsp.length === $Yg(fsp).length && fsp[fsp.length - 1] === sep2;
+      const fsp = originalFSPath(resource);
+      isRootSep = fsp !== void 0 && fsp.length === getRoot(fsp).length && fsp[fsp.length - 1] === sep2;
     } else {
       sep2 = "/";
       const p = resource.path;
       isRootSep = p.length === 1 && p.charCodeAt(p.length - 1) === 47;
     }
-    if (!isRootSep && !$Gh(resource, sep2)) {
+    if (!isRootSep && !hasTrailingPathSeparator(resource, sep2)) {
       return resource.with({ path: resource.path + "/" });
     }
     return resource;
   }
 };
-var $qh = new $ph(() => false);
-var $rh = new $ph((uri) => {
-  return uri.scheme === Schemas.file ? !$o : true;
+var extUri = new ExtUri(() => false);
+var extUriBiasedIgnorePathCase = new ExtUri((uri) => {
+  return uri.scheme === Schemas.file ? !isLinux : true;
 });
-var $sh = new $ph((_) => true);
-var $th = $qh.isEqual.bind($qh);
-var $uh = $qh.isEqualOrParent.bind($qh);
-var $vh = $qh.getComparisonKey.bind($qh);
-var $wh = $qh.basenameOrAuthority.bind($qh);
-var $xh = $qh.basename.bind($qh);
-var $yh = $qh.extname.bind($qh);
-var $zh = $qh.dirname.bind($qh);
-var $Ah = $qh.joinPath.bind($qh);
-var $Bh = $qh.normalizePath.bind($qh);
-var $Ch = $qh.relativePath.bind($qh);
-var $Dh = $qh.resolvePath.bind($qh);
-var $Eh = $qh.isAbsolutePath.bind($qh);
-var $Fh = $qh.isEqualAuthority.bind($qh);
-var $Gh = $qh.hasTrailingPathSeparator.bind($qh);
-var $Hh = $qh.removeTrailingPathSeparator.bind($qh);
-var $Ih = $qh.addTrailingPathSeparator.bind($qh);
+var extUriIgnorePathCase = new ExtUri((_) => true);
+var isEqual = extUri.isEqual.bind(extUri);
+var isEqualOrParent2 = extUri.isEqualOrParent.bind(extUri);
+var getComparisonKey = extUri.getComparisonKey.bind(extUri);
+var basenameOrAuthority = extUri.basenameOrAuthority.bind(extUri);
+var basename2 = extUri.basename.bind(extUri);
+var extname2 = extUri.extname.bind(extUri);
+var dirname2 = extUri.dirname.bind(extUri);
+var joinPath = extUri.joinPath.bind(extUri);
+var normalizePath = extUri.normalizePath.bind(extUri);
+var relativePath = extUri.relativePath.bind(extUri);
+var resolvePath = extUri.resolvePath.bind(extUri);
+var isAbsolutePath = extUri.isAbsolutePath.bind(extUri);
+var isEqualAuthority = extUri.isEqualAuthority.bind(extUri);
+var hasTrailingPathSeparator = extUri.hasTrailingPathSeparator.bind(extUri);
+var removeTrailingPathSeparator = extUri.removeTrailingPathSeparator.bind(extUri);
+var addTrailingPathSeparator = extUri.addTrailingPathSeparator.bind(extUri);
 var DataUri;
 (function(DataUri2) {
   DataUri2.META_DATA_LABEL = "label";
@@ -6382,25 +6382,25 @@ var DataUri;
 })(DataUri || (DataUri = {}));
 
 // out-build/vs/base/common/symbols.js
-var $lf = Symbol("MicrotaskDelay");
+var MicrotaskDelay = Symbol("MicrotaskDelay");
 
 // out-build/vs/base/common/async.js
-function $Mh(callback) {
-  const source = new $Cf();
+function createCancelablePromise(callback) {
+  const source = new CancellationTokenSource();
   const thenable = callback(source.token);
   let isCancelled = false;
-  const promise = new Promise((resolve2, reject) => {
+  const promise = new Promise((resolve3, reject) => {
     const subscription = source.token.onCancellationRequested(() => {
       isCancelled = true;
       subscription.dispose();
-      reject(new $tb());
+      reject(new CancellationError());
     });
     Promise.resolve(thenable).then((value) => {
       subscription.dispose();
       source.dispose();
       if (!isCancelled) {
-        resolve2(value);
-      } else if ($zd(value)) {
+        resolve3(value);
+      } else if (isDisposable(value)) {
         value.dispose();
       }
     }, (err) => {
@@ -6414,8 +6414,8 @@ function $Mh(callback) {
       source.cancel();
       source.dispose();
     }
-    then(resolve2, reject) {
-      return promise.then(resolve2, reject);
+    then(resolve3, reject) {
+      return promise.then(resolve3, reject);
     }
     catch(reject) {
       return this.then(void 0, reject);
@@ -6425,58 +6425,58 @@ function $Mh(callback) {
     }
   }();
 }
-var $Zh = class {
+var Barrier = class {
   constructor() {
-    this.a = false;
-    this.b = new Promise((c, e) => {
-      this.d = c;
+    this._isOpen = false;
+    this._promise = new Promise((c, e) => {
+      this._completePromise = c;
     });
   }
   isOpen() {
-    return this.a;
+    return this._isOpen;
   }
   open() {
-    this.a = true;
-    this.d(true);
+    this._isOpen = true;
+    this._completePromise(true);
   }
   wait() {
-    return this.b;
+    return this._promise;
   }
 };
-var $1h = class extends $Zh {
+var AutoOpenBarrier = class extends Barrier {
   constructor(autoOpenTimeMs) {
     super();
-    this.f = setTimeout(() => this.open(), autoOpenTimeMs);
+    this._timeout = setTimeout(() => this.open(), autoOpenTimeMs);
   }
   open() {
-    clearTimeout(this.f);
+    clearTimeout(this._timeout);
     super.open();
   }
 };
-function $2h(millis, token) {
+function timeout(millis, token) {
   if (!token) {
-    return $Mh((token2) => $2h(millis, token2));
+    return createCancelablePromise((token2) => timeout(millis, token2));
   }
-  return new Promise((resolve2, reject) => {
+  return new Promise((resolve3, reject) => {
     const handle = setTimeout(() => {
       disposable.dispose();
-      resolve2();
+      resolve3();
     }, millis);
     const disposable = token.onCancellationRequested(() => {
       clearTimeout(handle);
       disposable.dispose();
-      reject(new $tb());
+      reject(new CancellationError());
     });
   });
 }
-var $7h = class {
+var Limiter = class {
   constructor(maxDegreeOfParalellism) {
-    this.a = 0;
-    this.b = false;
-    this.f = maxDegreeOfParalellism;
-    this.g = [];
-    this.d = 0;
-    this.h = new $qf();
+    this._size = 0;
+    this._isDisposed = false;
+    this.maxDegreeOfParalellism = maxDegreeOfParalellism;
+    this.outstandingPromises = [];
+    this.runningPromises = 0;
+    this._onDrained = new Emitter();
   }
   /**
    *
@@ -6487,246 +6487,246 @@ var $7h = class {
     return this.size > 0 ? Event.toPromise(this.onDrained) : Promise.resolve();
   }
   get onDrained() {
-    return this.h.event;
+    return this._onDrained.event;
   }
   get size() {
-    return this.a;
+    return this._size;
   }
   queue(factory) {
-    if (this.b) {
+    if (this._isDisposed) {
       throw new Error("Object has been disposed");
     }
-    this.a++;
+    this._size++;
     return new Promise((c, e) => {
-      this.g.push({ factory, c, e });
-      this.j();
+      this.outstandingPromises.push({ factory, c, e });
+      this.consume();
     });
   }
-  j() {
-    while (this.g.length && this.d < this.f) {
-      const iLimitedTask = this.g.shift();
-      this.d++;
+  consume() {
+    while (this.outstandingPromises.length && this.runningPromises < this.maxDegreeOfParalellism) {
+      const iLimitedTask = this.outstandingPromises.shift();
+      this.runningPromises++;
       const promise = iLimitedTask.factory();
       promise.then(iLimitedTask.c, iLimitedTask.e);
-      promise.then(() => this.k(), () => this.k());
+      promise.then(() => this.consumed(), () => this.consumed());
     }
   }
-  k() {
-    if (this.b) {
+  consumed() {
+    if (this._isDisposed) {
       return;
     }
-    this.d--;
-    if (--this.a === 0) {
-      this.h.fire();
+    this.runningPromises--;
+    if (--this._size === 0) {
+      this._onDrained.fire();
     }
-    if (this.g.length > 0) {
-      this.j();
+    if (this.outstandingPromises.length > 0) {
+      this.consume();
     }
   }
   clear() {
-    if (this.b) {
+    if (this._isDisposed) {
       throw new Error("Object has been disposed");
     }
-    this.g.length = 0;
-    this.a = this.d;
+    this.outstandingPromises.length = 0;
+    this._size = this.runningPromises;
   }
   dispose() {
-    this.b = true;
-    this.g.length = 0;
-    this.a = 0;
-    this.h.dispose();
+    this._isDisposed = true;
+    this.outstandingPromises.length = 0;
+    this._size = 0;
+    this._onDrained.dispose();
   }
 };
-var $8h = class extends $7h {
+var Queue = class extends Limiter {
   constructor() {
     super(1);
   }
 };
-var $0h = class {
+var ResourceQueue = class {
   constructor() {
-    this.a = /* @__PURE__ */ new Map();
-    this.b = /* @__PURE__ */ new Set();
-    this.d = void 0;
-    this.f = 0;
+    this.queues = /* @__PURE__ */ new Map();
+    this.drainers = /* @__PURE__ */ new Set();
+    this.drainListeners = void 0;
+    this.drainListenerCount = 0;
   }
   async whenDrained() {
-    if (this.g()) {
+    if (this.isDrained()) {
       return;
     }
-    const promise = new $mi();
-    this.b.add(promise);
+    const promise = new DeferredPromise();
+    this.drainers.add(promise);
     return promise.p;
   }
-  g() {
-    for (const [, queue] of this.a) {
+  isDrained() {
+    for (const [, queue] of this.queues) {
       if (queue.size > 0) {
         return false;
       }
     }
     return true;
   }
-  queueSize(resource, extUri = $qh) {
-    const key = extUri.getComparisonKey(resource);
-    return this.a.get(key)?.size ?? 0;
+  queueSize(resource, extUri2 = extUri) {
+    const key = extUri2.getComparisonKey(resource);
+    return this.queues.get(key)?.size ?? 0;
   }
-  queueFor(resource, factory, extUri = $qh) {
-    const key = extUri.getComparisonKey(resource);
-    let queue = this.a.get(key);
+  queueFor(resource, factory, extUri2 = extUri) {
+    const key = extUri2.getComparisonKey(resource);
+    let queue = this.queues.get(key);
     if (!queue) {
-      queue = new $8h();
-      const drainListenerId = this.f++;
+      queue = new Queue();
+      const drainListenerId = this.drainListenerCount++;
       const drainListener = Event.once(queue.onDrained)(() => {
         queue?.dispose();
-        this.a.delete(key);
-        this.h();
-        this.d?.deleteAndDispose(drainListenerId);
-        if (this.d?.size === 0) {
-          this.d.dispose();
-          this.d = void 0;
+        this.queues.delete(key);
+        this.onDidQueueDrain();
+        this.drainListeners?.deleteAndDispose(drainListenerId);
+        if (this.drainListeners?.size === 0) {
+          this.drainListeners.dispose();
+          this.drainListeners = void 0;
         }
       });
-      if (!this.d) {
-        this.d = new $Nd();
+      if (!this.drainListeners) {
+        this.drainListeners = new DisposableMap();
       }
-      this.d.set(drainListenerId, drainListener);
-      this.a.set(key, queue);
+      this.drainListeners.set(drainListenerId, drainListener);
+      this.queues.set(key, queue);
     }
     return queue.queue(factory);
   }
-  h() {
-    if (!this.g()) {
+  onDidQueueDrain() {
+    if (!this.isDrained()) {
       return;
     }
-    this.j();
+    this.releaseDrainers();
   }
-  j() {
-    for (const drainer of this.b) {
+  releaseDrainers() {
+    for (const drainer of this.drainers) {
       drainer.complete();
     }
-    this.b.clear();
+    this.drainers.clear();
   }
   dispose() {
-    for (const [, queue] of this.a) {
+    for (const [, queue] of this.queues) {
       queue.dispose();
     }
-    this.a.clear();
-    this.j();
-    this.d?.dispose();
+    this.queues.clear();
+    this.releaseDrainers();
+    this.drainListeners?.dispose();
   }
 };
-var $bi = class {
+var RunOnceScheduler = class {
   constructor(runner, delay) {
-    this.b = void 0;
-    this.a = runner;
-    this.d = delay;
-    this.f = this.g.bind(this);
+    this.timeoutToken = void 0;
+    this.runner = runner;
+    this.timeout = delay;
+    this.timeoutHandler = this.onTimeout.bind(this);
   }
   /**
    * Dispose RunOnceScheduler
    */
   dispose() {
     this.cancel();
-    this.a = null;
+    this.runner = null;
   }
   /**
    * Cancel current scheduled runner (if any).
    */
   cancel() {
     if (this.isScheduled()) {
-      clearTimeout(this.b);
-      this.b = void 0;
+      clearTimeout(this.timeoutToken);
+      this.timeoutToken = void 0;
     }
   }
   /**
    * Cancel previous runner (if any) & schedule a new runner.
    */
-  schedule(delay = this.d) {
+  schedule(delay = this.timeout) {
     this.cancel();
-    this.b = setTimeout(this.f, delay);
+    this.timeoutToken = setTimeout(this.timeoutHandler, delay);
   }
   get delay() {
-    return this.d;
+    return this.timeout;
   }
   set delay(value) {
-    this.d = value;
+    this.timeout = value;
   }
   /**
    * Returns true if scheduled.
    */
   isScheduled() {
-    return this.b !== void 0;
+    return this.timeoutToken !== void 0;
   }
   flush() {
     if (this.isScheduled()) {
       this.cancel();
-      this.h();
+      this.doRun();
     }
   }
-  g() {
-    this.b = void 0;
-    if (this.a) {
-      this.h();
+  onTimeout() {
+    this.timeoutToken = void 0;
+    if (this.runner) {
+      this.doRun();
     }
   }
-  h() {
-    this.a?.();
+  doRun() {
+    this.runner?.();
   }
 };
-var $ci = class {
+var ProcessTimeRunOnceScheduler = class {
   constructor(runner, delay) {
     if (delay % 1e3 !== 0) {
       console.warn(`ProcessTimeRunOnceScheduler resolution is 1s, ${delay}ms is not a multiple of 1000ms.`);
     }
-    this.a = runner;
-    this.b = delay;
-    this.d = 0;
-    this.f = void 0;
-    this.g = this.h.bind(this);
+    this.runner = runner;
+    this.timeout = delay;
+    this.counter = 0;
+    this.intervalToken = void 0;
+    this.intervalHandler = this.onInterval.bind(this);
   }
   dispose() {
     this.cancel();
-    this.a = null;
+    this.runner = null;
   }
   cancel() {
     if (this.isScheduled()) {
-      clearInterval(this.f);
-      this.f = void 0;
+      clearInterval(this.intervalToken);
+      this.intervalToken = void 0;
     }
   }
   /**
    * Cancel previous runner (if any) & schedule a new runner.
    */
-  schedule(delay = this.b) {
+  schedule(delay = this.timeout) {
     if (delay % 1e3 !== 0) {
       console.warn(`ProcessTimeRunOnceScheduler resolution is 1s, ${delay}ms is not a multiple of 1000ms.`);
     }
     this.cancel();
-    this.d = Math.ceil(delay / 1e3);
-    this.f = setInterval(this.g, 1e3);
+    this.counter = Math.ceil(delay / 1e3);
+    this.intervalToken = setInterval(this.intervalHandler, 1e3);
   }
   /**
    * Returns true if scheduled.
    */
   isScheduled() {
-    return this.f !== void 0;
+    return this.intervalToken !== void 0;
   }
-  h() {
-    this.d--;
-    if (this.d > 0) {
+  onInterval() {
+    this.counter--;
+    if (this.counter > 0) {
       return;
     }
-    clearInterval(this.f);
-    this.f = void 0;
-    this.a?.();
+    clearInterval(this.intervalToken);
+    this.intervalToken = void 0;
+    this.runner?.();
   }
 };
-var $fi;
-var $gi;
+var runWhenGlobalIdle;
+var _runWhenIdle;
 (function() {
   const safeGlobal = globalThis;
   if (typeof safeGlobal.requestIdleCallback !== "function" || typeof safeGlobal.cancelIdleCallback !== "function") {
-    $gi = (_targetWindow, runner, timeout) => {
-      $F(() => {
+    _runWhenIdle = (_targetWindow, runner, timeout2) => {
+      setTimeout0(() => {
         if (disposed) {
           return;
         }
@@ -6750,8 +6750,8 @@ var $gi;
       };
     };
   } else {
-    $gi = (targetWindow, runner, timeout) => {
-      const handle = targetWindow.requestIdleCallback(runner, typeof timeout === "number" ? { timeout } : void 0);
+    _runWhenIdle = (targetWindow, runner, timeout2) => {
+      const handle = targetWindow.requestIdleCallback(runner, typeof timeout2 === "number" ? { timeout: timeout2 } : void 0);
       let disposed = false;
       return {
         dispose() {
@@ -6764,62 +6764,62 @@ var $gi;
       };
     };
   }
-  $fi = (runner, timeout) => $gi(globalThis, runner, timeout);
+  runWhenGlobalIdle = (runner, timeout2) => _runWhenIdle(globalThis, runner, timeout2);
 })();
 var DeferredOutcome;
 (function(DeferredOutcome2) {
   DeferredOutcome2[DeferredOutcome2["Resolved"] = 0] = "Resolved";
   DeferredOutcome2[DeferredOutcome2["Rejected"] = 1] = "Rejected";
 })(DeferredOutcome || (DeferredOutcome = {}));
-var $mi = class _$mi {
+var DeferredPromise = class _DeferredPromise {
   static fromPromise(promise) {
-    const deferred = new _$mi();
+    const deferred = new _DeferredPromise();
     deferred.settleWith(promise);
     return deferred;
   }
   get isRejected() {
-    return this.d?.outcome === 1;
+    return this.outcome?.outcome === 1;
   }
   get isResolved() {
-    return this.d?.outcome === 0;
+    return this.outcome?.outcome === 0;
   }
   get isSettled() {
-    return !!this.d;
+    return !!this.outcome;
   }
   get value() {
-    return this.d?.outcome === 0 ? this.d?.value : void 0;
+    return this.outcome?.outcome === 0 ? this.outcome?.value : void 0;
   }
   constructor() {
     this.p = new Promise((c, e) => {
-      this.a = c;
-      this.b = e;
+      this.completeCallback = c;
+      this.errorCallback = e;
     });
   }
   complete(value) {
     if (this.isSettled) {
       return Promise.resolve();
     }
-    return new Promise((resolve2) => {
-      this.a(value);
-      this.d = { outcome: 0, value };
-      resolve2();
+    return new Promise((resolve3) => {
+      this.completeCallback(value);
+      this.outcome = { outcome: 0, value };
+      resolve3();
     });
   }
   error(err) {
     if (this.isSettled) {
       return Promise.resolve();
     }
-    return new Promise((resolve2) => {
-      this.b(err);
-      this.d = { outcome: 1, value: err };
-      resolve2();
+    return new Promise((resolve3) => {
+      this.errorCallback(err);
+      this.outcome = { outcome: 1, value: err };
+      resolve3();
     });
   }
   settleWith(promise) {
     return promise.then((value) => this.complete(value), (error) => this.error(error));
   }
   cancel() {
-    return this.error(new $tb());
+    return this.error(new CancellationError());
   }
 };
 var Promises;
@@ -6839,9 +6839,9 @@ var Promises;
   }
   Promises3.settled = settled;
   function withAsyncBody(bodyFn) {
-    return new Promise(async (resolve2, reject) => {
+    return new Promise(async (resolve3, reject) => {
       try {
-        await bodyFn(resolve2, reject);
+        await bodyFn(resolve3, reject);
       } catch (error) {
         reject(error);
       }
@@ -6855,24 +6855,24 @@ var AsyncIterableSourceState;
   AsyncIterableSourceState2[AsyncIterableSourceState2["DoneOK"] = 1] = "DoneOK";
   AsyncIterableSourceState2[AsyncIterableSourceState2["DoneError"] = 2] = "DoneError";
 })(AsyncIterableSourceState || (AsyncIterableSourceState = {}));
-var $pi = class _$pi {
+var AsyncIterableObject = class _AsyncIterableObject {
   static fromArray(items) {
-    return new _$pi((writer) => {
+    return new _AsyncIterableObject((writer) => {
       writer.emitMany(items);
     });
   }
   static fromPromise(promise) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       emitter.emitMany(await promise);
     });
   }
   static fromPromisesResolveOrder(promises4) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       await Promise.all(promises4.map(async (p) => emitter.emitOne(await p)));
     });
   }
   static merge(iterables) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       await Promise.all(iterables.map(async (iterable) => {
         for await (const item of iterable) {
           emitter.emitOne(item);
@@ -6881,25 +6881,25 @@ var $pi = class _$pi {
     });
   }
   static {
-    this.EMPTY = _$pi.fromArray([]);
+    this.EMPTY = _AsyncIterableObject.fromArray([]);
   }
   constructor(executor, onReturn) {
-    this.a = 0;
-    this.b = [];
-    this.d = null;
-    this.f = onReturn;
-    this.g = new $qf();
+    this._state = 0;
+    this._results = [];
+    this._error = null;
+    this._onReturn = onReturn;
+    this._onStateChanged = new Emitter();
     queueMicrotask(async () => {
       const writer = {
-        emitOne: (item) => this.h(item),
-        emitMany: (items) => this.j(items),
-        reject: (error) => this.l(error)
+        emitOne: (item) => this.emitOne(item),
+        emitMany: (items) => this.emitMany(items),
+        reject: (error) => this.reject(error)
       };
       try {
         await Promise.resolve(executor(writer));
-        this.k();
+        this.resolve();
       } catch (err) {
-        this.l(err);
+        this.reject(err);
       } finally {
         writer.emitOne = void 0;
         writer.emitMany = void 0;
@@ -6912,36 +6912,36 @@ var $pi = class _$pi {
     return {
       next: async () => {
         do {
-          if (this.a === 2) {
-            throw this.d;
+          if (this._state === 2) {
+            throw this._error;
           }
-          if (i < this.b.length) {
-            return { done: false, value: this.b[i++] };
+          if (i < this._results.length) {
+            return { done: false, value: this._results[i++] };
           }
-          if (this.a === 1) {
+          if (this._state === 1) {
             return { done: true, value: void 0 };
           }
-          await Event.toPromise(this.g.event);
+          await Event.toPromise(this._onStateChanged.event);
         } while (true);
       },
       return: async () => {
-        this.f?.();
+        this._onReturn?.();
         return { done: true, value: void 0 };
       }
     };
   }
   static map(iterable, mapFn) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       for await (const item of iterable) {
         emitter.emitOne(mapFn(item));
       }
     });
   }
   map(mapFn) {
-    return _$pi.map(this, mapFn);
+    return _AsyncIterableObject.map(this, mapFn);
   }
   static filter(iterable, filterFn) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       for await (const item of iterable) {
         if (filterFn(item)) {
           emitter.emitOne(item);
@@ -6950,13 +6950,13 @@ var $pi = class _$pi {
     });
   }
   filter(filterFn) {
-    return _$pi.filter(this, filterFn);
+    return _AsyncIterableObject.filter(this, filterFn);
   }
   static coalesce(iterable) {
-    return _$pi.filter(iterable, (item) => !!item);
+    return _AsyncIterableObject.filter(iterable, (item) => !!item);
   }
   coalesce() {
-    return _$pi.coalesce(this);
+    return _AsyncIterableObject.coalesce(this);
   }
   static async toPromise(iterable) {
     const result = [];
@@ -6966,31 +6966,31 @@ var $pi = class _$pi {
     return result;
   }
   toPromise() {
-    return _$pi.toPromise(this);
+    return _AsyncIterableObject.toPromise(this);
   }
   /**
    * The value will be appended at the end.
    *
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  h(value) {
-    if (this.a !== 0) {
+  emitOne(value) {
+    if (this._state !== 0) {
       return;
     }
-    this.b.push(value);
-    this.g.fire();
+    this._results.push(value);
+    this._onStateChanged.fire();
   }
   /**
    * The values will be appended at the end.
    *
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  j(values) {
-    if (this.a !== 0) {
+  emitMany(values) {
+    if (this._state !== 0) {
       return;
     }
-    this.b = this.b.concat(values);
-    this.g.fire();
+    this._results = this._results.concat(values);
+    this._onStateChanged.fire();
   }
   /**
    * Calling `resolve()` will mark the result array as complete.
@@ -6998,12 +6998,12 @@ var $pi = class _$pi {
    * **NOTE** `resolve()` must be called, otherwise all consumers of this iterable will hang indefinitely, similar to a non-resolved promise.
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  k() {
-    if (this.a !== 0) {
+  resolve() {
+    if (this._state !== 0) {
       return;
     }
-    this.a = 1;
-    this.g.fire();
+    this._state = 1;
+    this._onStateChanged.fire();
   }
   /**
    * Writing an error will permanently invalidate this iterable.
@@ -7011,46 +7011,46 @@ var $pi = class _$pi {
    *
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  l(error) {
-    if (this.a !== 0) {
+  reject(error) {
+    if (this._state !== 0) {
       return;
     }
-    this.a = 2;
-    this.d = error;
-    this.g.fire();
+    this._state = 2;
+    this._error = error;
+    this._onStateChanged.fire();
   }
 };
 var ProducerConsumer = class {
   constructor() {
-    this.a = [];
-    this.b = [];
+    this._unsatisfiedConsumers = [];
+    this._unconsumedValues = [];
   }
   get hasFinalValue() {
-    return !!this.d;
+    return !!this._finalValue;
   }
   produce(value) {
-    this.f();
-    if (this.a.length > 0) {
-      const deferred = this.a.shift();
-      this.g(deferred, value);
+    this._ensureNoFinalValue();
+    if (this._unsatisfiedConsumers.length > 0) {
+      const deferred = this._unsatisfiedConsumers.shift();
+      this._resolveOrRejectDeferred(deferred, value);
     } else {
-      this.b.push(value);
+      this._unconsumedValues.push(value);
     }
   }
   produceFinal(value) {
-    this.f();
-    this.d = value;
-    for (const deferred of this.a) {
-      this.g(deferred, value);
+    this._ensureNoFinalValue();
+    this._finalValue = value;
+    for (const deferred of this._unsatisfiedConsumers) {
+      this._resolveOrRejectDeferred(deferred, value);
     }
-    this.a.length = 0;
+    this._unsatisfiedConsumers.length = 0;
   }
-  f() {
-    if (this.d) {
-      throw new $Eb("ProducerConsumer: cannot produce after final value has been set");
+  _ensureNoFinalValue() {
+    if (this._finalValue) {
+      throw new BugIndicatingError("ProducerConsumer: cannot produce after final value has been set");
     }
   }
-  g(deferred, value) {
+  _resolveOrRejectDeferred(deferred, value) {
     if (value.ok) {
       deferred.complete(value.value);
     } else {
@@ -7058,72 +7058,72 @@ var ProducerConsumer = class {
     }
   }
   consume() {
-    if (this.b.length > 0 || this.d) {
-      const value = this.b.length > 0 ? this.b.shift() : this.d;
+    if (this._unconsumedValues.length > 0 || this._finalValue) {
+      const value = this._unconsumedValues.length > 0 ? this._unconsumedValues.shift() : this._finalValue;
       if (value.ok) {
         return Promise.resolve(value.value);
       } else {
         return Promise.reject(value.error);
       }
     } else {
-      const deferred = new $mi();
-      this.a.push(deferred);
+      const deferred = new DeferredPromise();
+      this._unsatisfiedConsumers.push(deferred);
       return deferred.p;
     }
   }
 };
-var $ti = class _$ti {
-  constructor(executor, b) {
-    this.b = b;
-    this.a = new ProducerConsumer();
-    this.g = {
-      next: () => this.a.consume(),
+var AsyncIterableProducer = class _AsyncIterableProducer {
+  constructor(executor, _onReturn) {
+    this._onReturn = _onReturn;
+    this._producerConsumer = new ProducerConsumer();
+    this._iterator = {
+      next: () => this._producerConsumer.consume(),
       return: () => {
-        this.b?.();
+        this._onReturn?.();
         return Promise.resolve({ done: true, value: void 0 });
       },
       throw: async (e) => {
-        this.f(e);
+        this._finishError(e);
         return { done: true, value: void 0 };
       }
     };
     queueMicrotask(async () => {
       const p = executor({
-        emitOne: (value) => this.a.produce({ ok: true, value: { done: false, value } }),
+        emitOne: (value) => this._producerConsumer.produce({ ok: true, value: { done: false, value } }),
         emitMany: (values) => {
           for (const value of values) {
-            this.a.produce({ ok: true, value: { done: false, value } });
+            this._producerConsumer.produce({ ok: true, value: { done: false, value } });
           }
         },
-        reject: (error) => this.f(error)
+        reject: (error) => this._finishError(error)
       });
-      if (!this.a.hasFinalValue) {
+      if (!this._producerConsumer.hasFinalValue) {
         try {
           await p;
-          this.d();
+          this._finishOk();
         } catch (error) {
-          this.f(error);
+          this._finishError(error);
         }
       }
     });
   }
   static fromArray(items) {
-    return new _$ti((writer) => {
+    return new _AsyncIterableProducer((writer) => {
       writer.emitMany(items);
     });
   }
   static fromPromise(promise) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       emitter.emitMany(await promise);
     });
   }
   static fromPromisesResolveOrder(promises4) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       await Promise.all(promises4.map(async (p) => emitter.emitOne(await p)));
     });
   }
   static merge(iterables) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       await Promise.all(iterables.map(async (iterable) => {
         for await (const item of iterable) {
           emitter.emitOne(item);
@@ -7132,10 +7132,10 @@ var $ti = class _$ti {
     });
   }
   static {
-    this.EMPTY = _$ti.fromArray([]);
+    this.EMPTY = _AsyncIterableProducer.fromArray([]);
   }
   static map(iterable, mapFn) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       for await (const item of iterable) {
         emitter.emitOne(mapFn(item));
       }
@@ -7144,7 +7144,7 @@ var $ti = class _$ti {
   static tee(iterable) {
     let emitter1;
     let emitter2;
-    const defer = new $mi();
+    const defer = new DeferredPromise();
     const start = async () => {
       if (!emitter1 || !emitter2) {
         return;
@@ -7161,12 +7161,12 @@ var $ti = class _$ti {
         defer.complete();
       }
     };
-    const p1 = new _$ti(async (emitter) => {
+    const p1 = new _AsyncIterableProducer(async (emitter) => {
       emitter1 = emitter;
       start();
       return defer.p;
     });
-    const p2 = new _$ti(async (emitter) => {
+    const p2 = new _AsyncIterableProducer(async (emitter) => {
       emitter2 = emitter;
       start();
       return defer.p;
@@ -7174,16 +7174,16 @@ var $ti = class _$ti {
     return [p1, p2];
   }
   map(mapFn) {
-    return _$ti.map(this, mapFn);
+    return _AsyncIterableProducer.map(this, mapFn);
   }
   static coalesce(iterable) {
-    return _$ti.filter(iterable, (item) => !!item);
+    return _AsyncIterableProducer.filter(iterable, (item) => !!item);
   }
   coalesce() {
-    return _$ti.coalesce(this);
+    return _AsyncIterableProducer.coalesce(this);
   }
   static filter(iterable, filterFn) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       for await (const item of iterable) {
         if (filterFn(item)) {
           emitter.emitOne(item);
@@ -7192,23 +7192,23 @@ var $ti = class _$ti {
     });
   }
   filter(filterFn) {
-    return _$ti.filter(this, filterFn);
+    return _AsyncIterableProducer.filter(this, filterFn);
   }
-  d() {
-    if (!this.a.hasFinalValue) {
-      this.a.produceFinal({ ok: true, value: { done: true, value: void 0 } });
+  _finishOk() {
+    if (!this._producerConsumer.hasFinalValue) {
+      this._producerConsumer.produceFinal({ ok: true, value: { done: true, value: void 0 } });
     }
   }
-  f(error) {
-    if (!this.a.hasFinalValue) {
-      this.a.produceFinal({ ok: false, error });
+  _finishError(error) {
+    if (!this._producerConsumer.hasFinalValue) {
+      this._producerConsumer.produceFinal({ ok: false, error });
     }
   }
   [Symbol.asyncIterator]() {
-    return this.g;
+    return this._iterator;
   }
 };
-var $vi = Symbol("AsyncReaderEndOfStream");
+var AsyncReaderEndOfStream = Symbol("AsyncReaderEndOfStream");
 
 // out-build/vs/base/common/decorators.js
 function createDecorator(mapFn) {
@@ -7228,7 +7228,7 @@ function createDecorator(mapFn) {
     descriptor[fnKey] = mapFn(fn, key);
   };
 }
-function $Qm(_target, key, descriptor) {
+function memoize(_target, key, descriptor) {
   let fnKey = null;
   let fn = null;
   if (typeof descriptor.value === "function") {
@@ -7257,7 +7257,7 @@ function $Qm(_target, key, descriptor) {
     return this[memoizeKey];
   };
 }
-function $Rm(delay, reducer, initialValueProvider) {
+function debounce(delay, reducer, initialValueProvider) {
   return createDecorator((fn, key) => {
     const timerKey = `$debounce$${key}`;
     const resultKey = `$debounce$result$${key}`;
@@ -7277,7 +7277,7 @@ function $Rm(delay, reducer, initialValueProvider) {
     };
   });
 }
-function $Sm(delay, reducer, initialValueProvider) {
+function throttle(delay, reducer, initialValueProvider) {
   return createDecorator((fn, key) => {
     const timerKey = `$throttle$timer$${key}`;
     const resultKey = `$throttle$result$${key}`;
@@ -7315,7 +7315,7 @@ function $Sm(delay, reducer, initialValueProvider) {
 }
 
 // out-build/vs/base/common/marshalling.js
-function $Vm(obj, depth = 0) {
+function revive(obj, depth = 0) {
   if (!obj || depth > 200) {
     return obj;
   }
@@ -7331,17 +7331,17 @@ function $Vm(obj, depth = 0) {
       case 17:
         return new Date(obj.source);
     }
-    if (obj instanceof $2i || obj instanceof Uint8Array) {
+    if (obj instanceof VSBuffer || obj instanceof Uint8Array) {
       return obj;
     }
     if (Array.isArray(obj)) {
       for (let i = 0; i < obj.length; ++i) {
-        obj[i] = $Vm(obj[i], depth + 1);
+        obj[i] = revive(obj[i], depth + 1);
       }
     } else {
       for (const key in obj) {
         if (Object.hasOwnProperty.call(obj, key)) {
-          obj[key] = $Vm(obj[key], depth + 1);
+          obj[key] = revive(obj[key], depth + 1);
         }
       }
     }
@@ -7415,7 +7415,7 @@ function writeInt32VQL(writer, value) {
   for (let v2 = value; v2 !== 0; v2 = v2 >>> 7) {
     len++;
   }
-  const scratch = $2i.alloc(len);
+  const scratch = VSBuffer.alloc(len);
   for (let i = 0; value !== 0; i++) {
     scratch.buffer[i] = value & 127;
     value = value >>> 7;
@@ -7425,26 +7425,26 @@ function writeInt32VQL(writer, value) {
   }
   writer.write(scratch);
 }
-var $Wm = class {
-  constructor(b) {
-    this.b = b;
-    this.a = 0;
+var BufferReader = class {
+  constructor(buffer) {
+    this.buffer = buffer;
+    this.pos = 0;
   }
   read(bytes) {
-    const result = this.b.slice(this.a, this.a + bytes);
-    this.a += result.byteLength;
+    const result = this.buffer.slice(this.pos, this.pos + bytes);
+    this.pos += result.byteLength;
     return result;
   }
 };
-var $Xm = class {
+var BufferWriter = class {
   constructor() {
-    this.a = [];
+    this.buffers = [];
   }
   get buffer() {
-    return $2i.concat(this.a);
+    return VSBuffer.concat(this.buffers);
   }
   write(buffer) {
-    this.a.push(buffer);
+    this.buffers.push(buffer);
   }
 };
 var DataType;
@@ -7458,7 +7458,7 @@ var DataType;
   DataType2[DataType2["Int"] = 6] = "Int";
 })(DataType || (DataType = {}));
 function createOneByteBuffer(value) {
-  const result = $2i.alloc(1);
+  const result = VSBuffer.alloc(1);
   result.writeUInt8(value, 0);
   return result;
 }
@@ -7471,20 +7471,20 @@ var BufferPresets = {
   Object: createOneByteBuffer(DataType.Object),
   Uint: createOneByteBuffer(DataType.Int)
 };
-function $Ym(writer, data) {
+function serialize(writer, data) {
   if (typeof data === "undefined") {
     writer.write(BufferPresets.Undefined);
   } else if (typeof data === "string") {
-    const buffer = $2i.fromString(data);
+    const buffer = VSBuffer.fromString(data);
     writer.write(BufferPresets.String);
     writeInt32VQL(writer, buffer.byteLength);
     writer.write(buffer);
-  } else if ($2i.isNativeBuffer(data)) {
-    const buffer = $2i.wrap(data);
+  } else if (VSBuffer.isNativeBuffer(data)) {
+    const buffer = VSBuffer.wrap(data);
     writer.write(BufferPresets.Buffer);
     writeInt32VQL(writer, buffer.byteLength);
     writer.write(buffer);
-  } else if (data instanceof $2i) {
+  } else if (data instanceof VSBuffer) {
     writer.write(BufferPresets.VSBuffer);
     writeInt32VQL(writer, data.byteLength);
     writer.write(data);
@@ -7492,19 +7492,19 @@ function $Ym(writer, data) {
     writer.write(BufferPresets.Array);
     writeInt32VQL(writer, data.length);
     for (const el of data) {
-      $Ym(writer, el);
+      serialize(writer, el);
     }
   } else if (typeof data === "number" && (data | 0) === data) {
     writer.write(BufferPresets.Uint);
     writeInt32VQL(writer, data);
   } else {
-    const buffer = $2i.fromString(JSON.stringify(data));
+    const buffer = VSBuffer.fromString(JSON.stringify(data));
     writer.write(BufferPresets.Object);
     writeInt32VQL(writer, buffer.byteLength);
     writer.write(buffer);
   }
 }
-function $Zm(reader) {
+function deserialize(reader) {
   const type = reader.read(1).readUInt8(0);
   switch (type) {
     case DataType.Undefined:
@@ -7519,7 +7519,7 @@ function $Zm(reader) {
       const length = readIntVQL(reader);
       const result = [];
       for (let i = 0; i < length; i++) {
-        result.push($Zm(reader));
+        result.push(deserialize(reader));
       }
       return result;
     }
@@ -7529,92 +7529,92 @@ function $Zm(reader) {
       return readIntVQL(reader);
   }
 }
-var $1m = class {
-  constructor(h, j, k = null, l = 1e3) {
-    this.h = h;
-    this.j = j;
-    this.k = k;
-    this.l = l;
-    this.b = /* @__PURE__ */ new Map();
-    this.d = /* @__PURE__ */ new Map();
-    this.g = /* @__PURE__ */ new Map();
-    this.f = this.h.onMessage((msg) => this.q(msg));
-    this.m({
+var ChannelServer = class {
+  constructor(protocol, ctx, logger = null, timeoutDelay = 1e3) {
+    this.protocol = protocol;
+    this.ctx = ctx;
+    this.logger = logger;
+    this.timeoutDelay = timeoutDelay;
+    this.channels = /* @__PURE__ */ new Map();
+    this.activeRequests = /* @__PURE__ */ new Map();
+    this.pendingRequests = /* @__PURE__ */ new Map();
+    this.protocolListener = this.protocol.onMessage((msg) => this.onRawMessage(msg));
+    this.sendResponse({
       type: 200
       /* ResponseType.Initialize */
     });
   }
   registerChannel(channelName, channel) {
-    this.b.set(channelName, channel);
-    setTimeout(() => this.w(channelName), 0);
+    this.channels.set(channelName, channel);
+    setTimeout(() => this.flushPendingRequests(channelName), 0);
   }
-  m(response) {
+  sendResponse(response) {
     switch (response.type) {
       case 200: {
-        const msgLength = this.o([response.type]);
-        this.k?.logOutgoing(msgLength, 0, 1, responseTypeToStr(response.type));
+        const msgLength = this.send([response.type]);
+        this.logger?.logOutgoing(msgLength, 0, 1, responseTypeToStr(response.type));
         return;
       }
       case 201:
       case 202:
       case 204:
       case 203: {
-        const msgLength = this.o([response.type, response.id], response.data);
-        this.k?.logOutgoing(msgLength, response.id, 1, responseTypeToStr(response.type), response.data);
+        const msgLength = this.send([response.type, response.id], response.data);
+        this.logger?.logOutgoing(msgLength, response.id, 1, responseTypeToStr(response.type), response.data);
         return;
       }
     }
   }
-  o(header, body = void 0) {
-    const writer = new $Xm();
-    $Ym(writer, header);
-    $Ym(writer, body);
-    return this.p(writer.buffer);
+  send(header, body = void 0) {
+    const writer = new BufferWriter();
+    serialize(writer, header);
+    serialize(writer, body);
+    return this.sendBuffer(writer.buffer);
   }
-  p(message) {
+  sendBuffer(message) {
     try {
-      this.h.send(message);
+      this.protocol.send(message);
       return message.byteLength;
     } catch (err) {
       return 0;
     }
   }
-  q(message) {
-    const reader = new $Wm(message);
-    const header = $Zm(reader);
-    const body = $Zm(reader);
+  onRawMessage(message) {
+    const reader = new BufferReader(message);
+    const header = deserialize(reader);
+    const body = deserialize(reader);
     const type = header[0];
     switch (type) {
       case 100:
-        this.k?.logIncoming(message.byteLength, header[1], 1, `${requestTypeToStr(type)}: ${header[2]}.${header[3]}`, body);
-        return this.s({ type, id: header[1], channelName: header[2], name: header[3], arg: body });
+        this.logger?.logIncoming(message.byteLength, header[1], 1, `${requestTypeToStr(type)}: ${header[2]}.${header[3]}`, body);
+        return this.onPromise({ type, id: header[1], channelName: header[2], name: header[3], arg: body });
       case 102:
-        this.k?.logIncoming(message.byteLength, header[1], 1, `${requestTypeToStr(type)}: ${header[2]}.${header[3]}`, body);
-        return this.t({ type, id: header[1], channelName: header[2], name: header[3], arg: body });
+        this.logger?.logIncoming(message.byteLength, header[1], 1, `${requestTypeToStr(type)}: ${header[2]}.${header[3]}`, body);
+        return this.onEventListen({ type, id: header[1], channelName: header[2], name: header[3], arg: body });
       case 101:
-        this.k?.logIncoming(message.byteLength, header[1], 1, `${requestTypeToStr(type)}`);
-        return this.u({ type, id: header[1] });
+        this.logger?.logIncoming(message.byteLength, header[1], 1, `${requestTypeToStr(type)}`);
+        return this.disposeActiveRequest({ type, id: header[1] });
       case 103:
-        this.k?.logIncoming(message.byteLength, header[1], 1, `${requestTypeToStr(type)}`);
-        return this.u({ type, id: header[1] });
+        this.logger?.logIncoming(message.byteLength, header[1], 1, `${requestTypeToStr(type)}`);
+        return this.disposeActiveRequest({ type, id: header[1] });
     }
   }
-  s(request) {
-    const channel = this.b.get(request.channelName);
+  onPromise(request) {
+    const channel = this.channels.get(request.channelName);
     if (!channel) {
-      this.v(request);
+      this.collectPendingRequest(request);
       return;
     }
-    const cancellationTokenSource = new $Cf();
+    const cancellationTokenSource = new CancellationTokenSource();
     let promise;
     try {
-      promise = channel.call(this.j, request.name, request.arg, cancellationTokenSource.token);
+      promise = channel.call(this.ctx, request.name, request.arg, cancellationTokenSource.token);
     } catch (err) {
       promise = Promise.reject(err);
     }
     const id2 = request.id;
     promise.then((data) => {
-      this.m({
+      this.sendResponse({
         id: id2,
         data,
         type: 201
@@ -7622,7 +7622,7 @@ var $1m = class {
       });
     }, (err) => {
       if (err instanceof Error) {
-        this.m({
+        this.sendResponse({
           id: id2,
           data: {
             message: err.message,
@@ -7633,7 +7633,7 @@ var $1m = class {
           /* ResponseType.PromiseError */
         });
       } else {
-        this.m({
+        this.sendResponse({
           id: id2,
           data: err,
           type: 203
@@ -7642,77 +7642,77 @@ var $1m = class {
       }
     }).finally(() => {
       disposable.dispose();
-      this.d.delete(request.id);
+      this.activeRequests.delete(request.id);
     });
-    const disposable = $Dd(() => cancellationTokenSource.cancel());
-    this.d.set(request.id, disposable);
+    const disposable = toDisposable(() => cancellationTokenSource.cancel());
+    this.activeRequests.set(request.id, disposable);
   }
-  t(request) {
-    const channel = this.b.get(request.channelName);
+  onEventListen(request) {
+    const channel = this.channels.get(request.channelName);
     if (!channel) {
-      this.v(request);
+      this.collectPendingRequest(request);
       return;
     }
     const id2 = request.id;
-    const event = channel.listen(this.j, request.name, request.arg);
-    const disposable = event((data) => this.m({
+    const event = channel.listen(this.ctx, request.name, request.arg);
+    const disposable = event((data) => this.sendResponse({
       id: id2,
       data,
       type: 204
       /* ResponseType.EventFire */
     }));
-    this.d.set(request.id, disposable);
+    this.activeRequests.set(request.id, disposable);
   }
-  u(request) {
-    const disposable = this.d.get(request.id);
+  disposeActiveRequest(request) {
+    const disposable = this.activeRequests.get(request.id);
     if (disposable) {
       disposable.dispose();
-      this.d.delete(request.id);
+      this.activeRequests.delete(request.id);
     }
   }
-  v(request) {
-    let pendingRequests = this.g.get(request.channelName);
+  collectPendingRequest(request) {
+    let pendingRequests = this.pendingRequests.get(request.channelName);
     if (!pendingRequests) {
       pendingRequests = [];
-      this.g.set(request.channelName, pendingRequests);
+      this.pendingRequests.set(request.channelName, pendingRequests);
     }
     const timer = setTimeout(() => {
       console.error(`Unknown channel: ${request.channelName}`);
       if (request.type === 100) {
-        this.m({
+        this.sendResponse({
           id: request.id,
-          data: { name: "Unknown channel", message: `Channel name '${request.channelName}' timed out after ${this.l}ms`, stack: void 0 },
+          data: { name: "Unknown channel", message: `Channel name '${request.channelName}' timed out after ${this.timeoutDelay}ms`, stack: void 0 },
           type: 202
           /* ResponseType.PromiseError */
         });
       }
-    }, this.l);
+    }, this.timeoutDelay);
     pendingRequests.push({ request, timeoutTimer: timer });
   }
-  w(channelName) {
-    const requests = this.g.get(channelName);
+  flushPendingRequests(channelName) {
+    const requests = this.pendingRequests.get(channelName);
     if (requests) {
       for (const request of requests) {
         clearTimeout(request.timeoutTimer);
         switch (request.request.type) {
           case 100:
-            this.s(request.request);
+            this.onPromise(request.request);
             break;
           case 102:
-            this.t(request.request);
+            this.onEventListen(request.request);
             break;
         }
       }
-      this.g.delete(channelName);
+      this.pendingRequests.delete(channelName);
     }
   }
   dispose() {
-    if (this.f) {
-      this.f.dispose();
-      this.f = null;
+    if (this.protocolListener) {
+      this.protocolListener.dispose();
+      this.protocolListener = null;
     }
-    $Ad(this.d.values());
-    this.d.clear();
+    dispose(this.activeRequests.values());
+    this.activeRequests.clear();
   }
 };
 var RequestInitiator;
@@ -7720,58 +7720,58 @@ var RequestInitiator;
   RequestInitiator2[RequestInitiator2["LocalSide"] = 0] = "LocalSide";
   RequestInitiator2[RequestInitiator2["OtherSide"] = 1] = "OtherSide";
 })(RequestInitiator || (RequestInitiator = {}));
-var $2m = class {
-  constructor(l, logger = null) {
-    this.l = l;
-    this.a = false;
-    this.b = State.Uninitialized;
-    this.d = /* @__PURE__ */ new Set();
-    this.f = /* @__PURE__ */ new Map();
-    this.g = 0;
-    this.k = new $qf();
-    this.onDidInitialize = this.k.event;
-    this.h = this.l.onMessage((msg) => this.s(msg));
-    this.j = logger;
+var ChannelClient = class {
+  constructor(protocol, logger = null) {
+    this.protocol = protocol;
+    this.isDisposed = false;
+    this.state = State.Uninitialized;
+    this.activeRequests = /* @__PURE__ */ new Set();
+    this.handlers = /* @__PURE__ */ new Map();
+    this.lastRequestId = 0;
+    this._onDidInitialize = new Emitter();
+    this.onDidInitialize = this._onDidInitialize.event;
+    this.protocolListener = this.protocol.onMessage((msg) => this.onBuffer(msg));
+    this.logger = logger;
   }
   getChannel(channelName) {
     const that = this;
     return {
       call(command, arg, cancellationToken) {
-        if (that.a) {
-          return Promise.reject(new $tb());
+        if (that.isDisposed) {
+          return Promise.reject(new CancellationError());
         }
-        return that.m(channelName, command, arg, cancellationToken);
+        return that.requestPromise(channelName, command, arg, cancellationToken);
       },
       listen(event, arg) {
-        if (that.a) {
+        if (that.isDisposed) {
           return Event.None;
         }
-        return that.o(channelName, event, arg);
+        return that.requestEvent(channelName, event, arg);
       }
     };
   }
-  m(channelName, name, arg, cancellationToken = CancellationToken.None) {
-    const id2 = this.g++;
+  requestPromise(channelName, name, arg, cancellationToken = CancellationToken.None) {
+    const id2 = this.lastRequestId++;
     const type = 100;
     const request = { id: id2, type, channelName, name, arg };
     if (cancellationToken.isCancellationRequested) {
-      return Promise.reject(new $tb());
+      return Promise.reject(new CancellationError());
     }
     let disposable;
     let disposableWithRequestCancel;
     const result = new Promise((c, e) => {
       if (cancellationToken.isCancellationRequested) {
-        return e(new $tb());
+        return e(new CancellationError());
       }
       const doRequest = () => {
         const handler = (response) => {
           switch (response.type) {
             case 201:
-              this.f.delete(id2);
+              this.handlers.delete(id2);
               c(response.data);
               break;
             case 202: {
-              this.f.delete(id2);
+              this.handlers.delete(id2);
               const error = new Error(response.data.message);
               error.stack = Array.isArray(response.data.stack) ? response.data.stack.join("\n") : response.data.stack;
               error.name = response.data.name;
@@ -7779,19 +7779,19 @@ var $2m = class {
               break;
             }
             case 203:
-              this.f.delete(id2);
+              this.handlers.delete(id2);
               e(response.data);
               break;
           }
         };
-        this.f.set(id2, handler);
-        this.p(request);
+        this.handlers.set(id2, handler);
+        this.sendRequest(request);
       };
       let uninitializedPromise = null;
-      if (this.b === State.Idle) {
+      if (this.state === State.Idle) {
         doRequest();
       } else {
-        uninitializedPromise = $Mh((_) => this.u());
+        uninitializedPromise = createCancelablePromise((_) => this.whenInitialized());
         uninitializedPromise.then(() => {
           uninitializedPromise = null;
           doRequest();
@@ -7802,43 +7802,43 @@ var $2m = class {
           uninitializedPromise.cancel();
           uninitializedPromise = null;
         } else {
-          this.p({
+          this.sendRequest({
             id: id2,
             type: 101
             /* RequestType.PromiseCancel */
           });
         }
-        e(new $tb());
+        e(new CancellationError());
       };
       disposable = cancellationToken.onCancellationRequested(cancel);
       disposableWithRequestCancel = {
-        dispose: $Fb(() => {
+        dispose: createSingleCallFunction(() => {
           cancel();
           disposable.dispose();
         })
       };
-      this.d.add(disposableWithRequestCancel);
+      this.activeRequests.add(disposableWithRequestCancel);
     });
     return result.finally(() => {
       disposable?.dispose();
-      this.d.delete(disposableWithRequestCancel);
+      this.activeRequests.delete(disposableWithRequestCancel);
     });
   }
-  o(channelName, name, arg) {
-    const id2 = this.g++;
+  requestEvent(channelName, name, arg) {
+    const id2 = this.lastRequestId++;
     const type = 102;
     const request = { id: id2, type, channelName, name, arg };
     let uninitializedPromise = null;
-    const emitter = new $qf({
+    const emitter = new Emitter({
       onWillAddFirstListener: () => {
         const doRequest = () => {
-          this.d.add(emitter);
-          this.p(request);
+          this.activeRequests.add(emitter);
+          this.sendRequest(request);
         };
-        if (this.b === State.Idle) {
+        if (this.state === State.Idle) {
           doRequest();
         } else {
-          uninitializedPromise = $Mh((_) => this.u());
+          uninitializedPromise = createCancelablePromise((_) => this.whenInitialized());
           uninitializedPromise.then(() => {
             uninitializedPromise = null;
             doRequest();
@@ -7850,8 +7850,8 @@ var $2m = class {
           uninitializedPromise.cancel();
           uninitializedPromise = null;
         } else {
-          this.d.delete(emitter);
-          this.p({
+          this.activeRequests.delete(emitter);
+          this.sendRequest({
             id: id2,
             type: 103
             /* RequestType.EventDispose */
@@ -7860,118 +7860,118 @@ var $2m = class {
       }
     });
     const handler = (res) => emitter.fire(res.data);
-    this.f.set(id2, handler);
+    this.handlers.set(id2, handler);
     return emitter.event;
   }
-  p(request) {
+  sendRequest(request) {
     switch (request.type) {
       case 100:
       case 102: {
-        const msgLength = this.q([request.type, request.id, request.channelName, request.name], request.arg);
-        this.j?.logOutgoing(msgLength, request.id, 0, `${requestTypeToStr(request.type)}: ${request.channelName}.${request.name}`, request.arg);
+        const msgLength = this.send([request.type, request.id, request.channelName, request.name], request.arg);
+        this.logger?.logOutgoing(msgLength, request.id, 0, `${requestTypeToStr(request.type)}: ${request.channelName}.${request.name}`, request.arg);
         return;
       }
       case 101:
       case 103: {
-        const msgLength = this.q([request.type, request.id]);
-        this.j?.logOutgoing(msgLength, request.id, 0, requestTypeToStr(request.type));
+        const msgLength = this.send([request.type, request.id]);
+        this.logger?.logOutgoing(msgLength, request.id, 0, requestTypeToStr(request.type));
         return;
       }
     }
   }
-  q(header, body = void 0) {
-    const writer = new $Xm();
-    $Ym(writer, header);
-    $Ym(writer, body);
-    return this.r(writer.buffer);
+  send(header, body = void 0) {
+    const writer = new BufferWriter();
+    serialize(writer, header);
+    serialize(writer, body);
+    return this.sendBuffer(writer.buffer);
   }
-  r(message) {
+  sendBuffer(message) {
     try {
-      this.l.send(message);
+      this.protocol.send(message);
       return message.byteLength;
     } catch (err) {
       return 0;
     }
   }
-  s(message) {
-    const reader = new $Wm(message);
-    const header = $Zm(reader);
-    const body = $Zm(reader);
+  onBuffer(message) {
+    const reader = new BufferReader(message);
+    const header = deserialize(reader);
+    const body = deserialize(reader);
     const type = header[0];
     switch (type) {
       case 200:
-        this.j?.logIncoming(message.byteLength, 0, 0, responseTypeToStr(type));
-        return this.t({ type: header[0] });
+        this.logger?.logIncoming(message.byteLength, 0, 0, responseTypeToStr(type));
+        return this.onResponse({ type: header[0] });
       case 201:
       case 202:
       case 204:
       case 203:
-        this.j?.logIncoming(message.byteLength, header[1], 0, responseTypeToStr(type), body);
-        return this.t({ type: header[0], id: header[1], data: body });
+        this.logger?.logIncoming(message.byteLength, header[1], 0, responseTypeToStr(type), body);
+        return this.onResponse({ type: header[0], id: header[1], data: body });
     }
   }
-  t(response) {
+  onResponse(response) {
     if (response.type === 200) {
-      this.b = State.Idle;
-      this.k.fire();
+      this.state = State.Idle;
+      this._onDidInitialize.fire();
       return;
     }
-    const handler = this.f.get(response.id);
+    const handler = this.handlers.get(response.id);
     handler?.(response);
   }
   get onDidInitializePromise() {
     return Event.toPromise(this.onDidInitialize);
   }
-  u() {
-    if (this.b === State.Idle) {
+  whenInitialized() {
+    if (this.state === State.Idle) {
       return Promise.resolve();
     } else {
       return this.onDidInitializePromise;
     }
   }
   dispose() {
-    this.a = true;
-    if (this.h) {
-      this.h.dispose();
-      this.h = null;
+    this.isDisposed = true;
+    if (this.protocolListener) {
+      this.protocolListener.dispose();
+      this.protocolListener = null;
     }
-    $Ad(this.d.values());
-    this.d.clear();
+    dispose(this.activeRequests.values());
+    this.activeRequests.clear();
   }
 };
 __decorate([
-  $Qm
-], $2m.prototype, "onDidInitializePromise", null);
-var $3m = class {
+  memoize
+], ChannelClient.prototype, "onDidInitializePromise", null);
+var IPCServer = class {
   get connections() {
     const result = [];
-    this.f.forEach((ctx) => result.push(ctx));
+    this._connections.forEach((ctx) => result.push(ctx));
     return result;
   }
   constructor(onDidClientConnect, ipcLogger, timeoutDelay) {
-    this.a = /* @__PURE__ */ new Map();
-    this.f = /* @__PURE__ */ new Set();
-    this.g = new $qf();
-    this.onDidAddConnection = this.g.event;
-    this.h = new $qf();
-    this.onDidRemoveConnection = this.h.event;
-    this.j = new $Ed();
-    this.j.add(onDidClientConnect(({ protocol, onDidClientDisconnect }) => {
+    this.channels = /* @__PURE__ */ new Map();
+    this._connections = /* @__PURE__ */ new Set();
+    this._onDidAddConnection = new Emitter();
+    this.onDidAddConnection = this._onDidAddConnection.event;
+    this._onDidRemoveConnection = new Emitter();
+    this.onDidRemoveConnection = this._onDidRemoveConnection.event;
+    this.disposables = new DisposableStore();
+    this.disposables.add(onDidClientConnect(({ protocol, onDidClientDisconnect }) => {
       const onFirstMessage = Event.once(protocol.onMessage);
-      this.j.add(onFirstMessage((msg) => {
-        const reader = new $Wm(msg);
-        const ctx = $Zm(reader);
-        const channelServer = new $1m(protocol, ctx, ipcLogger, timeoutDelay);
-        const channelClient = new $2m(protocol, ipcLogger);
-        this.a.forEach((channel, name) => channelServer.registerChannel(name, channel));
+      this.disposables.add(onFirstMessage((msg) => {
+        const reader = new BufferReader(msg);
+        const ctx = deserialize(reader);
+        const channelServer = new ChannelServer(protocol, ctx, ipcLogger, timeoutDelay);
+        const channelClient = new ChannelClient(protocol, ipcLogger);
+        this.channels.forEach((channel, name) => channelServer.registerChannel(name, channel));
         const connection = { channelServer, channelClient, ctx };
-        this.f.add(connection);
-        this.g.fire(connection);
-        this.j.add(onDidClientDisconnect(() => {
+        this._connections.add(connection);
+        this._onDidAddConnection.fire(connection);
+        this.disposables.add(onDidClientDisconnect(() => {
           channelServer.dispose();
           channelClient.dispose();
-          this.f.delete(connection);
-          this.h.fire(connection);
+          this._connections.delete(connection);
+          this._onDidRemoveConnection.fire(connection);
         }));
       }));
     }));
@@ -7981,31 +7981,31 @@ var $3m = class {
     return {
       call(command, arg, cancellationToken) {
         let connectionPromise;
-        if ($nd(routerOrClientFilter)) {
-          const connection = $uc(that.connections.filter(routerOrClientFilter));
+        if (isFunction(routerOrClientFilter)) {
+          const connection = getRandomElement(that.connections.filter(routerOrClientFilter));
           connectionPromise = connection ? Promise.resolve(connection) : Event.toPromise(Event.filter(that.onDidAddConnection, routerOrClientFilter));
         } else {
           connectionPromise = routerOrClientFilter.routeCall(that, command, arg);
         }
         const channelPromise = connectionPromise.then((connection) => connection.channelClient.getChannel(channelName));
-        return $5m(channelPromise).call(command, arg, cancellationToken);
+        return getDelayedChannel(channelPromise).call(command, arg, cancellationToken);
       },
       listen(event, arg) {
-        if ($nd(routerOrClientFilter)) {
-          return that.k(channelName, routerOrClientFilter, event, arg);
+        if (isFunction(routerOrClientFilter)) {
+          return that.getMulticastEvent(channelName, routerOrClientFilter, event, arg);
         }
         const channelPromise = routerOrClientFilter.routeEvent(that, event, arg).then((connection) => connection.channelClient.getChannel(channelName));
-        return $5m(channelPromise).listen(event, arg);
+        return getDelayedChannel(channelPromise).listen(event, arg);
       }
     };
   }
-  k(channelName, clientFilter, eventName, arg) {
+  getMulticastEvent(channelName, clientFilter, eventName, arg) {
     const that = this;
     let disposables;
-    const emitter = new $qf({
+    const emitter = new Emitter({
       onWillAddFirstListener: () => {
-        disposables = new $Ed();
-        const eventMultiplexer = new $wf();
+        disposables = new DisposableStore();
+        const eventMultiplexer = new EventMultiplexer();
         const map = /* @__PURE__ */ new Map();
         const onDidAddConnection = (connection) => {
           const channel = connection.channelClient.getChannel(channelName);
@@ -8032,34 +8032,34 @@ var $3m = class {
         disposables = void 0;
       }
     });
-    that.j.add(emitter);
+    that.disposables.add(emitter);
     return emitter.event;
   }
   registerChannel(channelName, channel) {
-    this.a.set(channelName, channel);
-    for (const connection of this.f) {
+    this.channels.set(channelName, channel);
+    for (const connection of this._connections) {
       connection.channelServer.registerChannel(channelName, channel);
     }
   }
   dispose() {
-    this.j.dispose();
-    for (const connection of this.f) {
+    this.disposables.dispose();
+    for (const connection of this._connections) {
       connection.channelClient.dispose();
       connection.channelServer.dispose();
     }
-    this.f.clear();
-    this.a.clear();
-    this.g.dispose();
-    this.h.dispose();
+    this._connections.clear();
+    this.channels.clear();
+    this._onDidAddConnection.dispose();
+    this._onDidRemoveConnection.dispose();
   }
 };
-function $5m(promise) {
+function getDelayedChannel(promise) {
   return {
     call(command, arg, cancellationToken) {
       return promise.then((c) => c.call(command, arg, cancellationToken));
     },
     listen(event, arg) {
-      const relay = new $zf();
+      const relay = new Relay();
       promise.then((c) => relay.input = c.listen(event, arg));
       return relay.event;
     }
@@ -8092,14 +8092,14 @@ var ProxyChannel;
             return mapEventNameToEvent.get(event);
           }
         }
-        throw new $Db(`Event not found: ${event}`);
+        throw new ErrorNoTelemetry(`Event not found: ${event}`);
       }
       call(_, command, args) {
         const target = handler[command];
         if (typeof target === "function") {
           if (!disableMarshalling && Array.isArray(args)) {
             for (let i = 0; i < args.length; i++) {
-              args[i] = $Vm(args[i]);
+              args[i] = revive(args[i]);
             }
           }
           let res = target.apply(handler, args);
@@ -8108,7 +8108,7 @@ var ProxyChannel;
           }
           return res;
         }
-        throw new $Db(`Method not found: ${command}`);
+        throw new ErrorNoTelemetry(`Method not found: ${command}`);
       }
     }();
   }
@@ -8131,28 +8131,28 @@ var ProxyChannel;
           }
           return async function(...args) {
             let methodArgs;
-            if (options && !$fd(options.context)) {
+            if (options && !isUndefinedOrNull(options.context)) {
               methodArgs = [options.context, ...args];
             } else {
               methodArgs = args;
             }
             const result = await channel.call(propKey, methodArgs);
             if (!disableMarshalling) {
-              return $Vm(result);
+              return revive(result);
             }
             return result;
           };
         }
-        throw new $Db(`Property not found: ${String(propKey)}`);
+        throw new ErrorNoTelemetry(`Property not found: ${String(propKey)}`);
       }
     });
   }
   ProxyChannel2.toService = toService;
   function propertyIsEvent(name) {
-    return name[0] === "o" && name[1] === "n" && $fg(name.charCodeAt(2));
+    return name[0] === "o" && name[1] === "n" && isUpperAsciiLetter(name.charCodeAt(2));
   }
   function propertyIsDynamicEvent(name) {
-    return /^onDynamic/.test(name) && $fg(name.charCodeAt(9));
+    return /^onDynamic/.test(name) && isUpperAsciiLetter(name.charCodeAt(9));
   }
 })(ProxyChannel || (ProxyChannel = {}));
 
@@ -8160,7 +8160,7 @@ var ProxyChannel;
 import { fork } from "child_process";
 
 // out-build/vs/base/common/objects.js
-function $xp(one, other) {
+function equals(one, other) {
   if (one === other) {
     return true;
   }
@@ -8183,7 +8183,7 @@ function $xp(one, other) {
       return false;
     }
     for (i = 0; i < one.length; i++) {
-      if (!$xp(one[i], other[i])) {
+      if (!equals(one[i], other[i])) {
         return false;
       }
     }
@@ -8198,18 +8198,18 @@ function $xp(one, other) {
       otherKeys.push(key);
     }
     otherKeys.sort();
-    if (!$xp(oneKeys, otherKeys)) {
+    if (!equals(oneKeys, otherKeys)) {
       return false;
     }
     for (i = 0; i < oneKeys.length; i++) {
-      if (!$xp(one[oneKeys[i]], other[oneKeys[i]])) {
+      if (!equals(one[oneKeys[i]], other[oneKeys[i]])) {
         return false;
       }
     }
   }
   return true;
 }
-function $Ap(target, key) {
+function getCaseInsensitive(target, key) {
   const lowercaseKey = key.toLowerCase();
   const equivalentKey = Object.keys(target).find((k) => k.toLowerCase() === lowercaseKey);
   return equivalentKey ? target[equivalentKey] : target[key];
@@ -8239,16 +8239,16 @@ import { tmpdir } from "os";
 import { promisify } from "util";
 
 // out-build/vs/base/common/normalization.js
-var nfcCache = new $Sc(1e4);
-function $xi(str) {
-  return normalize(str, "NFC", nfcCache);
+var nfcCache = new LRUCache(1e4);
+function normalizeNFC(str) {
+  return normalize2(str, "NFC", nfcCache);
 }
-var nfdCache = new $Sc(1e4);
-function $yi(str) {
-  return normalize(str, "NFD", nfdCache);
+var nfdCache = new LRUCache(1e4);
+function normalizeNFD(str) {
+  return normalize2(str, "NFD", nfdCache);
 }
 var nonAsciiCharactersPattern = /[^\u0000-\u0080]/;
-function normalize(str, form, normalizedCache) {
+function normalize2(str, form, normalizedCache) {
   if (!str) {
     return str;
   }
@@ -8265,15 +8265,15 @@ function normalize(str, form, normalizedCache) {
   normalizedCache.set(str, res);
   return res;
 }
-var $zi = function() {
-  const cache = new $Sc(1e4);
+var tryNormalizeToBase = function() {
+  const cache = new LRUCache(1e4);
   const accentsRegex = /[\u0300-\u036f]/g;
   return function(str) {
     const cached = cache.get(str);
     if (cached) {
       return cached;
     }
-    const noAccents = $yi(str).replace(accentsRegex, "");
+    const noAccents = normalizeNFD(str).replace(accentsRegex, "");
     const result = (noAccents.length === str.length ? noAccents : str).toLowerCase();
     cache.set(str, result);
     return result;
@@ -8287,7 +8287,7 @@ var RimRafMode;
   RimRafMode2[RimRafMode2["MOVE"] = 1] = "MOVE";
 })(RimRafMode || (RimRafMode = {}));
 async function rimraf(path, mode = RimRafMode.UNLINK, moveToPath) {
-  if ($7g(path)) {
+  if (isRootOrDriveLetter(path)) {
     throw new Error("rimraf - will refuse to recursively delete root");
   }
   if (mode === RimRafMode.UNLINK) {
@@ -8295,7 +8295,7 @@ async function rimraf(path, mode = RimRafMode.UNLINK, moveToPath) {
   }
   return rimrafMove(path, moveToPath);
 }
-async function rimrafMove(path, moveToPath = $_g(tmpdir())) {
+async function rimrafMove(path, moveToPath = randomPath(tmpdir())) {
   try {
     try {
       await fs.promises.rename(path, moveToPath);
@@ -8320,7 +8320,7 @@ async function readdir(path, options) {
   try {
     return await doReaddir(path, options);
   } catch (error) {
-    if (error.code === "ENOENT" && $m && $7g(path)) {
+    if (error.code === "ENOENT" && isWindows && isRootOrDriveLetter(path)) {
       try {
         return await doReaddir(`${path}.`, options);
       } catch {
@@ -8345,7 +8345,7 @@ async function safeReaddirWithFileTypes(path) {
     let isDirectory = false;
     let isSymbolicLink = false;
     try {
-      const lstat = await fs.promises.lstat($0(path, child));
+      const lstat = await fs.promises.lstat(join(path, child));
       isFile = lstat.isFile();
       isDirectory = lstat.isDirectory();
       isSymbolicLink = lstat.isSymbolicLink();
@@ -8364,9 +8364,9 @@ async function safeReaddirWithFileTypes(path) {
 function handleDirectoryChildren(children) {
   return children.map((child) => {
     if (typeof child === "string") {
-      return $n ? $xi(child) : child;
+      return isMacintosh ? normalizeNFC(child) : child;
     }
-    child.name = $n ? $xi(child.name) : child.name;
+    child.name = isMacintosh ? normalizeNFC(child.name) : child.name;
     return child;
   });
 }
@@ -8374,7 +8374,7 @@ async function readDirsInDir(dirPath) {
   const children = await readdir(dirPath);
   const directories = [];
   for (const child of children) {
-    if (await SymlinkSupport.existsDirectory($0(dirPath, child))) {
+    if (await SymlinkSupport.existsDirectory(join(dirPath, child))) {
       directories.push(child);
     }
   }
@@ -8398,7 +8398,7 @@ var SymlinkSupport;
       if (error.code === "ENOENT" && lstats) {
         return { stat: lstats, symbolicLink: { dangling: true } };
       }
-      if ($m && error.code === "EACCES") {
+      if (isWindows && error.code === "EACCES") {
         try {
           const stats = await fs.promises.stat(await fs.promises.readlink(path));
           return { stat: stats, symbolicLink: { dangling: false } };
@@ -8432,12 +8432,12 @@ var SymlinkSupport;
   }
   SymlinkSupport2.existsDirectory = existsDirectory;
 })(SymlinkSupport || (SymlinkSupport = {}));
-var writeQueues = new $0h();
+var writeQueues = new ResourceQueue();
 function writeFile2(path, data, options) {
   return writeQueues.queueFor(URI.file(path), () => {
     const ensuredOptions = ensureWriteOptions(options);
-    return new Promise((resolve2, reject) => doWriteFileAndFlush(path, data, ensuredOptions, (error) => error ? reject(error) : resolve2()));
-  }, $rh);
+    return new Promise((resolve3, reject) => doWriteFileAndFlush(path, data, ensuredOptions, (error) => error ? reject(error) : resolve3()));
+  }, extUriBiasedIgnorePathCase);
 }
 var canFlush = true;
 function configureFlushOnWrite(enabled) {
@@ -8479,7 +8479,7 @@ async function rename(source, target, windowsRetryTimeout = 6e4) {
     return;
   }
   try {
-    if ($m && typeof windowsRetryTimeout === "number") {
+    if (isWindows && typeof windowsRetryTimeout === "number") {
       await renameWithRetry(source, target, Date.now(), windowsRetryTimeout);
     } else {
       await fs.promises.rename(source, target);
@@ -8520,7 +8520,7 @@ async function renameWithRetry(source, target, startTime, retryTimeout, attempt 
         throw error;
       }
     }
-    await $2h(Math.min(100, attempt * 10));
+    await timeout(Math.min(100, attempt * 10));
     return renameWithRetry(source, target, startTime, retryTimeout, attempt + 1);
   }
 }
@@ -8556,7 +8556,7 @@ async function doCopyDirectory(source, target, mode, payload) {
   await fs.promises.mkdir(target, { recursive: true, mode });
   const files = await readdir(source);
   for (const file of files) {
-    await doCopy($0(source, file), $0(target, file), payload);
+    await doCopy(join(source, file), join(target, file), payload);
   }
 }
 async function doCopyFile(source, target, mode) {
@@ -8565,8 +8565,8 @@ async function doCopyFile(source, target, mode) {
 }
 async function doCopySymlink(source, target, payload) {
   let linkTarget = await fs.promises.readlink(source);
-  if ($3g(linkTarget, payload.root.source, !$o)) {
-    linkTarget = $0(payload.root.target, linkTarget.substr(payload.root.source.length + 1));
+  if (isEqualOrParent(linkTarget, payload.root.source, !isLinux)) {
+    linkTarget = join(payload.root.target, linkTarget.substr(payload.root.source.length + 1));
   }
   await fs.promises.symlink(linkTarget, target);
 }
@@ -8574,36 +8574,36 @@ async function realpath2(path) {
   try {
     return await promisify(fs.realpath)(path);
   } catch {
-    const normalizedPath = normalizePath(path);
+    const normalizedPath = normalizePath2(path);
     await fs.promises.access(normalizedPath, fs.constants.R_OK);
     return normalizedPath;
   }
 }
-function normalizePath(path) {
-  return $Yf($8(path), sep);
+function normalizePath2(path) {
+  return rtrim(normalize(path), sep);
 }
 var Promises2 = new class {
   //#region Implemented by node.js
   get read() {
     return (fd, buffer, offset, length, position) => {
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         fs.read(fd, buffer, offset, length, position, (err, bytesRead, buffer2) => {
           if (err) {
             return reject(err);
           }
-          return resolve2({ bytesRead, buffer: buffer2 });
+          return resolve3({ bytesRead, buffer: buffer2 });
         });
       });
     };
   }
   get write() {
     return (fd, buffer, offset, length, position) => {
-      return new Promise((resolve2, reject) => {
+      return new Promise((resolve3, reject) => {
         fs.write(fd, buffer, offset, length, position, (err, bytesWritten, buffer2) => {
           if (err) {
             return reject(err);
           }
-          return resolve2({ bytesWritten, buffer: buffer2 });
+          return resolve3({ bytesWritten, buffer: buffer2 });
         });
       });
     };
@@ -8659,8 +8659,8 @@ var Promises2 = new class {
 }();
 
 // out-build/vs/base/node/processes.js
-function $Nw(env = $3) {
-  return env["comspec"] || "cmd.exe";
+function getWindowsShell(env2 = env) {
+  return env2["comspec"] || "cmd.exe";
 }
 async function fileExistsDefault(path) {
   if (await Promises2.exists(path)) {
@@ -8676,35 +8676,35 @@ async function fileExistsDefault(path) {
   }
   return false;
 }
-async function $Pw(command, cwd2, paths, env = $3, fileExists = fileExistsDefault) {
-  if ($9(command)) {
+async function findExecutable(command, cwd3, paths, env2 = env, fileExists = fileExistsDefault) {
+  if (isAbsolute(command)) {
     return await fileExists(command) ? command : void 0;
   }
-  if (cwd2 === void 0) {
-    cwd2 = $2();
+  if (cwd3 === void 0) {
+    cwd3 = cwd();
   }
-  const dir = $ab(command);
+  const dir = dirname(command);
   if (dir !== ".") {
-    const fullPath2 = $0(cwd2, command);
+    const fullPath2 = join(cwd3, command);
     return await fileExists(fullPath2) ? fullPath2 : void 0;
   }
-  const envPath = $Ap(env, "PATH");
-  if (paths === void 0 && $7c(envPath)) {
-    paths = envPath.split($hb);
+  const envPath = getCaseInsensitive(env2, "PATH");
+  if (paths === void 0 && isString(envPath)) {
+    paths = envPath.split(delimiter);
   }
   if (paths === void 0 || paths.length === 0) {
-    const fullPath2 = $0(cwd2, command);
+    const fullPath2 = join(cwd3, command);
     return await fileExists(fullPath2) ? fullPath2 : void 0;
   }
   for (const pathEntry of paths) {
     let fullPath2;
-    if ($9(pathEntry)) {
-      fullPath2 = $0(pathEntry, command);
+    if (isAbsolute(pathEntry)) {
+      fullPath2 = join(pathEntry, command);
     } else {
-      fullPath2 = $0(cwd2, pathEntry, command);
+      fullPath2 = join(cwd3, pathEntry, command);
     }
-    if ($m) {
-      const pathExt = $Ap(env, "PATHEXT") || ".COM;.EXE;.BAT;.CMD";
+    if (isWindows) {
+      const pathExt = getCaseInsensitive(env2, "PATHEXT") || ".COM;.EXE;.BAT;.CMD";
       const pathExtsFound = pathExt.split(";").map(async (ext) => {
         const withExtension = fullPath2 + ext;
         return await fileExists(withExtension) ? withExtension : void 0;
@@ -8720,12 +8720,12 @@ async function $Pw(command, cwd2, paths, env = $3, fileExists = fileExistsDefaul
       return fullPath2;
     }
   }
-  const fullPath = $0(cwd2, command);
+  const fullPath = join(cwd3, command);
   return await fileExists(fullPath) ? fullPath : void 0;
 }
 
 // out-build/vs/base/parts/ipc/node/ipc.cp.js
-var $ox = class extends $1m {
+var Server = class extends ChannelServer {
   constructor(ctx) {
     super({
       send: (r) => {
@@ -8734,40 +8734,40 @@ var $ox = class extends $1m {
         } catch (e) {
         }
       },
-      onMessage: Event.fromNodeEventEmitter(process, "message", (msg) => $2i.wrap(Buffer.from(msg, "base64")))
+      onMessage: Event.fromNodeEventEmitter(process, "message", (msg) => VSBuffer.wrap(Buffer.from(msg, "base64")))
     }, ctx);
     process.once("disconnect", () => this.dispose());
   }
 };
 
 // out-build/vs/base/parts/sandbox/node/electronTypes.js
-function $e_(process2) {
+function isUtilityProcess(process2) {
   return !!process2.parentPort;
 }
 
 // out-build/vs/base/parts/ipc/node/ipc.mp.js
 var Protocol = class {
-  constructor(a) {
-    this.a = a;
-    this.onMessage = Event.fromNodeEventEmitter(this.a, "message", (e) => {
+  constructor(port) {
+    this.port = port;
+    this.onMessage = Event.fromNodeEventEmitter(this.port, "message", (e) => {
       if (e.data) {
-        return $2i.wrap(e.data);
+        return VSBuffer.wrap(e.data);
       }
-      return $2i.alloc(0);
+      return VSBuffer.alloc(0);
     });
-    a.start();
+    port.start();
   }
   send(message) {
-    this.a.postMessage(message.buffer);
+    this.port.postMessage(message.buffer);
   }
   disconnect() {
-    this.a.close();
+    this.port.close();
   }
 };
-var $f_ = class _$f_ extends $3m {
-  static b(filter) {
-    $gd($e_(process), "Electron Utility Process");
-    const onCreateMessageChannel = new $qf();
+var Server2 = class _Server extends IPCServer {
+  static getOnDidClientConnect(filter) {
+    assertType(isUtilityProcess(process), "Electron Utility Process");
+    const onCreateMessageChannel = new Emitter();
     process.parentPort.on("message", (e) => {
       if (filter?.handledClientConnection(e)) {
         return;
@@ -8790,7 +8790,7 @@ var $f_ = class _$f_ extends $3m {
     });
   }
   constructor(filter) {
-    super(_$f_.b(filter));
+    super(_Server.getOnDidClientConnect(filter));
   }
 };
 
@@ -8802,7 +8802,7 @@ var helpCategories = {
   t: localize(1888, null),
   m: localize(1889, null)
 };
-var $al = {
+var OPTIONS = {
   "chat": {
     type: "subcommand",
     description: "Pass in a prompt to run in a chat session in the current working directory.",
@@ -8998,7 +8998,7 @@ var ignoringReporter = {
   onDeprecatedOption: () => {
   }
 };
-function $bl(args, options, errorReporter = ignoringReporter) {
+function parseArgs(args, options, errorReporter = ignoringReporter) {
   const firstPossibleCommand = args.find((a, i) => a.length > 0 && a[0] !== "-" && options.hasOwnProperty(a) && options[a].type === "subcommand");
   const alias = {};
   const stringOptions = ["_"];
@@ -9038,7 +9038,7 @@ function $bl(args, options, errorReporter = ignoringReporter) {
     }
     const newArgs = args.filter((a) => a !== firstPossibleCommand);
     const reporter = errorReporter.getSubcommandReporter ? errorReporter.getSubcommandReporter(firstPossibleCommand) : void 0;
-    const subcommandOptions = $bl(newArgs, options2, reporter);
+    const subcommandOptions = parseArgs(newArgs, options2, reporter);
     return {
       [firstPossibleCommand]: subcommandOptions,
       _: []
@@ -9115,44 +9115,44 @@ var day = hour * 24;
 var week = day * 7;
 var month = day * 30;
 var year = day * 365;
-function $Kn(date) {
+function toLocalISOString(date) {
   return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0") + "-" + String(date.getDate()).padStart(2, "0") + "T" + String(date.getHours()).padStart(2, "0") + ":" + String(date.getMinutes()).padStart(2, "0") + ":" + String(date.getSeconds()).padStart(2, "0") + "." + (date.getMilliseconds() / 1e3).toFixed(3).slice(2, 5) + "Z";
 }
 
 // out-build/vs/platform/environment/common/environmentService.js
-var $On = /^([^.]+\..+)[:=](.+)$/;
-var $Pn = class {
+var EXTENSION_IDENTIFIER_WITH_LOG_REGEX = /^([^.]+\..+)[:=](.+)$/;
+var AbstractNativeEnvironmentService = class {
   get appRoot() {
-    return $ab($lh.asFileUri("").fsPath);
+    return dirname(FileAccess.asFileUri("").fsPath);
   }
   get userHome() {
-    return URI.file(this.b.homeDir);
+    return URI.file(this.paths.homeDir);
   }
   get userDataPath() {
-    return this.b.userDataDir;
+    return this.paths.userDataDir;
   }
   get appSettingsHome() {
-    return URI.file($0(this.userDataPath, "User"));
+    return URI.file(join(this.userDataPath, "User"));
   }
   get tmpDir() {
-    return URI.file(this.b.tmpDir);
+    return URI.file(this.paths.tmpDir);
   }
   get cacheHome() {
     return URI.file(this.userDataPath);
   }
   get stateResource() {
-    return $Ah(this.appSettingsHome, "globalStorage", "storage.json");
+    return joinPath(this.appSettingsHome, "globalStorage", "storage.json");
   }
   get userRoamingDataHome() {
     return this.appSettingsHome.with({ scheme: Schemas.vscodeUserData });
   }
   get userDataSyncHome() {
-    return $Ah(this.appSettingsHome, "sync");
+    return joinPath(this.appSettingsHome, "sync");
   }
   get logsHome() {
     if (!this.args.logsPath) {
-      const key = $Kn(/* @__PURE__ */ new Date()).replace(/-|:|\.\d+Z$/g, "");
-      this.args.logsPath = $0(this.userDataPath, "logs", key);
+      const key = toLocalISOString(/* @__PURE__ */ new Date()).replace(/-|:|\.\d+Z$/g, "");
+      this.args.logsPath = join(this.userDataPath, "logs", key);
     }
     return URI.file(this.args.logsPath);
   }
@@ -9160,55 +9160,55 @@ var $Pn = class {
     return this.args.sync;
   }
   get workspaceStorageHome() {
-    return $Ah(this.appSettingsHome, "workspaceStorage");
+    return joinPath(this.appSettingsHome, "workspaceStorage");
   }
   get localHistoryHome() {
-    return $Ah(this.appSettingsHome, "History");
+    return joinPath(this.appSettingsHome, "History");
   }
   get keyboardLayoutResource() {
-    return $Ah(this.userRoamingDataHome, "keyboardLayout.json");
+    return joinPath(this.userRoamingDataHome, "keyboardLayout.json");
   }
   get argvResource() {
-    const vscodePortable = $3["VSCODE_PORTABLE"];
+    const vscodePortable = env["VSCODE_PORTABLE"];
     if (vscodePortable) {
-      return URI.file($0(vscodePortable, "argv.json"));
+      return URI.file(join(vscodePortable, "argv.json"));
     }
-    return $Ah(this.userHome, this.c.dataFolderName, "argv.json");
+    return joinPath(this.userHome, this.productService.dataFolderName, "argv.json");
   }
   get isExtensionDevelopment() {
     return !!this.args.extensionDevelopmentPath;
   }
   get untitledWorkspacesHome() {
-    return URI.file($0(this.userDataPath, "Workspaces"));
+    return URI.file(join(this.userDataPath, "Workspaces"));
   }
   get builtinExtensionsPath() {
     const cliBuiltinExtensionsDir = this.args["builtin-extensions-dir"];
     if (cliBuiltinExtensionsDir) {
-      return $$(cliBuiltinExtensionsDir);
+      return resolve(cliBuiltinExtensionsDir);
     }
-    return $8($0($lh.asFileUri("").fsPath, "..", "extensions"));
+    return normalize(join(FileAccess.asFileUri("").fsPath, "..", "extensions"));
   }
   get extensionsDownloadLocation() {
     const cliExtensionsDownloadDir = this.args["extensions-download-dir"];
     if (cliExtensionsDownloadDir) {
-      return URI.file($$(cliExtensionsDownloadDir));
+      return URI.file(resolve(cliExtensionsDownloadDir));
     }
-    return URI.file($0(this.userDataPath, "CachedExtensionVSIXs"));
+    return URI.file(join(this.userDataPath, "CachedExtensionVSIXs"));
   }
   get extensionsPath() {
     const cliExtensionsDir = this.args["extensions-dir"];
     if (cliExtensionsDir) {
-      return $$(cliExtensionsDir);
+      return resolve(cliExtensionsDir);
     }
-    const vscodeExtensions = $3["VSCODE_EXTENSIONS"];
+    const vscodeExtensions = env["VSCODE_EXTENSIONS"];
     if (vscodeExtensions) {
       return vscodeExtensions;
     }
-    const vscodePortable = $3["VSCODE_PORTABLE"];
+    const vscodePortable = env["VSCODE_PORTABLE"];
     if (vscodePortable) {
-      return $0(vscodePortable, "extensions");
+      return join(vscodePortable, "extensions");
     }
-    return $Ah(this.userHome, this.c.dataFolderName, "extensions").fsPath;
+    return joinPath(this.userHome, this.productService.dataFolderName, "extensions").fsPath;
   }
   get extensionDevelopmentLocationURI() {
     const extensionDevelopmentPaths = this.args.extensionDevelopmentPath;
@@ -9217,7 +9217,7 @@ var $Pn = class {
         if (/^[^:/?#]+?:\/\//.test(extensionDevelopmentPath)) {
           return URI.parse(extensionDevelopmentPath);
         }
-        return URI.file($8(extensionDevelopmentPath));
+        return URI.file(normalize(extensionDevelopmentPath));
       });
     }
     return void 0;
@@ -9231,7 +9231,7 @@ var $Pn = class {
       if (/^[^:/?#]+?:\/\//.test(extensionTestsPath)) {
         return URI.parse(extensionTestsPath);
       }
-      return URI.file($8(extensionTestsPath));
+      return URI.file(normalize(extensionTestsPath));
     }
     return void 0;
   }
@@ -9251,24 +9251,24 @@ var $Pn = class {
     return false;
   }
   get debugExtensionHost() {
-    return $Qn(this.args, this.isBuilt);
+    return parseExtensionHostDebugPort(this.args, this.isBuilt);
   }
   get debugRenderer() {
     return !!this.args.debugRenderer;
   }
   get isBuilt() {
-    return !$3["VSCODE_DEV"];
+    return !env["VSCODE_DEV"];
   }
   get verbose() {
     return !!this.args.verbose;
   }
   get logLevel() {
-    return this.args.log?.find((entry) => !$On.test(entry));
+    return this.args.log?.find((entry) => !EXTENSION_IDENTIFIER_WITH_LOG_REGEX.test(entry));
   }
   get extensionLogLevel() {
     const result = [];
     for (const entry of this.args.log || []) {
-      const matches = $On.exec(entry);
+      const matches = EXTENSION_IDENTIFIER_WITH_LOG_REGEX.exec(entry);
       if (matches?.[1] && matches[2]) {
         result.push([matches[1], matches[2]]);
       }
@@ -9276,7 +9276,7 @@ var $Pn = class {
     return result.length ? result : void 0;
   }
   get serviceMachineIdResource() {
-    return $Ah(URI.file(this.userDataPath), "machineid");
+    return joinPath(URI.file(this.userDataPath), "machineid");
   }
   get crashReporterId() {
     return this.args["crash-reporter-id"];
@@ -9298,11 +9298,11 @@ var $Pn = class {
   }
   get policyFile() {
     if (this.args["__enable-file-policy"]) {
-      const vscodePortable = $3["VSCODE_PORTABLE"];
+      const vscodePortable = env["VSCODE_PORTABLE"];
       if (vscodePortable) {
-        return URI.file($0(vscodePortable, "policy.json"));
+        return URI.file(join(vscodePortable, "policy.json"));
       }
-      return $Ah(this.userHome, this.c.dataFolderName, "policy.json");
+      return joinPath(this.userHome, this.productService.dataFolderName, "policy.json");
     }
     return void 0;
   }
@@ -9319,132 +9319,132 @@ var $Pn = class {
     this.args["continueOn"] = value;
   }
   get args() {
-    return this.a;
+    return this._args;
   }
-  constructor(a, b, c) {
-    this.a = a;
-    this.b = b;
-    this.c = c;
+  constructor(_args, paths, productService) {
+    this._args = _args;
+    this.paths = paths;
+    this.productService = productService;
   }
 };
 __decorate([
-  $Qm
-], $Pn.prototype, "appRoot", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "appRoot", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "userHome", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "userHome", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "userDataPath", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "userDataPath", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "appSettingsHome", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "appSettingsHome", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "tmpDir", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "tmpDir", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "cacheHome", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "cacheHome", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "stateResource", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "stateResource", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "userRoamingDataHome", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "userRoamingDataHome", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "userDataSyncHome", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "userDataSyncHome", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "sync", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "sync", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "workspaceStorageHome", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "workspaceStorageHome", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "localHistoryHome", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "localHistoryHome", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "keyboardLayoutResource", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "keyboardLayoutResource", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "argvResource", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "argvResource", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "isExtensionDevelopment", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "isExtensionDevelopment", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "untitledWorkspacesHome", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "untitledWorkspacesHome", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "builtinExtensionsPath", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "builtinExtensionsPath", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "extensionsPath", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "extensionsPath", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "extensionDevelopmentLocationURI", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "extensionDevelopmentLocationURI", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "extensionDevelopmentKind", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "extensionDevelopmentKind", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "extensionTestsLocationURI", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "extensionTestsLocationURI", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "debugExtensionHost", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "debugExtensionHost", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "logLevel", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "logLevel", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "extensionLogLevel", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "extensionLogLevel", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "serviceMachineIdResource", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "serviceMachineIdResource", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "disableTelemetry", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "disableTelemetry", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "disableExperiments", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "disableExperiments", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "disableWorkspaceTrust", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "disableWorkspaceTrust", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "useInMemorySecretStorage", null);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "useInMemorySecretStorage", null);
 __decorate([
-  $Qm
-], $Pn.prototype, "policyFile", null);
-function $Qn(args, isBuilt) {
-  return $Rn(args["inspect-extensions"], args["inspect-brk-extensions"], 5870, isBuilt, args.debugId, args.extensionEnvironment);
+  memoize
+], AbstractNativeEnvironmentService.prototype, "policyFile", null);
+function parseExtensionHostDebugPort(args, isBuilt) {
+  return parseDebugParams(args["inspect-extensions"], args["inspect-brk-extensions"], 5870, isBuilt, args.debugId, args.extensionEnvironment);
 }
-function $Rn(debugArg, debugBrkArg, defaultBuildPort, isBuilt, debugId, environmentString) {
+function parseDebugParams(debugArg, debugBrkArg, defaultBuildPort, isBuilt, debugId, environmentString) {
   const portStr = debugBrkArg || debugArg;
   const port = Number(portStr) || (!isBuilt ? defaultBuildPort : null);
   const brk = port ? Boolean(!!debugBrkArg) : false;
-  let env;
+  let env2;
   if (environmentString) {
     try {
-      env = JSON.parse(environmentString);
+      env2 = JSON.parse(environmentString);
     } catch {
     }
   }
-  return { port, break: brk, debugId, env };
+  return { port, break: brk, debugId, env: env2 };
 }
 
 // out-build/vs/platform/environment/node/userDataPath.js
 import { homedir } from "os";
-import { resolve, isAbsolute, join } from "path";
-var cwd = process.env["VSCODE_CWD"] || process.cwd();
-function $zl(cliArgs, productName) {
+import { resolve as resolve2, isAbsolute as isAbsolute2, join as join2 } from "path";
+var cwd2 = process.env["VSCODE_CWD"] || process.cwd();
+function getUserDataPath(cliArgs, productName) {
   const userDataPath = doGetUserDataPath(cliArgs, productName);
   const pathsToResolve = [userDataPath];
-  if (!isAbsolute(userDataPath)) {
-    pathsToResolve.unshift(cwd);
+  if (!isAbsolute2(userDataPath)) {
+    pathsToResolve.unshift(cwd2);
   }
-  return resolve(...pathsToResolve);
+  return resolve2(...pathsToResolve);
 }
 function doGetUserDataPath(cliArgs, productName) {
   if (process.env["VSCODE_DEV"]) {
@@ -9452,11 +9452,11 @@ function doGetUserDataPath(cliArgs, productName) {
   }
   const portablePath = process.env["VSCODE_PORTABLE"];
   if (portablePath) {
-    return join(portablePath, "user-data");
+    return join2(portablePath, "user-data");
   }
   let appDataPath = process.env["VSCODE_APPDATA"];
   if (appDataPath) {
-    return join(appDataPath, productName);
+    return join2(appDataPath, productName);
   }
   const cliPath = cliArgs["user-data-dir"];
   if (cliPath) {
@@ -9470,28 +9470,28 @@ function doGetUserDataPath(cliArgs, productName) {
         if (typeof userProfile !== "string") {
           throw new Error("Windows: Unexpected undefined %USERPROFILE% environment variable");
         }
-        appDataPath = join(userProfile, "AppData", "Roaming");
+        appDataPath = join2(userProfile, "AppData", "Roaming");
       }
       break;
     case "darwin":
-      appDataPath = join(homedir(), "Library", "Application Support");
+      appDataPath = join2(homedir(), "Library", "Application Support");
       break;
     case "linux":
-      appDataPath = process.env["XDG_CONFIG_HOME"] || join(homedir(), ".config");
+      appDataPath = process.env["XDG_CONFIG_HOME"] || join2(homedir(), ".config");
       break;
     default:
       throw new Error("Platform not supported");
   }
-  return join(appDataPath, productName);
+  return join2(appDataPath, productName);
 }
 
 // out-build/vs/platform/environment/node/environmentService.js
-var $Sn = class extends $Pn {
+var NativeEnvironmentService = class extends AbstractNativeEnvironmentService {
   constructor(args, productService) {
     super(args, {
       homeDir: homedir2(),
       tmpDir: tmpdir2(),
-      userDataDir: $zl(args, productService.nameShort)
+      userDataDir: getUserDataPath(args, productService.nameShort)
     }, productService);
   }
 };
@@ -9518,19 +9518,19 @@ function detectSystemErrorMessage(exception) {
   }
   return exception.message || localize(112, null);
 }
-function $Cm(error = null, verbose = false) {
+function toErrorMessage(error = null, verbose = false) {
   if (!error) {
     return localize(113, null);
   }
   if (Array.isArray(error)) {
-    const errors = $_b(error);
-    const msg = $Cm(errors[0], verbose);
+    const errors = coalesce(error);
+    const msg = toErrorMessage(errors[0], verbose);
     if (errors.length > 1) {
       return localize(114, null, msg, errors.length);
     }
     return msg;
   }
-  if ($7c(error)) {
+  if (isString(error)) {
     return error;
   }
   if (error.detail) {
@@ -9552,52 +9552,52 @@ function $Cm(error = null, verbose = false) {
 }
 
 // out-build/vs/base/common/hash.js
-function $xn(obj) {
-  return $yn(obj, 0);
+function hash(obj) {
+  return doHash(obj, 0);
 }
-function $yn(obj, hashVal) {
+function doHash(obj, hashVal) {
   switch (typeof obj) {
     case "object":
       if (obj === null) {
-        return $zn(349, hashVal);
+        return numberHash(349, hashVal);
       } else if (Array.isArray(obj)) {
         return arrayHash(obj, hashVal);
       }
       return objectHash(obj, hashVal);
     case "string":
-      return $An(obj, hashVal);
+      return stringHash(obj, hashVal);
     case "boolean":
       return booleanHash(obj, hashVal);
     case "number":
-      return $zn(obj, hashVal);
+      return numberHash(obj, hashVal);
     case "undefined":
-      return $zn(937, hashVal);
+      return numberHash(937, hashVal);
     default:
-      return $zn(617, hashVal);
+      return numberHash(617, hashVal);
   }
 }
-function $zn(val, initialHashVal) {
+function numberHash(val, initialHashVal) {
   return (initialHashVal << 5) - initialHashVal + val | 0;
 }
 function booleanHash(b, initialHashVal) {
-  return $zn(b ? 433 : 863, initialHashVal);
+  return numberHash(b ? 433 : 863, initialHashVal);
 }
-function $An(s, hashVal) {
-  hashVal = $zn(149417, hashVal);
+function stringHash(s, hashVal) {
+  hashVal = numberHash(149417, hashVal);
   for (let i = 0, length = s.length; i < length; i++) {
-    hashVal = $zn(s.charCodeAt(i), hashVal);
+    hashVal = numberHash(s.charCodeAt(i), hashVal);
   }
   return hashVal;
 }
 function arrayHash(arr, initialHashVal) {
-  initialHashVal = $zn(104579, initialHashVal);
-  return arr.reduce((hashVal, item) => $yn(item, hashVal), initialHashVal);
+  initialHashVal = numberHash(104579, initialHashVal);
+  return arr.reduce((hashVal, item) => doHash(item, hashVal), initialHashVal);
 }
 function objectHash(obj, initialHashVal) {
-  initialHashVal = $zn(181387, initialHashVal);
+  initialHashVal = numberHash(181387, initialHashVal);
   return Object.keys(obj).sort().reduce((hashVal, key) => {
-    hashVal = $An(key, hashVal);
-    return $yn(obj[key], hashVal);
+    hashVal = stringHash(key, hashVal);
+    return doHash(obj[key], hashVal);
   }, initialHashVal);
 }
 var SHA1Constant;
@@ -9612,39 +9612,39 @@ function leftRotate(value, bits, totalBits = 32) {
 }
 function toHexString(bufferOrValue, bitsize = 32) {
   if (bufferOrValue instanceof ArrayBuffer) {
-    return $kj($2i.wrap(new Uint8Array(bufferOrValue)));
+    return encodeHex(VSBuffer.wrap(new Uint8Array(bufferOrValue)));
   }
   return (bufferOrValue >>> 0).toString(16).padStart(bitsize / 4, "0");
 }
-var $Cn = class _$Cn {
+var StringSHA1 = class _StringSHA1 {
   static {
-    this.g = new DataView(new ArrayBuffer(320));
+    this._bigBlock32 = new DataView(new ArrayBuffer(320));
   }
   // 80 * 4 = 320
   constructor() {
-    this.h = 1732584193;
-    this.l = 4023233417;
-    this.m = 2562383102;
-    this.n = 271733878;
-    this.o = 3285377520;
-    this.p = new Uint8Array(
+    this._h0 = 1732584193;
+    this._h1 = 4023233417;
+    this._h2 = 2562383102;
+    this._h3 = 271733878;
+    this._h4 = 3285377520;
+    this._buff = new Uint8Array(
       64 + 3
       /* to fit any utf-8 */
     );
-    this.q = new DataView(this.p.buffer);
-    this.r = 0;
-    this.t = 0;
-    this.u = 0;
-    this.v = false;
+    this._buffDV = new DataView(this._buff.buffer);
+    this._buffLen = 0;
+    this._totalLen = 0;
+    this._leftoverHighSurrogate = 0;
+    this._finished = false;
   }
   update(str) {
     const strLen = str.length;
     if (strLen === 0) {
       return;
     }
-    const buff = this.p;
-    let buffLen = this.r;
-    let leftoverHighSurrogate = this.u;
+    const buff = this._buff;
+    let buffLen = this._buffLen;
+    let leftoverHighSurrogate = this._leftoverHighSurrogate;
     let charCode;
     let offset;
     if (leftoverHighSurrogate !== 0) {
@@ -9657,12 +9657,12 @@ var $Cn = class _$Cn {
     }
     while (true) {
       let codePoint = charCode;
-      if ($mg(charCode)) {
+      if (isHighSurrogate(charCode)) {
         if (offset + 1 < strLen) {
           const nextCharCode = str.charCodeAt(offset + 1);
-          if ($ng(nextCharCode)) {
+          if (isLowSurrogate(nextCharCode)) {
             offset++;
-            codePoint = $og(charCode, nextCharCode);
+            codePoint = computeCodePoint(charCode, nextCharCode);
           } else {
             codePoint = 65533;
           }
@@ -9670,10 +9670,10 @@ var $Cn = class _$Cn {
           leftoverHighSurrogate = charCode;
           break;
         }
-      } else if ($ng(charCode)) {
+      } else if (isLowSurrogate(charCode)) {
         codePoint = 65533;
       }
-      buffLen = this.w(buff, buffLen, codePoint);
+      buffLen = this._push(buff, buffLen, codePoint);
       offset++;
       if (offset < strLen) {
         charCode = str.charCodeAt(offset);
@@ -9681,10 +9681,10 @@ var $Cn = class _$Cn {
         break;
       }
     }
-    this.r = buffLen;
-    this.u = leftoverHighSurrogate;
+    this._buffLen = buffLen;
+    this._leftoverHighSurrogate = leftoverHighSurrogate;
   }
-  w(buff, buffLen, codePoint) {
+  _push(buff, buffLen, codePoint) {
     if (codePoint < 128) {
       buff[buffLen++] = codePoint;
     } else if (codePoint < 2048) {
@@ -9701,9 +9701,9 @@ var $Cn = class _$Cn {
       buff[buffLen++] = 128 | (codePoint & 63) >>> 0;
     }
     if (buffLen >= 64) {
-      this.y();
+      this._step();
       buffLen -= 64;
-      this.t += 64;
+      this._totalLen += 64;
       buff[0] = buff[64 + 0];
       buff[1] = buff[64 + 1];
       buff[2] = buff[64 + 2];
@@ -9711,48 +9711,48 @@ var $Cn = class _$Cn {
     return buffLen;
   }
   digest() {
-    if (!this.v) {
-      this.v = true;
-      if (this.u) {
-        this.u = 0;
-        this.r = this.w(
-          this.p,
-          this.r,
+    if (!this._finished) {
+      this._finished = true;
+      if (this._leftoverHighSurrogate) {
+        this._leftoverHighSurrogate = 0;
+        this._buffLen = this._push(
+          this._buff,
+          this._buffLen,
           65533
           /* SHA1Constant.UNICODE_REPLACEMENT */
         );
       }
-      this.t += this.r;
-      this.x();
+      this._totalLen += this._buffLen;
+      this._wrapUp();
     }
-    return toHexString(this.h) + toHexString(this.l) + toHexString(this.m) + toHexString(this.n) + toHexString(this.o);
+    return toHexString(this._h0) + toHexString(this._h1) + toHexString(this._h2) + toHexString(this._h3) + toHexString(this._h4);
   }
-  x() {
-    this.p[this.r++] = 128;
-    this.p.subarray(this.r).fill(0);
-    if (this.r > 56) {
-      this.y();
-      this.p.fill(0);
+  _wrapUp() {
+    this._buff[this._buffLen++] = 128;
+    this._buff.subarray(this._buffLen).fill(0);
+    if (this._buffLen > 56) {
+      this._step();
+      this._buff.fill(0);
     }
-    const ml = 8 * this.t;
-    this.q.setUint32(56, Math.floor(ml / 4294967296), false);
-    this.q.setUint32(60, ml % 4294967296, false);
-    this.y();
+    const ml = 8 * this._totalLen;
+    this._buffDV.setUint32(56, Math.floor(ml / 4294967296), false);
+    this._buffDV.setUint32(60, ml % 4294967296, false);
+    this._step();
   }
-  y() {
-    const bigBlock32 = _$Cn.g;
-    const data = this.q;
+  _step() {
+    const bigBlock32 = _StringSHA1._bigBlock32;
+    const data = this._buffDV;
     for (let j = 0; j < 64; j += 4) {
       bigBlock32.setUint32(j, data.getUint32(j, false), false);
     }
     for (let j = 64; j < 320; j += 4) {
       bigBlock32.setUint32(j, leftRotate(bigBlock32.getUint32(j - 12, false) ^ bigBlock32.getUint32(j - 32, false) ^ bigBlock32.getUint32(j - 56, false) ^ bigBlock32.getUint32(j - 64, false), 1), false);
     }
-    let a = this.h;
-    let b = this.l;
-    let c = this.m;
-    let d = this.n;
-    let e = this.o;
+    let a = this._h0;
+    let b = this._h1;
+    let c = this._h2;
+    let d = this._h3;
+    let e = this._h4;
     let f, k;
     let temp;
     for (let j = 0; j < 80; j++) {
@@ -9776,11 +9776,11 @@ var $Cn = class _$Cn {
       b = a;
       a = temp;
     }
-    this.h = this.h + a & 4294967295;
-    this.l = this.l + b & 4294967295;
-    this.m = this.m + c & 4294967295;
-    this.n = this.n + d & 4294967295;
-    this.o = this.o + e & 4294967295;
+    this._h0 = this._h0 + a & 4294967295;
+    this._h1 = this._h1 + b & 4294967295;
+    this._h2 = this._h2 + c & 4294967295;
+    this._h3 = this._h3 + d & 4294967295;
+    this._h4 = this._h4 + e & 4294967295;
   }
 };
 
@@ -9823,14 +9823,14 @@ function hintDidYouMean(...meant) {
 }
 var hintDidYouForgetToOpenOrCloseQuote = localize(1866, null);
 var hintDidYouForgetToEscapeSlash = localize(1867, null);
-var $Xn = class _$Xn {
+var Scanner = class _Scanner {
   constructor() {
-    this.c = "";
-    this.d = 0;
-    this.e = 0;
-    this.f = [];
-    this.g = [];
-    this.m = /[a-zA-Z0-9_<>\-\./\\:\*\?\+\[\]\^,#@;"%\$\p{L}-]+/uy;
+    this._input = "";
+    this._start = 0;
+    this._current = 0;
+    this._tokens = [];
+    this._errors = [];
+    this.stringRe = /[a-zA-Z0-9_<>\-\./\\:\*\?\+\[\]\^,#@;"%\$\p{L}-]+/uy;
   }
   static getLexeme(token) {
     switch (token.type) {
@@ -9877,14 +9877,14 @@ var $Xn = class _$Xn {
       case 20:
         return "EOF";
       default:
-        throw $xb(`unhandled token type: ${JSON.stringify(token)}; have you forgotten to add a case?`);
+        throw illegalState(`unhandled token type: ${JSON.stringify(token)}; have you forgotten to add a case?`);
     }
   }
   static {
-    this.a = new Set(["i", "g", "s", "m", "y", "u"].map((ch) => ch.charCodeAt(0)));
+    this._regexFlags = new Set(["i", "g", "s", "m", "y", "u"].map((ch) => ch.charCodeAt(0)));
   }
   static {
-    this.b = /* @__PURE__ */ new Map([
+    this._keywords = /* @__PURE__ */ new Map([
       [
         "not",
         14
@@ -9908,81 +9908,81 @@ var $Xn = class _$Xn {
     ]);
   }
   get errors() {
-    return this.g;
+    return this._errors;
   }
   reset(value) {
-    this.c = value;
-    this.d = 0;
-    this.e = 0;
-    this.f = [];
-    this.g = [];
+    this._input = value;
+    this._start = 0;
+    this._current = 0;
+    this._tokens = [];
+    this._errors = [];
     return this;
   }
   scan() {
-    while (!this.r()) {
-      this.d = this.e;
-      const ch = this.i();
+    while (!this._isAtEnd()) {
+      this._start = this._current;
+      const ch = this._advance();
       switch (ch) {
         case 40:
-          this.k(
+          this._addToken(
             0
             /* TokenType.LParen */
           );
           break;
         case 41:
-          this.k(
+          this._addToken(
             1
             /* TokenType.RParen */
           );
           break;
         case 33:
-          if (this.h(
+          if (this._match(
             61
             /* CharCode.Equals */
           )) {
-            const isTripleEq = this.h(
+            const isTripleEq = this._match(
               61
               /* CharCode.Equals */
             );
-            this.f.push({ type: 4, offset: this.d, isTripleEq });
+            this._tokens.push({ type: 4, offset: this._start, isTripleEq });
           } else {
-            this.k(
+            this._addToken(
               2
               /* TokenType.Neg */
             );
           }
           break;
         case 39:
-          this.o();
+          this._quotedString();
           break;
         case 47:
-          this.q();
+          this._regex();
           break;
         case 61:
-          if (this.h(
+          if (this._match(
             61
             /* CharCode.Equals */
           )) {
-            const isTripleEq = this.h(
+            const isTripleEq = this._match(
               61
               /* CharCode.Equals */
             );
-            this.f.push({ type: 3, offset: this.d, isTripleEq });
-          } else if (this.h(
+            this._tokens.push({ type: 3, offset: this._start, isTripleEq });
+          } else if (this._match(
             126
             /* CharCode.Tilde */
           )) {
-            this.k(
+            this._addToken(
               9
               /* TokenType.RegexOp */
             );
           } else {
-            this.l(hintDidYouMean("==", "=~"));
+            this._error(hintDidYouMean("==", "=~"));
           }
           break;
         case 60:
-          this.k(
-            this.h(
+          this._addToken(
+            this._match(
               61
               /* CharCode.Equals */
             ) ? 6 : 5
@@ -9990,8 +9990,8 @@ var $Xn = class _$Xn {
           );
           break;
         case 62:
-          this.k(
-            this.h(
+          this._addToken(
+            this._match(
               61
               /* CharCode.Equals */
             ) ? 8 : 7
@@ -9999,29 +9999,29 @@ var $Xn = class _$Xn {
           );
           break;
         case 38:
-          if (this.h(
+          if (this._match(
             38
             /* CharCode.Ampersand */
           )) {
-            this.k(
+            this._addToken(
               15
               /* TokenType.And */
             );
           } else {
-            this.l(hintDidYouMean("&&"));
+            this._error(hintDidYouMean("&&"));
           }
           break;
         case 124:
-          if (this.h(
+          if (this._match(
             124
             /* CharCode.Pipe */
           )) {
-            this.k(
+            this._addToken(
               16
               /* TokenType.Or */
             );
           } else {
-            this.l(hintDidYouMean("||"));
+            this._error(hintDidYouMean("||"));
           }
           break;
         // TODO@ulugbekna: 1) rewrite using a regex 2) reconsider what characters are considered whitespace, including unicode, nbsp, etc.
@@ -10032,67 +10032,67 @@ var $Xn = class _$Xn {
         case 160:
           break;
         default:
-          this.n();
+          this._string();
       }
     }
-    this.d = this.e;
-    this.k(
+    this._start = this._current;
+    this._addToken(
       20
       /* TokenType.EOF */
     );
-    return Array.from(this.f);
+    return Array.from(this._tokens);
   }
-  h(expected) {
-    if (this.r()) {
+  _match(expected) {
+    if (this._isAtEnd()) {
       return false;
     }
-    if (this.c.charCodeAt(this.e) !== expected) {
+    if (this._input.charCodeAt(this._current) !== expected) {
       return false;
     }
-    this.e++;
+    this._current++;
     return true;
   }
-  i() {
-    return this.c.charCodeAt(this.e++);
+  _advance() {
+    return this._input.charCodeAt(this._current++);
   }
-  j() {
-    return this.r() ? 0 : this.c.charCodeAt(this.e);
+  _peek() {
+    return this._isAtEnd() ? 0 : this._input.charCodeAt(this._current);
   }
-  k(type) {
-    this.f.push({ type, offset: this.d });
+  _addToken(type) {
+    this._tokens.push({ type, offset: this._start });
   }
-  l(additional) {
-    const offset = this.d;
-    const lexeme = this.c.substring(this.d, this.e);
-    const errToken = { type: 19, offset: this.d, lexeme };
-    this.g.push({ offset, lexeme, additionalInfo: additional });
-    this.f.push(errToken);
+  _error(additional) {
+    const offset = this._start;
+    const lexeme = this._input.substring(this._start, this._current);
+    const errToken = { type: 19, offset: this._start, lexeme };
+    this._errors.push({ offset, lexeme, additionalInfo: additional });
+    this._tokens.push(errToken);
   }
-  n() {
-    this.m.lastIndex = this.d;
-    const match = this.m.exec(this.c);
+  _string() {
+    this.stringRe.lastIndex = this._start;
+    const match = this.stringRe.exec(this._input);
     if (match) {
-      this.e = this.d + match[0].length;
-      const lexeme = this.c.substring(this.d, this.e);
-      const keyword = _$Xn.b.get(lexeme);
+      this._current = this._start + match[0].length;
+      const lexeme = this._input.substring(this._start, this._current);
+      const keyword = _Scanner._keywords.get(lexeme);
       if (keyword) {
-        this.k(keyword);
+        this._addToken(keyword);
       } else {
-        this.f.push({ type: 17, lexeme, offset: this.d });
+        this._tokens.push({ type: 17, lexeme, offset: this._start });
       }
     }
   }
   // captures the lexeme without the leading and trailing '
-  o() {
-    while (this.j() !== 39 && !this.r()) {
-      this.i();
+  _quotedString() {
+    while (this._peek() !== 39 && !this._isAtEnd()) {
+      this._advance();
     }
-    if (this.r()) {
-      this.l(hintDidYouForgetToOpenOrCloseQuote);
+    if (this._isAtEnd()) {
+      this._error(hintDidYouForgetToOpenOrCloseQuote);
       return;
     }
-    this.i();
-    this.f.push({ type: 18, lexeme: this.c.substring(this.d + 1, this.e - 1), offset: this.d + 1 });
+    this._advance();
+    this._tokens.push({ type: 18, lexeme: this._input.substring(this._start + 1, this._current - 1), offset: this._start + 1 });
   }
   /*
    * Lexing a regex expression: /.../[igsmyu]*
@@ -10100,17 +10100,17 @@ var $Xn = class _$Xn {
    *
    * Note that we want slashes within a regex to be escaped, e.g., /file:\\/\\/\\// should match `file:///`
    */
-  q() {
-    let p = this.e;
+  _regex() {
+    let p = this._current;
     let inEscape = false;
     let inCharacterClass = false;
     while (true) {
-      if (p >= this.c.length) {
-        this.e = p;
-        this.l(hintDidYouForgetToEscapeSlash);
+      if (p >= this._input.length) {
+        this._current = p;
+        this._error(hintDidYouForgetToEscapeSlash);
         return;
       }
-      const ch = this.c.charCodeAt(p);
+      const ch = this._input.charCodeAt(p);
       if (inEscape) {
         inEscape = false;
       } else if (ch === 47 && !inCharacterClass) {
@@ -10125,15 +10125,15 @@ var $Xn = class _$Xn {
       }
       p++;
     }
-    while (p < this.c.length && _$Xn.a.has(this.c.charCodeAt(p))) {
+    while (p < this._input.length && _Scanner._regexFlags.has(this._input.charCodeAt(p))) {
       p++;
     }
-    this.e = p;
-    const lexeme = this.c.substring(this.d, this.e);
-    this.f.push({ type: 10, lexeme, offset: this.d });
+    this._current = p;
+    const lexeme = this._input.substring(this._start, this._current);
+    this._tokens.push({ type: 10, lexeme, offset: this._start });
   }
-  r() {
-    return this.e >= this.c.length;
+  _isAtEnd() {
+    return this._current >= this._input.length;
   }
 };
 
@@ -10148,7 +10148,7 @@ var _util;
   }
   _util2.getServiceDependencies = getServiceDependencies;
 })(_util || (_util = {}));
-var $Ej = $Fj("instantiationService");
+var IInstantiationService = createDecorator2("instantiationService");
 function storeServiceDependency(id2, target, index) {
   if (target[_util.DI_TARGET] === target) {
     target[_util.DI_DEPENDENCIES].push({ id: id2, index });
@@ -10157,7 +10157,7 @@ function storeServiceDependency(id2, target, index) {
     target[_util.DI_TARGET] = target;
   }
 }
-function $Fj(serviceId) {
+function createDecorator2(serviceId) {
   if (_util.serviceIds.has(serviceId)) {
     return _util.serviceIds.get(serviceId);
   }
@@ -10176,15 +10176,15 @@ function $Fj(serviceId) {
 var CONSTANT_VALUES = /* @__PURE__ */ new Map();
 CONSTANT_VALUES.set("false", false);
 CONSTANT_VALUES.set("true", true);
-CONSTANT_VALUES.set("isMac", $n);
-CONSTANT_VALUES.set("isLinux", $o);
-CONSTANT_VALUES.set("isWindows", $m);
-CONSTANT_VALUES.set("isWeb", $s);
-CONSTANT_VALUES.set("isMacNative", $n && !$s);
-CONSTANT_VALUES.set("isEdge", $L);
-CONSTANT_VALUES.set("isFirefox", $J);
-CONSTANT_VALUES.set("isChrome", $I);
-CONSTANT_VALUES.set("isSafari", $K);
+CONSTANT_VALUES.set("isMac", isMacintosh);
+CONSTANT_VALUES.set("isLinux", isLinux);
+CONSTANT_VALUES.set("isWindows", isWindows);
+CONSTANT_VALUES.set("isWeb", isWeb);
+CONSTANT_VALUES.set("isMacNative", isMacintosh && !isWeb);
+CONSTANT_VALUES.set("isEdge", isEdge);
+CONSTANT_VALUES.set("isFirefox", isFirefox);
+CONSTANT_VALUES.set("isChrome", isChrome);
+CONSTANT_VALUES.set("isSafari", isSafari);
 var hasOwnProperty = Object.prototype.hasOwnProperty;
 var ContextKeyExprType;
 (function(ContextKeyExprType2) {
@@ -10216,23 +10216,23 @@ var errorUnexpectedToken = localize(1847, null);
 var hintUnexpectedToken = localize(1848, null);
 var errorUnexpectedEOF = localize(1849, null);
 var hintUnexpectedEOF = localize(1850, null);
-var $Zn = class _$Zn {
+var Parser = class _Parser {
   static {
-    this.c = new Error();
+    this._parseError = new Error();
   }
   get lexingErrors() {
-    return this.d.errors;
+    return this._scanner.errors;
   }
   get parsingErrors() {
-    return this.h;
+    return this._parsingErrors;
   }
-  constructor(k = defaultConfig) {
-    this.k = k;
-    this.d = new $Xn();
-    this.f = [];
-    this.g = 0;
-    this.h = [];
-    this.v = /g|y/g;
+  constructor(_config = defaultConfig) {
+    this._config = _config;
+    this._scanner = new Scanner();
+    this._tokens = [];
+    this._current = 0;
+    this._parsingErrors = [];
+    this._flagsGYRe = /g|y/g;
   }
   /**
    * Parse a context key expression.
@@ -10242,126 +10242,126 @@ var $Zn = class _$Zn {
    */
   parse(input) {
     if (input === "") {
-      this.h.push({ message: errorEmptyString, offset: 0, lexeme: "", additionalInfo: hintEmptyString });
+      this._parsingErrors.push({ message: errorEmptyString, offset: 0, lexeme: "", additionalInfo: hintEmptyString });
       return void 0;
     }
-    this.f = this.d.reset(input).scan();
-    this.g = 0;
-    this.h = [];
+    this._tokens = this._scanner.reset(input).scan();
+    this._current = 0;
+    this._parsingErrors = [];
     try {
-      const expr = this.l();
-      if (!this.E()) {
-        const peek = this.D();
+      const expr = this._expr();
+      if (!this._isAtEnd()) {
+        const peek = this._peek();
         const additionalInfo = peek.type === 17 ? hintUnexpectedToken : void 0;
-        this.h.push({ message: errorUnexpectedToken, offset: peek.offset, lexeme: $Xn.getLexeme(peek), additionalInfo });
-        throw _$Zn.c;
+        this._parsingErrors.push({ message: errorUnexpectedToken, offset: peek.offset, lexeme: Scanner.getLexeme(peek), additionalInfo });
+        throw _Parser._parseError;
       }
       return expr;
     } catch (e) {
-      if (!(e === _$Zn.c)) {
+      if (!(e === _Parser._parseError)) {
         throw e;
       }
       return void 0;
     }
   }
-  l() {
-    return this.m();
+  _expr() {
+    return this._or();
   }
-  m() {
-    const expr = [this.o()];
-    while (this.y(
+  _or() {
+    const expr = [this._and()];
+    while (this._matchOne(
       16
       /* TokenType.Or */
     )) {
-      const right = this.o();
+      const right = this._and();
       expr.push(right);
     }
-    return expr.length === 1 ? expr[0] : $1n.or(...expr);
+    return expr.length === 1 ? expr[0] : ContextKeyExpr.or(...expr);
   }
-  o() {
-    const expr = [this.s()];
-    while (this.y(
+  _and() {
+    const expr = [this._term()];
+    while (this._matchOne(
       15
       /* TokenType.And */
     )) {
-      const right = this.s();
+      const right = this._term();
       expr.push(right);
     }
-    return expr.length === 1 ? expr[0] : $1n.and(...expr);
+    return expr.length === 1 ? expr[0] : ContextKeyExpr.and(...expr);
   }
-  s() {
-    if (this.y(
+  _term() {
+    if (this._matchOne(
       2
       /* TokenType.Neg */
     )) {
-      const peek = this.D();
+      const peek = this._peek();
       switch (peek.type) {
         case 11:
-          this.z();
-          return $4n.INSTANCE;
+          this._advance();
+          return ContextKeyFalseExpr.INSTANCE;
         case 12:
-          this.z();
-          return $5n.INSTANCE;
+          this._advance();
+          return ContextKeyTrueExpr.INSTANCE;
         case 0: {
-          this.z();
-          const expr = this.l();
-          this.A(1, errorClosingParenthesis);
+          this._advance();
+          const expr = this._expr();
+          this._consume(1, errorClosingParenthesis);
           return expr?.negate();
         }
         case 17:
-          this.z();
-          return $$n.create(peek.lexeme);
+          this._advance();
+          return ContextKeyNotExpr.create(peek.lexeme);
         default:
-          throw this.B(`KEY | true | false | '(' expression ')'`, peek);
+          throw this._errExpectedButGot(`KEY | true | false | '(' expression ')'`, peek);
       }
     }
-    return this.t();
+    return this._primary();
   }
-  t() {
-    const peek = this.D();
+  _primary() {
+    const peek = this._peek();
     switch (peek.type) {
       case 11:
-        this.z();
-        return $1n.true();
+        this._advance();
+        return ContextKeyExpr.true();
       case 12:
-        this.z();
-        return $1n.false();
+        this._advance();
+        return ContextKeyExpr.false();
       case 0: {
-        this.z();
-        const expr = this.l();
-        this.A(1, errorClosingParenthesis);
+        this._advance();
+        const expr = this._expr();
+        this._consume(1, errorClosingParenthesis);
         return expr;
       }
       case 17: {
         const key = peek.lexeme;
-        this.z();
-        if (this.y(
+        this._advance();
+        if (this._matchOne(
           9
           /* TokenType.RegexOp */
         )) {
-          const expr = this.D();
-          if (!this.k.regexParsingWithErrorRecovery) {
-            this.z();
+          const expr = this._peek();
+          if (!this._config.regexParsingWithErrorRecovery) {
+            this._advance();
             if (expr.type !== 10) {
-              throw this.B(`REGEX`, expr);
+              throw this._errExpectedButGot(`REGEX`, expr);
             }
             const regexLexeme = expr.lexeme;
             const closingSlashIndex = regexLexeme.lastIndexOf("/");
-            const flags = closingSlashIndex === regexLexeme.length - 1 ? void 0 : this.w(regexLexeme.substring(closingSlashIndex + 1));
+            const flags = closingSlashIndex === regexLexeme.length - 1 ? void 0 : this._removeFlagsGY(regexLexeme.substring(closingSlashIndex + 1));
             let regexp;
             try {
               regexp = new RegExp(regexLexeme.substring(1, closingSlashIndex), flags);
             } catch (e) {
-              throw this.B(`REGEX`, expr);
+              throw this._errExpectedButGot(`REGEX`, expr);
             }
-            return $do.create(key, regexp);
+            return ContextKeyRegexExpr.create(key, regexp);
           }
           switch (expr.type) {
             case 10:
             case 19: {
               const lexemeReconstruction = [expr.lexeme];
-              this.z();
-              let followingToken = this.D();
+              this._advance();
+              let followingToken = this._peek();
               let parenBalance = 0;
               for (let i = 0; i < expr.lexeme.length; i++) {
                 if (expr.lexeme.charCodeAt(i) === 40) {
@@ -10370,7 +10370,7 @@ var $Zn = class _$Zn {
                   parenBalance--;
                 }
               }
-              while (!this.E() && followingToken.type !== 15 && followingToken.type !== 16) {
+              while (!this._isAtEnd() && followingToken.type !== 15 && followingToken.type !== 16) {
                 switch (followingToken.type) {
                   case 0:
                     parenBalance++;
@@ -10391,26 +10391,26 @@ var $Zn = class _$Zn {
                 if (parenBalance < 0) {
                   break;
                 }
-                lexemeReconstruction.push($Xn.getLexeme(followingToken));
-                this.z();
-                followingToken = this.D();
+                lexemeReconstruction.push(Scanner.getLexeme(followingToken));
+                this._advance();
+                followingToken = this._peek();
               }
               const regexLexeme = lexemeReconstruction.join("");
               const closingSlashIndex = regexLexeme.lastIndexOf("/");
-              const flags = closingSlashIndex === regexLexeme.length - 1 ? void 0 : this.w(regexLexeme.substring(closingSlashIndex + 1));
+              const flags = closingSlashIndex === regexLexeme.length - 1 ? void 0 : this._removeFlagsGY(regexLexeme.substring(closingSlashIndex + 1));
               let regexp;
               try {
                 regexp = new RegExp(regexLexeme.substring(1, closingSlashIndex), flags);
               } catch (e) {
-                throw this.B(`REGEX`, expr);
+                throw this._errExpectedButGot(`REGEX`, expr);
               }
-              return $1n.regex(key, regexp);
+              return ContextKeyExpr.regex(key, regexp);
             }
             case 18: {
               const serializedValue = expr.lexeme;
-              this.z();
+              this._advance();
               let regex = null;
-              if (!$Nf(serializedValue)) {
+              if (!isFalsyOrWhitespace(serializedValue)) {
                 const start = serializedValue.indexOf("/");
                 const end = serializedValue.lastIndexOf("/");
                 if (start !== end && start >= 0) {
@@ -10419,215 +10419,215 @@ var $Zn = class _$Zn {
                   try {
                     regex = new RegExp(value, caseIgnoreFlag);
                   } catch (_e) {
-                    throw this.B(`REGEX`, expr);
+                    throw this._errExpectedButGot(`REGEX`, expr);
                   }
                 }
               }
               if (regex === null) {
-                throw this.B("REGEX", expr);
+                throw this._errExpectedButGot("REGEX", expr);
               }
-              return $do.create(key, regex);
+              return ContextKeyRegexExpr.create(key, regex);
             }
             default:
-              throw this.B("REGEX", this.D());
+              throw this._errExpectedButGot("REGEX", this._peek());
           }
         }
-        if (this.y(
+        if (this._matchOne(
           14
           /* TokenType.Not */
         )) {
-          this.A(13, errorNoInAfterNot);
-          const right = this.u();
-          return $1n.notIn(key, right);
+          this._consume(13, errorNoInAfterNot);
+          const right = this._value();
+          return ContextKeyExpr.notIn(key, right);
         }
-        const maybeOp = this.D().type;
+        const maybeOp = this._peek().type;
         switch (maybeOp) {
           case 3: {
-            this.z();
-            const right = this.u();
-            if (this.x().type === 18) {
-              return $1n.equals(key, right);
+            this._advance();
+            const right = this._value();
+            if (this._previous().type === 18) {
+              return ContextKeyExpr.equals(key, right);
             }
             switch (right) {
               case "true":
-                return $1n.has(key);
+                return ContextKeyExpr.has(key);
               case "false":
-                return $1n.not(key);
+                return ContextKeyExpr.not(key);
               default:
-                return $1n.equals(key, right);
+                return ContextKeyExpr.equals(key, right);
             }
           }
           case 4: {
-            this.z();
-            const right = this.u();
-            if (this.x().type === 18) {
-              return $1n.notEquals(key, right);
+            this._advance();
+            const right = this._value();
+            if (this._previous().type === 18) {
+              return ContextKeyExpr.notEquals(key, right);
             }
             switch (right) {
               case "true":
-                return $1n.not(key);
+                return ContextKeyExpr.not(key);
               case "false":
-                return $1n.has(key);
+                return ContextKeyExpr.has(key);
               default:
-                return $1n.notEquals(key, right);
+                return ContextKeyExpr.notEquals(key, right);
             }
           }
           // TODO: ContextKeyExpr.smaller(key, right) accepts only `number` as `right` AND during eval of this node, we just eval to `false` if `right` is not a number
           // consequently, package.json linter should _warn_ the user if they're passing undesired things to ops
           case 5:
-            this.z();
-            return $bo.create(key, this.u());
+            this._advance();
+            return ContextKeySmallerExpr.create(key, this._value());
           case 6:
-            this.z();
-            return $co.create(key, this.u());
+            this._advance();
+            return ContextKeySmallerEqualsExpr.create(key, this._value());
           case 7:
-            this.z();
-            return $_n.create(key, this.u());
+            this._advance();
+            return ContextKeyGreaterExpr.create(key, this._value());
           case 8:
-            this.z();
-            return $ao.create(key, this.u());
+            this._advance();
+            return ContextKeyGreaterEqualsExpr.create(key, this._value());
           case 13:
-            this.z();
-            return $1n.in(key, this.u());
+            this._advance();
+            return ContextKeyExpr.in(key, this._value());
           default:
-            return $1n.has(key);
+            return ContextKeyExpr.has(key);
         }
       }
       case 20:
-        this.h.push({ message: errorUnexpectedEOF, offset: peek.offset, lexeme: "", additionalInfo: hintUnexpectedEOF });
-        throw _$Zn.c;
+        this._parsingErrors.push({ message: errorUnexpectedEOF, offset: peek.offset, lexeme: "", additionalInfo: hintUnexpectedEOF });
+        throw _Parser._parseError;
       default:
-        throw this.B(`true | false | KEY 
+        throw this._errExpectedButGot(`true | false | KEY 
 	| KEY '=~' REGEX 
-	| KEY ('==' | '!=' | '<' | '<=' | '>' | '>=' | 'in' | 'not' 'in') value`, this.D());
+	| KEY ('==' | '!=' | '<' | '<=' | '>' | '>=' | 'in' | 'not' 'in') value`, this._peek());
     }
   }
-  u() {
-    const token = this.D();
+  _value() {
+    const token = this._peek();
     switch (token.type) {
       case 17:
       case 18:
-        this.z();
+        this._advance();
         return token.lexeme;
       case 11:
-        this.z();
+        this._advance();
         return "true";
       case 12:
-        this.z();
+        this._advance();
         return "false";
       case 13:
-        this.z();
+        this._advance();
         return "in";
       default:
         return "";
     }
   }
-  w(flags) {
-    return flags.replaceAll(this.v, "");
+  _removeFlagsGY(flags) {
+    return flags.replaceAll(this._flagsGYRe, "");
   }
   // careful: this can throw if current token is the initial one (ie index = 0)
-  x() {
-    return this.f[this.g - 1];
+  _previous() {
+    return this._tokens[this._current - 1];
   }
-  y(token) {
-    if (this.C(token)) {
-      this.z();
+  _matchOne(token) {
+    if (this._check(token)) {
+      this._advance();
       return true;
     }
     return false;
   }
-  z() {
-    if (!this.E()) {
-      this.g++;
+  _advance() {
+    if (!this._isAtEnd()) {
+      this._current++;
     }
-    return this.x();
+    return this._previous();
   }
-  A(type, message) {
-    if (this.C(type)) {
-      return this.z();
+  _consume(type, message) {
+    if (this._check(type)) {
+      return this._advance();
     }
-    throw this.B(message, this.D());
+    throw this._errExpectedButGot(message, this._peek());
   }
-  B(expected, got, additionalInfo) {
-    const message = localize(1851, null, expected, $Xn.getLexeme(got));
+  _errExpectedButGot(expected, got, additionalInfo) {
+    const message = localize(1851, null, expected, Scanner.getLexeme(got));
     const offset = got.offset;
-    const lexeme = $Xn.getLexeme(got);
-    this.h.push({ message, offset, lexeme, additionalInfo });
-    return _$Zn.c;
+    const lexeme = Scanner.getLexeme(got);
+    this._parsingErrors.push({ message, offset, lexeme, additionalInfo });
+    return _Parser._parseError;
   }
-  C(type) {
-    return this.D().type === type;
+  _check(type) {
+    return this._peek().type === type;
   }
-  D() {
-    return this.f[this.g];
+  _peek() {
+    return this._tokens[this._current];
   }
-  E() {
-    return this.D().type === 20;
+  _isAtEnd() {
+    return this._peek().type === 20;
   }
 };
-var $1n = class {
+var ContextKeyExpr = class {
   static false() {
-    return $4n.INSTANCE;
+    return ContextKeyFalseExpr.INSTANCE;
   }
   static true() {
-    return $5n.INSTANCE;
+    return ContextKeyTrueExpr.INSTANCE;
   }
   static has(key) {
-    return $6n.create(key);
+    return ContextKeyDefinedExpr.create(key);
   }
   static equals(key, value) {
-    return $7n.create(key, value);
+    return ContextKeyEqualsExpr.create(key, value);
   }
   static notEquals(key, value) {
-    return $0n.create(key, value);
+    return ContextKeyNotEqualsExpr.create(key, value);
   }
   static regex(key, value) {
-    return $do.create(key, value);
+    return ContextKeyRegexExpr.create(key, value);
   }
   static in(key, value) {
-    return $8n.create(key, value);
+    return ContextKeyInExpr.create(key, value);
   }
   static notIn(key, value) {
-    return $9n.create(key, value);
+    return ContextKeyNotInExpr.create(key, value);
   }
   static not(key) {
-    return $$n.create(key);
+    return ContextKeyNotExpr.create(key);
   }
   static and(...expr) {
-    return $fo.create(expr, null, true);
+    return ContextKeyAndExpr.create(expr, null, true);
   }
   static or(...expr) {
-    return $go.create(expr, null, true);
+    return ContextKeyOrExpr.create(expr, null, true);
   }
   static greater(key, value) {
-    return $_n.create(key, value);
+    return ContextKeyGreaterExpr.create(key, value);
   }
   static greaterEquals(key, value) {
-    return $ao.create(key, value);
+    return ContextKeyGreaterEqualsExpr.create(key, value);
   }
   static smaller(key, value) {
-    return $bo.create(key, value);
+    return ContextKeySmallerExpr.create(key, value);
   }
   static smallerEquals(key, value) {
-    return $co.create(key, value);
+    return ContextKeySmallerEqualsExpr.create(key, value);
   }
   static {
-    this.c = new $Zn({ regexParsingWithErrorRecovery: false });
+    this._parser = new Parser({ regexParsingWithErrorRecovery: false });
   }
   static deserialize(serialized) {
     if (serialized === void 0 || serialized === null) {
       return void 0;
     }
-    const expr = this.c.parse(serialized);
+    const expr = this._parser.parse(serialized);
     return expr;
   }
 };
 function cmp(a, b) {
   return a.cmp(b);
 }
-var $4n = class _$4n {
+var ContextKeyFalseExpr = class _ContextKeyFalseExpr {
   static {
-    this.INSTANCE = new _$4n();
+    this.INSTANCE = new _ContextKeyFalseExpr();
   }
   constructor() {
     this.type = 0;
@@ -10654,12 +10654,12 @@ var $4n = class _$4n {
     return this;
   }
   negate() {
-    return $5n.INSTANCE;
+    return ContextKeyTrueExpr.INSTANCE;
   }
 };
-var $5n = class _$5n {
+var ContextKeyTrueExpr = class _ContextKeyTrueExpr {
   static {
-    this.INSTANCE = new _$5n();
+    this.INSTANCE = new _ContextKeyTrueExpr();
   }
   constructor() {
     this.type = 1;
@@ -10686,20 +10686,20 @@ var $5n = class _$5n {
     return this;
   }
   negate() {
-    return $4n.INSTANCE;
+    return ContextKeyFalseExpr.INSTANCE;
   }
 };
-var $6n = class _$6n {
+var ContextKeyDefinedExpr = class _ContextKeyDefinedExpr {
   static create(key, negated = null) {
     const constantValue = CONSTANT_VALUES.get(key);
     if (typeof constantValue === "boolean") {
-      return constantValue ? $5n.INSTANCE : $4n.INSTANCE;
+      return constantValue ? ContextKeyTrueExpr.INSTANCE : ContextKeyFalseExpr.INSTANCE;
     }
-    return new _$6n(key, negated);
+    return new _ContextKeyDefinedExpr(key, negated);
   }
-  constructor(key, c) {
+  constructor(key, negated) {
     this.key = key;
-    this.c = c;
+    this.negated = negated;
     this.type = 2;
   }
   cmp(other) {
@@ -10717,7 +10717,7 @@ var $6n = class _$6n {
   substituteConstants() {
     const constantValue = CONSTANT_VALUES.get(this.key);
     if (typeof constantValue === "boolean") {
-      return constantValue ? $5n.INSTANCE : $4n.INSTANCE;
+      return constantValue ? ContextKeyTrueExpr.INSTANCE : ContextKeyFalseExpr.INSTANCE;
     }
     return this;
   }
@@ -10734,88 +10734,88 @@ var $6n = class _$6n {
     return mapFnc.mapDefined(this.key);
   }
   negate() {
-    if (!this.c) {
-      this.c = $$n.create(this.key, this);
+    if (!this.negated) {
+      this.negated = ContextKeyNotExpr.create(this.key, this);
     }
-    return this.c;
+    return this.negated;
   }
 };
-var $7n = class _$7n {
+var ContextKeyEqualsExpr = class _ContextKeyEqualsExpr {
   static create(key, value, negated = null) {
     if (typeof value === "boolean") {
-      return value ? $6n.create(key, negated) : $$n.create(key, negated);
+      return value ? ContextKeyDefinedExpr.create(key, negated) : ContextKeyNotExpr.create(key, negated);
     }
     const constantValue = CONSTANT_VALUES.get(key);
     if (typeof constantValue === "boolean") {
       const trueValue = constantValue ? "true" : "false";
-      return value === trueValue ? $5n.INSTANCE : $4n.INSTANCE;
+      return value === trueValue ? ContextKeyTrueExpr.INSTANCE : ContextKeyFalseExpr.INSTANCE;
     }
-    return new _$7n(key, value, negated);
+    return new _ContextKeyEqualsExpr(key, value, negated);
   }
-  constructor(c, d, f) {
-    this.c = c;
-    this.d = d;
-    this.f = f;
+  constructor(key, value, negated) {
+    this.key = key;
+    this.value = value;
+    this.negated = negated;
     this.type = 4;
   }
   cmp(other) {
     if (other.type !== this.type) {
       return this.type - other.type;
     }
-    return cmp2(this.c, this.d, other.c, other.d);
+    return cmp2(this.key, this.value, other.key, other.value);
   }
   equals(other) {
     if (other.type === this.type) {
-      return this.c === other.c && this.d === other.d;
+      return this.key === other.key && this.value === other.value;
     }
     return false;
   }
   substituteConstants() {
-    const constantValue = CONSTANT_VALUES.get(this.c);
+    const constantValue = CONSTANT_VALUES.get(this.key);
     if (typeof constantValue === "boolean") {
       const trueValue = constantValue ? "true" : "false";
-      return this.d === trueValue ? $5n.INSTANCE : $4n.INSTANCE;
+      return this.value === trueValue ? ContextKeyTrueExpr.INSTANCE : ContextKeyFalseExpr.INSTANCE;
     }
     return this;
   }
   evaluate(context) {
-    return context.getValue(this.c) == this.d;
+    return context.getValue(this.key) == this.value;
   }
   serialize() {
-    return `${this.c} == '${this.d}'`;
+    return `${this.key} == '${this.value}'`;
   }
   keys() {
-    return [this.c];
+    return [this.key];
   }
   map(mapFnc) {
-    return mapFnc.mapEquals(this.c, this.d);
+    return mapFnc.mapEquals(this.key, this.value);
   }
   negate() {
-    if (!this.f) {
-      this.f = $0n.create(this.c, this.d, this);
+    if (!this.negated) {
+      this.negated = ContextKeyNotEqualsExpr.create(this.key, this.value, this);
     }
-    return this.f;
+    return this.negated;
   }
 };
-var $8n = class _$8n {
+var ContextKeyInExpr = class _ContextKeyInExpr {
   static create(key, valueKey) {
-    return new _$8n(key, valueKey);
+    return new _ContextKeyInExpr(key, valueKey);
   }
-  constructor(d, f) {
-    this.d = d;
-    this.f = f;
+  constructor(key, valueKey) {
+    this.key = key;
+    this.valueKey = valueKey;
     this.type = 10;
-    this.c = null;
+    this.negated = null;
   }
   cmp(other) {
     if (other.type !== this.type) {
       return this.type - other.type;
     }
-    return cmp2(this.d, this.f, other.d, other.f);
+    return cmp2(this.key, this.valueKey, other.key, other.valueKey);
   }
   equals(other) {
     if (other.type === this.type) {
-      return this.d === other.d && this.f === other.f;
+      return this.key === other.key && this.valueKey === other.valueKey;
     }
     return false;
   }
@@ -10823,8 +10823,8 @@ var $8n = class _$8n {
     return this;
   }
   evaluate(context) {
-    const source = context.getValue(this.f);
-    const item = context.getValue(this.d);
+    const source = context.getValue(this.valueKey);
+    const item = context.getValue(this.key);
     if (Array.isArray(source)) {
       return source.includes(item);
     }
@@ -10834,40 +10834,40 @@ var $8n = class _$8n {
     return false;
   }
   serialize() {
-    return `${this.d} in '${this.f}'`;
+    return `${this.key} in '${this.valueKey}'`;
   }
   keys() {
-    return [this.d, this.f];
+    return [this.key, this.valueKey];
   }
   map(mapFnc) {
-    return mapFnc.mapIn(this.d, this.f);
+    return mapFnc.mapIn(this.key, this.valueKey);
   }
   negate() {
-    if (!this.c) {
-      this.c = $9n.create(this.d, this.f);
+    if (!this.negated) {
+      this.negated = ContextKeyNotInExpr.create(this.key, this.valueKey);
     }
-    return this.c;
+    return this.negated;
   }
 };
-var $9n = class _$9n {
+var ContextKeyNotInExpr = class _ContextKeyNotInExpr {
   static create(key, valueKey) {
-    return new _$9n(key, valueKey);
+    return new _ContextKeyNotInExpr(key, valueKey);
   }
-  constructor(d, f) {
-    this.d = d;
-    this.f = f;
+  constructor(key, valueKey) {
+    this.key = key;
+    this.valueKey = valueKey;
     this.type = 11;
-    this.c = $8n.create(d, f);
+    this._negated = ContextKeyInExpr.create(key, valueKey);
   }
   cmp(other) {
     if (other.type !== this.type) {
       return this.type - other.type;
     }
-    return this.c.cmp(other.c);
+    return this._negated.cmp(other._negated);
   }
   equals(other) {
     if (other.type === this.type) {
-      return this.c.equals(other.c);
+      return this._negated.equals(other._negated);
     }
     return false;
   }
@@ -10875,130 +10875,130 @@ var $9n = class _$9n {
     return this;
   }
   evaluate(context) {
-    return !this.c.evaluate(context);
+    return !this._negated.evaluate(context);
   }
   serialize() {
-    return `${this.d} not in '${this.f}'`;
+    return `${this.key} not in '${this.valueKey}'`;
   }
   keys() {
-    return this.c.keys();
+    return this._negated.keys();
   }
   map(mapFnc) {
-    return mapFnc.mapNotIn(this.d, this.f);
+    return mapFnc.mapNotIn(this.key, this.valueKey);
   }
   negate() {
-    return this.c;
+    return this._negated;
   }
 };
-var $0n = class _$0n {
+var ContextKeyNotEqualsExpr = class _ContextKeyNotEqualsExpr {
   static create(key, value, negated = null) {
     if (typeof value === "boolean") {
       if (value) {
-        return $$n.create(key, negated);
+        return ContextKeyNotExpr.create(key, negated);
       }
-      return $6n.create(key, negated);
+      return ContextKeyDefinedExpr.create(key, negated);
     }
     const constantValue = CONSTANT_VALUES.get(key);
     if (typeof constantValue === "boolean") {
       const falseValue = constantValue ? "true" : "false";
-      return value === falseValue ? $4n.INSTANCE : $5n.INSTANCE;
+      return value === falseValue ? ContextKeyFalseExpr.INSTANCE : ContextKeyTrueExpr.INSTANCE;
     }
-    return new _$0n(key, value, negated);
+    return new _ContextKeyNotEqualsExpr(key, value, negated);
   }
-  constructor(c, d, f) {
-    this.c = c;
-    this.d = d;
-    this.f = f;
+  constructor(key, value, negated) {
+    this.key = key;
+    this.value = value;
+    this.negated = negated;
     this.type = 5;
   }
   cmp(other) {
     if (other.type !== this.type) {
       return this.type - other.type;
     }
-    return cmp2(this.c, this.d, other.c, other.d);
+    return cmp2(this.key, this.value, other.key, other.value);
   }
   equals(other) {
     if (other.type === this.type) {
-      return this.c === other.c && this.d === other.d;
+      return this.key === other.key && this.value === other.value;
     }
     return false;
   }
   substituteConstants() {
-    const constantValue = CONSTANT_VALUES.get(this.c);
+    const constantValue = CONSTANT_VALUES.get(this.key);
     if (typeof constantValue === "boolean") {
       const falseValue = constantValue ? "true" : "false";
-      return this.d === falseValue ? $4n.INSTANCE : $5n.INSTANCE;
+      return this.value === falseValue ? ContextKeyFalseExpr.INSTANCE : ContextKeyTrueExpr.INSTANCE;
     }
     return this;
   }
   evaluate(context) {
-    return context.getValue(this.c) != this.d;
+    return context.getValue(this.key) != this.value;
   }
   serialize() {
-    return `${this.c} != '${this.d}'`;
+    return `${this.key} != '${this.value}'`;
   }
   keys() {
-    return [this.c];
+    return [this.key];
   }
   map(mapFnc) {
-    return mapFnc.mapNotEquals(this.c, this.d);
+    return mapFnc.mapNotEquals(this.key, this.value);
   }
   negate() {
-    if (!this.f) {
-      this.f = $7n.create(this.c, this.d, this);
+    if (!this.negated) {
+      this.negated = ContextKeyEqualsExpr.create(this.key, this.value, this);
     }
-    return this.f;
+    return this.negated;
   }
 };
-var $$n = class _$$n {
+var ContextKeyNotExpr = class _ContextKeyNotExpr {
   static create(key, negated = null) {
     const constantValue = CONSTANT_VALUES.get(key);
     if (typeof constantValue === "boolean") {
-      return constantValue ? $4n.INSTANCE : $5n.INSTANCE;
+      return constantValue ? ContextKeyFalseExpr.INSTANCE : ContextKeyTrueExpr.INSTANCE;
     }
-    return new _$$n(key, negated);
+    return new _ContextKeyNotExpr(key, negated);
   }
-  constructor(c, d) {
-    this.c = c;
-    this.d = d;
+  constructor(key, negated) {
+    this.key = key;
+    this.negated = negated;
     this.type = 3;
   }
   cmp(other) {
     if (other.type !== this.type) {
       return this.type - other.type;
     }
-    return cmp1(this.c, other.c);
+    return cmp1(this.key, other.key);
   }
   equals(other) {
     if (other.type === this.type) {
-      return this.c === other.c;
+      return this.key === other.key;
     }
     return false;
   }
   substituteConstants() {
-    const constantValue = CONSTANT_VALUES.get(this.c);
+    const constantValue = CONSTANT_VALUES.get(this.key);
     if (typeof constantValue === "boolean") {
-      return constantValue ? $4n.INSTANCE : $5n.INSTANCE;
+      return constantValue ? ContextKeyFalseExpr.INSTANCE : ContextKeyTrueExpr.INSTANCE;
     }
     return this;
   }
   evaluate(context) {
-    return !context.getValue(this.c);
+    return !context.getValue(this.key);
   }
   serialize() {
-    return `!${this.c}`;
+    return `!${this.key}`;
   }
   keys() {
-    return [this.c];
+    return [this.key];
   }
   map(mapFnc) {
-    return mapFnc.mapNot(this.c);
+    return mapFnc.mapNot(this.key);
   }
   negate() {
-    if (!this.d) {
-      this.d = $6n.create(this.c, this);
+    if (!this.negated) {
+      this.negated = ContextKeyDefinedExpr.create(this.key, this);
     }
-    return this.d;
+    return this.negated;
   }
 };
 function withFloatOrStr(value, callback) {
@@ -11011,27 +11011,27 @@ function withFloatOrStr(value, callback) {
   if (typeof value === "string" || typeof value === "number") {
     return callback(value);
   }
-  return $4n.INSTANCE;
+  return ContextKeyFalseExpr.INSTANCE;
 }
-var $_n = class _$_n {
+var ContextKeyGreaterExpr = class _ContextKeyGreaterExpr {
   static create(key, _value, negated = null) {
-    return withFloatOrStr(_value, (value) => new _$_n(key, value, negated));
+    return withFloatOrStr(_value, (value) => new _ContextKeyGreaterExpr(key, value, negated));
   }
-  constructor(c, d, f) {
-    this.c = c;
-    this.d = d;
-    this.f = f;
+  constructor(key, value, negated) {
+    this.key = key;
+    this.value = value;
+    this.negated = negated;
     this.type = 12;
   }
   cmp(other) {
     if (other.type !== this.type) {
       return this.type - other.type;
     }
-    return cmp2(this.c, this.d, other.c, other.d);
+    return cmp2(this.key, this.value, other.key, other.value);
   }
   equals(other) {
     if (other.type === this.type) {
-      return this.c === other.c && this.d === other.d;
+      return this.key === other.key && this.value === other.value;
     }
     return false;
   }
@@ -11039,46 +11039,46 @@ var $_n = class _$_n {
     return this;
   }
   evaluate(context) {
-    if (typeof this.d === "string") {
+    if (typeof this.value === "string") {
       return false;
     }
-    return parseFloat(context.getValue(this.c)) > this.d;
+    return parseFloat(context.getValue(this.key)) > this.value;
   }
   serialize() {
-    return `${this.c} > ${this.d}`;
+    return `${this.key} > ${this.value}`;
   }
   keys() {
-    return [this.c];
+    return [this.key];
   }
   map(mapFnc) {
-    return mapFnc.mapGreater(this.c, this.d);
+    return mapFnc.mapGreater(this.key, this.value);
   }
   negate() {
-    if (!this.f) {
-      this.f = $co.create(this.c, this.d, this);
+    if (!this.negated) {
+      this.negated = ContextKeySmallerEqualsExpr.create(this.key, this.value, this);
     }
-    return this.f;
+    return this.negated;
   }
 };
-var $ao = class _$ao {
+var ContextKeyGreaterEqualsExpr = class _ContextKeyGreaterEqualsExpr {
   static create(key, _value, negated = null) {
-    return withFloatOrStr(_value, (value) => new _$ao(key, value, negated));
+    return withFloatOrStr(_value, (value) => new _ContextKeyGreaterEqualsExpr(key, value, negated));
   }
-  constructor(c, d, f) {
-    this.c = c;
-    this.d = d;
-    this.f = f;
+  constructor(key, value, negated) {
+    this.key = key;
+    this.value = value;
+    this.negated = negated;
     this.type = 13;
   }
   cmp(other) {
     if (other.type !== this.type) {
       return this.type - other.type;
     }
-    return cmp2(this.c, this.d, other.c, other.d);
+    return cmp2(this.key, this.value, other.key, other.value);
   }
   equals(other) {
     if (other.type === this.type) {
-      return this.c === other.c && this.d === other.d;
+      return this.key === other.key && this.value === other.value;
     }
     return false;
   }
@@ -11086,46 +11086,46 @@ var $ao = class _$ao {
     return this;
   }
   evaluate(context) {
-    if (typeof this.d === "string") {
+    if (typeof this.value === "string") {
       return false;
     }
-    return parseFloat(context.getValue(this.c)) >= this.d;
+    return parseFloat(context.getValue(this.key)) >= this.value;
   }
   serialize() {
-    return `${this.c} >= ${this.d}`;
+    return `${this.key} >= ${this.value}`;
   }
   keys() {
-    return [this.c];
+    return [this.key];
   }
   map(mapFnc) {
-    return mapFnc.mapGreaterEquals(this.c, this.d);
+    return mapFnc.mapGreaterEquals(this.key, this.value);
   }
   negate() {
-    if (!this.f) {
-      this.f = $bo.create(this.c, this.d, this);
+    if (!this.negated) {
+      this.negated = ContextKeySmallerExpr.create(this.key, this.value, this);
     }
-    return this.f;
+    return this.negated;
   }
 };
-var $bo = class _$bo {
+var ContextKeySmallerExpr = class _ContextKeySmallerExpr {
   static create(key, _value, negated = null) {
-    return withFloatOrStr(_value, (value) => new _$bo(key, value, negated));
+    return withFloatOrStr(_value, (value) => new _ContextKeySmallerExpr(key, value, negated));
   }
-  constructor(c, d, f) {
-    this.c = c;
-    this.d = d;
-    this.f = f;
+  constructor(key, value, negated) {
+    this.key = key;
+    this.value = value;
+    this.negated = negated;
     this.type = 14;
   }
   cmp(other) {
     if (other.type !== this.type) {
       return this.type - other.type;
     }
-    return cmp2(this.c, this.d, other.c, other.d);
+    return cmp2(this.key, this.value, other.key, other.value);
   }
   equals(other) {
     if (other.type === this.type) {
-      return this.c === other.c && this.d === other.d;
+      return this.key === other.key && this.value === other.value;
     }
     return false;
   }
@@ -11133,46 +11133,46 @@ var $bo = class _$bo {
     return this;
   }
   evaluate(context) {
-    if (typeof this.d === "string") {
+    if (typeof this.value === "string") {
       return false;
     }
-    return parseFloat(context.getValue(this.c)) < this.d;
+    return parseFloat(context.getValue(this.key)) < this.value;
   }
   serialize() {
-    return `${this.c} < ${this.d}`;
+    return `${this.key} < ${this.value}`;
   }
   keys() {
-    return [this.c];
+    return [this.key];
   }
   map(mapFnc) {
-    return mapFnc.mapSmaller(this.c, this.d);
+    return mapFnc.mapSmaller(this.key, this.value);
   }
   negate() {
-    if (!this.f) {
-      this.f = $ao.create(this.c, this.d, this);
+    if (!this.negated) {
+      this.negated = ContextKeyGreaterEqualsExpr.create(this.key, this.value, this);
     }
-    return this.f;
+    return this.negated;
   }
 };
-var $co = class _$co {
+var ContextKeySmallerEqualsExpr = class _ContextKeySmallerEqualsExpr {
   static create(key, _value, negated = null) {
-    return withFloatOrStr(_value, (value) => new _$co(key, value, negated));
+    return withFloatOrStr(_value, (value) => new _ContextKeySmallerEqualsExpr(key, value, negated));
   }
-  constructor(c, d, f) {
-    this.c = c;
-    this.d = d;
-    this.f = f;
+  constructor(key, value, negated) {
+    this.key = key;
+    this.value = value;
+    this.negated = negated;
     this.type = 15;
   }
   cmp(other) {
     if (other.type !== this.type) {
       return this.type - other.type;
     }
-    return cmp2(this.c, this.d, other.c, other.d);
+    return cmp2(this.key, this.value, other.key, other.value);
   }
   equals(other) {
     if (other.type === this.type) {
-      return this.c === other.c && this.d === other.d;
+      return this.key === other.key && this.value === other.value;
     }
     return false;
   }
@@ -11180,49 +11180,49 @@ var $co = class _$co {
     return this;
   }
   evaluate(context) {
-    if (typeof this.d === "string") {
+    if (typeof this.value === "string") {
       return false;
     }
-    return parseFloat(context.getValue(this.c)) <= this.d;
+    return parseFloat(context.getValue(this.key)) <= this.value;
   }
   serialize() {
-    return `${this.c} <= ${this.d}`;
+    return `${this.key} <= ${this.value}`;
   }
   keys() {
-    return [this.c];
+    return [this.key];
   }
   map(mapFnc) {
-    return mapFnc.mapSmallerEquals(this.c, this.d);
+    return mapFnc.mapSmallerEquals(this.key, this.value);
   }
   negate() {
-    if (!this.f) {
-      this.f = $_n.create(this.c, this.d, this);
+    if (!this.negated) {
+      this.negated = ContextKeyGreaterExpr.create(this.key, this.value, this);
     }
-    return this.f;
+    return this.negated;
   }
 };
-var $do = class _$do {
+var ContextKeyRegexExpr = class _ContextKeyRegexExpr {
   static create(key, regexp) {
-    return new _$do(key, regexp);
+    return new _ContextKeyRegexExpr(key, regexp);
   }
-  constructor(d, f) {
-    this.d = d;
-    this.f = f;
+  constructor(key, regexp) {
+    this.key = key;
+    this.regexp = regexp;
     this.type = 7;
-    this.c = null;
+    this.negated = null;
   }
   cmp(other) {
     if (other.type !== this.type) {
       return this.type - other.type;
     }
-    if (this.d < other.d) {
+    if (this.key < other.key) {
       return -1;
     }
-    if (this.d > other.d) {
+    if (this.key > other.key) {
       return 1;
     }
-    const thisSource = this.f ? this.f.source : "";
-    const otherSource = other.f ? other.f.source : "";
+    const thisSource = this.regexp ? this.regexp.source : "";
+    const otherSource = other.regexp ? other.regexp.source : "";
     if (thisSource < otherSource) {
       return -1;
     }
@@ -11233,9 +11233,9 @@ var $do = class _$do {
   }
   equals(other) {
     if (other.type === this.type) {
-      const thisSource = this.f ? this.f.source : "";
-      const otherSource = other.f ? other.f.source : "";
-      return this.d === other.d && thisSource === otherSource;
+      const thisSource = this.regexp ? this.regexp.source : "";
+      const otherSource = other.regexp ? other.regexp.source : "";
+      return this.key === other.key && thisSource === otherSource;
     }
     return false;
   }
@@ -11243,43 +11243,43 @@ var $do = class _$do {
     return this;
   }
   evaluate(context) {
-    const value = context.getValue(this.d);
-    return this.f ? this.f.test(value) : false;
+    const value = context.getValue(this.key);
+    return this.regexp ? this.regexp.test(value) : false;
   }
   serialize() {
-    const value = this.f ? `/${this.f.source}/${this.f.flags}` : "/invalid/";
-    return `${this.d} =~ ${value}`;
+    const value = this.regexp ? `/${this.regexp.source}/${this.regexp.flags}` : "/invalid/";
+    return `${this.key} =~ ${value}`;
   }
   keys() {
-    return [this.d];
+    return [this.key];
   }
   map(mapFnc) {
-    return mapFnc.mapRegex(this.d, this.f);
+    return mapFnc.mapRegex(this.key, this.regexp);
   }
   negate() {
-    if (!this.c) {
-      this.c = $eo.create(this);
+    if (!this.negated) {
+      this.negated = ContextKeyNotRegexExpr.create(this);
     }
-    return this.c;
+    return this.negated;
   }
 };
-var $eo = class _$eo {
+var ContextKeyNotRegexExpr = class _ContextKeyNotRegexExpr {
   static create(actual) {
-    return new _$eo(actual);
+    return new _ContextKeyNotRegexExpr(actual);
   }
-  constructor(c) {
-    this.c = c;
+  constructor(_actual) {
+    this._actual = _actual;
     this.type = 8;
   }
   cmp(other) {
     if (other.type !== this.type) {
       return this.type - other.type;
     }
-    return this.c.cmp(other.c);
+    return this._actual.cmp(other._actual);
   }
   equals(other) {
     if (other.type === this.type) {
-      return this.c.equals(other.c);
+      return this._actual.equals(other._actual);
     }
     return false;
   }
@@ -11287,19 +11287,19 @@ var $eo = class _$eo {
     return this;
   }
   evaluate(context) {
-    return !this.c.evaluate(context);
+    return !this._actual.evaluate(context);
   }
   serialize() {
-    return `!(${this.c.serialize()})`;
+    return `!(${this._actual.serialize()})`;
   }
   keys() {
-    return this.c.keys();
+    return this._actual.keys();
   }
   map(mapFnc) {
-    return new _$eo(this.c.map(mapFnc));
+    return new _ContextKeyNotRegexExpr(this._actual.map(mapFnc));
   }
   negate() {
-    return this.c;
+    return this._actual;
   }
 };
 function eliminateConstantsInArray(arr) {
@@ -11323,13 +11323,13 @@ function eliminateConstantsInArray(arr) {
   }
   return newArr;
 }
-var $fo = class _$fo {
+var ContextKeyAndExpr = class _ContextKeyAndExpr {
   static create(_expr, negated, extraRedundantCheck) {
-    return _$fo.d(_expr, negated, extraRedundantCheck);
+    return _ContextKeyAndExpr._normalizeArr(_expr, negated, extraRedundantCheck);
   }
-  constructor(expr, c) {
+  constructor(expr, negated) {
     this.expr = expr;
-    this.c = c;
+    this.negated = negated;
     this.type = 6;
   }
   cmp(other) {
@@ -11369,7 +11369,7 @@ var $fo = class _$fo {
     if (exprArr === this.expr) {
       return this;
     }
-    return _$fo.create(exprArr, this.c, false);
+    return _ContextKeyAndExpr.create(exprArr, this.negated, false);
   }
   evaluate(context) {
     for (let i = 0, len = this.expr.length; i < len; i++) {
@@ -11379,7 +11379,7 @@ var $fo = class _$fo {
     }
     return true;
   }
-  static d(arr, negated, extraRedundantCheck) {
+  static _normalizeArr(arr, negated, extraRedundantCheck) {
     const expr = [];
     let hasTrue = false;
     for (const e of arr) {
@@ -11391,7 +11391,7 @@ var $fo = class _$fo {
         continue;
       }
       if (e.type === 0) {
-        return $4n.INSTANCE;
+        return ContextKeyFalseExpr.INSTANCE;
       }
       if (e.type === 6) {
         expr.push(...e.expr);
@@ -11400,7 +11400,7 @@ var $fo = class _$fo {
       expr.push(e);
     }
     if (expr.length === 0 && hasTrue) {
-      return $5n.INSTANCE;
+      return ContextKeyTrueExpr.INSTANCE;
     }
     if (expr.length === 0) {
       return void 0;
@@ -11426,7 +11426,7 @@ var $fo = class _$fo {
       expr.pop();
       const secondToLastElement = expr.pop();
       const isFinished = expr.length === 0;
-      const resultElement = $go.create(lastElement.expr.map((el) => _$fo.create([el, secondToLastElement], null, extraRedundantCheck)), null, isFinished);
+      const resultElement = ContextKeyOrExpr.create(lastElement.expr.map((el) => _ContextKeyAndExpr.create([el, secondToLastElement], null, extraRedundantCheck)), null, isFinished);
       if (resultElement) {
         expr.push(resultElement);
         expr.sort(cmp);
@@ -11439,7 +11439,7 @@ var $fo = class _$fo {
       for (let i = 0; i < expr.length; i++) {
         for (let j = i + 1; j < expr.length; j++) {
           if (expr[i].negate().equals(expr[j])) {
-            return $4n.INSTANCE;
+            return ContextKeyFalseExpr.INSTANCE;
           }
         }
       }
@@ -11447,7 +11447,7 @@ var $fo = class _$fo {
         return expr[0];
       }
     }
-    return new _$fo(expr, negated);
+    return new _ContextKeyAndExpr(expr, negated);
   }
   serialize() {
     return this.expr.map((e) => e.serialize()).join(" && ");
@@ -11460,26 +11460,26 @@ var $fo = class _$fo {
     return result;
   }
   map(mapFnc) {
-    return new _$fo(this.expr.map((expr) => expr.map(mapFnc)), null);
+    return new _ContextKeyAndExpr(this.expr.map((expr) => expr.map(mapFnc)), null);
   }
   negate() {
-    if (!this.c) {
+    if (!this.negated) {
       const result = [];
       for (const expr of this.expr) {
         result.push(expr.negate());
       }
-      this.c = $go.create(result, this, true);
+      this.negated = ContextKeyOrExpr.create(result, this, true);
     }
-    return this.c;
+    return this.negated;
   }
 };
-var $go = class _$go {
+var ContextKeyOrExpr = class _ContextKeyOrExpr {
   static create(_expr, negated, extraRedundantCheck) {
-    return _$go.d(_expr, negated, extraRedundantCheck);
+    return _ContextKeyOrExpr._normalizeArr(_expr, negated, extraRedundantCheck);
   }
-  constructor(expr, c) {
+  constructor(expr, negated) {
     this.expr = expr;
-    this.c = c;
+    this.negated = negated;
     this.type = 9;
   }
   cmp(other) {
@@ -11519,7 +11519,7 @@ var $go = class _$go {
     if (exprArr === this.expr) {
       return this;
     }
-    return _$go.create(exprArr, this.c, false);
+    return _ContextKeyOrExpr.create(exprArr, this.negated, false);
   }
   evaluate(context) {
     for (let i = 0, len = this.expr.length; i < len; i++) {
@@ -11529,7 +11529,7 @@ var $go = class _$go {
     }
     return false;
   }
-  static d(arr, negated, extraRedundantCheck) {
+  static _normalizeArr(arr, negated, extraRedundantCheck) {
     let expr = [];
     let hasFalse = false;
     if (arr) {
@@ -11543,7 +11543,7 @@ var $go = class _$go {
           continue;
         }
         if (e.type === 1) {
-          return $5n.INSTANCE;
+          return ContextKeyTrueExpr.INSTANCE;
         }
         if (e.type === 9) {
           expr = expr.concat(e.expr);
@@ -11552,7 +11552,7 @@ var $go = class _$go {
         expr.push(e);
       }
       if (expr.length === 0 && hasFalse) {
-        return $4n.INSTANCE;
+        return ContextKeyFalseExpr.INSTANCE;
       }
       expr.sort(cmp);
     }
@@ -11575,7 +11575,7 @@ var $go = class _$go {
       for (let i = 0; i < expr.length; i++) {
         for (let j = i + 1; j < expr.length; j++) {
           if (expr[i].negate().equals(expr[j])) {
-            return $5n.INSTANCE;
+            return ContextKeyTrueExpr.INSTANCE;
           }
         }
       }
@@ -11583,7 +11583,7 @@ var $go = class _$go {
         return expr[0];
       }
     }
-    return new _$go(expr, negated);
+    return new _ContextKeyOrExpr(expr, negated);
   }
   serialize() {
     return this.expr.map((e) => e.serialize()).join(" || ");
@@ -11596,10 +11596,10 @@ var $go = class _$go {
     return result;
   }
   map(mapFnc) {
-    return new _$go(this.expr.map((expr) => expr.map(mapFnc)), null);
+    return new _ContextKeyOrExpr(this.expr.map((expr) => expr.map(mapFnc)), null);
   }
   negate() {
-    if (!this.c) {
+    if (!this.negated) {
       const result = [];
       for (const expr of this.expr) {
         result.push(expr.negate());
@@ -11610,34 +11610,34 @@ var $go = class _$go {
         const all = [];
         for (const left of getTerminals(LEFT)) {
           for (const right of getTerminals(RIGHT)) {
-            all.push($fo.create([left, right], null, false));
+            all.push(ContextKeyAndExpr.create([left, right], null, false));
           }
         }
-        result.unshift(_$go.create(all, null, false));
+        result.unshift(_ContextKeyOrExpr.create(all, null, false));
       }
-      this.c = _$go.create(result, this, true);
+      this.negated = _ContextKeyOrExpr.create(result, this, true);
     }
-    return this.c;
+    return this.negated;
   }
 };
-var $ho = class _$ho extends $6n {
+var RawContextKey = class _RawContextKey extends ContextKeyDefinedExpr {
   static {
-    this.d = [];
+    this._info = [];
   }
   static all() {
-    return _$ho.d.values();
+    return _RawContextKey._info.values();
   }
   constructor(key, defaultValue, metaOrHide) {
     super(key, null);
-    this.f = defaultValue;
+    this._defaultValue = defaultValue;
     if (typeof metaOrHide === "object") {
-      _$ho.d.push({ ...metaOrHide, key });
+      _RawContextKey._info.push({ ...metaOrHide, key });
     } else if (metaOrHide !== true) {
-      _$ho.d.push({ key, description: metaOrHide, type: defaultValue !== null && defaultValue !== void 0 ? typeof defaultValue : void 0 });
+      _RawContextKey._info.push({ key, description: metaOrHide, type: defaultValue !== null && defaultValue !== void 0 ? typeof defaultValue : void 0 });
     }
   }
   bindTo(target) {
-    return target.createKey(this.key, this.f);
+    return target.createKey(this.key, this._defaultValue);
   }
   getValue(target) {
     return target.getContextKeyValue(this.key);
@@ -11646,16 +11646,16 @@ var $ho = class _$ho extends $6n {
     return this.negate();
   }
   isEqualTo(value) {
-    return $7n.create(this.key, value);
+    return ContextKeyEqualsExpr.create(this.key, value);
   }
   notEqualsTo(value) {
-    return $0n.create(this.key, value);
+    return ContextKeyNotEqualsExpr.create(this.key, value);
   }
   greater(value) {
-    return $_n.create(this.key, value);
+    return ContextKeyGreaterExpr.create(this.key, value);
   }
 };
-var $io = $Fj("contextKeyService");
+var IContextKeyService = createDecorator2("contextKeyService");
 function cmp1(key1, key2) {
   if (key1 < key2) {
     return -1;
@@ -11688,10 +11688,10 @@ function getTerminals(node) {
 }
 
 // out-build/vs/platform/log/common/log.js
-var $po = $Fj("logService");
-var $qo = $Fj("loggerService");
-function $ro(thing) {
-  return $_c(thing);
+var ILogService = createDecorator2("logService");
+var ILoggerService = createDecorator2("loggerService");
+function isLogLevel(thing) {
+  return isNumber(thing);
 }
 var LogLevel;
 (function(LogLevel2) {
@@ -11702,16 +11702,16 @@ var LogLevel;
   LogLevel2[LogLevel2["Warning"] = 4] = "Warning";
   LogLevel2[LogLevel2["Error"] = 5] = "Error";
 })(LogLevel || (LogLevel = {}));
-var $so = LogLevel.Info;
-function $to(loggerLevel, messageLevel) {
+var DEFAULT_LOG_LEVEL = LogLevel.Info;
+function canLog(loggerLevel, messageLevel) {
   return loggerLevel !== LogLevel.Off && loggerLevel <= messageLevel;
 }
-function format(args, verbose = false) {
+function format3(args, verbose = false) {
   let result = "";
   for (let i = 0; i < args.length; i++) {
     let a = args[i];
     if (a instanceof Error) {
-      a = $Cm(a, verbose);
+      a = toErrorMessage(a, verbose);
     }
     if (typeof a === "object") {
       try {
@@ -11723,161 +11723,161 @@ function format(args, verbose = false) {
   }
   return result;
 }
-var $vo = class extends $Fd {
+var AbstractLogger = class extends Disposable {
   constructor() {
     super(...arguments);
-    this.b = $so;
-    this.c = this.D(new $qf());
+    this.level = DEFAULT_LOG_LEVEL;
+    this._onDidChangeLogLevel = this._register(new Emitter());
   }
   get onDidChangeLogLevel() {
-    return this.c.event;
+    return this._onDidChangeLogLevel.event;
   }
   setLevel(level) {
-    if (this.b !== level) {
-      this.b = level;
-      this.c.fire(this.b);
+    if (this.level !== level) {
+      this.level = level;
+      this._onDidChangeLogLevel.fire(this.level);
     }
   }
   getLevel() {
-    return this.b;
+    return this.level;
   }
-  f(level) {
-    return $to(this.b, level);
+  checkLogLevel(level) {
+    return canLog(this.level, level);
   }
-  g(level) {
-    if (this.B.isDisposed) {
+  canLog(level) {
+    if (this._store.isDisposed) {
       return false;
     }
-    return this.f(level);
+    return this.checkLogLevel(level);
   }
 };
-var $wo = class extends $vo {
-  constructor(h) {
+var AbstractMessageLogger = class extends AbstractLogger {
+  constructor(logAlways) {
     super();
-    this.h = h;
+    this.logAlways = logAlways;
   }
-  f(level) {
-    return this.h || super.f(level);
+  checkLogLevel(level) {
+    return this.logAlways || super.checkLogLevel(level);
   }
   trace(message, ...args) {
-    if (this.g(LogLevel.Trace)) {
-      this.m(LogLevel.Trace, format([message, ...args], true));
+    if (this.canLog(LogLevel.Trace)) {
+      this.log(LogLevel.Trace, format3([message, ...args], true));
     }
   }
   debug(message, ...args) {
-    if (this.g(LogLevel.Debug)) {
-      this.m(LogLevel.Debug, format([message, ...args]));
+    if (this.canLog(LogLevel.Debug)) {
+      this.log(LogLevel.Debug, format3([message, ...args]));
     }
   }
   info(message, ...args) {
-    if (this.g(LogLevel.Info)) {
-      this.m(LogLevel.Info, format([message, ...args]));
+    if (this.canLog(LogLevel.Info)) {
+      this.log(LogLevel.Info, format3([message, ...args]));
     }
   }
   warn(message, ...args) {
-    if (this.g(LogLevel.Warning)) {
-      this.m(LogLevel.Warning, format([message, ...args]));
+    if (this.canLog(LogLevel.Warning)) {
+      this.log(LogLevel.Warning, format3([message, ...args]));
     }
   }
   error(message, ...args) {
-    if (this.g(LogLevel.Error)) {
+    if (this.canLog(LogLevel.Error)) {
       if (message instanceof Error) {
         const array = Array.prototype.slice.call(arguments);
         array[0] = message.stack;
-        this.m(LogLevel.Error, format(array));
+        this.log(LogLevel.Error, format3(array));
       } else {
-        this.m(LogLevel.Error, format([message, ...args]));
+        this.log(LogLevel.Error, format3([message, ...args]));
       }
     }
   }
   flush() {
   }
 };
-var $Ao = class extends $vo {
-  constructor(h) {
+var MultiplexLogger = class extends AbstractLogger {
+  constructor(loggers) {
     super();
-    this.h = h;
-    if (h.length) {
-      this.setLevel(h[0].getLevel());
+    this.loggers = loggers;
+    if (loggers.length) {
+      this.setLevel(loggers[0].getLevel());
     }
   }
   setLevel(level) {
-    for (const logger of this.h) {
+    for (const logger of this.loggers) {
       logger.setLevel(level);
     }
     super.setLevel(level);
   }
   trace(message, ...args) {
-    for (const logger of this.h) {
+    for (const logger of this.loggers) {
       logger.trace(message, ...args);
     }
   }
   debug(message, ...args) {
-    for (const logger of this.h) {
+    for (const logger of this.loggers) {
       logger.debug(message, ...args);
     }
   }
   info(message, ...args) {
-    for (const logger of this.h) {
+    for (const logger of this.loggers) {
       logger.info(message, ...args);
     }
   }
   warn(message, ...args) {
-    for (const logger of this.h) {
+    for (const logger of this.loggers) {
       logger.warn(message, ...args);
     }
   }
   error(message, ...args) {
-    for (const logger of this.h) {
+    for (const logger of this.loggers) {
       logger.error(message, ...args);
     }
   }
   flush() {
-    for (const logger of this.h) {
+    for (const logger of this.loggers) {
       logger.flush();
     }
   }
   dispose() {
-    for (const logger of this.h) {
+    for (const logger of this.loggers) {
       logger.dispose();
     }
     super.dispose();
   }
 };
-var $Bo = class extends $Fd {
-  constructor(j, m, loggerResources) {
+var AbstractLoggerService = class extends Disposable {
+  constructor(logLevel, logsHome, loggerResources) {
     super();
-    this.j = j;
-    this.m = m;
-    this.b = new $Pc();
-    this.f = this.D(new $qf());
-    this.onDidChangeLoggers = this.f.event;
-    this.g = this.D(new $qf());
-    this.onDidChangeLogLevel = this.g.event;
-    this.h = this.D(new $qf());
-    this.onDidChangeVisibility = this.h.event;
+    this.logLevel = logLevel;
+    this.logsHome = logsHome;
+    this._loggers = new ResourceMap();
+    this._onDidChangeLoggers = this._register(new Emitter());
+    this.onDidChangeLoggers = this._onDidChangeLoggers.event;
+    this._onDidChangeLogLevel = this._register(new Emitter());
+    this.onDidChangeLogLevel = this._onDidChangeLogLevel.event;
+    this._onDidChangeVisibility = this._register(new Emitter());
+    this.onDidChangeVisibility = this._onDidChangeVisibility.event;
     if (loggerResources) {
       for (const loggerResource of loggerResources) {
-        this.b.set(loggerResource.resource, { logger: void 0, info: loggerResource });
+        this._loggers.set(loggerResource.resource, { logger: void 0, info: loggerResource });
       }
     }
   }
-  n(resourceOrId) {
-    if ($7c(resourceOrId)) {
-      return [...this.b.values()].find((logger) => logger.info.id === resourceOrId);
+  getLoggerEntry(resourceOrId) {
+    if (isString(resourceOrId)) {
+      return [...this._loggers.values()].find((logger) => logger.info.id === resourceOrId);
     }
-    return this.b.get(resourceOrId);
+    return this._loggers.get(resourceOrId);
   }
   getLogger(resourceOrId) {
-    return this.n(resourceOrId)?.logger;
+    return this.getLoggerEntry(resourceOrId)?.logger;
   }
   createLogger(idOrResource, options) {
-    const resource = this.q(idOrResource);
-    const id2 = $7c(idOrResource) ? idOrResource : options?.id ?? $xn(resource.toString()).toString(16);
-    let logger = this.b.get(resource)?.logger;
+    const resource = this.toResource(idOrResource);
+    const id2 = isString(idOrResource) ? idOrResource : options?.id ?? hash(resource.toString()).toString(16);
+    let logger = this._loggers.get(resource)?.logger;
     const logLevel = options?.logLevel === "always" ? LogLevel.Trace : options?.logLevel;
     if (!logger) {
-      logger = this.s(resource, logLevel ?? this.getLogLevel(resource) ?? this.j, { ...options, id: id2 });
+      logger = this.doCreateLogger(resource, logLevel ?? this.getLogLevel(resource) ?? this.logLevel, { ...options, id: id2 });
     }
     const loggerEntry = {
       logger,
@@ -11893,97 +11893,97 @@ var $Bo = class extends $Fd {
       }
     };
     this.registerLogger(loggerEntry.info);
-    this.b.set(resource, loggerEntry);
+    this._loggers.set(resource, loggerEntry);
     return logger;
   }
-  q(idOrResource) {
-    return $7c(idOrResource) ? $Ah(this.m, `${idOrResource}.log`) : idOrResource;
+  toResource(idOrResource) {
+    return isString(idOrResource) ? joinPath(this.logsHome, `${idOrResource}.log`) : idOrResource;
   }
   setLogLevel(arg1, arg2) {
     if (URI.isUri(arg1)) {
       const resource = arg1;
       const logLevel = arg2;
-      const logger = this.b.get(resource);
+      const logger = this._loggers.get(resource);
       if (logger && logLevel !== logger.info.logLevel) {
-        logger.info.logLevel = logLevel === this.j ? void 0 : logLevel;
+        logger.info.logLevel = logLevel === this.logLevel ? void 0 : logLevel;
         logger.logger?.setLevel(logLevel);
-        this.b.set(logger.info.resource, logger);
-        this.g.fire([resource, logLevel]);
+        this._loggers.set(logger.info.resource, logger);
+        this._onDidChangeLogLevel.fire([resource, logLevel]);
       }
     } else {
-      this.j = arg1;
-      for (const [resource, logger] of this.b.entries()) {
-        if (this.b.get(resource)?.info.logLevel === void 0) {
-          logger.logger?.setLevel(this.j);
+      this.logLevel = arg1;
+      for (const [resource, logger] of this._loggers.entries()) {
+        if (this._loggers.get(resource)?.info.logLevel === void 0) {
+          logger.logger?.setLevel(this.logLevel);
         }
       }
-      this.g.fire(this.j);
+      this._onDidChangeLogLevel.fire(this.logLevel);
     }
   }
   setVisibility(resourceOrId, visibility) {
-    const logger = this.n(resourceOrId);
+    const logger = this.getLoggerEntry(resourceOrId);
     if (logger && visibility !== !logger.info.hidden) {
       logger.info.hidden = !visibility;
-      this.b.set(logger.info.resource, logger);
-      this.h.fire([logger.info.resource, visibility]);
+      this._loggers.set(logger.info.resource, logger);
+      this._onDidChangeVisibility.fire([logger.info.resource, visibility]);
     }
   }
   getLogLevel(resource) {
     let logLevel;
     if (resource) {
-      logLevel = this.b.get(resource)?.info.logLevel;
+      logLevel = this._loggers.get(resource)?.info.logLevel;
     }
-    return logLevel ?? this.j;
+    return logLevel ?? this.logLevel;
   }
   registerLogger(resource) {
-    const existing = this.b.get(resource.resource);
+    const existing = this._loggers.get(resource.resource);
     if (existing) {
       if (existing.info.hidden !== resource.hidden) {
         this.setVisibility(resource.resource, !resource.hidden);
       }
     } else {
-      this.b.set(resource.resource, { info: resource, logger: void 0 });
-      this.f.fire({ added: [resource], removed: [] });
+      this._loggers.set(resource.resource, { info: resource, logger: void 0 });
+      this._onDidChangeLoggers.fire({ added: [resource], removed: [] });
     }
   }
   deregisterLogger(idOrResource) {
-    const resource = this.q(idOrResource);
-    const existing = this.b.get(resource);
+    const resource = this.toResource(idOrResource);
+    const existing = this._loggers.get(resource);
     if (existing) {
       if (existing.logger) {
         existing.logger.dispose();
       }
-      this.b.delete(resource);
-      this.f.fire({ added: [], removed: [existing.info] });
+      this._loggers.delete(resource);
+      this._onDidChangeLoggers.fire({ added: [], removed: [existing.info] });
     }
   }
   *getRegisteredLoggers() {
-    for (const entry of this.b.values()) {
+    for (const entry of this._loggers.values()) {
       yield entry.info;
     }
   }
   getRegisteredLogger(resource) {
-    return this.b.get(resource)?.info;
+    return this._loggers.get(resource)?.info;
   }
   dispose() {
-    this.b.forEach((logger) => logger.logger?.dispose());
-    this.b.clear();
+    this._loggers.forEach((logger) => logger.logger?.dispose());
+    this._loggers.clear();
     super.dispose();
   }
 };
-function $Fo(environmentService) {
+function getLogLevel(environmentService) {
   if (environmentService.verbose) {
     return LogLevel.Trace;
   }
   if (typeof environmentService.logLevel === "string") {
-    const logLevel = $Io(environmentService.logLevel.toLowerCase());
+    const logLevel = parseLogLevel(environmentService.logLevel.toLowerCase());
     if (logLevel !== void 0) {
       return logLevel;
     }
   }
-  return $so;
+  return DEFAULT_LOG_LEVEL;
 }
-function $Go(logLevel) {
+function LogLevelToString(logLevel) {
   switch (logLevel) {
     case LogLevel.Trace:
       return "trace";
@@ -11999,7 +11999,7 @@ function $Go(logLevel) {
       return "off";
   }
 }
-function $Io(logLevel) {
+function parseLogLevel(logLevel) {
   switch (logLevel) {
     case "trace":
       return LogLevel.Trace;
@@ -12018,40 +12018,40 @@ function $Io(logLevel) {
   }
   return void 0;
 }
-var $Jo = new $ho("logLevel", $Go(LogLevel.Info));
+var CONTEXT_LOG_LEVEL = new RawContextKey("logLevel", LogLevelToString(LogLevel.Info));
 
 // out-build/vs/platform/log/common/logIpc.js
-var $RA = class {
-  constructor(a, b) {
-    this.a = a;
-    this.b = b;
+var LoggerChannel = class {
+  constructor(loggerService, getUriTransformer) {
+    this.loggerService = loggerService;
+    this.getUriTransformer = getUriTransformer;
   }
   listen(context, event) {
-    const uriTransformer = this.b(context);
+    const uriTransformer = this.getUriTransformer(context);
     switch (event) {
       case "onDidChangeLoggers":
-        return Event.map(this.a.onDidChangeLoggers, (e) => ({
-          added: [...e.added].map((logger) => this.c(logger, uriTransformer)),
-          removed: [...e.removed].map((logger) => this.c(logger, uriTransformer))
+        return Event.map(this.loggerService.onDidChangeLoggers, (e) => ({
+          added: [...e.added].map((logger) => this.transformLogger(logger, uriTransformer)),
+          removed: [...e.removed].map((logger) => this.transformLogger(logger, uriTransformer))
         }));
       case "onDidChangeVisibility":
-        return Event.map(this.a.onDidChangeVisibility, (e) => [uriTransformer.transformOutgoingURI(e[0]), e[1]]);
+        return Event.map(this.loggerService.onDidChangeVisibility, (e) => [uriTransformer.transformOutgoingURI(e[0]), e[1]]);
       case "onDidChangeLogLevel":
-        return Event.map(this.a.onDidChangeLogLevel, (e) => $ro(e) ? e : [uriTransformer.transformOutgoingURI(e[0]), e[1]]);
+        return Event.map(this.loggerService.onDidChangeLogLevel, (e) => isLogLevel(e) ? e : [uriTransformer.transformOutgoingURI(e[0]), e[1]]);
     }
     throw new Error(`Event not found: ${event}`);
   }
   async call(context, command, arg) {
-    const uriTransformer = this.b(context);
+    const uriTransformer = this.getUriTransformer(context);
     switch (command) {
       case "setLogLevel":
-        return $ro(arg[0]) ? this.a.setLogLevel(arg[0]) : this.a.setLogLevel(URI.revive(uriTransformer.transformIncoming(arg[0][0])), arg[0][1]);
+        return isLogLevel(arg[0]) ? this.loggerService.setLogLevel(arg[0]) : this.loggerService.setLogLevel(URI.revive(uriTransformer.transformIncoming(arg[0][0])), arg[0][1]);
       case "getRegisteredLoggers":
-        return Promise.resolve([...this.a.getRegisteredLoggers()].map((logger) => this.c(logger, uriTransformer)));
+        return Promise.resolve([...this.loggerService.getRegisteredLoggers()].map((logger) => this.transformLogger(logger, uriTransformer)));
     }
     throw new Error(`Call not found: ${command}`);
   }
-  c(logger, transformer) {
+  transformLogger(logger, transformer) {
     return {
       ...logger,
       resource: transformer.transformOutgoingURI(logger.resource)
@@ -12060,43 +12060,43 @@ var $RA = class {
 };
 
 // out-build/vs/platform/log/common/logService.js
-var $vC = class extends $Fd {
+var LogService = class extends Disposable {
   constructor(primaryLogger, otherLoggers = []) {
     super();
-    this.a = new $Ao([primaryLogger, ...otherLoggers]);
-    this.D(primaryLogger.onDidChangeLogLevel((level) => this.setLevel(level)));
+    this.logger = new MultiplexLogger([primaryLogger, ...otherLoggers]);
+    this._register(primaryLogger.onDidChangeLogLevel((level) => this.setLevel(level)));
   }
   get onDidChangeLogLevel() {
-    return this.a.onDidChangeLogLevel;
+    return this.logger.onDidChangeLogLevel;
   }
   setLevel(level) {
-    this.a.setLevel(level);
+    this.logger.setLevel(level);
   }
   getLevel() {
-    return this.a.getLevel();
+    return this.logger.getLevel();
   }
   trace(message, ...args) {
-    this.a.trace(message, ...args);
+    this.logger.trace(message, ...args);
   }
   debug(message, ...args) {
-    this.a.debug(message, ...args);
+    this.logger.debug(message, ...args);
   }
   info(message, ...args) {
-    this.a.info(message, ...args);
+    this.logger.info(message, ...args);
   }
   warn(message, ...args) {
-    this.a.warn(message, ...args);
+    this.logger.warn(message, ...args);
   }
   error(message, ...args) {
-    this.a.error(message, ...args);
+    this.logger.error(message, ...args);
   }
   flush() {
-    this.a.flush();
+    this.logger.flush();
   }
 };
 
 // out-build/vs/base/common/uuid.js
-var $cn = function() {
+var generateUuid = function() {
   if (typeof crypto.randomUUID === "function") {
     return crypto.randomUUID.bind(crypto);
   }
@@ -12105,7 +12105,7 @@ var $cn = function() {
   for (let i = 0; i < 256; i++) {
     _hex.push(i.toString(16).padStart(2, "0"));
   }
-  return function generateUuid() {
+  return function generateUuid2() {
     crypto.getRandomValues(_data);
     _data[6] = _data[6] & 15 | 64;
     _data[8] = _data[8] & 63 | 128;
@@ -12136,53 +12136,53 @@ var $cn = function() {
 }();
 
 // out-build/vs/base/common/ternarySearchTree.js
-var $xj = class {
+var StringIterator = class {
   constructor() {
-    this.b = "";
-    this.c = 0;
+    this._value = "";
+    this._pos = 0;
   }
   reset(key) {
-    this.b = key;
-    this.c = 0;
+    this._value = key;
+    this._pos = 0;
     return this;
   }
   next() {
-    this.c += 1;
+    this._pos += 1;
     return this;
   }
   hasNext() {
-    return this.c < this.b.length - 1;
+    return this._pos < this._value.length - 1;
   }
   cmp(a) {
     const aCode = a.charCodeAt(0);
-    const thisCode = this.b.charCodeAt(this.c);
+    const thisCode = this._value.charCodeAt(this._pos);
     return aCode - thisCode;
   }
   value() {
-    return this.b[this.c];
+    return this._value[this._pos];
   }
 };
-var $yj = class {
-  constructor(e = true) {
-    this.e = e;
+var ConfigKeysIterator = class {
+  constructor(_caseSensitive = true) {
+    this._caseSensitive = _caseSensitive;
   }
   reset(key) {
-    this.b = key;
-    this.c = 0;
-    this.d = 0;
+    this._value = key;
+    this._from = 0;
+    this._to = 0;
     return this.next();
   }
   hasNext() {
-    return this.d < this.b.length;
+    return this._to < this._value.length;
   }
   next() {
-    this.c = this.d;
+    this._from = this._to;
     let justSeps = true;
-    for (; this.d < this.b.length; this.d++) {
-      const ch = this.b.charCodeAt(this.d);
+    for (; this._to < this._value.length; this._to++) {
+      const ch = this._value.charCodeAt(this._to);
       if (ch === 46) {
         if (justSeps) {
-          this.c++;
+          this._from++;
         } else {
           break;
         }
@@ -12193,41 +12193,41 @@ var $yj = class {
     return this;
   }
   cmp(a) {
-    return this.e ? $ag(a, this.b, 0, a.length, this.c, this.d) : $cg(a, this.b, 0, a.length, this.c, this.d);
+    return this._caseSensitive ? compareSubstring(a, this._value, 0, a.length, this._from, this._to) : compareSubstringIgnoreCase(a, this._value, 0, a.length, this._from, this._to);
   }
   value() {
-    return this.b.substring(this.c, this.d);
+    return this._value.substring(this._from, this._to);
   }
 };
-var $zj = class {
-  constructor(f = true, g = true) {
-    this.f = f;
-    this.g = g;
+var PathIterator = class {
+  constructor(_splitOnBackslash = true, _caseSensitive = true) {
+    this._splitOnBackslash = _splitOnBackslash;
+    this._caseSensitive = _caseSensitive;
   }
   reset(key) {
-    this.d = 0;
-    this.e = 0;
-    this.b = key;
-    this.c = key.length;
-    for (let pos = key.length - 1; pos >= 0; pos--, this.c--) {
-      const ch = this.b.charCodeAt(pos);
-      if (!(ch === 47 || this.f && ch === 92)) {
+    this._from = 0;
+    this._to = 0;
+    this._value = key;
+    this._valueLen = key.length;
+    for (let pos = key.length - 1; pos >= 0; pos--, this._valueLen--) {
+      const ch = this._value.charCodeAt(pos);
+      if (!(ch === 47 || this._splitOnBackslash && ch === 92)) {
         break;
       }
     }
     return this.next();
   }
   hasNext() {
-    return this.e < this.c;
+    return this._to < this._valueLen;
   }
   next() {
-    this.d = this.e;
+    this._from = this._to;
     let justSeps = true;
-    for (; this.e < this.c; this.e++) {
-      const ch = this.b.charCodeAt(this.e);
-      if (ch === 47 || this.f && ch === 92) {
+    for (; this._to < this._valueLen; this._to++) {
+      const ch = this._value.charCodeAt(this._to);
+      if (ch === 47 || this._splitOnBackslash && ch === 92) {
         if (justSeps) {
-          this.d++;
+          this._from++;
         } else {
           break;
         }
@@ -12238,10 +12238,10 @@ var $zj = class {
     return this;
   }
   cmp(a) {
-    return this.g ? $ag(a, this.b, 0, a.length, this.d, this.e) : $cg(a, this.b, 0, a.length, this.d, this.e);
+    return this._caseSensitive ? compareSubstring(a, this._value, 0, a.length, this._from, this._to) : compareSubstringIgnoreCase(a, this._value, 0, a.length, this._from, this._to);
   }
   value() {
-    return this.b.substring(this.d, this.e);
+    return this._value.substring(this._from, this._to);
   }
 };
 var UriIteratorState;
@@ -12252,91 +12252,91 @@ var UriIteratorState;
   UriIteratorState2[UriIteratorState2["Query"] = 4] = "Query";
   UriIteratorState2[UriIteratorState2["Fragment"] = 5] = "Fragment";
 })(UriIteratorState || (UriIteratorState = {}));
-var $Aj = class {
-  constructor(f, g) {
-    this.f = f;
-    this.g = g;
-    this.d = [];
-    this.e = 0;
+var UriIterator = class {
+  constructor(_ignorePathCasing, _ignoreQueryAndFragment) {
+    this._ignorePathCasing = _ignorePathCasing;
+    this._ignoreQueryAndFragment = _ignoreQueryAndFragment;
+    this._states = [];
+    this._stateIdx = 0;
   }
   reset(key) {
-    this.c = key;
-    this.d = [];
-    if (this.c.scheme) {
-      this.d.push(
+    this._value = key;
+    this._states = [];
+    if (this._value.scheme) {
+      this._states.push(
         1
         /* UriIteratorState.Scheme */
       );
     }
-    if (this.c.authority) {
-      this.d.push(
+    if (this._value.authority) {
+      this._states.push(
         2
         /* UriIteratorState.Authority */
       );
     }
-    if (this.c.path) {
-      this.b = new $zj(false, !this.f(key));
-      this.b.reset(key.path);
-      if (this.b.value()) {
-        this.d.push(
+    if (this._value.path) {
+      this._pathIterator = new PathIterator(false, !this._ignorePathCasing(key));
+      this._pathIterator.reset(key.path);
+      if (this._pathIterator.value()) {
+        this._states.push(
           3
           /* UriIteratorState.Path */
         );
       }
     }
-    if (!this.g(key)) {
-      if (this.c.query) {
-        this.d.push(
+    if (!this._ignoreQueryAndFragment(key)) {
+      if (this._value.query) {
+        this._states.push(
           4
           /* UriIteratorState.Query */
         );
       }
-      if (this.c.fragment) {
-        this.d.push(
+      if (this._value.fragment) {
+        this._states.push(
           5
           /* UriIteratorState.Fragment */
         );
       }
     }
-    this.e = 0;
+    this._stateIdx = 0;
     return this;
   }
   next() {
-    if (this.d[this.e] === 3 && this.b.hasNext()) {
-      this.b.next();
+    if (this._states[this._stateIdx] === 3 && this._pathIterator.hasNext()) {
+      this._pathIterator.next();
     } else {
-      this.e += 1;
+      this._stateIdx += 1;
     }
     return this;
   }
   hasNext() {
-    return this.d[this.e] === 3 && this.b.hasNext() || this.e < this.d.length - 1;
+    return this._states[this._stateIdx] === 3 && this._pathIterator.hasNext() || this._stateIdx < this._states.length - 1;
   }
   cmp(a) {
-    if (this.d[this.e] === 1) {
-      return $bg(a, this.c.scheme);
-    } else if (this.d[this.e] === 2) {
-      return $bg(a, this.c.authority);
-    } else if (this.d[this.e] === 3) {
-      return this.b.cmp(a);
-    } else if (this.d[this.e] === 4) {
-      return $_f(a, this.c.query);
-    } else if (this.d[this.e] === 5) {
-      return $_f(a, this.c.fragment);
+    if (this._states[this._stateIdx] === 1) {
+      return compareIgnoreCase(a, this._value.scheme);
+    } else if (this._states[this._stateIdx] === 2) {
+      return compareIgnoreCase(a, this._value.authority);
+    } else if (this._states[this._stateIdx] === 3) {
+      return this._pathIterator.cmp(a);
+    } else if (this._states[this._stateIdx] === 4) {
+      return compare(a, this._value.query);
+    } else if (this._states[this._stateIdx] === 5) {
+      return compare(a, this._value.fragment);
     }
     throw new Error();
   }
   value() {
-    if (this.d[this.e] === 1) {
-      return this.c.scheme;
-    } else if (this.d[this.e] === 2) {
-      return this.c.authority;
-    } else if (this.d[this.e] === 3) {
-      return this.b.value();
-    } else if (this.d[this.e] === 4) {
-      return this.c.query;
-    } else if (this.d[this.e] === 5) {
-      return this.c.fragment;
+    if (this._states[this._stateIdx] === 1) {
+      return this._value.scheme;
+    } else if (this._states[this._stateIdx] === 2) {
+      return this._value.authority;
+    } else if (this._states[this._stateIdx] === 3) {
+      return this._pathIterator.value();
+    } else if (this._states[this._stateIdx] === 4) {
+      return this._value.query;
+    } else if (this._states[this._stateIdx] === 5) {
+      return this._value.fragment;
     }
     throw new Error();
   }
@@ -12399,49 +12399,49 @@ var Dir;
   Dir2[Dir2["Mid"] = 0] = "Mid";
   Dir2[Dir2["Right"] = 1] = "Right";
 })(Dir || (Dir = {}));
-var $Bj = class _$Bj {
+var TernarySearchTree = class _TernarySearchTree {
   static forUris(ignorePathCasing = () => false, ignoreQueryAndFragment = () => false) {
-    return new _$Bj(new $Aj(ignorePathCasing, ignoreQueryAndFragment));
+    return new _TernarySearchTree(new UriIterator(ignorePathCasing, ignoreQueryAndFragment));
   }
   static forPaths(ignorePathCasing = false) {
-    return new _$Bj(new $zj(void 0, !ignorePathCasing));
+    return new _TernarySearchTree(new PathIterator(void 0, !ignorePathCasing));
   }
   static forStrings() {
-    return new _$Bj(new $xj());
+    return new _TernarySearchTree(new StringIterator());
   }
   static forConfigKeys() {
-    return new _$Bj(new $yj());
+    return new _TernarySearchTree(new ConfigKeysIterator());
   }
   constructor(segments) {
-    this.b = segments;
+    this._iter = segments;
   }
   clear() {
-    this.c = void 0;
+    this._root = void 0;
   }
   fill(values, keys) {
     if (keys) {
       const arr = keys.slice(0);
-      $mc(arr);
+      shuffle(arr);
       for (const k of arr) {
         this.set(k, values);
       }
     } else {
       const arr = values.slice(0);
-      $mc(arr);
+      shuffle(arr);
       for (const entry of arr) {
         this.set(entry[0], entry[1]);
       }
     }
   }
   set(key, element) {
-    const iter = this.b.reset(key);
+    const iter = this._iter.reset(key);
     let node;
-    if (!this.c) {
-      this.c = new TernarySearchTreeNode();
-      this.c.segment = iter.value();
+    if (!this._root) {
+      this._root = new TernarySearchTreeNode();
+      this._root.segment = iter.value();
     }
     const stack = [];
-    node = this.c;
+    node = this._root;
     while (true) {
       const val = iter.cmp(node.segment);
       if (val > 0) {
@@ -12506,18 +12506,18 @@ var $Bj = class _$Bj {
               break;
           }
         } else {
-          this.c = stack[0][1];
+          this._root = stack[0][1];
         }
       }
     }
     return oldElement;
   }
   get(key) {
-    return Undef.unwrap(this.d(key)?.value);
+    return Undef.unwrap(this._getNode(key)?.value);
   }
-  d(key) {
-    const iter = this.b.reset(key);
-    let node = this.c;
+  _getNode(key) {
+    const iter = this._iter.reset(key);
+    let node = this._root;
     while (node) {
       const val = iter.cmp(node.segment);
       if (val > 0) {
@@ -12534,19 +12534,19 @@ var $Bj = class _$Bj {
     return node;
   }
   has(key) {
-    const node = this.d(key);
+    const node = this._getNode(key);
     return !(node?.value === void 0 && node?.mid === void 0);
   }
   delete(key) {
-    return this.e(key, false);
+    return this._delete(key, false);
   }
   deleteSuperstr(key) {
-    return this.e(key, true);
+    return this._delete(key, true);
   }
-  e(key, superStr) {
-    const iter = this.b.reset(key);
+  _delete(key, superStr) {
+    const iter = this._iter.reset(key);
     const stack = [];
-    let node = this.c;
+    let node = this._root;
     while (node) {
       const val = iter.cmp(node.segment);
       if (val > 0) {
@@ -12578,7 +12578,7 @@ var $Bj = class _$Bj {
     if (!node.mid && !node.value) {
       if (node.left && node.right) {
         const stack2 = [[1, node]];
-        const min = this.f(node.right, stack2);
+        const min = this._min(node.right, stack2);
         if (min.key) {
           node.key = min.key;
           node.value = min.value;
@@ -12591,14 +12591,14 @@ var $Bj = class _$Bj {
                 parent.left = newChild;
                 break;
               case 0:
-                $3c(false);
+                assert(false);
               case 1:
-                $3c(false);
+                assert(false);
             }
           } else {
             node.right = newChild;
           }
-          const newChild2 = this.g(stack2);
+          const newChild2 = this._balanceByStack(stack2);
           if (stack.length > 0) {
             const [dir, parent] = stack[stack.length - 1];
             switch (dir) {
@@ -12613,7 +12613,7 @@ var $Bj = class _$Bj {
                 break;
             }
           } else {
-            this.c = newChild2;
+            this._root = newChild2;
           }
         }
       } else {
@@ -12632,20 +12632,20 @@ var $Bj = class _$Bj {
               break;
           }
         } else {
-          this.c = newChild;
+          this._root = newChild;
         }
       }
     }
-    this.c = this.g(stack) ?? this.c;
+    this._root = this._balanceByStack(stack) ?? this._root;
   }
-  f(node, stack) {
+  _min(node, stack) {
     while (node.left) {
       stack.push([-1, node]);
       node = node.left;
     }
     return node;
   }
-  g(stack) {
+  _balanceByStack(stack) {
     for (let i = stack.length - 1; i >= 0; i--) {
       const node = stack[i][1];
       node.updateHeight();
@@ -12684,8 +12684,8 @@ var $Bj = class _$Bj {
     return void 0;
   }
   findSubstr(key) {
-    const iter = this.b.reset(key);
-    let node = this.c;
+    const iter = this._iter.reset(key);
+    let node = this._root;
     let candidate = void 0;
     while (node) {
       const val = iter.cmp(node.segment);
@@ -12704,11 +12704,11 @@ var $Bj = class _$Bj {
     return node && Undef.unwrap(node.value) || candidate;
   }
   findSuperstr(key) {
-    return this.h(key, false);
+    return this._findSuperstrOrElement(key, false);
   }
-  h(key, allowValue) {
-    const iter = this.b.reset(key);
-    let node = this.c;
+  _findSuperstrOrElement(key, allowValue) {
+    const iter = this._iter.reset(key);
+    let node = this._root;
     while (node) {
       const val = iter.cmp(node.segment);
       if (val > 0) {
@@ -12726,14 +12726,14 @@ var $Bj = class _$Bj {
             return void 0;
           }
         } else {
-          return this.j(node.mid);
+          return this._entries(node.mid);
         }
       }
     }
     return void 0;
   }
   hasElementOrSubtree(key) {
-    return this.h(key, true) !== void 0;
+    return this._findSuperstrOrElement(key, true) !== void 0;
   }
   forEach(callback) {
     for (const [key, value] of this) {
@@ -12741,28 +12741,28 @@ var $Bj = class _$Bj {
     }
   }
   *[Symbol.iterator]() {
-    yield* this.j(this.c);
+    yield* this._entries(this._root);
   }
-  j(node) {
+  _entries(node) {
     const result = [];
-    this.l(node, result);
+    this._dfsEntries(node, result);
     return result[Symbol.iterator]();
   }
-  l(node, bucket) {
+  _dfsEntries(node, bucket) {
     if (!node) {
       return;
     }
     if (node.left) {
-      this.l(node.left, bucket);
+      this._dfsEntries(node.left, bucket);
     }
     if (node.value !== void 0) {
       bucket.push([node.key, Undef.unwrap(node.value)]);
     }
     if (node.mid) {
-      this.l(node.mid, bucket);
+      this._dfsEntries(node.mid, bucket);
     }
     if (node.right) {
-      this.l(node.right, bucket);
+      this._dfsEntries(node.right, bucket);
     }
   }
   // for debug/testing
@@ -12777,12 +12777,12 @@ var $Bj = class _$Bj {
       }
       return nodeIsBalanced(node.left) && nodeIsBalanced(node.right);
     };
-    return nodeIsBalanced(this.c);
+    return nodeIsBalanced(this._root);
   }
 };
 
 // out-build/vs/platform/files/common/files.js
-var $nk = $Fj("fileService");
+var IFileService = createDecorator2("fileService");
 var FileType;
 (function(FileType2) {
   FileType2[FileType2["Unknown"] = 0] = "Unknown";
@@ -12845,25 +12845,25 @@ var FileChangeType;
   FileChangeType2[FileChangeType2["ADDED"] = 1] = "ADDED";
   FileChangeType2[FileChangeType2["DELETED"] = 2] = "DELETED";
 })(FileChangeType || (FileChangeType = {}));
-var $Hk = class _$Hk {
+var FileChangesEvent = class _FileChangesEvent {
   static {
-    this.a = null;
+    this.MIXED_CORRELATION = null;
   }
-  constructor(changes, c) {
-    this.c = c;
-    this.b = void 0;
-    this.d = new $Kf(() => {
-      const added = $Bj.forUris(() => this.c);
+  constructor(changes, ignorePathCasing) {
+    this.ignorePathCasing = ignorePathCasing;
+    this.correlationId = void 0;
+    this.added = new Lazy(() => {
+      const added = TernarySearchTree.forUris(() => this.ignorePathCasing);
       added.fill(this.rawAdded.map((resource) => [resource, true]));
       return added;
     });
-    this.f = new $Kf(() => {
-      const updated = $Bj.forUris(() => this.c);
+    this.updated = new Lazy(() => {
+      const updated = TernarySearchTree.forUris(() => this.ignorePathCasing);
       updated.fill(this.rawUpdated.map((resource) => [resource, true]));
       return updated;
     });
-    this.g = new $Kf(() => {
-      const deleted = $Bj.forUris(() => this.c);
+    this.deleted = new Lazy(() => {
+      const deleted = TernarySearchTree.forUris(() => this.ignorePathCasing);
       deleted.fill(this.rawDeleted.map((resource) => [resource, true]));
       return deleted;
     });
@@ -12882,16 +12882,16 @@ var $Hk = class _$Hk {
           this.rawDeleted.push(change.resource);
           break;
       }
-      if (this.b !== _$Hk.a) {
+      if (this.correlationId !== _FileChangesEvent.MIXED_CORRELATION) {
         if (typeof change.cId === "number") {
-          if (this.b === void 0) {
-            this.b = change.cId;
-          } else if (this.b !== change.cId) {
-            this.b = _$Hk.a;
+          if (this.correlationId === void 0) {
+            this.correlationId = change.cId;
+          } else if (this.correlationId !== change.cId) {
+            this.correlationId = _FileChangesEvent.MIXED_CORRELATION;
           }
         } else {
-          if (this.b !== void 0) {
-            this.b = _$Hk.a;
+          if (this.correlationId !== void 0) {
+            this.correlationId = _FileChangesEvent.MIXED_CORRELATION;
           }
         }
       }
@@ -12904,16 +12904,16 @@ var $Hk = class _$Hk {
    * also when the parent of the resource got deleted.
    */
   contains(resource, ...types) {
-    return this.h(resource, { includeChildren: false }, ...types);
+    return this.doContains(resource, { includeChildren: false }, ...types);
   }
   /**
    * Find out if the file change events either match the provided
    * resource, or contain a child of this resource.
    */
   affects(resource, ...types) {
-    return this.h(resource, { includeChildren: true }, ...types);
+    return this.doContains(resource, { includeChildren: true }, ...types);
   }
-  h(resource, options, ...types) {
+  doContains(resource, options, ...types) {
     if (!resource) {
       return false;
     }
@@ -12922,10 +12922,10 @@ var $Hk = class _$Hk {
       1
       /* FileChangeType.ADDED */
     )) {
-      if (this.d.value.get(resource)) {
+      if (this.added.value.get(resource)) {
         return true;
       }
-      if (options.includeChildren && this.d.value.findSuperstr(resource)) {
+      if (options.includeChildren && this.added.value.findSuperstr(resource)) {
         return true;
       }
     }
@@ -12933,10 +12933,10 @@ var $Hk = class _$Hk {
       0
       /* FileChangeType.UPDATED */
     )) {
-      if (this.f.value.get(resource)) {
+      if (this.updated.value.get(resource)) {
         return true;
       }
-      if (options.includeChildren && this.f.value.findSuperstr(resource)) {
+      if (options.includeChildren && this.updated.value.findSuperstr(resource)) {
         return true;
       }
     }
@@ -12944,10 +12944,10 @@ var $Hk = class _$Hk {
       2
       /* FileChangeType.DELETED */
     )) {
-      if (this.g.value.findSubstr(resource)) {
+      if (this.deleted.value.findSubstr(resource)) {
         return true;
       }
-      if (options.includeChildren && this.g.value.findSuperstr(resource)) {
+      if (options.includeChildren && this.deleted.value.findSuperstr(resource)) {
         return true;
       }
     }
@@ -12981,7 +12981,7 @@ var $Hk = class _$Hk {
    * only to the requestor and not emit them to all listeners.
    */
   correlates(correlationId) {
-    return this.b === correlationId;
+    return this.correlationId === correlationId;
   }
   /**
    * Figure out if the event contains changes that correlate to one
@@ -12993,7 +12993,7 @@ var $Hk = class _$Hk {
    * only to the requestor and not emit them to all listeners.
    */
   hasCorrelation() {
-    return typeof this.b === "number";
+    return typeof this.correlationId === "number";
   }
 };
 var FileOperationResult;
@@ -13016,36 +13016,36 @@ var FileKind;
   FileKind2[FileKind2["FOLDER"] = 1] = "FOLDER";
   FileKind2[FileKind2["ROOT_FOLDER"] = 2] = "ROOT_FOLDER";
 })(FileKind || (FileKind = {}));
-var $Wk = class _$Wk {
+var ByteSize = class _ByteSize {
   static {
     this.KB = 1024;
   }
   static {
-    this.MB = _$Wk.KB * _$Wk.KB;
+    this.MB = _ByteSize.KB * _ByteSize.KB;
   }
   static {
-    this.GB = _$Wk.MB * _$Wk.KB;
+    this.GB = _ByteSize.MB * _ByteSize.KB;
   }
   static {
-    this.TB = _$Wk.GB * _$Wk.KB;
+    this.TB = _ByteSize.GB * _ByteSize.KB;
   }
   static formatSize(size) {
-    if (!$_c(size)) {
+    if (!isNumber(size)) {
       size = 0;
     }
-    if (size < _$Wk.KB) {
+    if (size < _ByteSize.KB) {
       return localize(2079, null, size.toFixed(0));
     }
-    if (size < _$Wk.MB) {
-      return localize(2080, null, (size / _$Wk.KB).toFixed(2));
+    if (size < _ByteSize.MB) {
+      return localize(2080, null, (size / _ByteSize.KB).toFixed(2));
     }
-    if (size < _$Wk.GB) {
-      return localize(2081, null, (size / _$Wk.MB).toFixed(2));
+    if (size < _ByteSize.GB) {
+      return localize(2081, null, (size / _ByteSize.MB).toFixed(2));
     }
-    if (size < _$Wk.TB) {
-      return localize(2082, null, (size / _$Wk.GB).toFixed(2));
+    if (size < _ByteSize.TB) {
+      return localize(2082, null, (size / _ByteSize.GB).toFixed(2));
     }
-    return localize(2083, null, (size / _$Wk.TB).toFixed(2));
+    return localize(2083, null, (size / _ByteSize.TB).toFixed(2));
   }
 };
 
@@ -13123,70 +13123,70 @@ function setLogLevel(logger, level) {
       throw new Error(`Invalid log level ${level}`);
   }
 }
-var $9v = class extends $wo {
+var SpdLogLogger = class extends AbstractMessageLogger {
   constructor(name, filepath, rotating, donotUseFormatters, level) {
     super();
-    this.n = [];
+    this.buffer = [];
     this.setLevel(level);
-    this.q = this.s(name, filepath, rotating, donotUseFormatters);
-    this.D(this.onDidChangeLogLevel((level2) => {
-      if (this.r) {
-        setLogLevel(this.r, level2);
+    this._loggerCreationPromise = this._createSpdLogLogger(name, filepath, rotating, donotUseFormatters);
+    this._register(this.onDidChangeLogLevel((level2) => {
+      if (this._logger) {
+        setLogLevel(this._logger, level2);
       }
     }));
   }
-  async s(name, filepath, rotating, donotUseFormatters) {
+  async _createSpdLogLogger(name, filepath, rotating, donotUseFormatters) {
     const filecount = rotating ? 6 : 1;
-    const filesize = 30 / filecount * $Wk.MB;
+    const filesize = 30 / filecount * ByteSize.MB;
     const logger = await createSpdLogLogger(name, filepath, filesize, filecount, donotUseFormatters);
     if (logger) {
-      this.r = logger;
-      setLogLevel(this.r, this.getLevel());
-      for (const { level, message } of this.n) {
-        log2(this.r, level, message);
+      this._logger = logger;
+      setLogLevel(this._logger, this.getLevel());
+      for (const { level, message } of this.buffer) {
+        log2(this._logger, level, message);
       }
-      this.n = [];
+      this.buffer = [];
     }
   }
-  m(level, message) {
-    if (this.r) {
-      log2(this.r, level, message);
+  log(level, message) {
+    if (this._logger) {
+      log2(this._logger, level, message);
     } else if (this.getLevel() <= level) {
-      this.n.push({ level, message });
+      this.buffer.push({ level, message });
     }
   }
   flush() {
-    if (this.r) {
-      this.u();
+    if (this._logger) {
+      this.flushLogger();
     } else {
-      this.q.then(() => this.u());
+      this._loggerCreationPromise.then(() => this.flushLogger());
     }
   }
   dispose() {
-    if (this.r) {
-      this.w();
+    if (this._logger) {
+      this.disposeLogger();
     } else {
-      this.q.then(() => this.w());
+      this._loggerCreationPromise.then(() => this.disposeLogger());
     }
     super.dispose();
   }
-  u() {
-    if (this.r) {
-      this.r.flush();
+  flushLogger() {
+    if (this._logger) {
+      this._logger.flush();
     }
   }
-  w() {
-    if (this.r) {
-      this.r.drop();
-      this.r = void 0;
+  disposeLogger() {
+    if (this._logger) {
+      this._logger.drop();
+      this._logger = void 0;
     }
   }
 };
 
 // out-build/vs/platform/log/node/loggerService.js
-var $0v = class extends $Bo {
-  s(resource, logLevel, options) {
-    return new $9v($cn(), resource.fsPath, !options?.donotRotate, !!options?.donotUseFormatters, logLevel);
+var LoggerService = class extends AbstractLoggerService {
+  doCreateLogger(resource, logLevel, options) {
+    return new SpdLogLogger(generateUuid(), resource.fsPath, !options?.donotRotate, !!options?.donotUseFormatters, logLevel);
   }
 };
 
@@ -13202,7 +13202,7 @@ if (typeof vscodeGlobal2 !== "undefined" && typeof vscodeGlobal2.context !== "un
   }
 } else if (globalThis._VSCODE_PRODUCT_JSON && globalThis._VSCODE_PACKAGE_JSON) {
   product = globalThis._VSCODE_PRODUCT_JSON;
-  if ($3["VSCODE_DEV"]) {
+  if (env["VSCODE_DEV"]) {
     Object.assign(product, {
       nameShort: `${product.nameShort} Dev`,
       nameLong: `${product.nameLong} Dev`,
@@ -13240,30 +13240,30 @@ var product_default = product;
 // out-build/vs/platform/registry/common/platform.js
 var RegistryImpl = class {
   constructor() {
-    this.a = /* @__PURE__ */ new Map();
+    this.data = /* @__PURE__ */ new Map();
   }
   add(id2, data) {
-    ok($7c(id2));
-    ok($0c(data));
-    ok(!this.a.has(id2), "There is already an extension with this id");
-    this.a.set(id2, data);
+    ok(isString(id2));
+    ok(isObject(data));
+    ok(!this.data.has(id2), "There is already an extension with this id");
+    this.data.set(id2, data);
   }
   knows(id2) {
-    return this.a.has(id2);
+    return this.data.has(id2);
   }
   as(id2) {
-    return this.a.get(id2) || null;
+    return this.data.get(id2) || null;
   }
   dispose() {
-    this.a.forEach((value) => {
-      if ($nd(value.dispose)) {
+    this.data.forEach((value) => {
+      if (isFunction(value.dispose)) {
         value.dispose();
       }
     });
-    this.a.clear();
+    this.data.clear();
   }
 };
-var $am = new RegistryImpl();
+var Registry = new RegistryImpl();
 
 // out-build/vs/platform/terminal/common/terminal.js
 var TerminalSettingPrefix;
@@ -13424,7 +13424,7 @@ var ProcessPropertyType;
   ProcessPropertyType2["UsedShellIntegrationInjection"] = "usedShellIntegrationInjection";
   ProcessPropertyType2["ShellIntegrationInjectionFailureReason"] = "shellIntegrationInjectionFailureReason";
 })(ProcessPropertyType || (ProcessPropertyType = {}));
-var $9w = $Fj("ptyService");
+var IPtyService = createDecorator2("ptyService");
 var HeartbeatConstants;
 (function(HeartbeatConstants2) {
   HeartbeatConstants2[HeartbeatConstants2["BeatInterval"] = 5e3] = "BeatInterval";
@@ -13485,44 +13485,44 @@ var TerminalExitReason;
   TerminalExitReason2[TerminalExitReason2["User"] = 3] = "User";
   TerminalExitReason2[TerminalExitReason2["Extension"] = 4] = "Extension";
 })(TerminalExitReason || (TerminalExitReason = {}));
-var $0w = {
+var TerminalExtensions = {
   Backend: "workbench.contributions.terminal.processBackend"
 };
 var TerminalBackendRegistry = class {
   constructor() {
-    this.a = /* @__PURE__ */ new Map();
+    this._backends = /* @__PURE__ */ new Map();
   }
   get backends() {
-    return this.a;
+    return this._backends;
   }
   registerTerminalBackend(backend) {
-    const key = this.b(backend.remoteAuthority);
-    if (this.a.has(key)) {
+    const key = this._sanitizeRemoteAuthority(backend.remoteAuthority);
+    if (this._backends.has(key)) {
       throw new Error(`A terminal backend with remote authority '${key}' was already registered.`);
     }
-    this.a.set(key, backend);
+    this._backends.set(key, backend);
   }
   getTerminalBackend(remoteAuthority) {
-    return this.a.get(this.b(remoteAuthority));
+    return this._backends.get(this._sanitizeRemoteAuthority(remoteAuthority));
   }
-  b(remoteAuthority) {
+  _sanitizeRemoteAuthority(remoteAuthority) {
     return remoteAuthority?.toLowerCase() ?? "";
   }
 };
-$am.add($0w.Backend, new TerminalBackendRegistry());
-var $$w = $Fj("localPtyService");
-var $_w = $Fj("terminalLogService");
+Registry.add(TerminalExtensions.Backend, new TerminalBackendRegistry());
+var ILocalPtyService = createDecorator2("localPtyService");
+var ITerminalLogService = createDecorator2("terminalLogService");
 
 // out-build/vs/platform/terminal/node/heartbeatService.js
-var $ePc = class extends $Fd {
+var HeartbeatService = class extends Disposable {
   constructor() {
     super();
-    this.a = this.D(new $qf());
-    this.onBeat = this.a.event;
+    this._onBeat = this._register(new Emitter());
+    this.onBeat = this._onBeat.event;
     const interval = setInterval(() => {
-      this.a.fire();
+      this._onBeat.fire();
     }, HeartbeatConstants.BeatInterval);
-    this.D($Dd(() => clearInterval(interval)));
+    this._register(toDisposable(() => clearInterval(interval)));
   }
 };
 
@@ -13567,16 +13567,16 @@ if (process.env["PROCESSOR_ARCHITEW6432"]) {
   osArch = 0;
 }
 var PossiblePowerShellExe = class {
-  constructor(exePath, displayName, a) {
+  constructor(exePath, displayName, knownToExist) {
     this.exePath = exePath;
     this.displayName = displayName;
-    this.a = a;
+    this.knownToExist = knownToExist;
   }
   async exists() {
-    if (this.a === void 0) {
-      this.a = await SymlinkSupport.existsFile(this.exePath);
+    if (this.knownToExist === void 0) {
+      this.knownToExist = await SymlinkSupport.existsFile(this.exePath);
     }
-    return this.a;
+    return this.knownToExist;
   }
 };
 function getProgramFilesPath({ useAlternateBitness = false } = {}) {
@@ -13596,7 +13596,7 @@ async function findPSCoreWindowsInstallation({ useAlternateBitness = false, find
   if (!programFilesPath) {
     return null;
   }
-  const powerShellInstallBaseDir = $0(programFilesPath, "PowerShell");
+  const powerShellInstallBaseDir = join(programFilesPath, "PowerShell");
   if (!await SymlinkSupport.existsDirectory(powerShellInstallBaseDir)) {
     return null;
   }
@@ -13623,7 +13623,7 @@ async function findPSCoreWindowsInstallation({ useAlternateBitness = false, find
     if (currentVersion <= highestSeenVersion) {
       continue;
     }
-    const exePath = $0(powerShellInstallBaseDir, item, "pwsh.exe");
+    const exePath = join(powerShellInstallBaseDir, item, "pwsh.exe");
     if (!await SymlinkSupport.existsFile(exePath)) {
       continue;
     }
@@ -13641,30 +13641,30 @@ async function findPSCoreMsix({ findPreview } = {}) {
   if (!process.env.LOCALAPPDATA) {
     return null;
   }
-  const msixAppDir = $0(process.env.LOCALAPPDATA, "Microsoft", "WindowsApps");
+  const msixAppDir = join(process.env.LOCALAPPDATA, "Microsoft", "WindowsApps");
   if (!await SymlinkSupport.existsDirectory(msixAppDir)) {
     return null;
   }
   const { pwshMsixDirRegex, pwshMsixName } = findPreview ? { pwshMsixDirRegex: PwshPreviewMsixRegex, pwshMsixName: "PowerShell Preview (Store)" } : { pwshMsixDirRegex: PwshMsixRegex, pwshMsixName: "PowerShell (Store)" };
   for (const subdir of await Promises2.readdir(msixAppDir)) {
     if (pwshMsixDirRegex.test(subdir)) {
-      const pwshMsixPath = $0(msixAppDir, subdir, "pwsh.exe");
+      const pwshMsixPath = join(msixAppDir, subdir, "pwsh.exe");
       return new PossiblePowerShellExe(pwshMsixPath, pwshMsixName);
     }
   }
   return null;
 }
 function findPSCoreDotnetGlobalTool() {
-  const dotnetGlobalToolExePath = $0(os.homedir(), ".dotnet", "tools", "pwsh.exe");
+  const dotnetGlobalToolExePath = join(os.homedir(), ".dotnet", "tools", "pwsh.exe");
   return new PossiblePowerShellExe(dotnetGlobalToolExePath, ".NET Core PowerShell Global Tool");
 }
 function findPSCoreScoopInstallation() {
-  const scoopAppsDir = $0(os.homedir(), "scoop", "apps");
-  const scoopPwsh = $0(scoopAppsDir, "pwsh", "current", "pwsh.exe");
+  const scoopAppsDir = join(os.homedir(), "scoop", "apps");
+  const scoopPwsh = join(scoopAppsDir, "pwsh", "current", "pwsh.exe");
   return new PossiblePowerShellExe(scoopPwsh, "PowerShell (Scoop)");
 }
 function findWinPS() {
-  const winPSPath = $0(process.env.windir, processArch === 1 && osArch !== 1 ? "SysNative" : "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+  const winPSPath = join(process.env.windir, processArch === 1 && osArch !== 1 ? "SysNative" : "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
   return new PossiblePowerShellExe(winPSPath, "Windows PowerShell", true);
 }
 async function* enumerateDefaultPowerShellInstallations() {
@@ -13705,41 +13705,41 @@ async function* enumerateDefaultPowerShellInstallations() {
     yield pwshExe;
   }
 }
-async function* $Lw() {
+async function* enumeratePowerShellInstallations() {
   for await (const defaultPwsh of enumerateDefaultPowerShellInstallations()) {
     if (await defaultPwsh.exists()) {
       yield defaultPwsh;
     }
   }
 }
-async function $Mw() {
-  for await (const pwsh of $Lw()) {
+async function getFirstAvailablePowerShellInstallation() {
+  for await (const pwsh of enumeratePowerShellInstallations()) {
     return pwsh;
   }
   return null;
 }
 
 // out-build/vs/base/node/shell.js
-async function $Rw(os3, env) {
+async function getSystemShell(os3, env2) {
   if (os3 === 1) {
-    if ($m) {
+    if (isWindows) {
       return getSystemShellWindows();
     }
-    return $Nw(env);
+    return getWindowsShell(env2);
   }
-  return getSystemShellUnixLike(os3, env);
+  return getSystemShellUnixLike(os3, env2);
 }
 var _TERMINAL_DEFAULT_SHELL_UNIX_LIKE = null;
-function getSystemShellUnixLike(os3, env) {
-  if ($o && os3 === 2 || $n && os3 === 3) {
+function getSystemShellUnixLike(os3, env2) {
+  if (isLinux && os3 === 2 || isMacintosh && os3 === 3) {
     return "/bin/bash";
   }
   if (!_TERMINAL_DEFAULT_SHELL_UNIX_LIKE) {
     let unixLikeTerminal;
-    if ($m) {
+    if (isWindows) {
       unixLikeTerminal = "/bin/bash";
     } else {
-      unixLikeTerminal = env["SHELL"];
+      unixLikeTerminal = env2["SHELL"];
       if (!unixLikeTerminal) {
         try {
           unixLikeTerminal = userInfo().shell;
@@ -13760,29 +13760,29 @@ function getSystemShellUnixLike(os3, env) {
 var _TERMINAL_DEFAULT_SHELL_WINDOWS = null;
 async function getSystemShellWindows() {
   if (!_TERMINAL_DEFAULT_SHELL_WINDOWS) {
-    _TERMINAL_DEFAULT_SHELL_WINDOWS = (await $Mw()).exePath;
+    _TERMINAL_DEFAULT_SHELL_WINDOWS = (await getFirstAvailablePowerShellInstallation()).exePath;
   }
   return _TERMINAL_DEFAULT_SHELL_WINDOWS;
 }
 
 // out-build/vs/platform/terminal/common/requestStore.js
-var $TA = class $TA2 extends $Fd {
+var RequestStore = class RequestStore2 extends Disposable {
   /**
    * @param timeout How long in ms to allow requests to go unanswered for, undefined will use the
    * default (15 seconds).
    */
-  constructor(timeout, h) {
+  constructor(timeout2, _logService) {
     super();
-    this.h = h;
-    this.a = 0;
-    this.c = /* @__PURE__ */ new Map();
-    this.f = /* @__PURE__ */ new Map();
-    this.g = this.D(new $qf());
-    this.onCreateRequest = this.g.event;
-    this.b = timeout === void 0 ? 15e3 : timeout;
-    this.D($Dd(() => {
-      for (const d of this.f.values()) {
-        $Ad(d);
+    this._logService = _logService;
+    this._lastRequestId = 0;
+    this._pendingRequests = /* @__PURE__ */ new Map();
+    this._pendingRequestDisposables = /* @__PURE__ */ new Map();
+    this._onCreateRequest = this._register(new Emitter());
+    this.onCreateRequest = this._onCreateRequest.event;
+    this._timeout = timeout2 === void 0 ? 15e3 : timeout2;
+    this._register(toDisposable(() => {
+      for (const d of this._pendingRequestDisposables.values()) {
+        dispose(d);
       }
     }));
   }
@@ -13791,13 +13791,13 @@ var $TA = class $TA2 extends $Fd {
    * @param args The arguments to pass to the onCreateRequest event.
    */
   createRequest(args) {
-    return new Promise((resolve2, reject) => {
-      const requestId = ++this.a;
-      this.c.set(requestId, resolve2);
-      this.g.fire({ requestId, ...args });
-      const tokenSource = new $Cf();
-      $2h(this.b, tokenSource.token).then(() => reject(`Request ${requestId} timed out (${this.b}ms)`));
-      this.f.set(requestId, [$Dd(() => tokenSource.cancel())]);
+    return new Promise((resolve3, reject) => {
+      const requestId = ++this._lastRequestId;
+      this._pendingRequests.set(requestId, resolve3);
+      this._onCreateRequest.fire({ requestId, ...args });
+      const tokenSource = new CancellationTokenSource();
+      timeout(this._timeout, tokenSource.token).then(() => reject(`Request ${requestId} timed out (${this._timeout}ms)`));
+      this._pendingRequestDisposables.set(requestId, [toDisposable(() => tokenSource.cancel())]);
     });
   }
   /**
@@ -13806,36 +13806,36 @@ var $TA = class $TA2 extends $Fd {
    * @param data The reply data.
    */
   acceptReply(requestId, data) {
-    const resolveRequest = this.c.get(requestId);
+    const resolveRequest = this._pendingRequests.get(requestId);
     if (resolveRequest) {
-      this.c.delete(requestId);
-      $Ad(this.f.get(requestId) || []);
-      this.f.delete(requestId);
+      this._pendingRequests.delete(requestId);
+      dispose(this._pendingRequestDisposables.get(requestId) || []);
+      this._pendingRequestDisposables.delete(requestId);
       resolveRequest(data);
     } else {
-      this.h.warn(`RequestStore#acceptReply was called without receiving a matching request ${requestId}`);
+      this._logService.warn(`RequestStore#acceptReply was called without receiving a matching request ${requestId}`);
     }
   }
 };
-$TA = __decorate([
-  __param(1, $po)
-], $TA);
+RequestStore = __decorate([
+  __param(1, ILogService)
+], RequestStore);
 
 // out-build/vs/platform/terminal/common/terminalDataBuffering.js
-var $t4b = class {
-  constructor(b) {
-    this.b = b;
-    this.a = /* @__PURE__ */ new Map();
+var TerminalDataBufferer = class {
+  constructor(_callback) {
+    this._callback = _callback;
+    this._terminalBufferMap = /* @__PURE__ */ new Map();
   }
   dispose() {
-    for (const buffer of this.a.values()) {
+    for (const buffer of this._terminalBufferMap.values()) {
       buffer.dispose();
     }
   }
   startBuffering(id2, event, throttleBy = 5) {
     const disposable = event((e) => {
-      const data = $7c(e) ? e : e.data;
-      let buffer = this.a.get(id2);
+      const data = isString(e) ? e : e.data;
+      let buffer = this._terminalBufferMap.get(id2);
       if (buffer) {
         buffer.data.push(data);
         return;
@@ -13850,25 +13850,25 @@ var $t4b = class {
           disposable.dispose();
         }
       };
-      this.a.set(id2, buffer);
+      this._terminalBufferMap.set(id2, buffer);
     });
     return disposable;
   }
   stopBuffering(id2) {
-    const buffer = this.a.get(id2);
+    const buffer = this._terminalBufferMap.get(id2);
     buffer?.dispose();
   }
   flushBuffer(id2) {
-    const buffer = this.a.get(id2);
+    const buffer = this._terminalBufferMap.get(id2);
     if (buffer) {
-      this.a.delete(id2);
-      this.b(id2, buffer.data.join(""));
+      this._terminalBufferMap.delete(id2);
+      this._callback(id2, buffer.data.join(""));
     }
   }
 };
 
 // out-build/vs/platform/terminal/common/terminalEnvironment.js
-function $R4(path, shellType) {
+function escapeNonWindowsPath(path, shellType) {
   let newPath = path;
   if (newPath.includes("\\")) {
     newPath = newPath.replace(/\\/g, "\\\\");
@@ -13917,14 +13917,14 @@ function $R4(path, shellType) {
     return escapeConfig.noSingleQuotes(newPath);
   }
 }
-function $T4(cwd2) {
-  if (cwd2.match(/^['"].*['"]$/)) {
-    cwd2 = cwd2.substring(1, cwd2.length - 1);
+function sanitizeCwd(cwd3) {
+  if (cwd3.match(/^['"].*['"]$/)) {
+    cwd3 = cwd3.substring(1, cwd3.length - 1);
   }
-  if (OS === 1 && cwd2 && cwd2[1] === ":") {
-    return cwd2[0].toUpperCase() + cwd2.substring(1);
+  if (OS === 1 && cwd3 && cwd3[1] === ":") {
+    return cwd3[0].toUpperCase() + cwd3.substring(1);
   }
-  return cwd2;
+  return cwd3;
 }
 
 // out-build/vs/platform/terminal/node/terminalEnvironment.js
@@ -13939,15 +13939,15 @@ var EnvironmentVariableMutatorType;
 })(EnvironmentVariableMutatorType || (EnvironmentVariableMutatorType = {}));
 
 // out-build/vs/platform/terminal/common/environmentVariableShared.js
-function $5A(serializedCollection) {
+function deserializeEnvironmentVariableCollection(serializedCollection) {
   return new Map(serializedCollection);
 }
-function $6A(serializableEnvironmentDescription) {
+function deserializeEnvironmentDescriptionMap(serializableEnvironmentDescription) {
   return new Map(serializableEnvironmentDescription ?? []);
 }
-function $8A(serializedCollection) {
+function deserializeEnvironmentVariableCollections(serializedCollection) {
   return new Map(serializedCollection.map((e) => {
-    return [e[0], { map: $5A(e[1]), descriptionMap: $6A(e[2]) }];
+    return [e[0], { map: deserializeEnvironmentVariableCollection(e[1]), descriptionMap: deserializeEnvironmentDescriptionMap(e[2]) }];
   }));
 }
 
@@ -13959,26 +13959,26 @@ var mutatorTypeToLabelMap = /* @__PURE__ */ new Map([
 ]);
 var PYTHON_ACTIVATION_VARS_PATTERN = /^VSCODE_PYTHON_(PWSH|ZSH|BASH|FISH)_ACTIVATE/;
 var PYTHON_ENV_EXTENSION_ID = "ms-python.vscode-python-envs";
-var $9A = class {
+var MergedEnvironmentVariableCollection = class {
   constructor(collections) {
     this.collections = collections;
-    this.a = /* @__PURE__ */ new Map();
-    this.b = /* @__PURE__ */ new Map();
+    this.map = /* @__PURE__ */ new Map();
+    this.descriptionMap = /* @__PURE__ */ new Map();
     collections.forEach((collection, extensionIdentifier) => {
-      this.f(collection, extensionIdentifier);
+      this.populateDescriptionMap(collection, extensionIdentifier);
       const it = collection.map.entries();
       let next = it.next();
       while (!next.done) {
         const mutator = next.value[1];
         const key = next.value[0];
-        if (this.d(key, extensionIdentifier)) {
+        if (this.blockPythonActivationVar(key, extensionIdentifier)) {
           next = it.next();
           continue;
         }
-        let entry = this.a.get(key);
+        let entry = this.map.get(key);
         if (!entry) {
           entry = [];
-          this.a.set(key, entry);
+          this.map.set(key, entry);
         }
         if (entry.length > 0 && entry[0].type === EnvironmentVariableMutatorType.Replace) {
           next = it.next();
@@ -14000,43 +14000,43 @@ var $9A = class {
       }
     });
   }
-  async applyToProcessEnvironment(env, scope, variableResolver) {
+  async applyToProcessEnvironment(env2, scope, variableResolver) {
     let lowerToActualVariableNames;
-    if ($m) {
+    if (isWindows) {
       lowerToActualVariableNames = {};
-      Object.keys(env).forEach((e) => lowerToActualVariableNames[e.toLowerCase()] = e);
+      Object.keys(env2).forEach((e) => lowerToActualVariableNames[e.toLowerCase()] = e);
     }
     for (const [variable, mutators] of this.getVariableMap(scope)) {
-      const actualVariable = $m ? lowerToActualVariableNames[variable.toLowerCase()] || variable : variable;
+      const actualVariable = isWindows ? lowerToActualVariableNames[variable.toLowerCase()] || variable : variable;
       for (const mutator of mutators) {
         const value = variableResolver ? await variableResolver(mutator.value) : mutator.value;
-        if (this.d(mutator.variable, mutator.extensionIdentifier)) {
+        if (this.blockPythonActivationVar(mutator.variable, mutator.extensionIdentifier)) {
           continue;
         }
         if (mutator.options?.applyAtProcessCreation ?? true) {
           switch (mutator.type) {
             case EnvironmentVariableMutatorType.Append:
-              env[actualVariable] = (env[actualVariable] || "") + value;
+              env2[actualVariable] = (env2[actualVariable] || "") + value;
               break;
             case EnvironmentVariableMutatorType.Prepend:
-              env[actualVariable] = value + (env[actualVariable] || "");
+              env2[actualVariable] = value + (env2[actualVariable] || "");
               break;
             case EnvironmentVariableMutatorType.Replace:
-              env[actualVariable] = value;
+              env2[actualVariable] = value;
               break;
           }
         }
         if (mutator.options?.applyAtShellIntegration ?? false) {
           const key = `VSCODE_ENV_${mutatorTypeToLabelMap.get(mutator.type)}`;
-          env[key] = (env[key] ? env[key] + ":" : "") + variable + "=" + this.c(value);
+          env2[key] = (env2[key] ? env2[key] + ":" : "") + variable + "=" + this._encodeColons(value);
         }
       }
     }
   }
-  c(value) {
+  _encodeColons(value) {
     return value.replaceAll(":", "\\x3a");
   }
-  d(variable, extensionIdentifier) {
+  blockPythonActivationVar(variable, extensionIdentifier) {
     if (PYTHON_ACTIVATION_VARS_PATTERN.test(variable) && PYTHON_ENV_EXTENSION_ID !== extensionIdentifier) {
       return true;
     }
@@ -14074,7 +14074,7 @@ var $9A = class {
   }
   getVariableMap(scope) {
     const result = /* @__PURE__ */ new Map();
-    for (const mutators of this.a.values()) {
+    for (const mutators of this.map.values()) {
       const filteredMutators = mutators.filter((m) => filterScope(m, scope));
       if (filteredMutators.length > 0) {
         result.set(filteredMutators[0].variable, filteredMutators);
@@ -14084,7 +14084,7 @@ var $9A = class {
   }
   getDescriptionMap(scope) {
     const result = /* @__PURE__ */ new Map();
-    for (const mutators of this.b.values()) {
+    for (const mutators of this.descriptionMap.values()) {
       const filteredMutators = mutators.filter((m) => filterScope(m, scope, true));
       for (const mutator of filteredMutators) {
         result.set(mutator.extensionIdentifier, mutator.description);
@@ -14092,7 +14092,7 @@ var $9A = class {
     }
     return result;
   }
-  f(collection, extensionIdentifier) {
+  populateDescriptionMap(collection, extensionIdentifier) {
     if (!collection.descriptionMap) {
       return;
     }
@@ -14101,10 +14101,10 @@ var $9A = class {
     while (!next.done) {
       const mutator = next.value[1];
       const key = next.value[0];
-      let entry = this.b.get(key);
+      let entry = this.descriptionMap.get(key);
       if (!entry) {
         entry = [];
-        this.b.set(key, entry);
+        this.descriptionMap.set(key, entry);
       }
       const extensionMutator = {
         extensionIdentifier,
@@ -14164,7 +14164,7 @@ function getChangedMutatorsFromArray(current, other) {
 // out-build/vs/platform/terminal/node/terminalEnvironment.js
 import { chmod, realpathSync as realpathSync2, mkdirSync } from "fs";
 import { promisify as promisify2 } from "util";
-function $0A() {
+function getWindowsBuildNumber() {
   const osVersion = /(\d+)\.(\d+)\.(\d+)/g.exec(os2.release());
   let buildNumber = 0;
   if (osVersion && osVersion.length === 4) {
@@ -14172,7 +14172,7 @@ function $0A() {
   }
   return buildNumber;
 }
-async function $$A(shellLaunchConfig, options, env, logService, productService, skipStickyBit = false) {
+async function getShellIntegrationInjection(shellLaunchConfig, options, env2, logService, productService, skipStickyBit = false) {
   if (!options.shellIntegration.enabled) {
     return {
       type: "failure",
@@ -14201,7 +14201,7 @@ async function $$A(shellLaunchConfig, options, env, logService, productService, 
       /* ShellIntegrationInjectionFailureReason.IgnoreShellIntegrationFlag */
     };
   }
-  if ($m && (!options.windowsEnableConpty || $0A() < 18309)) {
+  if (isWindows && (!options.windowsEnableConpty || getWindowsBuildNumber() < 18309)) {
     return {
       type: "failure",
       reason: "winpty"
@@ -14209,8 +14209,8 @@ async function $$A(shellLaunchConfig, options, env, logService, productService, 
     };
   }
   const originalArgs = shellLaunchConfig.args;
-  const shell = $4 === "win32" ? $bb(shellLaunchConfig.executable).toLowerCase() : $bb(shellLaunchConfig.executable);
-  const appRoot = $ab($lh.asFileUri("").fsPath);
+  const shell = platform2 === "win32" ? basename(shellLaunchConfig.executable).toLowerCase() : basename(shellLaunchConfig.executable);
+  const appRoot = dirname(FileAccess.asFileUri("").fsPath);
   const type = "injection";
   let newArgs;
   const envMixin = {
@@ -14221,8 +14221,8 @@ async function $$A(shellLaunchConfig, options, env, logService, productService, 
   }
   const scopedDownShellEnvs = ["PATH", "VIRTUAL_ENV", "HOME", "SHELL", "PWD"];
   if (shellLaunchConfig.shellIntegrationEnvironmentReporting) {
-    if ($m) {
-      const enableWindowsEnvReporting = options.windowsUseConptyDll || options.windowsEnableConpty && $0A() >= 22631 && shell !== "bash.exe";
+    if (isWindows) {
+      const enableWindowsEnvReporting = options.windowsUseConptyDll || options.windowsEnableConpty && getWindowsBuildNumber() >= 22631 && shell !== "bash.exe";
       if (enableWindowsEnvReporting) {
         envMixin["VSCODE_SHELL_ENV_REPORTING"] = scopedDownShellEnvs.join(",");
       }
@@ -14230,7 +14230,7 @@ async function $$A(shellLaunchConfig, options, env, logService, productService, 
       envMixin["VSCODE_SHELL_ENV_REPORTING"] = scopedDownShellEnvs.join(",");
     }
   }
-  if ($m) {
+  if (isWindows) {
     if (shell === "pwsh.exe" || shell === "powershell.exe") {
       envMixin["VSCODE_A11Y_MODE"] = options.isScreenReaderOptimized ? "1" : "0";
       if (!originalArgs || arePwshImpliedArgs(originalArgs)) {
@@ -14245,7 +14245,7 @@ async function $$A(shellLaunchConfig, options, env, logService, productService, 
           /* ShellIntegrationInjectionFailureReason.UnsupportedArgs */
         };
       }
-      newArgs[newArgs.length - 1] = $Of(newArgs[newArgs.length - 1], appRoot, "");
+      newArgs[newArgs.length - 1] = format2(newArgs[newArgs.length - 1], appRoot, "");
       envMixin["VSCODE_STABLE"] = productService.quality === "stable" ? "1" : "0";
       return { type, newArgs, envMixin };
     } else if (shell === "bash.exe") {
@@ -14264,7 +14264,7 @@ async function $$A(shellLaunchConfig, options, env, logService, productService, 
         };
       }
       newArgs = [...newArgs];
-      newArgs[newArgs.length - 1] = $Of(newArgs[newArgs.length - 1], appRoot);
+      newArgs[newArgs.length - 1] = format2(newArgs[newArgs.length - 1], appRoot);
       envMixin["VSCODE_STABLE"] = productService.quality === "stable" ? "1" : "0";
       return { type, newArgs, envMixin };
     }
@@ -14292,7 +14292,7 @@ async function $$A(shellLaunchConfig, options, env, logService, productService, 
         };
       }
       newArgs = [...newArgs];
-      newArgs[newArgs.length - 1] = $Of(newArgs[newArgs.length - 1], appRoot);
+      newArgs[newArgs.length - 1] = format2(newArgs[newArgs.length - 1], appRoot);
       envMixin["VSCODE_STABLE"] = productService.quality === "stable" ? "1" : "0";
       return { type, newArgs, envMixin };
     }
@@ -14313,7 +14313,7 @@ async function $$A(shellLaunchConfig, options, env, logService, productService, 
       }
       addEnvMixinPathPrefix(options, envMixin, shell);
       newArgs = [...newArgs];
-      newArgs[newArgs.length - 1] = $Of(newArgs[newArgs.length - 1], appRoot);
+      newArgs[newArgs.length - 1] = format2(newArgs[newArgs.length - 1], appRoot);
       return { type, newArgs, envMixin };
     }
     case "pwsh": {
@@ -14330,7 +14330,7 @@ async function $$A(shellLaunchConfig, options, env, logService, productService, 
         };
       }
       newArgs = [...newArgs];
-      newArgs[newArgs.length - 1] = $Of(newArgs[newArgs.length - 1], appRoot, "");
+      newArgs[newArgs.length - 1] = format2(newArgs[newArgs.length - 1], appRoot, "");
       envMixin["VSCODE_STABLE"] = productService.quality === "stable" ? "1" : "0";
       return { type, newArgs, envMixin };
     }
@@ -14351,7 +14351,7 @@ async function $$A(shellLaunchConfig, options, env, logService, productService, 
         };
       }
       newArgs = [...newArgs];
-      newArgs[newArgs.length - 1] = $Of(newArgs[newArgs.length - 1], appRoot);
+      newArgs[newArgs.length - 1] = format2(newArgs[newArgs.length - 1], appRoot);
       let username;
       try {
         username = os2.userInfo().username;
@@ -14359,7 +14359,7 @@ async function $$A(shellLaunchConfig, options, env, logService, productService, 
         username = "unknown";
       }
       const realTmpDir = realpathSync2(os2.tmpdir());
-      const zdotdir = $0(realTmpDir, `${username}-${productService.applicationName}-zsh`);
+      const zdotdir = join(realTmpDir, `${username}-${productService.applicationName}-zsh`);
       if (!skipStickyBit) {
         try {
           const chmodAsync = promisify2(chmod);
@@ -14397,24 +14397,24 @@ async function $$A(shellLaunchConfig, options, env, logService, productService, 
         }
       }
       envMixin["ZDOTDIR"] = zdotdir;
-      const userZdotdir = env?.ZDOTDIR ?? os2.homedir() ?? `~`;
+      const userZdotdir = env2?.ZDOTDIR ?? os2.homedir() ?? `~`;
       envMixin["USER_ZDOTDIR"] = userZdotdir;
       const filesToCopy = [];
       filesToCopy.push({
-        source: $0(appRoot, "out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"),
-        dest: $0(zdotdir, ".zshrc")
+        source: join(appRoot, "out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-rc.zsh"),
+        dest: join(zdotdir, ".zshrc")
       });
       filesToCopy.push({
-        source: $0(appRoot, "out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-profile.zsh"),
-        dest: $0(zdotdir, ".zprofile")
+        source: join(appRoot, "out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-profile.zsh"),
+        dest: join(zdotdir, ".zprofile")
       });
       filesToCopy.push({
-        source: $0(appRoot, "out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-env.zsh"),
-        dest: $0(zdotdir, ".zshenv")
+        source: join(appRoot, "out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-env.zsh"),
+        dest: join(zdotdir, ".zshenv")
       });
       filesToCopy.push({
-        source: $0(appRoot, "out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-login.zsh"),
-        dest: $0(zdotdir, ".zlogin")
+        source: join(appRoot, "out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-login.zsh"),
+        dest: join(zdotdir, ".zlogin")
       });
       return { type, newArgs, envMixin, filesToCopy };
     }
@@ -14427,9 +14427,9 @@ async function $$A(shellLaunchConfig, options, env, logService, productService, 
   };
 }
 function addEnvMixinPathPrefix(options, envMixin, shell) {
-  if (($n || shell === "fish") && options.environmentVariableCollections) {
-    const deserialized = $8A(options.environmentVariableCollections);
-    const merged = new $9A(deserialized);
+  if ((isMacintosh || shell === "fish") && options.environmentVariableCollections) {
+    const deserialized = deserializeEnvironmentVariableCollections(options.environmentVariableCollections);
+    const merged = new MergedEnvironmentVariableCollection(deserialized);
     const pathEntry = merged.getVariableMap({ workspaceFolder: options.workspaceFolder }).get("PATH");
     const prependToPath = [];
     if (pathEntry) {
@@ -14471,24 +14471,24 @@ var shLoginArgs = ["--login", "-l"];
 var shInteractiveArgs = ["-i", "--interactive"];
 var pwshImpliedArgs = ["-nol", "-nologo"];
 function arePwshLoginArgs(originalArgs) {
-  if ($7c(originalArgs)) {
+  if (isString(originalArgs)) {
     return pwshLoginArgs.includes(originalArgs.toLowerCase());
   } else {
     return originalArgs.length === 1 && pwshLoginArgs.includes(originalArgs[0].toLowerCase()) || originalArgs.length === 2 && (pwshLoginArgs.includes(originalArgs[0].toLowerCase()) || pwshLoginArgs.includes(originalArgs[1].toLowerCase())) && (pwshImpliedArgs.includes(originalArgs[0].toLowerCase()) || pwshImpliedArgs.includes(originalArgs[1].toLowerCase()));
   }
 }
 function arePwshImpliedArgs(originalArgs) {
-  if ($7c(originalArgs)) {
+  if (isString(originalArgs)) {
     return pwshImpliedArgs.includes(originalArgs.toLowerCase());
   } else {
     return originalArgs.length === 0 || originalArgs?.length === 1 && pwshImpliedArgs.includes(originalArgs[0].toLowerCase());
   }
 }
 function areZshBashFishLoginArgs(originalArgs) {
-  if (!$7c(originalArgs)) {
+  if (!isString(originalArgs)) {
     originalArgs = originalArgs.filter((arg) => !shInteractiveArgs.includes(arg.toLowerCase()));
   }
-  return $7c(originalArgs) && shLoginArgs.includes(originalArgs.toLowerCase()) || !$7c(originalArgs) && originalArgs.length === 1 && shLoginArgs.includes(originalArgs[0].toLowerCase());
+  return isString(originalArgs) && shLoginArgs.includes(originalArgs.toLowerCase()) || !isString(originalArgs) && originalArgs.length === 1 && shLoginArgs.includes(originalArgs[0].toLowerCase());
 }
 
 // out-build/vs/platform/terminal/node/terminalProcess.js
@@ -14496,13 +14496,13 @@ import * as fs2 from "fs";
 import { exec as exec2 } from "child_process";
 
 // out-build/vs/platform/product/common/productService.js
-var $Mn = $Fj("productService");
+var IProductService = createDecorator2("productService");
 
 // out-build/vs/base/node/ps.js
 import { exec } from "child_process";
 import { totalmem } from "os";
-function $Dx(rootPid) {
-  return new Promise((resolve2, reject) => {
+function listProcesses(rootPid) {
+  return new Promise((resolve3, reject) => {
     let rootItem;
     const map = /* @__PURE__ */ new Map();
     const totalMemory = totalmem();
@@ -14515,7 +14515,7 @@ function $Dx(rootPid) {
           pid,
           ppid,
           load,
-          mem: $m ? mem : totalMemory * (mem / 100)
+          mem: isWindows ? mem : totalMemory * (mem / 100)
         };
         map.set(pid, item);
         if (pid === rootPid) {
@@ -14625,7 +14625,7 @@ function $Dx(rootPid) {
                   item.children = item.children.sort((a, b) => a.pid - b.pid);
                 }
               });
-              resolve2(rootItem);
+              resolve3(rootItem);
             } else {
               reject(new Error(`Root process ${rootPid} not found`));
             }
@@ -14645,7 +14645,7 @@ function $Dx(rootPid) {
             }
           }
         }
-        let cmd = JSON.stringify($lh.asFileUri("vs/base/node/cpuUsage.sh").fsPath);
+        let cmd = JSON.stringify(FileAccess.asFileUri("vs/base/node/cpuUsage.sh").fsPath);
         cmd += " " + pids.join(" ");
         exec(cmd, {}, (err, stdout, stderr) => {
           if (err || stderr) {
@@ -14660,7 +14660,7 @@ function $Dx(rootPid) {
               reject(new Error(`Root process ${rootPid} not found`));
               return;
             }
-            resolve2(rootItem);
+            resolve3(rootItem);
           }
         });
       };
@@ -14670,7 +14670,7 @@ function $Dx(rootPid) {
           if (process.platform !== "linux") {
             reject(err || new Error(stderr.toString()));
           } else {
-            const cmd = JSON.stringify($lh.asFileUri("vs/base/node/ps.sh").fsPath);
+            const cmd = JSON.stringify(FileAccess.asFileUri("vs/base/node/ps.sh").fsPath);
             exec(cmd, {}, (err2, stdout2, stderr2) => {
               if (err2 || stderr2) {
                 reject(err2 || new Error(stderr2.toString()));
@@ -14694,7 +14694,7 @@ function $Dx(rootPid) {
                 if (!rootItem) {
                   reject(new Error(`Root process ${rootPid} not found`));
                 } else {
-                  resolve2(rootItem);
+                  resolve3(rootItem);
                 }
               }
             }
@@ -14721,56 +14721,56 @@ var Constants;
   Constants5[Constants5["InactiveThrottleDuration"] = 5e3] = "InactiveThrottleDuration";
   Constants5[Constants5["ActiveDebounceDuration"] = 1e3] = "ActiveDebounceDuration";
 })(Constants || (Constants = {}));
-var $cPc = [];
-var $dPc = class $dPc2 extends $Fd {
+var ignoreProcessNames = [];
+var ChildProcessMonitor = class ChildProcessMonitor2 extends Disposable {
   set hasChildProcesses(value) {
-    if (this.a !== value) {
-      this.a = value;
-      this.f.debug("ChildProcessMonitor: Has child processes changed", value);
-      this.b.fire(value);
+    if (this._hasChildProcesses !== value) {
+      this._hasChildProcesses = value;
+      this._logService.debug("ChildProcessMonitor: Has child processes changed", value);
+      this._onDidChangeHasChildProcesses.fire(value);
     }
   }
   /**
    * Whether the process has child processes.
    */
   get hasChildProcesses() {
-    return this.a;
+    return this._hasChildProcesses;
   }
-  constructor(c, f) {
+  constructor(_pid, _logService) {
     super();
-    this.c = c;
-    this.f = f;
-    this.a = false;
-    this.b = this.D(new $qf());
-    this.onDidChangeHasChildProcesses = this.b.event;
+    this._pid = _pid;
+    this._logService = _logService;
+    this._hasChildProcesses = false;
+    this._onDidChangeHasChildProcesses = this._register(new Emitter());
+    this.onDidChangeHasChildProcesses = this._onDidChangeHasChildProcesses.event;
   }
   /**
    * Input was triggered on the process.
    */
   handleInput() {
-    this.g();
+    this._refreshActive();
   }
   /**
    * Output was triggered on the process.
    */
   handleOutput() {
-    this.h();
+    this._refreshInactive();
   }
-  async g() {
-    if (this.B.isDisposed) {
+  async _refreshActive() {
+    if (this._store.isDisposed) {
       return;
     }
     try {
-      const processItem = await $Dx(this.c);
-      this.hasChildProcesses = this.j(processItem);
+      const processItem = await listProcesses(this._pid);
+      this.hasChildProcesses = this._processContainsChildren(processItem);
     } catch (e) {
-      this.f.debug("ChildProcessMonitor: Fetching process tree failed", e);
+      this._logService.debug("ChildProcessMonitor: Fetching process tree failed", e);
     }
   }
-  h() {
-    this.g();
+  _refreshInactive() {
+    this._refreshActive();
   }
-  j(processItem) {
+  _processContainsChildren(processItem) {
     if (!processItem.children) {
       return false;
     }
@@ -14787,26 +14787,26 @@ var $dPc = class $dPc2 extends $Fd {
           cmd = item.cmd.substring(0, spaceIndex);
         }
       }
-      return $cPc.indexOf($eb(cmd).name) === -1;
+      return ignoreProcessNames.indexOf(parse(cmd).name) === -1;
     }
     return processItem.children.length > 0;
   }
 };
 __decorate([
-  $Rm(
+  debounce(
     1e3
     /* Constants.ActiveDebounceDuration */
   )
-], $dPc.prototype, "g", null);
+], ChildProcessMonitor.prototype, "_refreshActive", null);
 __decorate([
-  $Sm(
+  throttle(
     5e3
     /* Constants.InactiveThrottleDuration */
   )
-], $dPc.prototype, "h", null);
-$dPc = __decorate([
-  __param(1, $po)
-], $dPc);
+], ChildProcessMonitor.prototype, "_refreshInactive", null);
+ChildProcessMonitor = __decorate([
+  __param(1, ILogService)
+], ChildProcessMonitor);
 
 // out-build/vs/platform/terminal/node/windowsShellHelper.js
 var SHELL_EXECUTABLES = [
@@ -14830,51 +14830,51 @@ var SHELL_EXECUTABLE_REGEXES = [
   /^python(\d(\.\d{0,2})?)?\.exe$/
 ];
 var windowsProcessTree;
-var $fPc = class extends $Fd {
+var WindowsShellHelper = class extends Disposable {
   get shellType() {
-    return this.b;
+    return this._shellType;
   }
   get shellTitle() {
-    return this.c;
+    return this._shellTitle;
   }
   get onShellNameChanged() {
-    return this.f.event;
+    return this._onShellNameChanged.event;
   }
   get onShellTypeChanged() {
-    return this.g.event;
+    return this._onShellTypeChanged.event;
   }
-  constructor(h) {
+  constructor(_rootProcessId) {
     super();
-    this.h = h;
-    this.c = "";
-    this.f = new $qf();
-    this.g = new $qf();
-    if (!$m) {
-      throw new Error(`WindowsShellHelper cannot be instantiated on ${$y}`);
+    this._rootProcessId = _rootProcessId;
+    this._shellTitle = "";
+    this._onShellNameChanged = new Emitter();
+    this._onShellTypeChanged = new Emitter();
+    if (!isWindows) {
+      throw new Error(`WindowsShellHelper cannot be instantiated on ${platform}`);
     }
-    this.j();
+    this._startMonitoringShell();
   }
-  async j() {
-    if (this.B.isDisposed) {
+  async _startMonitoringShell() {
+    if (this._store.isDisposed) {
       return;
     }
     this.checkShell();
   }
   async checkShell() {
-    if ($m) {
-      await $2h(300);
+    if (isWindows) {
+      await timeout(300);
       this.getShellName().then((title) => {
         const type = this.getShellType(title);
-        if (type !== this.b) {
-          this.g.fire(type);
-          this.f.fire(title);
-          this.b = type;
-          this.c = title;
+        if (type !== this._shellType) {
+          this._onShellTypeChanged.fire(type);
+          this._onShellNameChanged.fire(title);
+          this._shellType = type;
+          this._shellTitle = title;
         }
       });
     }
   }
-  m(tree) {
+  traverseTree(tree) {
     if (!tree) {
       return "";
     }
@@ -14902,29 +14902,29 @@ var $fPc = class extends $Fd {
     if (favouriteChild >= tree.children.length) {
       return tree.name;
     }
-    return this.m(tree.children[favouriteChild]);
+    return this.traverseTree(tree.children[favouriteChild]);
   }
   /**
    * Returns the innermost shell executable running in the terminal
    */
   async getShellName() {
-    if (this.B.isDisposed) {
+    if (this._store.isDisposed) {
       return Promise.resolve("");
     }
-    if (this.a) {
-      return this.a;
+    if (this._currentRequest) {
+      return this._currentRequest;
     }
     if (!windowsProcessTree) {
       windowsProcessTree = await import("@vscode/windows-process-tree");
     }
-    this.a = new Promise((resolve2) => {
-      windowsProcessTree.getProcessTree(this.h, (tree) => {
-        const name = this.m(tree);
-        this.a = void 0;
-        resolve2(name);
+    this._currentRequest = new Promise((resolve3) => {
+      windowsProcessTree.getProcessTree(this._rootProcessId, (tree) => {
+        const name = this.traverseTree(tree);
+        this._currentRequest = void 0;
+        resolve3(name);
       });
     });
-    return this.a;
+    return this._currentRequest;
   }
   getShellType(executable) {
     switch (executable.toLowerCase()) {
@@ -14959,8 +14959,8 @@ var $fPc = class extends $Fd {
   }
 };
 __decorate([
-  $Rm(500)
-], $fPc.prototype, "checkShell", null);
+  debounce(500)
+], WindowsShellHelper.prototype, "checkShell", null);
 
 // out-build/vs/platform/terminal/node/terminalProcess.js
 import { spawn as spawn2 } from "node-pty";
@@ -14970,7 +14970,7 @@ var Constants2;
 (function(Constants5) {
   Constants5[Constants5["WriteMaxChunkSize"] = 50] = "WriteMaxChunkSize";
 })(Constants2 || (Constants2 = {}));
-function $8w(data) {
+function chunkInput(data) {
   const chunks = [];
   let nextChunkStartIndex = 0;
   for (let i = 0; i < data.length - 1; i++) {
@@ -14992,7 +14992,7 @@ function $8w(data) {
 }
 
 // out-build/vs/platform/terminal/node/terminalProcess.js
-var $gPc_1;
+var TerminalProcess_1;
 var ShutdownConstants;
 (function(ShutdownConstants2) {
   ShutdownConstants2[ShutdownConstants2["DataFlushTimeout"] = 250] = "DataFlushTimeout";
@@ -15068,35 +15068,35 @@ var generalShellTypeMap = /* @__PURE__ */ new Map([
     /* GeneralShellType.Node */
   ]
 ]);
-var $gPc = class $gPc2 extends $Fd {
+var TerminalProcess = class TerminalProcess2 extends Disposable {
   static {
-    $gPc_1 = this;
+    TerminalProcess_1 = this;
   }
   static {
-    this.b = 0;
+    this._lastKillOrStart = 0;
   }
   get exitMessage() {
-    return this.h;
+    return this._exitMessage;
   }
   get currentTitle() {
-    return this.s?.shellTitle || this.n;
+    return this._windowsShellHelper?.shellTitle || this._currentTitle;
   }
   get shellType() {
-    return $m ? this.s?.shellType : posixShellTypeMap.get(this.n) || generalShellTypeMap.get(this.n);
+    return isWindows ? this._windowsShellHelper?.shellType : posixShellTypeMap.get(this._currentTitle) || generalShellTypeMap.get(this._currentTitle);
   }
   get hasChildProcesses() {
-    return this.t?.hasChildProcesses || false;
+    return this._childProcessMonitor?.hasChildProcesses || false;
   }
-  constructor(shellLaunchConfig, cwd2, cols, rows, env, N, O, P, Q) {
+  constructor(shellLaunchConfig, cwd3, cols, rows, env2, _executableEnv, _options, _logService, _productService) {
     super();
     this.shellLaunchConfig = shellLaunchConfig;
-    this.N = N;
-    this.O = O;
-    this.P = P;
-    this.Q = Q;
+    this._executableEnv = _executableEnv;
+    this._options = _options;
+    this._logService = _logService;
+    this._productService = _productService;
     this.id = 0;
     this.shouldPersist = false;
-    this.a = {
+    this._properties = {
       cwd: "",
       initialCwd: "",
       fixedDimensions: { cols: void 0, rows: void 0 },
@@ -15109,40 +15109,40 @@ var $gPc = class $gPc2 extends $Fd {
       usedShellIntegrationInjection: void 0,
       shellIntegrationInjectionFailureReason: void 0
     };
-    this.n = "";
-    this.w = [];
-    this.G = false;
-    this.H = 0;
-    this.I = this.D(new $qf());
-    this.onProcessData = this.I.event;
-    this.J = this.D(new $qf());
-    this.onProcessReady = this.J.event;
-    this.L = this.D(new $qf());
-    this.onDidChangeProperty = this.L.event;
-    this.M = this.D(new $qf());
-    this.onProcessExit = this.M.event;
+    this._currentTitle = "";
+    this._writeQueue = [];
+    this._isPtyPaused = false;
+    this._unacknowledgedCharCount = 0;
+    this._onProcessData = this._register(new Emitter());
+    this.onProcessData = this._onProcessData.event;
+    this._onProcessReady = this._register(new Emitter());
+    this.onProcessReady = this._onProcessReady.event;
+    this._onDidChangeProperty = this._register(new Emitter());
+    this.onDidChangeProperty = this._onDidChangeProperty.event;
+    this._onProcessExit = this._register(new Emitter());
+    this.onProcessExit = this._onProcessExit.event;
     let name;
-    if ($m) {
-      name = $bb(this.shellLaunchConfig.executable || "");
+    if (isWindows) {
+      name = basename(this.shellLaunchConfig.executable || "");
     } else {
       name = "xterm-256color";
     }
-    this.C = cwd2;
-    this.a[
+    this._initialCwd = cwd3;
+    this._properties[
       "initialCwd"
       /* ProcessPropertyType.InitialCwd */
-    ] = this.C;
-    this.a[
+    ] = this._initialCwd;
+    this._properties[
       "cwd"
       /* ProcessPropertyType.Cwd */
-    ] = this.C;
-    const useConpty = this.O.windowsEnableConpty && process.platform === "win32" && $0A() >= 18309;
-    const useConptyDll = useConpty && this.O.windowsUseConptyDll;
-    this.F = {
+    ] = this._initialCwd;
+    const useConpty = this._options.windowsEnableConpty && process.platform === "win32" && getWindowsBuildNumber() >= 18309;
+    const useConptyDll = useConpty && this._options.windowsUseConptyDll;
+    this._ptyOptions = {
       name,
-      cwd: cwd2,
+      cwd: cwd3,
       // TODO: When node-pty is updated this cast can be removed
-      env,
+      env: env2,
       cols,
       rows,
       useConpty,
@@ -15150,96 +15150,96 @@ var $gPc = class $gPc2 extends $Fd {
       // This option will force conpty to not redraw the whole viewport on launch
       conptyInheritCursor: useConpty && !!shellLaunchConfig.initialText
     };
-    if ($m) {
+    if (isWindows) {
       if (useConpty && cols === 0 && rows === 0 && this.shellLaunchConfig.executable?.endsWith("Git\\bin\\bash.exe")) {
-        this.z = new DelayedResizer();
-        this.D(this.z.onTrigger((dimensions) => {
-          this.z?.dispose();
-          this.z = void 0;
+        this._delayedResizer = new DelayedResizer();
+        this._register(this._delayedResizer.onTrigger((dimensions) => {
+          this._delayedResizer?.dispose();
+          this._delayedResizer = void 0;
           if (dimensions.cols && dimensions.rows) {
             this.resize(dimensions.cols, dimensions.rows);
           }
         }));
       }
       this.onProcessReady((e) => {
-        this.s = this.D(new $fPc(e.pid));
-        this.D(this.s.onShellTypeChanged((e2) => this.L.fire({ type: "shellType", value: e2 })));
-        this.D(this.s.onShellNameChanged((e2) => this.L.fire({ type: "title", value: e2 })));
+        this._windowsShellHelper = this._register(new WindowsShellHelper(e.pid));
+        this._register(this._windowsShellHelper.onShellTypeChanged((e2) => this._onDidChangeProperty.fire({ type: "shellType", value: e2 })));
+        this._register(this._windowsShellHelper.onShellNameChanged((e2) => this._onDidChangeProperty.fire({ type: "title", value: e2 })));
       });
     }
-    this.D($Dd(() => {
-      if (this.u) {
-        clearInterval(this.u);
-        this.u = void 0;
+    this._register(toDisposable(() => {
+      if (this._titleInterval) {
+        clearInterval(this._titleInterval);
+        this._titleInterval = void 0;
       }
     }));
   }
   async start() {
-    const results = await Promise.all([this.R(), this.S()]);
+    const results = await Promise.all([this._validateCwd(), this._validateExecutable()]);
     const firstError = results.find((r) => r !== void 0);
     if (firstError) {
       return firstError;
     }
-    const injection = await $$A(this.shellLaunchConfig, this.O, this.F.env, this.P, this.Q);
+    const injection = await getShellIntegrationInjection(this.shellLaunchConfig, this._options, this._ptyOptions.env, this._logService, this._productService);
     if (injection.type === "injection") {
-      this.L.fire({ type: "usedShellIntegrationInjection", value: true });
+      this._onDidChangeProperty.fire({ type: "usedShellIntegrationInjection", value: true });
       if (injection.envMixin) {
         for (const [key, value] of Object.entries(injection.envMixin)) {
-          this.F.env ||= {};
-          this.F.env[key] = value;
+          this._ptyOptions.env ||= {};
+          this._ptyOptions.env[key] = value;
         }
       }
       if (injection.filesToCopy) {
         for (const f of injection.filesToCopy) {
           try {
-            await fs2.promises.mkdir($ab(f.dest), { recursive: true });
+            await fs2.promises.mkdir(dirname(f.dest), { recursive: true });
             await fs2.promises.copyFile(f.source, f.dest);
           } catch {
           }
         }
       }
     } else {
-      this.L.fire({ type: "failedShellIntegrationActivation", value: true });
-      this.L.fire({ type: "shellIntegrationInjectionFailureReason", value: injection.reason });
-      if (this.O.shellIntegration.nonce) {
-        this.F.env ||= {};
-        this.F.env["VSCODE_NONCE"] = this.O.shellIntegration.nonce;
+      this._onDidChangeProperty.fire({ type: "failedShellIntegrationActivation", value: true });
+      this._onDidChangeProperty.fire({ type: "shellIntegrationInjectionFailureReason", value: injection.reason });
+      if (this._options.shellIntegration.nonce) {
+        this._ptyOptions.env ||= {};
+        this._ptyOptions.env["VSCODE_NONCE"] = this._options.shellIntegration.nonce;
       }
     }
     try {
       const injectionConfig = injection.type === "injection" ? injection : void 0;
-      await this.U(this.shellLaunchConfig, this.F, injectionConfig);
+      await this.setupPtyProcess(this.shellLaunchConfig, this._ptyOptions, injectionConfig);
       if (injectionConfig?.newArgs) {
         return { injectedArgs: injectionConfig.newArgs };
       }
       return void 0;
     } catch (err) {
-      this.P.trace("node-pty.node-pty.IPty#spawn native exception", err);
+      this._logService.trace("node-pty.node-pty.IPty#spawn native exception", err);
       return { message: `A native exception occurred during launch (${err.message})` };
     }
   }
-  async R() {
+  async _validateCwd() {
     try {
-      const result = await fs2.promises.stat(this.C);
+      const result = await fs2.promises.stat(this._initialCwd);
       if (!result.isDirectory()) {
-        return { message: localize(2366, null, this.C.toString()) };
+        return { message: localize(2366, null, this._initialCwd.toString()) };
       }
     } catch (err) {
       if (err?.code === "ENOENT") {
-        return { message: localize(2367, null, this.C.toString()) };
+        return { message: localize(2367, null, this._initialCwd.toString()) };
       }
     }
-    this.L.fire({ type: "initialCwd", value: this.C });
+    this._onDidChangeProperty.fire({ type: "initialCwd", value: this._initialCwd });
     return void 0;
   }
-  async S() {
+  async _validateExecutable() {
     const slc = this.shellLaunchConfig;
     if (!slc.executable) {
       throw new Error("IShellLaunchConfig.executable not set");
     }
-    const cwd2 = slc.cwd instanceof URI ? slc.cwd.path : slc.cwd;
-    const envPaths = slc.env && slc.env.PATH ? slc.env.PATH.split($hb) : void 0;
-    const executable = await $Pw(slc.executable, cwd2, envPaths, this.N);
+    const cwd3 = slc.cwd instanceof URI ? slc.cwd.path : slc.cwd;
+    const envPaths = slc.env && slc.env.PATH ? slc.env.PATH.split(delimiter) : void 0;
+    const executable = await findExecutable(slc.executable, cwd3, envPaths, this._executableEnv);
     if (!executable) {
       return { message: localize(2368, null, slc.executable) };
     }
@@ -15257,147 +15257,147 @@ var $gPc = class $gPc2 extends $Fd {
     }
     return void 0;
   }
-  async U(shellLaunchConfig, options, shellIntegrationInjection) {
+  async setupPtyProcess(shellLaunchConfig, options, shellIntegrationInjection) {
     const args = shellIntegrationInjection?.newArgs || shellLaunchConfig.args || [];
-    await this.Z();
-    this.P.trace("node-pty.IPty#spawn", shellLaunchConfig.executable, args, options);
+    await this._throttleKillSpawn();
+    this._logService.trace("node-pty.IPty#spawn", shellLaunchConfig.executable, args, options);
     const ptyProcess = spawn2(shellLaunchConfig.executable, args, options);
-    this.m = ptyProcess;
-    this.t = this.D(new $dPc(ptyProcess.pid, this.P));
-    this.D(this.t.onDidChangeHasChildProcesses((value) => this.L.fire({ type: "hasChildProcesses", value })));
-    this.q = new Promise((c) => {
-      this.D(this.onProcessReady(() => c()));
+    this._ptyProcess = ptyProcess;
+    this._childProcessMonitor = this._register(new ChildProcessMonitor(ptyProcess.pid, this._logService));
+    this._register(this._childProcessMonitor.onDidChangeHasChildProcesses((value) => this._onDidChangeProperty.fire({ type: "hasChildProcesses", value })));
+    this._processStartupComplete = new Promise((c) => {
+      this._register(this.onProcessReady(() => c()));
     });
-    this.D(ptyProcess.onData((data) => {
-      this.H += data.length;
-      if (!this.G && this.H > 1e5) {
-        this.P.trace(`Flow control: Pause (${this.H} > ${1e5})`);
-        this.G = true;
+    this._register(ptyProcess.onData((data) => {
+      this._unacknowledgedCharCount += data.length;
+      if (!this._isPtyPaused && this._unacknowledgedCharCount > 1e5) {
+        this._logService.trace(`Flow control: Pause (${this._unacknowledgedCharCount} > ${1e5})`);
+        this._isPtyPaused = true;
         ptyProcess.pause();
       }
-      this.P.trace("node-pty.IPty#onData", data);
-      this.I.fire(data);
-      if (this.j) {
-        this.X();
+      this._logService.trace("node-pty.IPty#onData", data);
+      this._onProcessData.fire(data);
+      if (this._closeTimeout) {
+        this._queueProcessExit();
       }
-      this.s?.checkShell();
-      this.t?.handleOutput();
+      this._windowsShellHelper?.checkShell();
+      this._childProcessMonitor?.handleOutput();
     }));
-    this.D(ptyProcess.onExit((e) => {
-      this.g = e.exitCode;
-      this.X();
+    this._register(ptyProcess.onExit((e) => {
+      this._exitCode = e.exitCode;
+      this._queueProcessExit();
     }));
-    this.$(ptyProcess.pid);
-    this.W(ptyProcess);
+    this._sendProcessId(ptyProcess.pid);
+    this._setupTitlePolling(ptyProcess);
   }
-  W(ptyProcess) {
-    setTimeout(() => this.ab(ptyProcess));
-    if (!$m) {
-      this.u = setInterval(() => {
-        if (this.n !== ptyProcess.process) {
-          this.ab(ptyProcess);
+  _setupTitlePolling(ptyProcess) {
+    setTimeout(() => this._sendProcessTitle(ptyProcess));
+    if (!isWindows) {
+      this._titleInterval = setInterval(() => {
+        if (this._currentTitle !== ptyProcess.process) {
+          this._sendProcessTitle(ptyProcess);
         }
       }, 200);
     }
   }
   // Allow any trailing data events to be sent before the exit event is sent.
   // See https://github.com/Tyriar/node-pty/issues/72
-  X() {
-    if (this.P.getLevel() === LogLevel.Trace) {
-      this.P.trace("TerminalProcess#_queueProcessExit", new Error().stack?.replace(/^Error/, ""));
+  _queueProcessExit() {
+    if (this._logService.getLevel() === LogLevel.Trace) {
+      this._logService.trace("TerminalProcess#_queueProcessExit", new Error().stack?.replace(/^Error/, ""));
     }
-    if (this.j) {
-      clearTimeout(this.j);
+    if (this._closeTimeout) {
+      clearTimeout(this._closeTimeout);
     }
-    this.j = setTimeout(
+    this._closeTimeout = setTimeout(
       () => {
-        this.j = void 0;
-        this.Y();
+        this._closeTimeout = void 0;
+        this._kill();
       },
       250
       /* ShutdownConstants.DataFlushTimeout */
     );
   }
-  async Y() {
-    await this.q;
-    if (this.B.isDisposed) {
+  async _kill() {
+    await this._processStartupComplete;
+    if (this._store.isDisposed) {
       return;
     }
     try {
-      if (this.m) {
-        await this.Z();
-        this.P.trace("node-pty.IPty#kill");
-        this.m.kill();
+      if (this._ptyProcess) {
+        await this._throttleKillSpawn();
+        this._logService.trace("node-pty.IPty#kill");
+        this._ptyProcess.kill();
       }
     } catch (ex) {
     }
-    this.M.fire(this.g || 0);
+    this._onProcessExit.fire(this._exitCode || 0);
     this.dispose();
   }
-  async Z() {
-    if (!$m || !hasConptyOption(this.F) || !this.F.useConpty) {
+  async _throttleKillSpawn() {
+    if (!isWindows || !hasConptyOption(this._ptyOptions) || !this._ptyOptions.useConpty) {
       return;
     }
-    if (this.F.useConptyDll) {
+    if (this._ptyOptions.useConptyDll) {
       return;
     }
-    while (Date.now() - $gPc_1.b < 250) {
-      this.P.trace("Throttling kill/spawn call");
-      await $2h(
-        250 - (Date.now() - $gPc_1.b) + 50
+    while (Date.now() - TerminalProcess_1._lastKillOrStart < 250) {
+      this._logService.trace("Throttling kill/spawn call");
+      await timeout(
+        250 - (Date.now() - TerminalProcess_1._lastKillOrStart) + 50
         /* Constants.KillSpawnSpacingDuration */
       );
     }
-    $gPc_1.b = Date.now();
+    TerminalProcess_1._lastKillOrStart = Date.now();
   }
-  $(pid) {
-    this.J.fire({
+  _sendProcessId(pid) {
+    this._onProcessReady.fire({
       pid,
-      cwd: this.C,
+      cwd: this._initialCwd,
       windowsPty: this.getWindowsPty()
     });
   }
-  ab(ptyProcess) {
-    if (this.B.isDisposed) {
+  _sendProcessTitle(ptyProcess) {
+    if (this._store.isDisposed) {
       return;
     }
-    this.n = ptyProcess.process ?? "";
-    this.L.fire({ type: "title", value: this.n });
+    this._currentTitle = ptyProcess.process ?? "";
+    this._onDidChangeProperty.fire({ type: "title", value: this._currentTitle });
     let sanitizedTitle = this.currentTitle.replace(/ \(figterm\)$/g, "");
-    if (!$m) {
-      sanitizedTitle = $bb(sanitizedTitle);
+    if (!isWindows) {
+      sanitizedTitle = basename(sanitizedTitle);
     }
     if (sanitizedTitle.toLowerCase().startsWith("python")) {
-      this.L.fire({
+      this._onDidChangeProperty.fire({
         type: "shellType",
         value: "python"
         /* GeneralShellType.Python */
       });
     } else if (sanitizedTitle.toLowerCase().startsWith("julia")) {
-      this.L.fire({
+      this._onDidChangeProperty.fire({
         type: "shellType",
         value: "julia"
         /* GeneralShellType.Julia */
       });
     } else {
       const shellTypeValue = posixShellTypeMap.get(sanitizedTitle) || generalShellTypeMap.get(sanitizedTitle);
-      this.L.fire({ type: "shellType", value: shellTypeValue });
+      this._onDidChangeProperty.fire({ type: "shellType", value: shellTypeValue });
     }
   }
   shutdown(immediate) {
-    if (this.P.getLevel() === LogLevel.Trace) {
-      this.P.trace("TerminalProcess#shutdown", new Error().stack?.replace(/^Error/, ""));
+    if (this._logService.getLevel() === LogLevel.Trace) {
+      this._logService.trace("TerminalProcess#shutdown", new Error().stack?.replace(/^Error/, ""));
     }
-    if (immediate && !$m) {
-      this.Y();
+    if (immediate && !isWindows) {
+      this._kill();
     } else {
-      if (!this.j && !this.B.isDisposed) {
-        this.X();
+      if (!this._closeTimeout && !this._store.isDisposed) {
+        this._queueProcessExit();
         setTimeout(
           () => {
-            if (this.j && !this.B.isDisposed) {
-              this.j = void 0;
-              this.Y();
+            if (this._closeTimeout && !this._store.isDisposed) {
+              this._closeTimeout = void 0;
+              this._kill();
             }
           },
           5e3
@@ -15407,19 +15407,19 @@ var $gPc = class $gPc2 extends $Fd {
     }
   }
   input(data, isBinary = false) {
-    if (this.B.isDisposed || !this.m) {
+    if (this._store.isDisposed || !this._ptyProcess) {
       return;
     }
-    this.w.push(...$8w(data).map((e) => {
+    this._writeQueue.push(...chunkInput(data).map((e) => {
       return { isBinary, data: e };
     }));
-    this.bb();
+    this._startWrite();
   }
   sendSignal(signal) {
-    if (this.B.isDisposed || !this.m) {
+    if (this._store.isDisposed || !this._ptyProcess) {
       return;
     }
-    this.m.kill(signal);
+    this._ptyProcess.kill(signal);
   }
   async processBinary(data) {
     this.input(data, true);
@@ -15428,17 +15428,17 @@ var $gPc = class $gPc2 extends $Fd {
     switch (type) {
       case "cwd": {
         const newCwd = await this.getCwd();
-        if (newCwd !== this.a.cwd) {
-          this.a.cwd = newCwd;
-          this.L.fire({ type: "cwd", value: this.a.cwd });
+        if (newCwd !== this._properties.cwd) {
+          this._properties.cwd = newCwd;
+          this._onDidChangeProperty.fire({ type: "cwd", value: this._properties.cwd });
         }
         return newCwd;
       }
       case "initialCwd": {
         const initialCwd = await this.getInitialCwd();
-        if (initialCwd !== this.a.initialCwd) {
-          this.a.initialCwd = initialCwd;
-          this.L.fire({ type: "initialCwd", value: this.a.initialCwd });
+        if (initialCwd !== this._properties.initialCwd) {
+          this._properties.initialCwd = initialCwd;
+          this._onDidChangeProperty.fire({ type: "initialCwd", value: this._properties.initialCwd });
         }
         return initialCwd;
       }
@@ -15450,141 +15450,141 @@ var $gPc = class $gPc2 extends $Fd {
   }
   async updateProperty(type, value) {
     if (type === "fixedDimensions") {
-      this.a.fixedDimensions = value;
+      this._properties.fixedDimensions = value;
     }
   }
-  bb() {
-    if (this.y !== void 0 || this.w.length === 0) {
+  _startWrite() {
+    if (this._writeTimeout !== void 0 || this._writeQueue.length === 0) {
       return;
     }
-    this.cb();
-    if (this.w.length === 0) {
-      this.y = void 0;
+    this._doWrite();
+    if (this._writeQueue.length === 0) {
+      this._writeTimeout = void 0;
       return;
     }
-    this.y = setTimeout(
+    this._writeTimeout = setTimeout(
       () => {
-        this.y = void 0;
-        this.bb();
+        this._writeTimeout = void 0;
+        this._startWrite();
       },
       5
       /* Constants.WriteInterval */
     );
   }
-  cb() {
-    const object = this.w.shift();
-    this.P.trace("node-pty.IPty#write", object.data);
+  _doWrite() {
+    const object = this._writeQueue.shift();
+    this._logService.trace("node-pty.IPty#write", object.data);
     if (object.isBinary) {
-      this.m.write(Buffer.from(object.data, "binary"));
+      this._ptyProcess.write(Buffer.from(object.data, "binary"));
     } else {
-      this.m.write(object.data);
+      this._ptyProcess.write(object.data);
     }
-    this.t?.handleInput();
+    this._childProcessMonitor?.handleInput();
   }
   resize(cols, rows) {
-    if (this.B.isDisposed) {
+    if (this._store.isDisposed) {
       return;
     }
-    if (!$_c(cols) || !$_c(rows)) {
+    if (!isNumber(cols) || !isNumber(rows)) {
       return;
     }
-    if (this.m) {
+    if (this._ptyProcess) {
       cols = Math.max(cols, 1);
       rows = Math.max(rows, 1);
-      if (this.z) {
-        this.z.cols = cols;
-        this.z.rows = rows;
+      if (this._delayedResizer) {
+        this._delayedResizer.cols = cols;
+        this._delayedResizer.rows = rows;
         return;
       }
-      this.P.trace("node-pty.IPty#resize", cols, rows);
+      this._logService.trace("node-pty.IPty#resize", cols, rows);
       try {
-        this.m.resize(cols, rows);
+        this._ptyProcess.resize(cols, rows);
       } catch (e) {
-        this.P.trace("node-pty.IPty#resize exception " + e.message);
-        if (this.g !== void 0 && e.message !== "ioctl(2) failed, EBADF" && e.message !== "Cannot resize a pty that has already exited") {
+        this._logService.trace("node-pty.IPty#resize exception " + e.message);
+        if (this._exitCode !== void 0 && e.message !== "ioctl(2) failed, EBADF" && e.message !== "Cannot resize a pty that has already exited") {
           throw e;
         }
       }
     }
   }
   clearBuffer() {
-    this.m?.clear();
+    this._ptyProcess?.clear();
   }
   acknowledgeDataEvent(charCount) {
-    this.H = Math.max(this.H - charCount, 0);
-    this.P.trace(`Flow control: Ack ${charCount} chars (unacknowledged: ${this.H})`);
-    if (this.G && this.H < 5e3) {
-      this.P.trace(`Flow control: Resume (${this.H} < ${5e3})`);
-      this.m?.resume();
-      this.G = false;
+    this._unacknowledgedCharCount = Math.max(this._unacknowledgedCharCount - charCount, 0);
+    this._logService.trace(`Flow control: Ack ${charCount} chars (unacknowledged: ${this._unacknowledgedCharCount})`);
+    if (this._isPtyPaused && this._unacknowledgedCharCount < 5e3) {
+      this._logService.trace(`Flow control: Resume (${this._unacknowledgedCharCount} < ${5e3})`);
+      this._ptyProcess?.resume();
+      this._isPtyPaused = false;
     }
   }
   clearUnacknowledgedChars() {
-    this.H = 0;
-    this.P.trace(`Flow control: Cleared all unacknowledged chars, forcing resume`);
-    if (this.G) {
-      this.m?.resume();
-      this.G = false;
+    this._unacknowledgedCharCount = 0;
+    this._logService.trace(`Flow control: Cleared all unacknowledged chars, forcing resume`);
+    if (this._isPtyPaused) {
+      this._ptyProcess?.resume();
+      this._isPtyPaused = false;
     }
   }
   async setUnicodeVersion(version) {
   }
   getInitialCwd() {
-    return Promise.resolve(this.C);
+    return Promise.resolve(this._initialCwd);
   }
   async getCwd() {
-    if ($n) {
-      return new Promise((resolve2) => {
-        if (!this.m) {
-          resolve2(this.C);
+    if (isMacintosh) {
+      return new Promise((resolve3) => {
+        if (!this._ptyProcess) {
+          resolve3(this._initialCwd);
           return;
         }
-        this.P.trace("node-pty.IPty#pid");
-        exec2("lsof -OPln -p " + this.m.pid + " | grep cwd", { env: { ...process.env, LANG: "en_US.UTF-8" } }, (error, stdout, stderr) => {
+        this._logService.trace("node-pty.IPty#pid");
+        exec2("lsof -OPln -p " + this._ptyProcess.pid + " | grep cwd", { env: { ...process.env, LANG: "en_US.UTF-8" } }, (error, stdout, stderr) => {
           if (!error && stdout !== "") {
-            resolve2(stdout.substring(stdout.indexOf("/"), stdout.length - 1));
+            resolve3(stdout.substring(stdout.indexOf("/"), stdout.length - 1));
           } else {
-            this.P.error("lsof did not run successfully, it may not be on the $PATH?", error, stdout, stderr);
-            resolve2(this.C);
+            this._logService.error("lsof did not run successfully, it may not be on the $PATH?", error, stdout, stderr);
+            resolve3(this._initialCwd);
           }
         });
       });
     }
-    if ($o) {
-      if (!this.m) {
-        return this.C;
+    if (isLinux) {
+      if (!this._ptyProcess) {
+        return this._initialCwd;
       }
-      this.P.trace("node-pty.IPty#pid");
+      this._logService.trace("node-pty.IPty#pid");
       try {
-        return await fs2.promises.readlink(`/proc/${this.m.pid}/cwd`);
+        return await fs2.promises.readlink(`/proc/${this._ptyProcess.pid}/cwd`);
       } catch (error) {
-        return this.C;
+        return this._initialCwd;
       }
     }
-    return this.C;
+    return this._initialCwd;
   }
   getWindowsPty() {
-    return $m ? {
-      backend: hasConptyOption(this.F) && this.F.useConpty ? "conpty" : "winpty",
-      buildNumber: $0A()
+    return isWindows ? {
+      backend: hasConptyOption(this._ptyOptions) && this._ptyOptions.useConpty ? "conpty" : "winpty",
+      buildNumber: getWindowsBuildNumber()
     } : void 0;
   }
 };
-$gPc = $gPc_1 = __decorate([
-  __param(7, $po),
-  __param(8, $Mn)
-], $gPc);
-var DelayedResizer = class extends $Fd {
+TerminalProcess = TerminalProcess_1 = __decorate([
+  __param(7, ILogService),
+  __param(8, IProductService)
+], TerminalProcess);
+var DelayedResizer = class extends Disposable {
   get onTrigger() {
-    return this.b.event;
+    return this._onTrigger.event;
   }
   constructor() {
     super();
-    this.b = this.D(new $qf());
-    this.a = setTimeout(() => {
-      this.b.fire({ rows: this.rows, cols: this.cols });
+    this._onTrigger = this._register(new Emitter());
+    this._timeout = setTimeout(() => {
+      this._onTrigger.fire({ rows: this.rows, cols: this.cols });
     }, 1e3);
-    this.D($Dd(() => clearTimeout(this.a)));
+    this._register(toDisposable(() => clearTimeout(this._timeout)));
   }
 };
 function hasConptyOption(obj) {
@@ -15592,36 +15592,36 @@ function hasConptyOption(obj) {
 }
 
 // out-build/vs/platform/terminal/common/capabilities/terminalCapabilityStore.js
-var $MVb = class extends $Fd {
+var TerminalCapabilityStore = class extends Disposable {
   constructor() {
     super(...arguments);
-    this.a = /* @__PURE__ */ new Map();
-    this.b = this.D(new $qf());
-    this.f = this.D(new $qf());
+    this._map = /* @__PURE__ */ new Map();
+    this._onDidAddCapability = this._register(new Emitter());
+    this._onDidRemoveCapability = this._register(new Emitter());
   }
   get onDidAddCapability() {
-    return this.b.event;
+    return this._onDidAddCapability.event;
   }
   get onDidRemoveCapability() {
-    return this.f.event;
+    return this._onDidRemoveCapability.event;
   }
   get onDidChangeCapabilities() {
-    return Event.map(Event.any(this.b.event, this.f.event), () => void 0, this.B);
+    return Event.map(Event.any(this._onDidAddCapability.event, this._onDidRemoveCapability.event), () => void 0, this._store);
   }
   get onDidAddCommandDetectionCapability() {
-    return Event.map(Event.filter(this.onDidAddCapability, (e) => e.id === 2, this.B), (e) => e.capability, this.B);
+    return Event.map(Event.filter(this.onDidAddCapability, (e) => e.id === 2, this._store), (e) => e.capability, this._store);
   }
   get onDidRemoveCommandDetectionCapability() {
-    return Event.map(Event.filter(this.onDidRemoveCapability, (e) => e.id === 2, this.B), () => void 0, this.B);
+    return Event.map(Event.filter(this.onDidRemoveCapability, (e) => e.id === 2, this._store), () => void 0, this._store);
   }
   get onDidAddCwdDetectionCapability() {
-    return Event.map(Event.filter(this.onDidAddCapability, (e) => e.id === 0, this.B), (e) => e.capability, this.B);
+    return Event.map(Event.filter(this.onDidAddCapability, (e) => e.id === 0, this._store), (e) => e.capability, this._store);
   }
   get onDidRemoveCwdDetectionCapability() {
-    return Event.map(Event.filter(this.onDidRemoveCapability, (e) => e.id === 0, this.B), () => void 0, this.B);
+    return Event.map(Event.filter(this.onDidRemoveCapability, (e) => e.id === 0, this._store), () => void 0, this._store);
   }
   get items() {
-    return this.a.keys();
+    return this._map.keys();
   }
   createOnDidRemoveCapabilityOfTypeEvent(type) {
     return Event.map(Event.filter(this.onDidRemoveCapability, (e) => e.id === type), (e) => e.capability);
@@ -15630,69 +15630,69 @@ var $MVb = class extends $Fd {
     return Event.map(Event.filter(this.onDidAddCapability, (e) => e.id === type), (e) => e.capability);
   }
   add(capability, impl) {
-    this.a.set(capability, impl);
-    this.b.fire(createCapabilityEvent(capability, impl));
+    this._map.set(capability, impl);
+    this._onDidAddCapability.fire(createCapabilityEvent(capability, impl));
   }
   get(capability) {
-    return this.a.get(capability);
+    return this._map.get(capability);
   }
   remove(capability) {
-    const impl = this.a.get(capability);
+    const impl = this._map.get(capability);
     if (!impl) {
       return;
     }
-    this.a.delete(capability);
-    this.f.fire(createCapabilityEvent(capability, impl));
+    this._map.delete(capability);
+    this._onDidRemoveCapability.fire(createCapabilityEvent(capability, impl));
   }
   has(capability) {
-    return this.a.has(capability);
+    return this._map.has(capability);
   }
 };
 __decorate([
-  $Qm
-], $MVb.prototype, "onDidChangeCapabilities", null);
+  memoize
+], TerminalCapabilityStore.prototype, "onDidChangeCapabilities", null);
 __decorate([
-  $Qm
-], $MVb.prototype, "onDidAddCommandDetectionCapability", null);
+  memoize
+], TerminalCapabilityStore.prototype, "onDidAddCommandDetectionCapability", null);
 __decorate([
-  $Qm
-], $MVb.prototype, "onDidRemoveCommandDetectionCapability", null);
+  memoize
+], TerminalCapabilityStore.prototype, "onDidRemoveCommandDetectionCapability", null);
 __decorate([
-  $Qm
-], $MVb.prototype, "onDidAddCwdDetectionCapability", null);
+  memoize
+], TerminalCapabilityStore.prototype, "onDidAddCwdDetectionCapability", null);
 __decorate([
-  $Qm
-], $MVb.prototype, "onDidRemoveCwdDetectionCapability", null);
-var $NVb = class extends $Fd {
+  memoize
+], TerminalCapabilityStore.prototype, "onDidRemoveCwdDetectionCapability", null);
+var TerminalCapabilityStoreMultiplexer = class extends Disposable {
   constructor() {
     super(...arguments);
     this._stores = [];
-    this.a = this.D(new $qf());
-    this.b = this.D(new $qf());
+    this._onDidAddCapability = this._register(new Emitter());
+    this._onDidRemoveCapability = this._register(new Emitter());
   }
   get onDidAddCapability() {
-    return this.a.event;
+    return this._onDidAddCapability.event;
   }
   get onDidRemoveCapability() {
-    return this.b.event;
+    return this._onDidRemoveCapability.event;
   }
   get onDidChangeCapabilities() {
-    return Event.map(Event.any(this.a.event, this.b.event), () => void 0, this.B);
+    return Event.map(Event.any(this._onDidAddCapability.event, this._onDidRemoveCapability.event), () => void 0, this._store);
   }
   get onDidAddCommandDetectionCapability() {
-    return Event.map(Event.filter(this.onDidAddCapability, (e) => e.id === 2, this.B), (e) => e.capability, this.B);
+    return Event.map(Event.filter(this.onDidAddCapability, (e) => e.id === 2, this._store), (e) => e.capability, this._store);
   }
   get onDidRemoveCommandDetectionCapability() {
-    return Event.map(Event.filter(this.onDidRemoveCapability, (e) => e.id === 2, this.B), () => void 0, this.B);
+    return Event.map(Event.filter(this.onDidRemoveCapability, (e) => e.id === 2, this._store), () => void 0, this._store);
   }
   get onDidAddCwdDetectionCapability() {
-    return Event.map(Event.filter(this.onDidAddCapability, (e) => e.id === 0, this.B), (e) => e.capability, this.B);
+    return Event.map(Event.filter(this.onDidAddCapability, (e) => e.id === 0, this._store), (e) => e.capability, this._store);
   }
   get onDidRemoveCwdDetectionCapability() {
-    return Event.map(Event.filter(this.onDidRemoveCapability, (e) => e.id === 0, this.B), () => void 0, this.B);
+    return Event.map(Event.filter(this.onDidRemoveCapability, (e) => e.id === 0, this._store), () => void 0, this._store);
   }
   get items() {
-    return this.f();
+    return this._items();
   }
   createOnDidRemoveCapabilityOfTypeEvent(type) {
     return Event.map(Event.filter(this.onDidRemoveCapability, (e) => e.id === type), (e) => e.capability);
@@ -15700,7 +15700,7 @@ var $NVb = class extends $Fd {
   createOnDidAddCapabilityOfTypeEvent(type) {
     return Event.map(Event.filter(this.onDidAddCapability, (e) => e.id === type), (e) => e.capability);
   }
-  *f() {
+  *_items() {
     for (const store of this._stores) {
       for (const c of store.items) {
         yield c;
@@ -15729,93 +15729,93 @@ var $NVb = class extends $Fd {
   add(store) {
     this._stores.push(store);
     for (const capability of store.items) {
-      this.a.fire(createCapabilityEvent(capability, store.get(capability)));
+      this._onDidAddCapability.fire(createCapabilityEvent(capability, store.get(capability)));
     }
-    this.D(store.onDidAddCapability((e) => this.a.fire(e)));
-    this.D(store.onDidRemoveCapability((e) => this.b.fire(e)));
+    this._register(store.onDidAddCapability((e) => this._onDidAddCapability.fire(e)));
+    this._register(store.onDidRemoveCapability((e) => this._onDidRemoveCapability.fire(e)));
   }
 };
 __decorate([
-  $Qm
-], $NVb.prototype, "onDidChangeCapabilities", null);
+  memoize
+], TerminalCapabilityStoreMultiplexer.prototype, "onDidChangeCapabilities", null);
 __decorate([
-  $Qm
-], $NVb.prototype, "onDidAddCommandDetectionCapability", null);
+  memoize
+], TerminalCapabilityStoreMultiplexer.prototype, "onDidAddCommandDetectionCapability", null);
 __decorate([
-  $Qm
-], $NVb.prototype, "onDidRemoveCommandDetectionCapability", null);
+  memoize
+], TerminalCapabilityStoreMultiplexer.prototype, "onDidRemoveCommandDetectionCapability", null);
 __decorate([
-  $Qm
-], $NVb.prototype, "onDidAddCwdDetectionCapability", null);
+  memoize
+], TerminalCapabilityStoreMultiplexer.prototype, "onDidAddCwdDetectionCapability", null);
 __decorate([
-  $Qm
-], $NVb.prototype, "onDidRemoveCwdDetectionCapability", null);
+  memoize
+], TerminalCapabilityStoreMultiplexer.prototype, "onDidRemoveCwdDetectionCapability", null);
 function createCapabilityEvent(capability, impl) {
   return { id: capability, capability: impl };
 }
 
 // out-build/vs/platform/terminal/common/capabilities/commandDetection/terminalCommand.js
-var $5w = class _$5w {
+var TerminalCommand = class _TerminalCommand {
   get command() {
-    return this.b.command;
+    return this._properties.command;
   }
   get commandLineConfidence() {
-    return this.b.commandLineConfidence;
+    return this._properties.commandLineConfidence;
   }
   get isTrusted() {
-    return this.b.isTrusted;
+    return this._properties.isTrusted;
   }
   get timestamp() {
-    return this.b.timestamp;
+    return this._properties.timestamp;
   }
   get duration() {
-    return this.b.duration;
+    return this._properties.duration;
   }
   get promptStartMarker() {
-    return this.b.promptStartMarker;
+    return this._properties.promptStartMarker;
   }
   get marker() {
-    return this.b.marker;
+    return this._properties.marker;
   }
   get endMarker() {
-    return this.b.endMarker;
+    return this._properties.endMarker;
   }
   set endMarker(value) {
-    this.b.endMarker = value;
+    this._properties.endMarker = value;
   }
   get executedMarker() {
-    return this.b.executedMarker;
+    return this._properties.executedMarker;
   }
   get aliases() {
-    return this.b.aliases;
+    return this._properties.aliases;
   }
   get wasReplayed() {
-    return this.b.wasReplayed;
+    return this._properties.wasReplayed;
   }
   get cwd() {
-    return this.b.cwd;
+    return this._properties.cwd;
   }
   get exitCode() {
-    return this.b.exitCode;
+    return this._properties.exitCode;
   }
   get commandStartLineContent() {
-    return this.b.commandStartLineContent;
+    return this._properties.commandStartLineContent;
   }
   get markProperties() {
-    return this.b.markProperties;
+    return this._properties.markProperties;
   }
   get executedX() {
-    return this.b.executedX;
+    return this._properties.executedX;
   }
   get startX() {
-    return this.b.startX;
+    return this._properties.startX;
   }
   get id() {
-    return this.b.id;
+    return this._properties.id;
   }
-  constructor(a, b) {
-    this.a = a;
-    this.b = b;
+  constructor(_xterm, _properties) {
+    this._xterm = _xterm;
+    this._properties = _properties;
   }
   static deserialize(xterm, serialized, isCommandStorageDisabled) {
     const buffer = xterm.buffer.normal;
@@ -15826,7 +15826,7 @@ var $5w = class _$5w {
     const promptStartMarker = serialized.promptStartLine !== void 0 ? xterm.registerMarker(serialized.promptStartLine - (buffer.baseY + buffer.cursorY)) : void 0;
     const endMarker = serialized.endLine !== void 0 ? xterm.registerMarker(serialized.endLine - (buffer.baseY + buffer.cursorY)) : void 0;
     const executedMarker = serialized.executedLine !== void 0 ? xterm.registerMarker(serialized.executedLine - (buffer.baseY + buffer.cursorY)) : void 0;
-    const newCommand = new _$5w(xterm, {
+    const newCommand = new _TerminalCommand(xterm, {
       command: isCommandStorageDisabled ? "" : serialized.command,
       commandLineConfidence: serialized.commandLineConfidence ?? "low",
       isTrusted: serialized.isTrusted,
@@ -15869,7 +15869,7 @@ var $5w = class _$5w {
     };
   }
   extractCommandLine() {
-    return extractCommandLine(this.a.buffer.active, this.a.cols, this.marker, this.startX, this.executedMarker, this.executedX);
+    return extractCommandLine(this._xterm.buffer.active, this._xterm.cols, this.marker, this.startX, this.executedMarker, this.executedX);
   }
   getOutput() {
     if (!this.executedMarker || !this.endMarker) {
@@ -15883,7 +15883,7 @@ var $5w = class _$5w {
     let output = "";
     let line;
     for (let i = startLine; i < endLine; i++) {
-      line = this.a.buffer.active.getLine(i);
+      line = this._xterm.buffer.active.getLine(i);
       if (!line) {
         continue;
       }
@@ -15899,10 +15899,10 @@ var $5w = class _$5w {
     if (endLine === -1) {
       return void 0;
     }
-    const buffer = this.a.buffer.active;
+    const buffer = this._xterm.buffer.active;
     const startLine = Math.max(this.executedMarker.line, 0);
     const matcher = outputMatcher.lineMatcher;
-    const linesToCheck = $7c(matcher) ? 1 : outputMatcher.length || countNewLines(matcher);
+    const linesToCheck = isString(matcher) ? 1 : outputMatcher.length || countNewLines(matcher);
     const lines = [];
     let match;
     if (outputMatcher.anchor === "bottom") {
@@ -15913,7 +15913,7 @@ var $5w = class _$5w {
           wrappedLineStart--;
         }
         i = wrappedLineStart;
-        lines.unshift(getXtermLineContent(buffer, wrappedLineStart, wrappedLineEnd, this.a.cols));
+        lines.unshift(getXtermLineContent(buffer, wrappedLineStart, wrappedLineEnd, this._xterm.cols));
         if (!match) {
           match = lines[0].match(matcher);
         }
@@ -15929,7 +15929,7 @@ var $5w = class _$5w {
           wrappedLineEnd++;
         }
         i = wrappedLineEnd;
-        lines.push(getXtermLineContent(buffer, wrappedLineStart, wrappedLineEnd, this.a.cols));
+        lines.push(getXtermLineContent(buffer, wrappedLineStart, wrappedLineEnd, this._xterm.cols));
         if (!match) {
           match = lines[lines.length - 1].match(matcher);
         }
@@ -15944,18 +15944,18 @@ var $5w = class _$5w {
     return !this.executedMarker?.isDisposed && !this.endMarker?.isDisposed && !!(this.executedMarker && this.endMarker && this.executedMarker.line < this.endMarker.line);
   }
   getPromptRowCount() {
-    return getPromptRowCount(this, this.a.buffer.active);
+    return getPromptRowCount(this, this._xterm.buffer.active);
   }
   getCommandRowCount() {
     return getCommandRowCount(this);
   }
 };
-var $6w = class {
-  constructor(c, id2) {
-    this.c = c;
-    this.id = id2 ?? $cn();
+var PartialTerminalCommand = class {
+  constructor(_xterm, id2) {
+    this._xterm = _xterm;
+    this.id = id2 ?? generateUuid();
   }
-  serialize(cwd2) {
+  serialize(cwd3) {
     if (!this.commandStartMarker) {
       return void 0;
     }
@@ -15969,7 +15969,7 @@ var $6w = class {
       command: "",
       commandLineConfidence: "low",
       isTrusted: true,
-      cwd: cwd2,
+      cwd: cwd3,
       exitCode: void 0,
       commandStartLineContent: void 0,
       timestamp: 0,
@@ -15978,12 +15978,12 @@ var $6w = class {
       id: this.id
     };
   }
-  promoteToFullCommand(cwd2, exitCode, ignoreCommandLine, markProperties) {
+  promoteToFullCommand(cwd3, exitCode, ignoreCommandLine, markProperties) {
     if (exitCode === void 0 && this.command === void 0) {
       this.command = "";
     }
     if (this.command !== void 0 && !this.command.startsWith("\\") || ignoreCommandLine) {
-      return new $5w(this.c, {
+      return new TerminalCommand(this._xterm, {
         command: ignoreCommandLine ? "" : this.command || "",
         commandLineConfidence: ignoreCommandLine ? "low" : this.commandLineConfidence || "low",
         isTrusted: !!this.isTrusted,
@@ -15995,8 +15995,8 @@ var $6w = class {
         executedMarker: this.commandExecutedMarker,
         executedX: this.commandExecutedX,
         timestamp: Date.now(),
-        duration: this.b || 0,
-        cwd: cwd2,
+        duration: this.commandDuration || 0,
+        cwd: cwd3,
         exitCode,
         commandStartLineContent: this.commandStartLineContent,
         markProperties
@@ -16005,20 +16005,20 @@ var $6w = class {
     return void 0;
   }
   markExecutedTime() {
-    if (this.a === void 0) {
-      this.a = Date.now();
+    if (this.commandExecutedTimestamp === void 0) {
+      this.commandExecutedTimestamp = Date.now();
     }
   }
   markFinishedTime() {
-    if (this.b === void 0 && this.a !== void 0) {
-      this.b = Date.now() - this.a;
+    if (this.commandDuration === void 0 && this.commandExecutedTimestamp !== void 0) {
+      this.commandDuration = Date.now() - this.commandExecutedTimestamp;
     }
   }
   extractCommandLine() {
-    return extractCommandLine(this.c.buffer.active, this.c.cols, this.commandStartMarker, this.commandStartX, this.commandExecutedMarker, this.commandExecutedX);
+    return extractCommandLine(this._xterm.buffer.active, this._xterm.cols, this.commandStartMarker, this.commandStartX, this.commandExecutedMarker, this.commandExecutedX);
   }
   getPromptRowCount() {
-    return getPromptRowCount(this, this.c.buffer.active);
+    return getPromptRowCount(this, this._xterm.buffer.active);
   }
   getCommandRowCount() {
     return getCommandRowCount(this);
@@ -16063,7 +16063,7 @@ function countNewLines(regex) {
   return count;
 }
 function getPromptRowCount(command, buffer) {
-  const marker = $7w(command) ? command.marker : command.commandStartMarker;
+  const marker = isFullTerminalCommand(command) ? command.marker : command.commandStartMarker;
   if (!marker || !command.promptStartMarker) {
     return 1;
   }
@@ -16076,20 +16076,20 @@ function getPromptRowCount(command, buffer) {
   return promptRowCount;
 }
 function getCommandRowCount(command) {
-  const marker = $7w(command) ? command.marker : command.commandStartMarker;
-  const executedMarker = $7w(command) ? command.executedMarker : command.commandExecutedMarker;
+  const marker = isFullTerminalCommand(command) ? command.marker : command.commandStartMarker;
+  const executedMarker = isFullTerminalCommand(command) ? command.executedMarker : command.commandExecutedMarker;
   if (!marker || !executedMarker) {
     return 1;
   }
   const commandExecutedLine = Math.max(executedMarker.line, marker.line);
   let commandRowCount = commandExecutedLine - marker.line + 1;
-  const executedX = $7w(command) ? command.executedX : command.commandExecutedX;
+  const executedX = isFullTerminalCommand(command) ? command.executedX : command.commandExecutedX;
   if (executedX === 0) {
     commandRowCount--;
   }
   return commandRowCount;
 }
-function $7w(command) {
+function isFullTerminalCommand(command) {
   return !!command.hasOutput;
 }
 
@@ -16100,80 +16100,80 @@ var PromptInputState;
   PromptInputState2[PromptInputState2["Input"] = 1] = "Input";
   PromptInputState2[PromptInputState2["Execute"] = 2] = "Execute";
 })(PromptInputState || (PromptInputState = {}));
-var $4w = class $4w2 extends $Fd {
+var PromptInputModel = class PromptInputModel2 extends Disposable {
   get state() {
-    return this.c;
+    return this._state;
   }
   get value() {
-    return this.q;
+    return this._value;
   }
   get prefix() {
-    return this.q.substring(0, this.r);
+    return this._value.substring(0, this._cursorIndex);
   }
   get suffix() {
-    return this.q.substring(this.r, this.s === -1 ? void 0 : this.s);
+    return this._value.substring(this._cursorIndex, this._ghostTextIndex === -1 ? void 0 : this._ghostTextIndex);
   }
   get cursorIndex() {
-    return this.r;
+    return this._cursorIndex;
   }
   get ghostTextIndex() {
-    return this.s;
+    return this._ghostTextIndex;
   }
-  constructor(C, onCommandStart, onCommandStartChanged, onCommandExecuted, F) {
+  constructor(_xterm, onCommandStart, onCommandStartChanged, onCommandExecuted, _logService) {
     super();
-    this.C = C;
-    this.F = F;
-    this.c = 0;
-    this.g = 0;
-    this.n = "";
-    this.q = "";
-    this.r = 0;
-    this.s = -1;
-    this.t = this.D(new $qf());
-    this.onDidStartInput = this.t.event;
-    this.u = this.D(new $qf());
-    this.onDidChangeInput = this.u.event;
-    this.w = this.D(new $qf());
-    this.onDidFinishInput = this.w.event;
-    this.z = this.D(new $qf());
-    this.onDidInterrupt = this.z.event;
-    this.D(Event.any(this.C.onCursorMove, this.C.onData, this.C.onWriteParsed)(() => this.L()));
-    this.D(this.C.onData((e) => this.N(e)));
-    this.D(onCommandStart((e) => this.H(e)));
-    this.D(onCommandStartChanged(() => this.I()));
-    this.D(onCommandExecuted(() => this.J()));
-    this.D(this.onDidStartInput(() => this.G("PromptInputModel#onDidStartInput")));
-    this.D(this.onDidChangeInput(() => this.G("PromptInputModel#onDidChangeInput")));
-    this.D(this.onDidFinishInput(() => this.G("PromptInputModel#onDidFinishInput")));
-    this.D(this.onDidInterrupt(() => this.G("PromptInputModel#onDidInterrupt")));
+    this._xterm = _xterm;
+    this._logService = _logService;
+    this._state = 0;
+    this._commandStartX = 0;
+    this._lastUserInput = "";
+    this._value = "";
+    this._cursorIndex = 0;
+    this._ghostTextIndex = -1;
+    this._onDidStartInput = this._register(new Emitter());
+    this.onDidStartInput = this._onDidStartInput.event;
+    this._onDidChangeInput = this._register(new Emitter());
+    this.onDidChangeInput = this._onDidChangeInput.event;
+    this._onDidFinishInput = this._register(new Emitter());
+    this.onDidFinishInput = this._onDidFinishInput.event;
+    this._onDidInterrupt = this._register(new Emitter());
+    this.onDidInterrupt = this._onDidInterrupt.event;
+    this._register(Event.any(this._xterm.onCursorMove, this._xterm.onData, this._xterm.onWriteParsed)(() => this._sync()));
+    this._register(this._xterm.onData((e) => this._handleUserInput(e)));
+    this._register(onCommandStart((e) => this._handleCommandStart(e)));
+    this._register(onCommandStartChanged(() => this._handleCommandStartChanged()));
+    this._register(onCommandExecuted(() => this._handleCommandExecuted()));
+    this._register(this.onDidStartInput(() => this._logCombinedStringIfTrace("PromptInputModel#onDidStartInput")));
+    this._register(this.onDidChangeInput(() => this._logCombinedStringIfTrace("PromptInputModel#onDidChangeInput")));
+    this._register(this.onDidFinishInput(() => this._logCombinedStringIfTrace("PromptInputModel#onDidFinishInput")));
+    this._register(this.onDidInterrupt(() => this._logCombinedStringIfTrace("PromptInputModel#onDidInterrupt")));
   }
-  G(message) {
-    if (this.F.getLevel() === LogLevel.Trace) {
-      this.F.trace(message, this.getCombinedString());
+  _logCombinedStringIfTrace(message) {
+    if (this._logService.getLevel() === LogLevel.Trace) {
+      this._logService.trace(message, this.getCombinedString());
     }
   }
   setShellType(shellType) {
-    this.m = shellType;
+    this._shellType = shellType;
   }
   setContinuationPrompt(value) {
-    this.j = value;
-    this.L();
+    this._continuationPrompt = value;
+    this._sync();
   }
   setLastPromptLine(value) {
-    this.h = value;
-    this.L();
+    this._lastPromptLine = value;
+    this._sync();
   }
   setConfidentCommandLine(value) {
-    if (this.q !== value) {
-      this.q = value;
-      this.r = -1;
-      this.s = -1;
-      this.u.fire(this.$());
+    if (this._value !== value) {
+      this._value = value;
+      this._cursorIndex = -1;
+      this._ghostTextIndex = -1;
+      this._onDidChangeInput.fire(this._createStateObject());
     }
   }
   getCombinedString(emptyStringWhenEmpty) {
-    const value = this.q.replaceAll("\n", "\u23CE");
-    if (this.r === -1) {
+    const value = this._value.replaceAll("\n", "\u23CE");
+    if (this._cursorIndex === -1) {
       return value;
     }
     let result = `${value.substring(0, this.cursorIndex)}|`;
@@ -16190,90 +16190,90 @@ var $4w = class $4w2 extends $Fd {
   }
   serialize() {
     return {
-      modelState: this.$(),
-      commandStartX: this.g,
-      lastPromptLine: this.h,
-      continuationPrompt: this.j,
-      lastUserInput: this.n
+      modelState: this._createStateObject(),
+      commandStartX: this._commandStartX,
+      lastPromptLine: this._lastPromptLine,
+      continuationPrompt: this._continuationPrompt,
+      lastUserInput: this._lastUserInput
     };
   }
   deserialize(serialized) {
-    this.q = serialized.modelState.value;
-    this.r = serialized.modelState.cursorIndex;
-    this.s = serialized.modelState.ghostTextIndex;
-    this.g = serialized.commandStartX;
-    this.h = serialized.lastPromptLine;
-    this.j = serialized.continuationPrompt;
-    this.n = serialized.lastUserInput;
+    this._value = serialized.modelState.value;
+    this._cursorIndex = serialized.modelState.cursorIndex;
+    this._ghostTextIndex = serialized.modelState.ghostTextIndex;
+    this._commandStartX = serialized.commandStartX;
+    this._lastPromptLine = serialized.lastPromptLine;
+    this._continuationPrompt = serialized.continuationPrompt;
+    this._lastUserInput = serialized.lastUserInput;
   }
-  H(command) {
-    if (this.c === 1) {
+  _handleCommandStart(command) {
+    if (this._state === 1) {
       return;
     }
-    this.c = 1;
-    this.f = command.marker;
-    this.g = this.C.buffer.active.cursorX;
-    this.q = "";
-    this.r = 0;
-    this.t.fire(this.$());
-    this.u.fire(this.$());
-    if (this.h) {
-      if (this.g !== this.h.length) {
-        const line = this.C.buffer.active.getLine(this.f.line);
-        if (line?.translateToString(true).startsWith(this.h)) {
-          this.g = this.h.length;
-          this.L();
+    this._state = 1;
+    this._commandStartMarker = command.marker;
+    this._commandStartX = this._xterm.buffer.active.cursorX;
+    this._value = "";
+    this._cursorIndex = 0;
+    this._onDidStartInput.fire(this._createStateObject());
+    this._onDidChangeInput.fire(this._createStateObject());
+    if (this._lastPromptLine) {
+      if (this._commandStartX !== this._lastPromptLine.length) {
+        const line = this._xterm.buffer.active.getLine(this._commandStartMarker.line);
+        if (line?.translateToString(true).startsWith(this._lastPromptLine)) {
+          this._commandStartX = this._lastPromptLine.length;
+          this._sync();
         }
       }
     }
   }
-  I() {
-    if (this.c !== 1) {
+  _handleCommandStartChanged() {
+    if (this._state !== 1) {
       return;
     }
-    this.g = this.C.buffer.active.cursorX;
-    this.u.fire(this.$());
-    this.L();
+    this._commandStartX = this._xterm.buffer.active.cursorX;
+    this._onDidChangeInput.fire(this._createStateObject());
+    this._sync();
   }
-  J() {
-    if (this.c === 2) {
+  _handleCommandExecuted() {
+    if (this._state === 2) {
       return;
     }
-    this.r = -1;
-    if (this.s !== -1) {
-      this.q = this.q.substring(0, this.s);
-      this.s = -1;
+    this._cursorIndex = -1;
+    if (this._ghostTextIndex !== -1) {
+      this._value = this._value.substring(0, this._ghostTextIndex);
+      this._ghostTextIndex = -1;
     }
-    const event = this.$();
-    if (this.n === "") {
-      this.n = "";
-      this.z.fire(event);
+    const event = this._createStateObject();
+    if (this._lastUserInput === "") {
+      this._lastUserInput = "";
+      this._onDidInterrupt.fire(event);
     }
-    this.c = 2;
-    this.w.fire(event);
-    this.u.fire(event);
+    this._state = 2;
+    this._onDidFinishInput.fire(event);
+    this._onDidChangeInput.fire(event);
   }
-  L() {
+  _sync() {
     try {
-      this.M();
+      this._doSync();
     } catch (e) {
-      this.F.error("Error while syncing prompt input model", e);
+      this._logService.error("Error while syncing prompt input model", e);
     }
   }
-  M() {
-    if (this.c !== 1) {
+  _doSync() {
+    if (this._state !== 1) {
       return;
     }
-    let commandStartY = this.f?.line;
+    let commandStartY = this._commandStartMarker?.line;
     if (commandStartY === void 0) {
       return;
     }
-    const buffer = this.C.buffer.active;
+    const buffer = this._xterm.buffer.active;
     let line = buffer.getLine(commandStartY);
     const absoluteCursorY = buffer.baseY + buffer.cursorY;
     let cursorIndex;
-    let commandLine = line?.translateToString(true, this.g);
-    if (this.m === "fish" && (!line || !commandLine)) {
+    let commandLine = line?.translateToString(true, this._commandStartX);
+    if (this._shellType === "fish" && (!line || !commandLine)) {
       commandStartY += 1;
       line = buffer.getLine(commandStartY);
       if (line) {
@@ -16282,14 +16282,14 @@ var $4w = class $4w2 extends $Fd {
       }
     }
     if (line === void 0 || commandLine === void 0) {
-      this.F.trace(`PromptInputModel#_sync: no line`);
+      this._logService.trace(`PromptInputModel#_sync: no line`);
       return;
     }
     let value = commandLine;
     let ghostTextIndex = -1;
     if (cursorIndex === void 0) {
       if (absoluteCursorY === commandStartY) {
-        cursorIndex = Math.min(this.Y(this.g, buffer, line), commandLine.length);
+        cursorIndex = Math.min(this._getRelativeCursorIndex(this._commandStartX, buffer, line), commandLine.length);
       } else {
         cursorIndex = commandLine.trimEnd().length;
       }
@@ -16298,15 +16298,15 @@ var $4w = class $4w2 extends $Fd {
       const nextLine = buffer.getLine(y);
       const lineText = nextLine?.translateToString(true);
       if (lineText && nextLine) {
-        if (nextLine.isWrapped || absoluteCursorY === y && this.j && !this.W(lineText)) {
+        if (nextLine.isWrapped || absoluteCursorY === y && this._continuationPrompt && !this._lineContainsContinuationPrompt(lineText)) {
           value += `${lineText}`;
-          const relativeCursorIndex = this.Y(0, buffer, nextLine);
+          const relativeCursorIndex = this._getRelativeCursorIndex(0, buffer, nextLine);
           if (absoluteCursorY === y) {
             cursorIndex += relativeCursorIndex;
           } else {
             cursorIndex += lineText.length;
           }
-        } else if (this.m === "fish") {
+        } else if (this._shellType === "fish") {
           if (value.endsWith("\\")) {
             value = value.substring(0, value.length - 1);
             value += `${lineText.trim()}`;
@@ -16321,13 +16321,13 @@ ${lineText.trim()}`;
               cursorIndex += lineText.length;
             }
           }
-        } else if (this.j === void 0 || this.W(lineText)) {
-          const trimmedLineText = this.U(lineText);
+        } else if (this._continuationPrompt === void 0 || this._lineContainsContinuationPrompt(lineText)) {
+          const trimmedLineText = this._trimContinuationPrompt(lineText);
           value += `
 ${trimmedLineText}`;
           if (absoluteCursorY === y) {
-            const continuationCellWidth = this.X(nextLine, lineText);
-            const relativeCursorIndex = this.Y(continuationCellWidth, buffer, nextLine);
+            const continuationCellWidth = this._getContinuationPromptCellWidth(nextLine, lineText);
+            const relativeCursorIndex = this._getRelativeCursorIndex(continuationCellWidth, buffer, nextLine);
             cursorIndex += relativeCursorIndex + 1;
           } else {
             cursorIndex += trimmedLineText.length + 1;
@@ -16335,15 +16335,15 @@ ${trimmedLineText}`;
         }
       }
     }
-    for (let y = absoluteCursorY + 1; y < buffer.baseY + this.C.rows; y++) {
+    for (let y = absoluteCursorY + 1; y < buffer.baseY + this._xterm.rows; y++) {
       const belowCursorLine = buffer.getLine(y);
       const lineText = belowCursorLine?.translateToString(true);
       if (lineText && belowCursorLine) {
-        if (this.m === "fish") {
+        if (this._shellType === "fish") {
           value += `${lineText}`;
-        } else if (this.j === void 0 || this.W(lineText)) {
+        } else if (this._continuationPrompt === void 0 || this._lineContainsContinuationPrompt(lineText)) {
           value += `
-${this.U(lineText)}`;
+${this._trimContinuationPrompt(lineText)}`;
         } else {
           value += lineText;
         }
@@ -16351,24 +16351,24 @@ ${this.U(lineText)}`;
         break;
       }
     }
-    if (this.F.getLevel() === LogLevel.Trace) {
-      this.F.trace(`PromptInputModel#_sync: ${this.getCombinedString()}`);
+    if (this._logService.getLevel() === LogLevel.Trace) {
+      this._logService.trace(`PromptInputModel#_sync: ${this.getCombinedString()}`);
     }
     {
-      let trailingWhitespace = this.q.length - this.q.trimEnd().length;
-      if (this.n === "\x7F") {
-        this.n = "";
-        if (cursorIndex === this.r - 1) {
-          if (this.q.trimEnd().length > value.trimEnd().length && value.trimEnd().length <= cursorIndex) {
-            trailingWhitespace = Math.max(this.q.length - 1 - value.trimEnd().length, 0);
+      let trailingWhitespace = this._value.length - this._value.trimEnd().length;
+      if (this._lastUserInput === "\x7F") {
+        this._lastUserInput = "";
+        if (cursorIndex === this._cursorIndex - 1) {
+          if (this._value.trimEnd().length > value.trimEnd().length && value.trimEnd().length <= cursorIndex) {
+            trailingWhitespace = Math.max(this._value.length - 1 - value.trimEnd().length, 0);
           } else {
             trailingWhitespace = Math.max(trailingWhitespace - 1, 0);
           }
         }
       }
-      if (this.n === "\x1B[3~") {
-        this.n = "";
-        if (cursorIndex === this.r) {
+      if (this._lastUserInput === "\x1B[3~") {
+        this._lastUserInput = "";
+        if (cursorIndex === this._cursorIndex) {
           trailingWhitespace = Math.max(trailingWhitespace - 1, 0);
         }
       }
@@ -16377,42 +16377,42 @@ ${this.U(lineText)}`;
       const valueEndTrimmed = value.trimEnd();
       if (!isMultiLine) {
         if (valueEndTrimmed.length < value.length) {
-          if (this.n === " ") {
-            this.n = "";
-            if (cursorIndex > valueEndTrimmed.length && cursorIndex > this.r) {
+          if (this._lastUserInput === " ") {
+            this._lastUserInput = "";
+            if (cursorIndex > valueEndTrimmed.length && cursorIndex > this._cursorIndex) {
               trailingWhitespace++;
             }
           }
           trailingWhitespace = Math.max(cursorIndex - valueEndTrimmed.length, trailingWhitespace, 0);
         }
         const charBeforeCursor = cursorIndex === 0 ? "" : value[cursorIndex - 1];
-        if (trailingWhitespace > 0 && cursorIndex === this.r + 1 && this.n !== "" && charBeforeCursor !== " ") {
-          trailingWhitespace = this.q.length - this.r;
+        if (trailingWhitespace > 0 && cursorIndex === this._cursorIndex + 1 && this._lastUserInput !== "" && charBeforeCursor !== " ") {
+          trailingWhitespace = this._value.length - this._cursorIndex;
         }
       }
       if (isMultiLine) {
         valueLines[valueLines.length - 1] = valueLines.at(-1)?.trimEnd() ?? "";
-        const continuationOffset = (valueLines.length - 1) * (this.j?.length ?? 0);
+        const continuationOffset = (valueLines.length - 1) * (this._continuationPrompt?.length ?? 0);
         trailingWhitespace = Math.max(0, cursorIndex - value.length - continuationOffset);
       }
       value = valueLines.map((e) => e.trimEnd()).join("\n") + " ".repeat(trailingWhitespace);
     }
-    ghostTextIndex = this.O(buffer, line, cursorIndex);
-    if (this.q !== value || this.r !== cursorIndex || this.s !== ghostTextIndex) {
-      this.q = value;
-      this.r = cursorIndex;
-      this.s = ghostTextIndex;
-      this.u.fire(this.$());
+    ghostTextIndex = this._scanForGhostText(buffer, line, cursorIndex);
+    if (this._value !== value || this._cursorIndex !== cursorIndex || this._ghostTextIndex !== ghostTextIndex) {
+      this._value = value;
+      this._cursorIndex = cursorIndex;
+      this._ghostTextIndex = ghostTextIndex;
+      this._onDidChangeInput.fire(this._createStateObject());
     }
   }
-  N(e) {
-    this.n = e;
+  _handleUserInput(e) {
+    this._lastUserInput = e;
   }
   /**
    * Detect ghost text by looking for italic or dim text in or after the cursor and
    * non-italic/dim text in the first non-whitespace cell following command start and before the cursor.
    */
-  O(buffer, line, cursorIndex) {
+  _scanForGhostText(buffer, line, cursorIndex) {
     if (!this.value.trim().length) {
       return -1;
     }
@@ -16425,7 +16425,7 @@ ${this.U(lineText)}`;
         break;
       }
       if (cell.getChars().trim().length > 0) {
-        proceedWithGhostTextCheck = !this.Z(cell);
+        proceedWithGhostTextCheck = !this._isCellStyledLikeGhostText(cell);
         break;
       }
     }
@@ -16437,7 +16437,7 @@ ${this.U(lineText)}`;
         if (!cell || cell.getCode() === 0) {
           break;
         }
-        if (this.Z(cell)) {
+        if (this._isCellStyledLikeGhostText(cell)) {
           ghostTextIndex = cursorIndex + potentialGhostIndexOffset;
           break;
         }
@@ -16445,36 +16445,36 @@ ${this.U(lineText)}`;
       }
     }
     if (ghostTextIndex === -1) {
-      ghostTextIndex = this.P(buffer, line, cursorIndex);
+      ghostTextIndex = this._scanForGhostTextAdvanced(buffer, line, cursorIndex);
     }
     if (ghostTextIndex > -1 && this.value.substring(ghostTextIndex).endsWith(" ")) {
-      this.q = this.value.trim();
+      this._value = this.value.trim();
       if (!this.value.substring(ghostTextIndex)) {
         ghostTextIndex = -1;
       }
     }
     return ghostTextIndex;
   }
-  P(buffer, line, cursorIndex) {
+  _scanForGhostTextAdvanced(buffer, line, cursorIndex) {
     let ghostTextIndex = -1;
     let currentPos = buffer.cursorX;
     const styleMap = /* @__PURE__ */ new Map();
     let lastNonWhitespaceCell = line.getCell(currentPos);
     let nextCell = lastNonWhitespaceCell;
     while (nextCell && currentPos < line.length) {
-      const styleKey = this.R(nextCell);
+      const styleKey = this._getCellStyleAsString(nextCell);
       styleMap.set(styleKey, [...styleMap.get(styleKey) ?? [], currentPos]);
       nextCell = line.getCell(++currentPos);
       if (nextCell?.getChars().trim().length) {
         lastNonWhitespaceCell = nextCell;
       }
     }
-    if (!lastNonWhitespaceCell?.getChars().trim().length || this.S(line.getCell(this.g), lastNonWhitespaceCell)) {
+    if (!lastNonWhitespaceCell?.getChars().trim().length || this._cellStylesMatch(line.getCell(this._commandStartX), lastNonWhitespaceCell)) {
       return -1;
     }
-    const positionsWithGhostStyle = styleMap.get(this.R(lastNonWhitespaceCell));
+    const positionsWithGhostStyle = styleMap.get(this._getCellStyleAsString(lastNonWhitespaceCell));
     if (positionsWithGhostStyle) {
-      if (positionsWithGhostStyle[0] > buffer.cursorX + 1 && this.Q(line, positionsWithGhostStyle[0])) {
+      if (positionsWithGhostStyle[0] > buffer.cursorX + 1 && this._isPositionRightPrompt(line, positionsWithGhostStyle[0])) {
         return -1;
       }
       for (let i = 1; i < positionsWithGhostStyle.length; i++) {
@@ -16482,19 +16482,19 @@ ${this.U(lineText)}`;
           return -1;
         }
       }
-      if (buffer.baseY + buffer.cursorY === this.f?.line) {
-        ghostTextIndex = positionsWithGhostStyle[0] - this.g;
+      if (buffer.baseY + buffer.cursorY === this._commandStartMarker?.line) {
+        ghostTextIndex = positionsWithGhostStyle[0] - this._commandStartX;
       } else {
         ghostTextIndex = positionsWithGhostStyle[0];
       }
     }
     if (ghostTextIndex !== -1) {
-      for (let checkPos = buffer.cursorX; checkPos >= this.g; checkPos--) {
+      for (let checkPos = buffer.cursorX; checkPos >= this._commandStartX; checkPos--) {
         const checkCell = line.getCell(checkPos);
         if (!checkCell?.getChars.length) {
           continue;
         }
-        if (checkCell && checkCell.getCode() !== 0 && this.S(lastNonWhitespaceCell, checkCell)) {
+        if (checkCell && checkCell.getCode() !== 0 && this._cellStylesMatch(lastNonWhitespaceCell, checkCell)) {
           return -1;
         }
       }
@@ -16505,9 +16505,9 @@ ${this.U(lineText)}`;
    * 5+ spaces preceding the position, following the command start,
    * indicates that we're likely in a right prompt at the current position
    */
-  Q(line, position) {
+  _isPositionRightPrompt(line, position) {
     let count = 0;
-    for (let i = position - 1; i >= this.g; i--) {
+    for (let i = position - 1; i >= this._commandStartX; i--) {
       const cell = line.getCell(i);
       if (!cell || cell.getChars().trim().length === 0) {
         count++;
@@ -16520,32 +16520,32 @@ ${this.U(lineText)}`;
     }
     return false;
   }
-  R(cell) {
+  _getCellStyleAsString(cell) {
     return `${cell.getFgColor()}${cell.getBgColor()}${cell.isBold()}${cell.isItalic()}${cell.isDim()}${cell.isUnderline()}${cell.isBlink()}${cell.isInverse()}${cell.isInvisible()}${cell.isStrikethrough()}${cell.isOverline()}${cell.getFgColorMode()}${cell.getBgColorMode()}`;
   }
-  S(a, b) {
+  _cellStylesMatch(a, b) {
     if (!a || !b) {
       return false;
     }
     return a.getFgColor() === b.getFgColor() && a.getBgColor() === b.getBgColor() && a.isBold() === b.isBold() && a.isItalic() === b.isItalic() && a.isDim() === b.isDim() && a.isUnderline() === b.isUnderline() && a.isBlink() === b.isBlink() && a.isInverse() === b.isInverse() && a.isInvisible() === b.isInvisible() && a.isStrikethrough() === b.isStrikethrough() && a.isOverline() === b.isOverline() && a?.getBgColorMode() === b?.getBgColorMode() && a?.getFgColorMode() === b?.getFgColorMode();
   }
-  U(lineText) {
-    if (this.W(lineText)) {
-      lineText = lineText.substring(this.j.length);
+  _trimContinuationPrompt(lineText) {
+    if (this._lineContainsContinuationPrompt(lineText)) {
+      lineText = lineText.substring(this._continuationPrompt.length);
     }
     return lineText;
   }
-  W(lineText) {
-    return !!(this.j && lineText.startsWith(this.j.trimEnd()));
+  _lineContainsContinuationPrompt(lineText) {
+    return !!(this._continuationPrompt && lineText.startsWith(this._continuationPrompt.trimEnd()));
   }
-  X(line, lineText) {
-    if (!this.j || !lineText.startsWith(this.j.trimEnd())) {
+  _getContinuationPromptCellWidth(line, lineText) {
+    if (!this._continuationPrompt || !lineText.startsWith(this._continuationPrompt.trimEnd())) {
       return 0;
     }
     let buffer = "";
     let x = 0;
     let cell;
-    while (buffer !== this.j) {
+    while (buffer !== this._continuationPrompt) {
       cell = line.getCell(x++);
       if (!cell) {
         break;
@@ -16554,95 +16554,95 @@ ${this.U(lineText)}`;
     }
     return x;
   }
-  Y(startCellX, buffer, line) {
+  _getRelativeCursorIndex(startCellX, buffer, line) {
     return line?.translateToString(false, startCellX, buffer.cursorX).length ?? 0;
   }
-  Z(cell) {
+  _isCellStyledLikeGhostText(cell) {
     return !!(cell.isItalic() || cell.isDim());
   }
-  $() {
+  _createStateObject() {
     return Object.freeze({
-      value: this.q,
+      value: this._value,
       prefix: this.prefix,
       suffix: this.suffix,
-      cursorIndex: this.r,
-      ghostTextIndex: this.s
+      cursorIndex: this._cursorIndex,
+      ghostTextIndex: this._ghostTextIndex
     });
   }
 };
 __decorate([
-  $Sm(0)
-], $4w.prototype, "L", null);
-$4w = __decorate([
-  __param(4, $po)
-], $4w);
+  throttle(0)
+], PromptInputModel.prototype, "_sync", null);
+PromptInputModel = __decorate([
+  __param(4, ILogService)
+], PromptInputModel);
 
 // out-build/vs/platform/terminal/common/capabilities/commandDetectionCapability.js
-var $OVb = class $OVb2 extends $Fd {
+var CommandDetectionCapability = class CommandDetectionCapability2 extends Disposable {
   get promptInputModel() {
-    return this.c;
+    return this._promptInputModel;
   }
   get hasRichCommandDetection() {
-    return this.u;
+    return this._hasRichCommandDetection;
   }
   get commands() {
-    return this.f;
+    return this._commands;
   }
   get executingCommand() {
-    return this.n.command;
+    return this._currentCommand.command;
   }
   get executingCommandObject() {
-    if (this.n.commandStartMarker) {
-      return this.n.promoteToFullCommand(this.g, void 0, this.t?.ignoreCommandLine ?? false, void 0);
+    if (this._currentCommand.commandStartMarker) {
+      return this._currentCommand.promoteToFullCommand(this._cwd, void 0, this._handleCommandStartOptions?.ignoreCommandLine ?? false, void 0);
     }
     return void 0;
   }
   get executingCommandConfidence() {
-    const casted = this.n;
-    return $7w(casted) ? casted.commandLineConfidence : void 0;
+    const casted = this._currentCommand;
+    return isFullTerminalCommand(casted) ? casted.commandLineConfidence : void 0;
   }
   get currentCommand() {
-    return this.n;
+    return this._currentCommand;
   }
   get cwd() {
-    return this.g;
+    return this._cwd;
   }
   get promptTerminator() {
-    return this.h;
+    return this._promptTerminator;
   }
-  constructor(O, P) {
+  constructor(_terminal, _logService) {
     super();
-    this.O = O;
-    this.P = P;
+    this._terminal = _terminal;
+    this._logService = _logService;
     this.type = 2;
-    this.f = [];
-    this.q = [];
-    this.s = false;
-    this.u = false;
-    this.F = this.D(new $qf());
-    this.onCommandStarted = this.F.event;
-    this.G = this.D(new $qf());
-    this.onCommandStartChanged = this.G.event;
-    this.H = this.D(new $qf());
-    this.onBeforeCommandFinished = this.H.event;
-    this.I = this.D(new $qf());
-    this.onCommandFinished = this.I.event;
-    this.J = this.D(new $qf());
-    this.onCommandExecuted = this.J.event;
-    this.L = this.D(new $qf());
-    this.onCommandInvalidated = this.L.event;
-    this.M = this.D(new $qf());
-    this.onCurrentCommandInvalidated = this.M.event;
-    this.N = this.D(new $qf());
-    this.onSetRichCommandDetection = this.N.event;
-    this.n = new $6w(this.O);
-    this.c = this.D(new $4w(this.O, this.onCommandStarted, this.onCommandStartChanged, this.onCommandExecuted, this.P));
-    this.D(this.onCommandExecuted((command) => {
+    this._commands = [];
+    this._commandMarkers = [];
+    this.__isCommandStorageDisabled = false;
+    this._hasRichCommandDetection = false;
+    this._onCommandStarted = this._register(new Emitter());
+    this.onCommandStarted = this._onCommandStarted.event;
+    this._onCommandStartChanged = this._register(new Emitter());
+    this.onCommandStartChanged = this._onCommandStartChanged.event;
+    this._onBeforeCommandFinished = this._register(new Emitter());
+    this.onBeforeCommandFinished = this._onBeforeCommandFinished.event;
+    this._onCommandFinished = this._register(new Emitter());
+    this.onCommandFinished = this._onCommandFinished.event;
+    this._onCommandExecuted = this._register(new Emitter());
+    this.onCommandExecuted = this._onCommandExecuted.event;
+    this._onCommandInvalidated = this._register(new Emitter());
+    this.onCommandInvalidated = this._onCommandInvalidated.event;
+    this._onCurrentCommandInvalidated = this._register(new Emitter());
+    this.onCurrentCommandInvalidated = this._onCurrentCommandInvalidated.event;
+    this._onSetRichCommandDetection = this._register(new Emitter());
+    this.onSetRichCommandDetection = this._onSetRichCommandDetection.event;
+    this._currentCommand = new PartialTerminalCommand(this._terminal);
+    this._promptInputModel = this._register(new PromptInputModel(this._terminal, this.onCommandStarted, this.onCommandStartChanged, this.onCommandExecuted, this._logService));
+    this._register(this.onCommandExecuted((command) => {
       if (command.commandLineConfidence !== "high") {
         const typedCommand = command;
         command.command = typedCommand.extractCommandLine();
         command.commandLineConfidence = "low";
-        if ($7w(typedCommand)) {
+        if (isFullTerminalCommand(typedCommand)) {
           if (
             // Markers exist
             typedCommand.promptStartMarker && typedCommand.marker && typedCommand.executedMarker && // Single line command
@@ -16663,143 +16663,143 @@ var $OVb = class $OVb2 extends $Fd {
         }
       }
     }));
-    this.D(this.O.parser.registerCsiHandler({ final: "J" }, (params) => {
+    this._register(this._terminal.parser.registerCsiHandler({ final: "J" }, (params) => {
       if (params.length >= 1 && params[0] === 2) {
-        if (!this.O.options.scrollOnEraseInDisplay) {
-          this.S();
+        if (!this._terminal.options.scrollOnEraseInDisplay) {
+          this._clearCommandsInViewport();
         }
-        this.n.wasCleared = true;
+        this._currentCommand.wasCleared = true;
       }
       return false;
     }));
     const that = this;
-    this.z = new class {
+    this._ptyHeuristicsHooks = new class {
       get onCurrentCommandInvalidatedEmitter() {
-        return that.M;
+        return that._onCurrentCommandInvalidated;
       }
       get onCommandStartedEmitter() {
-        return that.F;
+        return that._onCommandStarted;
       }
       get onCommandExecutedEmitter() {
-        return that.J;
+        return that._onCommandExecuted;
       }
       get dimensions() {
-        return that.r;
+        return that._dimensions;
       }
       get isCommandStorageDisabled() {
-        return that.s;
+        return that.__isCommandStorageDisabled;
       }
       get commandMarkers() {
-        return that.q;
+        return that._commandMarkers;
       }
       set commandMarkers(value) {
-        that.q = value;
+        that._commandMarkers = value;
       }
       get clearCommandsInViewport() {
-        return that.S.bind(that);
+        return that._clearCommandsInViewport.bind(that);
       }
     }();
-    this.C = this.D(new $Hd(new UnixPtyHeuristics(this.O, this, this.z, this.P)));
-    this.r = {
-      cols: this.O.cols,
-      rows: this.O.rows
+    this._ptyHeuristics = this._register(new MandatoryMutableDisposable(new UnixPtyHeuristics(this._terminal, this, this._ptyHeuristicsHooks, this._logService)));
+    this._dimensions = {
+      cols: this._terminal.cols,
+      rows: this._terminal.rows
     };
-    this.D(this.O.onResize((e) => this.Q(e)));
-    this.D(this.O.onCursorMove(() => this.R()));
+    this._register(this._terminal.onResize((e) => this._handleResize(e)));
+    this._register(this._terminal.onCursorMove(() => this._handleCursorMove()));
   }
-  Q(e) {
-    this.C.value.preHandleResize?.(e);
-    this.r.cols = e.cols;
-    this.r.rows = e.rows;
+  _handleResize(e) {
+    this._ptyHeuristics.value.preHandleResize?.(e);
+    this._dimensions.cols = e.cols;
+    this._dimensions.rows = e.rows;
   }
-  R() {
-    if (this.B.isDisposed) {
+  _handleCursorMove() {
+    if (this._store.isDisposed) {
       return;
     }
-    if (this.O.buffer.active === this.O.buffer.normal && this.n.commandStartMarker) {
-      if (this.O.buffer.active.baseY + this.O.buffer.active.cursorY < this.n.commandStartMarker.line) {
-        this.S();
-        this.n.isInvalid = true;
-        this.M.fire({
+    if (this._terminal.buffer.active === this._terminal.buffer.normal && this._currentCommand.commandStartMarker) {
+      if (this._terminal.buffer.active.baseY + this._terminal.buffer.active.cursorY < this._currentCommand.commandStartMarker.line) {
+        this._clearCommandsInViewport();
+        this._currentCommand.isInvalid = true;
+        this._onCurrentCommandInvalidated.fire({
           reason: "windows"
           /* CommandInvalidationReason.Windows */
         });
       }
     }
   }
-  S() {
+  _clearCommandsInViewport() {
     let count = 0;
-    for (let i = this.f.length - 1; i >= 0; i--) {
-      const line = this.f[i].marker?.line;
-      if (line && line < this.O.buffer.active.baseY) {
+    for (let i = this._commands.length - 1; i >= 0; i--) {
+      const line = this._commands[i].marker?.line;
+      if (line && line < this._terminal.buffer.active.baseY) {
         break;
       }
       count++;
     }
     if (count > 0) {
-      this.L.fire(this.f.splice(this.f.length - count, count));
+      this._onCommandInvalidated.fire(this._commands.splice(this._commands.length - count, count));
     }
   }
   setContinuationPrompt(value) {
-    this.c.setContinuationPrompt(value);
+    this._promptInputModel.setContinuationPrompt(value);
   }
   // TODO: Simplify this, can everything work off the last line?
   setPromptTerminator(promptTerminator, lastPromptLine) {
-    this.P.debug("CommandDetectionCapability#setPromptTerminator", promptTerminator);
-    this.h = promptTerminator;
-    this.c.setLastPromptLine(lastPromptLine);
+    this._logService.debug("CommandDetectionCapability#setPromptTerminator", promptTerminator);
+    this._promptTerminator = promptTerminator;
+    this._promptInputModel.setLastPromptLine(lastPromptLine);
   }
   setCwd(value) {
-    this.g = value;
+    this._cwd = value;
   }
   setIsWindowsPty(value) {
-    if (value && !(this.C.value instanceof WindowsPtyHeuristics)) {
+    if (value && !(this._ptyHeuristics.value instanceof WindowsPtyHeuristics)) {
       const that = this;
-      this.C.value = new WindowsPtyHeuristics(this.O, this, new class {
+      this._ptyHeuristics.value = new WindowsPtyHeuristics(this._terminal, this, new class {
         get onCurrentCommandInvalidatedEmitter() {
-          return that.M;
+          return that._onCurrentCommandInvalidated;
         }
         get onCommandStartedEmitter() {
-          return that.F;
+          return that._onCommandStarted;
         }
         get onCommandExecutedEmitter() {
-          return that.J;
+          return that._onCommandExecuted;
         }
         get dimensions() {
-          return that.r;
+          return that._dimensions;
         }
         get isCommandStorageDisabled() {
-          return that.s;
+          return that.__isCommandStorageDisabled;
         }
         get commandMarkers() {
-          return that.q;
+          return that._commandMarkers;
         }
         set commandMarkers(value2) {
-          that.q = value2;
+          that._commandMarkers = value2;
         }
         get clearCommandsInViewport() {
-          return that.S.bind(that);
+          return that._clearCommandsInViewport.bind(that);
         }
-      }(), this.P);
-    } else if (!value && !(this.C.value instanceof UnixPtyHeuristics)) {
-      this.C.value = new UnixPtyHeuristics(this.O, this, this.z, this.P);
+      }(), this._logService);
+    } else if (!value && !(this._ptyHeuristics.value instanceof UnixPtyHeuristics)) {
+      this._ptyHeuristics.value = new UnixPtyHeuristics(this._terminal, this, this._ptyHeuristicsHooks, this._logService);
     }
   }
   setHasRichCommandDetection(value) {
-    this.u = value;
-    this.N.fire(value);
+    this._hasRichCommandDetection = value;
+    this._onSetRichCommandDetection.fire(value);
   }
   setIsCommandStorageDisabled() {
-    this.s = true;
+    this.__isCommandStorageDisabled = true;
   }
   getCommandForLine(line) {
-    if (this.n.promptStartMarker && line >= this.n.promptStartMarker?.line) {
-      return this.n;
+    if (this._currentCommand.promptStartMarker && line >= this._currentCommand.promptStartMarker?.line) {
+      return this._currentCommand;
     }
-    if (this.f.length === 0) {
+    if (this._commands.length === 0) {
       return void 0;
     }
-    if ((this.f[0].promptStartMarker ?? this.f[0].marker).line > line) {
+    if ((this._commands[0].promptStartMarker ?? this._commands[0].marker).line > line) {
       return void 0;
     }
     for (let i = this.commands.length - 1; i >= 0; i--) {
@@ -16810,136 +16810,136 @@ var $OVb = class $OVb2 extends $Fd {
     return void 0;
   }
   getCwdForLine(line) {
-    if (this.n.promptStartMarker && line >= this.n.promptStartMarker?.line) {
-      return this.g;
+    if (this._currentCommand.promptStartMarker && line >= this._currentCommand.promptStartMarker?.line) {
+      return this._cwd;
     }
     const command = this.getCommandForLine(line);
-    if (command && $7w(command)) {
+    if (command && isFullTerminalCommand(command)) {
       return command.cwd;
     }
     return void 0;
   }
   handlePromptStart(options) {
     const lastCommand = this.commands.at(-1);
-    if (lastCommand?.endMarker && lastCommand?.executedMarker && lastCommand.endMarker.line === lastCommand.executedMarker.line && lastCommand.executedMarker.line < this.O.buffer.active.baseY + this.O.buffer.active.cursorY) {
-      this.P.debug("CommandDetectionCapability#handlePromptStart adjusted commandFinished", `${lastCommand.endMarker.line} -> ${lastCommand.executedMarker.line + 1}`);
-      lastCommand.endMarker = cloneMarker(this.O, lastCommand.executedMarker, 1);
+    if (lastCommand?.endMarker && lastCommand?.executedMarker && lastCommand.endMarker.line === lastCommand.executedMarker.line && lastCommand.executedMarker.line < this._terminal.buffer.active.baseY + this._terminal.buffer.active.cursorY) {
+      this._logService.debug("CommandDetectionCapability#handlePromptStart adjusted commandFinished", `${lastCommand.endMarker.line} -> ${lastCommand.executedMarker.line + 1}`);
+      lastCommand.endMarker = cloneMarker(this._terminal, lastCommand.executedMarker, 1);
     }
-    this.n.promptStartMarker = options?.marker || // Generally the prompt start should happen at the exact place the endmarker happened.
+    this._currentCommand.promptStartMarker = options?.marker || // Generally the prompt start should happen at the exact place the endmarker happened.
     // However, after ctrl+l is used to clear the display, we want to ensure the actual
     // prompt start marker position is used. This is mostly a workaround for Windows but we
     // apply it generally.
-    (!this.n.wasCleared && lastCommand?.endMarker ? cloneMarker(this.O, lastCommand.endMarker) : this.O.registerMarker(0));
-    this.n.wasCleared = false;
+    (!this._currentCommand.wasCleared && lastCommand?.endMarker ? cloneMarker(this._terminal, lastCommand.endMarker) : this._terminal.registerMarker(0));
+    this._currentCommand.wasCleared = false;
   }
   handleContinuationStart() {
-    this.n.currentContinuationMarker = this.O.registerMarker(0);
-    this.P.debug("CommandDetectionCapability#handleContinuationStart", this.n.currentContinuationMarker);
+    this._currentCommand.currentContinuationMarker = this._terminal.registerMarker(0);
+    this._logService.debug("CommandDetectionCapability#handleContinuationStart", this._currentCommand.currentContinuationMarker);
   }
   handleContinuationEnd() {
-    if (!this.n.currentContinuationMarker) {
-      this.P.warn("CommandDetectionCapability#handleContinuationEnd Received continuation end without start");
+    if (!this._currentCommand.currentContinuationMarker) {
+      this._logService.warn("CommandDetectionCapability#handleContinuationEnd Received continuation end without start");
       return;
     }
-    if (!this.n.continuations) {
-      this.n.continuations = [];
+    if (!this._currentCommand.continuations) {
+      this._currentCommand.continuations = [];
     }
-    this.n.continuations.push({
-      marker: this.n.currentContinuationMarker,
-      end: this.O.buffer.active.cursorX
+    this._currentCommand.continuations.push({
+      marker: this._currentCommand.currentContinuationMarker,
+      end: this._terminal.buffer.active.cursorX
     });
-    this.n.currentContinuationMarker = void 0;
-    this.P.debug("CommandDetectionCapability#handleContinuationEnd", this.n.continuations[this.n.continuations.length - 1]);
+    this._currentCommand.currentContinuationMarker = void 0;
+    this._logService.debug("CommandDetectionCapability#handleContinuationEnd", this._currentCommand.continuations[this._currentCommand.continuations.length - 1]);
   }
   handleRightPromptStart() {
-    this.n.commandRightPromptStartX = this.O.buffer.active.cursorX;
-    this.P.debug("CommandDetectionCapability#handleRightPromptStart", this.n.commandRightPromptStartX);
+    this._currentCommand.commandRightPromptStartX = this._terminal.buffer.active.cursorX;
+    this._logService.debug("CommandDetectionCapability#handleRightPromptStart", this._currentCommand.commandRightPromptStartX);
   }
   handleRightPromptEnd() {
-    this.n.commandRightPromptEndX = this.O.buffer.active.cursorX;
-    this.P.debug("CommandDetectionCapability#handleRightPromptEnd", this.n.commandRightPromptEndX);
+    this._currentCommand.commandRightPromptEndX = this._terminal.buffer.active.cursorX;
+    this._logService.debug("CommandDetectionCapability#handleRightPromptEnd", this._currentCommand.commandRightPromptEndX);
   }
   handleCommandStart(options) {
-    this.t = options;
-    this.n.cwd = this.g;
-    this.n.commandStartMarker = options?.marker || this.n.commandStartMarker;
-    if (this.n.commandStartMarker?.line === this.O.buffer.active.cursorY) {
-      this.n.commandStartX = this.O.buffer.active.cursorX;
-      this.G.fire();
-      this.P.debug("CommandDetectionCapability#handleCommandStart", this.n.commandStartX, this.n.commandStartMarker?.line);
+    this._handleCommandStartOptions = options;
+    this._currentCommand.cwd = this._cwd;
+    this._currentCommand.commandStartMarker = options?.marker || this._currentCommand.commandStartMarker;
+    if (this._currentCommand.commandStartMarker?.line === this._terminal.buffer.active.cursorY) {
+      this._currentCommand.commandStartX = this._terminal.buffer.active.cursorX;
+      this._onCommandStartChanged.fire();
+      this._logService.debug("CommandDetectionCapability#handleCommandStart", this._currentCommand.commandStartX, this._currentCommand.commandStartMarker?.line);
       return;
     }
-    this.C.value.handleCommandStart(options);
+    this._ptyHeuristics.value.handleCommandStart(options);
   }
   /**
    * Sets the command ID to use for the next command that starts.
    * This is useful when you want to pre-assign an ID before the shell sends the command start sequence.
    */
   setNextCommandId(command, commandId) {
-    this.w = { command, commandId };
+    this._nextCommandId = { command, commandId };
   }
   handleCommandExecuted(options) {
-    this.U(this.n.command ?? this.n.extractCommandLine());
-    this.C.value.handleCommandExecuted(options);
-    this.n.markExecutedTime();
+    this._ensureCurrentCommandId(this._currentCommand.command ?? this._currentCommand.extractCommandLine());
+    this._ptyHeuristics.value.handleCommandExecuted(options);
+    this._currentCommand.markExecutedTime();
   }
   handleCommandFinished(exitCode, options) {
-    if (!this.n.commandExecutedMarker) {
+    if (!this._currentCommand.commandExecutedMarker) {
       this.handleCommandExecuted();
     }
-    this.n.markFinishedTime();
-    this.C.value.preHandleCommandFinished?.();
-    this.P.debug("CommandDetectionCapability#handleCommandFinished", this.O.buffer.active.cursorX, options?.marker?.line, this.n.command, this.n);
+    this._currentCommand.markFinishedTime();
+    this._ptyHeuristics.value.preHandleCommandFinished?.();
+    this._logService.debug("CommandDetectionCapability#handleCommandFinished", this._terminal.buffer.active.cursorX, options?.marker?.line, this._currentCommand.command, this._currentCommand);
     if (exitCode === void 0) {
       const lastCommand = this.commands.length > 0 ? this.commands[this.commands.length - 1] : void 0;
-      if (this.n.command && this.n.command.length > 0 && lastCommand?.command === this.n.command) {
+      if (this._currentCommand.command && this._currentCommand.command.length > 0 && lastCommand?.command === this._currentCommand.command) {
         exitCode = lastCommand.exitCode;
       }
     }
-    if (this.n.commandStartMarker === void 0 || !this.O.buffer.active) {
+    if (this._currentCommand.commandStartMarker === void 0 || !this._terminal.buffer.active) {
       return;
     }
-    this.n.commandFinishedMarker = options?.marker || this.O.registerMarker(0);
-    this.C.value.postHandleCommandFinished?.();
-    const newCommand = this.n.promoteToFullCommand(this.g, exitCode, this.t?.ignoreCommandLine ?? false, options?.markProperties);
+    this._currentCommand.commandFinishedMarker = options?.marker || this._terminal.registerMarker(0);
+    this._ptyHeuristics.value.postHandleCommandFinished?.();
+    const newCommand = this._currentCommand.promoteToFullCommand(this._cwd, exitCode, this._handleCommandStartOptions?.ignoreCommandLine ?? false, options?.markProperties);
     if (newCommand) {
-      this.f.push(newCommand);
-      this.H.fire(newCommand);
-      this.P.debug("CommandDetectionCapability#onCommandFinished", newCommand);
-      this.I.fire(newCommand);
+      this._commands.push(newCommand);
+      this._onBeforeCommandFinished.fire(newCommand);
+      this._logService.debug("CommandDetectionCapability#onCommandFinished", newCommand);
+      this._onCommandFinished.fire(newCommand);
     }
-    this.n = new $6w(this.O);
-    this.t = void 0;
+    this._currentCommand = new PartialTerminalCommand(this._terminal);
+    this._handleCommandStartOptions = void 0;
   }
-  U(commandLine) {
-    if (this.w?.commandId && $7c(commandLine) && commandLine.trim() === this.w.command.trim()) {
-      if (this.n.id !== this.w.commandId) {
-        this.n.id = this.w.commandId;
+  _ensureCurrentCommandId(commandLine) {
+    if (this._nextCommandId?.commandId && isString(commandLine) && commandLine.trim() === this._nextCommandId.command.trim()) {
+      if (this._currentCommand.id !== this._nextCommandId.commandId) {
+        this._currentCommand.id = this._nextCommandId.commandId;
       }
-      this.w = void 0;
+      this._nextCommandId = void 0;
       return;
     }
   }
   setCommandLine(commandLine, isTrusted) {
-    this.P.debug("CommandDetectionCapability#setCommandLine", commandLine, isTrusted);
-    this.n.command = commandLine;
-    this.n.commandLineConfidence = "high";
-    this.n.isTrusted = isTrusted;
+    this._logService.debug("CommandDetectionCapability#setCommandLine", commandLine, isTrusted);
+    this._currentCommand.command = commandLine;
+    this._currentCommand.commandLineConfidence = "high";
+    this._currentCommand.isTrusted = isTrusted;
     if (isTrusted) {
-      this.c.setConfidentCommandLine(commandLine);
+      this._promptInputModel.setConfidentCommandLine(commandLine);
     }
   }
   serialize() {
-    const commands = this.commands.map((e) => e.serialize(this.s));
-    const partialCommand = this.n.serialize(this.g);
+    const commands = this.commands.map((e) => e.serialize(this.__isCommandStorageDisabled));
+    const partialCommand = this._currentCommand.serialize(this._cwd);
     if (partialCommand) {
       commands.push(partialCommand);
     }
     return {
-      isWindowsPty: this.C.value instanceof WindowsPtyHeuristics,
-      hasRichCommandDetection: this.u,
+      isWindowsPty: this._ptyHeuristics.value instanceof WindowsPtyHeuristics,
+      hasRichCommandDetection: this._hasRichCommandDetection,
       commands,
-      promptInputModel: this.c.serialize()
+      promptInputModel: this._promptInputModel.serialize()
     };
   }
   deserialize(serialized) {
@@ -16949,71 +16949,71 @@ var $OVb = class $OVb2 extends $Fd {
     if (serialized.hasRichCommandDetection) {
       this.setHasRichCommandDetection(serialized.hasRichCommandDetection);
     }
-    const buffer = this.O.buffer.normal;
+    const buffer = this._terminal.buffer.normal;
     for (const e of serialized.commands) {
       if (!e.endLine) {
-        const marker = e.startLine !== void 0 ? this.O.registerMarker(e.startLine - (buffer.baseY + buffer.cursorY)) : void 0;
+        const marker = e.startLine !== void 0 ? this._terminal.registerMarker(e.startLine - (buffer.baseY + buffer.cursorY)) : void 0;
         if (!marker) {
           continue;
         }
-        this.n.commandStartMarker = e.startLine !== void 0 ? this.O.registerMarker(e.startLine - (buffer.baseY + buffer.cursorY)) : void 0;
-        this.n.commandStartX = e.startX;
-        this.n.promptStartMarker = e.promptStartLine !== void 0 ? this.O.registerMarker(e.promptStartLine - (buffer.baseY + buffer.cursorY)) : void 0;
-        this.g = e.cwd;
-        this.F.fire({ marker });
+        this._currentCommand.commandStartMarker = e.startLine !== void 0 ? this._terminal.registerMarker(e.startLine - (buffer.baseY + buffer.cursorY)) : void 0;
+        this._currentCommand.commandStartX = e.startX;
+        this._currentCommand.promptStartMarker = e.promptStartLine !== void 0 ? this._terminal.registerMarker(e.promptStartLine - (buffer.baseY + buffer.cursorY)) : void 0;
+        this._cwd = e.cwd;
+        this._onCommandStarted.fire({ marker });
         continue;
       }
-      const newCommand = $5w.deserialize(this.O, e, this.s);
+      const newCommand = TerminalCommand.deserialize(this._terminal, e, this.__isCommandStorageDisabled);
       if (!newCommand) {
         continue;
       }
-      this.f.push(newCommand);
-      this.P.debug("CommandDetectionCapability#onCommandFinished", newCommand);
-      this.I.fire(newCommand);
+      this._commands.push(newCommand);
+      this._logService.debug("CommandDetectionCapability#onCommandFinished", newCommand);
+      this._onCommandFinished.fire(newCommand);
     }
     if (serialized.promptInputModel) {
-      this.c.deserialize(serialized.promptInputModel);
+      this._promptInputModel.deserialize(serialized.promptInputModel);
     }
   }
 };
 __decorate([
-  $Rm(500)
-], $OVb.prototype, "R", null);
-$OVb = __decorate([
-  __param(1, $po)
-], $OVb);
-var UnixPtyHeuristics = class extends $Fd {
-  constructor(c, f, g, h) {
+  debounce(500)
+], CommandDetectionCapability.prototype, "_handleCursorMove", null);
+CommandDetectionCapability = __decorate([
+  __param(1, ILogService)
+], CommandDetectionCapability);
+var UnixPtyHeuristics = class extends Disposable {
+  constructor(_terminal, _capability, _hooks, _logService) {
     super();
-    this.c = c;
-    this.f = f;
-    this.g = g;
-    this.h = h;
+    this._terminal = _terminal;
+    this._capability = _capability;
+    this._hooks = _hooks;
+    this._logService = _logService;
   }
   handleCommandStart(options) {
-    const currentCommand = this.f.currentCommand;
-    currentCommand.commandStartX = this.c.buffer.active.cursorX;
-    currentCommand.commandStartMarker = options?.marker || this.c.registerMarker(0);
+    const currentCommand = this._capability.currentCommand;
+    currentCommand.commandStartX = this._terminal.buffer.active.cursorX;
+    currentCommand.commandStartMarker = options?.marker || this._terminal.registerMarker(0);
     currentCommand.commandExecutedMarker?.dispose();
     currentCommand.commandExecutedMarker = void 0;
     currentCommand.commandExecutedX = void 0;
-    for (const m of this.g.commandMarkers) {
+    for (const m of this._hooks.commandMarkers) {
       m.dispose();
     }
-    this.g.commandMarkers.length = 0;
-    this.g.onCommandStartedEmitter.fire({ marker: options?.marker || currentCommand.commandStartMarker, markProperties: options?.markProperties });
-    this.h.debug("CommandDetectionCapability#handleCommandStart", currentCommand.commandStartX, currentCommand.commandStartMarker?.line);
+    this._hooks.commandMarkers.length = 0;
+    this._hooks.onCommandStartedEmitter.fire({ marker: options?.marker || currentCommand.commandStartMarker, markProperties: options?.markProperties });
+    this._logService.debug("CommandDetectionCapability#handleCommandStart", currentCommand.commandStartX, currentCommand.commandStartMarker?.line);
   }
   handleCommandExecuted(options) {
-    const currentCommand = this.f.currentCommand;
-    currentCommand.commandExecutedMarker = options?.marker || this.c.registerMarker(0);
-    currentCommand.commandExecutedX = this.c.buffer.active.cursorX;
-    this.h.debug("CommandDetectionCapability#handleCommandExecuted", currentCommand.commandExecutedX, currentCommand.commandExecutedMarker?.line);
+    const currentCommand = this._capability.currentCommand;
+    currentCommand.commandExecutedMarker = options?.marker || this._terminal.registerMarker(0);
+    currentCommand.commandExecutedX = this._terminal.buffer.active.cursorX;
+    this._logService.debug("CommandDetectionCapability#handleCommandExecuted", currentCommand.commandExecutedX, currentCommand.commandExecutedMarker?.line);
     if (!currentCommand.commandStartMarker || !currentCommand.commandExecutedMarker || currentCommand.commandStartX === void 0) {
       return;
     }
-    currentCommand.command = this.f.promptInputModel.ghostTextIndex > -1 ? this.f.promptInputModel.value.substring(0, this.f.promptInputModel.ghostTextIndex) : this.f.promptInputModel.value;
-    this.g.onCommandExecutedEmitter.fire(currentCommand);
+    currentCommand.command = this._capability.promptInputModel.ghostTextIndex > -1 ? this._capability.promptInputModel.value.substring(0, this._capability.promptInputModel.ghostTextIndex) : this._capability.promptInputModel.value;
+    this._hooks.onCommandExecutedEmitter.fire(currentCommand);
   }
 };
 var AdjustCommandStartMarkerConstants;
@@ -17022,23 +17022,23 @@ var AdjustCommandStartMarkerConstants;
   AdjustCommandStartMarkerConstants2[AdjustCommandStartMarkerConstants2["Interval"] = 20] = "Interval";
   AdjustCommandStartMarkerConstants2[AdjustCommandStartMarkerConstants2["MaximumPollCount"] = 10] = "MaximumPollCount";
 })(AdjustCommandStartMarkerConstants || (AdjustCommandStartMarkerConstants = {}));
-var WindowsPtyHeuristics = class WindowsPtyHeuristics2 extends $Fd {
-  constructor(n, q, r, s) {
+var WindowsPtyHeuristics = class WindowsPtyHeuristics2 extends Disposable {
+  constructor(_terminal, _capability, _hooks, _logService) {
     super();
-    this.n = n;
-    this.q = q;
-    this.r = r;
-    this.s = s;
-    this.c = this.D(new $Gd());
-    this.g = 0;
-    this.h = 0;
-    this.D(this.q.onBeforeCommandFinished((command) => {
+    this._terminal = _terminal;
+    this._capability = _capability;
+    this._hooks = _hooks;
+    this._logService = _logService;
+    this._onCursorMoveListener = this._register(new MutableDisposable());
+    this._tryAdjustCommandStartMarkerScannedLineCount = 0;
+    this._tryAdjustCommandStartMarkerPollCount = 0;
+    this._register(this._capability.onBeforeCommandFinished((command) => {
       if (command.command.trim().toLowerCase() === "clear" || command.command.trim().toLowerCase() === "cls") {
-        this.f?.cancel();
-        this.f = void 0;
-        this.r.clearCommandsInViewport();
-        this.q.currentCommand.isInvalid = true;
-        this.r.onCurrentCommandInvalidatedEmitter.fire({
+        this._tryAdjustCommandStartMarkerScheduler?.cancel();
+        this._tryAdjustCommandStartMarkerScheduler = void 0;
+        this._hooks.clearCommandsInViewport();
+        this._capability.currentCommand.isInvalid = true;
+        this._hooks.onCurrentCommandInvalidatedEmitter.fire({
           reason: "windows"
           /* CommandInvalidationReason.Windows */
         });
@@ -17046,27 +17046,27 @@ var WindowsPtyHeuristics = class WindowsPtyHeuristics2 extends $Fd {
     }));
   }
   preHandleResize(e) {
-    const baseY = this.n.buffer.active.baseY;
-    const rowsDifference = e.rows - this.r.dimensions.rows;
+    const baseY = this._terminal.buffer.active.baseY;
+    const rowsDifference = e.rows - this._hooks.dimensions.rows;
     if (rowsDifference > 0) {
-      this.C().then(() => {
+      this._waitForCursorMove().then(() => {
         const potentialShiftedLineCount = Math.min(rowsDifference, baseY);
-        for (let i = this.q.commands.length - 1; i >= 0; i--) {
-          const command = this.q.commands[i];
+        for (let i = this._capability.commands.length - 1; i >= 0; i--) {
+          const command = this._capability.commands[i];
           if (!command.marker || command.marker.line < baseY || command.commandStartLineContent === void 0) {
             break;
           }
-          const line = this.n.buffer.active.getLine(command.marker.line);
+          const line = this._terminal.buffer.active.getLine(command.marker.line);
           if (!line || line.translateToString(true) === command.commandStartLineContent) {
             continue;
           }
           const shiftedY = command.marker.line - potentialShiftedLineCount;
-          const shiftedLine = this.n.buffer.active.getLine(shiftedY);
+          const shiftedLine = this._terminal.buffer.active.getLine(shiftedY);
           if (shiftedLine?.translateToString(true) !== command.commandStartLineContent) {
             continue;
           }
-          this.n._core._bufferService.buffer.lines.onDeleteEmitter.fire({
-            index: this.n.buffer.active.baseY,
+          this._terminal._core._bufferService.buffer.lines.onDeleteEmitter.fire({
+            index: this._terminal.buffer.active.baseY,
             amount: potentialShiftedLineCount
           });
         }
@@ -17074,111 +17074,111 @@ var WindowsPtyHeuristics = class WindowsPtyHeuristics2 extends $Fd {
     }
   }
   handleCommandStart() {
-    this.q.currentCommand.commandStartX = this.n.buffer.active.cursorX;
-    this.r.commandMarkers.length = 0;
-    const initialCommandStartMarker = this.q.currentCommand.commandStartMarker = this.q.currentCommand.promptStartMarker ? cloneMarker(this.n, this.q.currentCommand.promptStartMarker) : this.n.registerMarker(0);
-    this.q.currentCommand.commandStartX = 0;
-    this.g = 0;
-    this.h = 0;
-    this.f = new $bi(
-      () => this.t(initialCommandStartMarker),
+    this._capability.currentCommand.commandStartX = this._terminal.buffer.active.cursorX;
+    this._hooks.commandMarkers.length = 0;
+    const initialCommandStartMarker = this._capability.currentCommand.commandStartMarker = this._capability.currentCommand.promptStartMarker ? cloneMarker(this._terminal, this._capability.currentCommand.promptStartMarker) : this._terminal.registerMarker(0);
+    this._capability.currentCommand.commandStartX = 0;
+    this._tryAdjustCommandStartMarkerScannedLineCount = 0;
+    this._tryAdjustCommandStartMarkerPollCount = 0;
+    this._tryAdjustCommandStartMarkerScheduler = new RunOnceScheduler(
+      () => this._tryAdjustCommandStartMarker(initialCommandStartMarker),
       20
       /* AdjustCommandStartMarkerConstants.Interval */
     );
-    this.f.schedule();
+    this._tryAdjustCommandStartMarkerScheduler.schedule();
   }
-  t(start) {
-    if (this.B.isDisposed) {
+  _tryAdjustCommandStartMarker(start) {
+    if (this._store.isDisposed) {
       return;
     }
-    const buffer = this.n.buffer.active;
-    let scannedLineCount = this.g;
-    while (scannedLineCount < 10 && start.line + scannedLineCount < buffer.baseY + this.n.rows) {
-      if (this.z()) {
-        const prompt = this.F(start.line + scannedLineCount);
+    const buffer = this._terminal.buffer.active;
+    let scannedLineCount = this._tryAdjustCommandStartMarkerScannedLineCount;
+    while (scannedLineCount < 10 && start.line + scannedLineCount < buffer.baseY + this._terminal.rows) {
+      if (this._cursorOnNextLine()) {
+        const prompt = this._getWindowsPrompt(start.line + scannedLineCount);
         if (prompt) {
-          const adjustedPrompt = $7c(prompt) ? prompt : prompt.prompt;
-          this.q.currentCommand.commandStartMarker = this.n.registerMarker(0);
-          if (!$7c(prompt) && prompt.likelySingleLine) {
-            this.s.debug("CommandDetectionCapability#_tryAdjustCommandStartMarker adjusted promptStart", `${this.q.currentCommand.promptStartMarker?.line} -> ${this.q.currentCommand.commandStartMarker.line}`);
-            this.q.currentCommand.promptStartMarker?.dispose();
-            this.q.currentCommand.promptStartMarker = cloneMarker(this.n, this.q.currentCommand.commandStartMarker);
-            const lastCommand = this.q.commands.at(-1);
-            if (lastCommand && this.q.currentCommand.commandStartMarker.line !== lastCommand.endMarker?.line) {
+          const adjustedPrompt = isString(prompt) ? prompt : prompt.prompt;
+          this._capability.currentCommand.commandStartMarker = this._terminal.registerMarker(0);
+          if (!isString(prompt) && prompt.likelySingleLine) {
+            this._logService.debug("CommandDetectionCapability#_tryAdjustCommandStartMarker adjusted promptStart", `${this._capability.currentCommand.promptStartMarker?.line} -> ${this._capability.currentCommand.commandStartMarker.line}`);
+            this._capability.currentCommand.promptStartMarker?.dispose();
+            this._capability.currentCommand.promptStartMarker = cloneMarker(this._terminal, this._capability.currentCommand.commandStartMarker);
+            const lastCommand = this._capability.commands.at(-1);
+            if (lastCommand && this._capability.currentCommand.commandStartMarker.line !== lastCommand.endMarker?.line) {
               lastCommand.endMarker?.dispose();
-              lastCommand.endMarker = cloneMarker(this.n, this.q.currentCommand.commandStartMarker);
+              lastCommand.endMarker = cloneMarker(this._terminal, this._capability.currentCommand.commandStartMarker);
             }
           }
-          this.q.currentCommand.commandStartX = adjustedPrompt.length;
-          this.s.debug("CommandDetectionCapability#_tryAdjustCommandStartMarker adjusted commandStart", `${start.line} -> ${this.q.currentCommand.commandStartMarker.line}:${this.q.currentCommand.commandStartX}`);
-          this.u();
+          this._capability.currentCommand.commandStartX = adjustedPrompt.length;
+          this._logService.debug("CommandDetectionCapability#_tryAdjustCommandStartMarker adjusted commandStart", `${start.line} -> ${this._capability.currentCommand.commandStartMarker.line}:${this._capability.currentCommand.commandStartX}`);
+          this._flushPendingHandleCommandStartTask();
           return;
         }
       }
       scannedLineCount++;
     }
     if (scannedLineCount < 10) {
-      this.g = scannedLineCount;
-      if (++this.h < 10) {
-        this.f?.schedule();
+      this._tryAdjustCommandStartMarkerScannedLineCount = scannedLineCount;
+      if (++this._tryAdjustCommandStartMarkerPollCount < 10) {
+        this._tryAdjustCommandStartMarkerScheduler?.schedule();
       } else {
-        this.u();
+        this._flushPendingHandleCommandStartTask();
       }
     } else {
-      this.u();
+      this._flushPendingHandleCommandStartTask();
     }
   }
-  u() {
-    if (this.f) {
-      this.h = 10;
-      this.f.flush();
-      this.f = void 0;
+  _flushPendingHandleCommandStartTask() {
+    if (this._tryAdjustCommandStartMarkerScheduler) {
+      this._tryAdjustCommandStartMarkerPollCount = 10;
+      this._tryAdjustCommandStartMarkerScheduler.flush();
+      this._tryAdjustCommandStartMarkerScheduler = void 0;
     }
-    if (!this.q.currentCommand.commandExecutedMarker) {
-      this.c.value = this.n.onCursorMove(() => {
-        if (this.r.commandMarkers.length === 0 || this.r.commandMarkers[this.r.commandMarkers.length - 1].line !== this.n.buffer.active.cursorY) {
-          const marker = this.n.registerMarker(0);
+    if (!this._capability.currentCommand.commandExecutedMarker) {
+      this._onCursorMoveListener.value = this._terminal.onCursorMove(() => {
+        if (this._hooks.commandMarkers.length === 0 || this._hooks.commandMarkers[this._hooks.commandMarkers.length - 1].line !== this._terminal.buffer.active.cursorY) {
+          const marker = this._terminal.registerMarker(0);
           if (marker) {
-            this.r.commandMarkers.push(marker);
+            this._hooks.commandMarkers.push(marker);
           }
         }
       });
     }
-    if (this.q.currentCommand.commandStartMarker) {
-      const line = this.n.buffer.active.getLine(this.q.currentCommand.commandStartMarker.line);
+    if (this._capability.currentCommand.commandStartMarker) {
+      const line = this._terminal.buffer.active.getLine(this._capability.currentCommand.commandStartMarker.line);
       if (line) {
-        this.q.currentCommand.commandStartLineContent = line.translateToString(true);
+        this._capability.currentCommand.commandStartLineContent = line.translateToString(true);
       }
     }
-    this.r.onCommandStartedEmitter.fire({ marker: this.q.currentCommand.commandStartMarker });
-    this.s.debug("CommandDetectionCapability#_handleCommandStartWindows", this.q.currentCommand.commandStartX, this.q.currentCommand.commandStartMarker?.line);
+    this._hooks.onCommandStartedEmitter.fire({ marker: this._capability.currentCommand.commandStartMarker });
+    this._logService.debug("CommandDetectionCapability#_handleCommandStartWindows", this._capability.currentCommand.commandStartX, this._capability.currentCommand.commandStartMarker?.line);
   }
   handleCommandExecuted(options) {
-    if (this.f) {
-      this.u();
+    if (this._tryAdjustCommandStartMarkerScheduler) {
+      this._flushPendingHandleCommandStartTask();
     }
-    this.c.clear();
-    this.w();
-    this.q.currentCommand.commandExecutedX = this.n.buffer.active.cursorX;
-    this.r.onCommandExecutedEmitter.fire(this.q.currentCommand);
-    this.s.debug("CommandDetectionCapability#handleCommandExecuted", this.q.currentCommand.commandExecutedX, this.q.currentCommand.commandExecutedMarker?.line);
+    this._onCursorMoveListener.clear();
+    this._evaluateCommandMarkers();
+    this._capability.currentCommand.commandExecutedX = this._terminal.buffer.active.cursorX;
+    this._hooks.onCommandExecutedEmitter.fire(this._capability.currentCommand);
+    this._logService.debug("CommandDetectionCapability#handleCommandExecuted", this._capability.currentCommand.commandExecutedX, this._capability.currentCommand.commandExecutedMarker?.line);
   }
   preHandleCommandFinished() {
-    if (this.q.currentCommand.commandExecutedMarker) {
+    if (this._capability.currentCommand.commandExecutedMarker) {
       return;
     }
-    if (this.r.commandMarkers.length === 0) {
-      if (!this.q.currentCommand.commandStartMarker) {
-        this.q.currentCommand.commandStartMarker = this.n.registerMarker(0);
+    if (this._hooks.commandMarkers.length === 0) {
+      if (!this._capability.currentCommand.commandStartMarker) {
+        this._capability.currentCommand.commandStartMarker = this._terminal.registerMarker(0);
       }
-      if (this.q.currentCommand.commandStartMarker) {
-        this.r.commandMarkers.push(this.q.currentCommand.commandStartMarker);
+      if (this._capability.currentCommand.commandStartMarker) {
+        this._hooks.commandMarkers.push(this._capability.currentCommand.commandStartMarker);
       }
     }
-    this.w();
+    this._evaluateCommandMarkers();
   }
   postHandleCommandFinished() {
-    const currentCommand = this.q.currentCommand;
+    const currentCommand = this._capability.currentCommand;
     const commandText = currentCommand.command;
     const commandLine = currentCommand.commandStartMarker?.line;
     const executedLine = currentCommand.commandExecutedMarker?.line;
@@ -17188,7 +17188,7 @@ var WindowsPtyHeuristics = class WindowsPtyHeuristics2 extends $Fd {
     let current = 0;
     let found = false;
     for (let i = commandLine; i <= executedLine; i++) {
-      const line = this.n.buffer.active.getLine(i);
+      const line = this._terminal.buffer.active.getLine(i);
       if (!line) {
         break;
       }
@@ -17201,8 +17201,8 @@ var WindowsPtyHeuristics = class WindowsPtyHeuristics2 extends $Fd {
           current++;
         }
         if (current === commandText.length) {
-          const wrapsToNextLine = j >= this.n.cols - 1;
-          currentCommand.commandExecutedMarker = this.n.registerMarker(i - (this.n.buffer.active.baseY + this.n.buffer.active.cursorY) + (wrapsToNextLine ? 1 : 0));
+          const wrapsToNextLine = j >= this._terminal.cols - 1;
+          currentCommand.commandExecutedMarker = this._terminal.registerMarker(i - (this._terminal.buffer.active.baseY + this._terminal.buffer.active.cursorY) + (wrapsToNextLine ? 1 : 0));
           currentCommand.commandExecutedX = wrapsToNextLine ? 0 : j + 1;
           found = true;
           break;
@@ -17213,51 +17213,51 @@ var WindowsPtyHeuristics = class WindowsPtyHeuristics2 extends $Fd {
       }
     }
   }
-  w() {
-    if (this.r.commandMarkers.length === 0) {
+  _evaluateCommandMarkers() {
+    if (this._hooks.commandMarkers.length === 0) {
       return;
     }
-    this.r.commandMarkers = this.r.commandMarkers.sort((a, b) => a.line - b.line);
-    this.q.currentCommand.commandStartMarker = this.r.commandMarkers[0];
-    if (this.q.currentCommand.commandStartMarker) {
-      const line = this.n.buffer.active.getLine(this.q.currentCommand.commandStartMarker.line);
+    this._hooks.commandMarkers = this._hooks.commandMarkers.sort((a, b) => a.line - b.line);
+    this._capability.currentCommand.commandStartMarker = this._hooks.commandMarkers[0];
+    if (this._capability.currentCommand.commandStartMarker) {
+      const line = this._terminal.buffer.active.getLine(this._capability.currentCommand.commandStartMarker.line);
       if (line) {
-        this.q.currentCommand.commandStartLineContent = line.translateToString(true);
+        this._capability.currentCommand.commandStartLineContent = line.translateToString(true);
       }
     }
-    this.q.currentCommand.commandExecutedMarker = this.r.commandMarkers[this.r.commandMarkers.length - 1];
-    this.r.onCommandExecutedEmitter.fire(this.q.currentCommand);
+    this._capability.currentCommand.commandExecutedMarker = this._hooks.commandMarkers[this._hooks.commandMarkers.length - 1];
+    this._hooks.onCommandExecutedEmitter.fire(this._capability.currentCommand);
   }
-  z() {
-    const lastCommand = this.q.commands.at(-1);
+  _cursorOnNextLine() {
+    const lastCommand = this._capability.commands.at(-1);
     if (!lastCommand) {
       return true;
     }
-    const cursorYAbsolute = this.n.buffer.active.baseY + this.n.buffer.active.cursorY;
+    const cursorYAbsolute = this._terminal.buffer.active.baseY + this._terminal.buffer.active.cursorY;
     const lastCommandYAbsolute = (lastCommand.endMarker ? lastCommand.endMarker.line : lastCommand.marker?.line) ?? -1;
     return cursorYAbsolute > lastCommandYAbsolute;
   }
-  C() {
-    const cursorX = this.n.buffer.active.cursorX;
-    const cursorY = this.n.buffer.active.cursorY;
+  _waitForCursorMove() {
+    const cursorX = this._terminal.buffer.active.cursorX;
+    const cursorY = this._terminal.buffer.active.cursorY;
     let totalDelay = 0;
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve3, reject) => {
       const interval = setInterval(() => {
-        if (cursorX !== this.n.buffer.active.cursorX || cursorY !== this.n.buffer.active.cursorY) {
-          resolve2();
+        if (cursorX !== this._terminal.buffer.active.cursorX || cursorY !== this._terminal.buffer.active.cursorY) {
+          resolve3();
           clearInterval(interval);
           return;
         }
         totalDelay += 10;
         if (totalDelay > 1e3) {
           clearInterval(interval);
-          resolve2();
+          resolve3();
         }
       }, 10);
     });
   }
-  F(y = this.n.buffer.active.baseY + this.n.buffer.active.cursorY) {
-    const line = this.n.buffer.active.getLine(y);
+  _getWindowsPrompt(y = this._terminal.buffer.active.baseY + this._terminal.buffer.active.cursorY) {
+    const line = this._terminal.buffer.active.getLine(y);
     if (!line) {
       return;
     }
@@ -17267,7 +17267,7 @@ var WindowsPtyHeuristics = class WindowsPtyHeuristics2 extends $Fd {
     }
     const pwshPrompt = lineText.match(/(?<prompt>(\(.+\)\s)?(?:PS.+>\s?))/)?.groups?.prompt;
     if (pwshPrompt) {
-      const adjustedPrompt = this.G(pwshPrompt, lineText, ">");
+      const adjustedPrompt = this._adjustPrompt(pwshPrompt, lineText, ">");
       if (adjustedPrompt) {
         return {
           prompt: adjustedPrompt,
@@ -17277,14 +17277,14 @@ var WindowsPtyHeuristics = class WindowsPtyHeuristics2 extends $Fd {
     }
     const customPrompt = lineText.match(/.*\u276f(?=[^\u276f]*$)/g)?.[0];
     if (customPrompt) {
-      const adjustedPrompt = this.G(customPrompt, lineText, "\u276F");
+      const adjustedPrompt = this._adjustPrompt(customPrompt, lineText, "\u276F");
       if (adjustedPrompt) {
         return adjustedPrompt;
       }
     }
     const bashPrompt = lineText.match(/^(?<prompt>\$)/)?.groups?.prompt;
     if (bashPrompt) {
-      const adjustedPrompt = this.G(bashPrompt, lineText, "$");
+      const adjustedPrompt = this._adjustPrompt(bashPrompt, lineText, "$");
       if (adjustedPrompt) {
         return adjustedPrompt;
       }
@@ -17296,8 +17296,8 @@ var WindowsPtyHeuristics = class WindowsPtyHeuristics2 extends $Fd {
         likelySingleLine: true
       };
     }
-    if (this.q.promptTerminator && (lineText === this.q.promptTerminator || lineText.trim().endsWith(this.q.promptTerminator))) {
-      const adjustedPrompt = this.G(lineText, lineText, this.q.promptTerminator);
+    if (this._capability.promptTerminator && (lineText === this._capability.promptTerminator || lineText.trim().endsWith(this._capability.promptTerminator))) {
+      const adjustedPrompt = this._adjustPrompt(lineText, lineText, this._capability.promptTerminator);
       if (adjustedPrompt) {
         return adjustedPrompt;
       }
@@ -17308,7 +17308,7 @@ var WindowsPtyHeuristics = class WindowsPtyHeuristics2 extends $Fd {
       likelySingleLine: true
     } : void 0;
   }
-  G(prompt, lineText, char) {
+  _adjustPrompt(prompt, lineText, char) {
     if (!prompt) {
       return;
     }
@@ -17319,39 +17319,39 @@ var WindowsPtyHeuristics = class WindowsPtyHeuristics2 extends $Fd {
   }
 };
 WindowsPtyHeuristics = __decorate([
-  __param(3, $po)
+  __param(3, ILogService)
 ], WindowsPtyHeuristics);
 function cloneMarker(xterm, marker, offset = 0) {
   return xterm.registerMarker(marker.line - (xterm.buffer.active.baseY + xterm.buffer.active.cursorY) + offset);
 }
 
 // out-build/vs/platform/terminal/common/capabilities/cwdDetectionCapability.js
-var $QVb = class extends $Fd {
+var CwdDetectionCapability = class extends Disposable {
   constructor() {
     super(...arguments);
     this.type = 0;
-    this.a = "";
-    this.b = /* @__PURE__ */ new Map();
-    this.c = this.D(new $qf());
-    this.onDidChangeCwd = this.c.event;
+    this._cwd = "";
+    this._cwds = /* @__PURE__ */ new Map();
+    this._onDidChangeCwd = this._register(new Emitter());
+    this.onDidChangeCwd = this._onDidChangeCwd.event;
   }
   /**
    * Gets the list of cwds seen in this session in order of last accessed.
    */
   get cwds() {
-    return Array.from(this.b.keys());
+    return Array.from(this._cwds.keys());
   }
   getCwd() {
-    return this.a;
+    return this._cwd;
   }
-  updateCwd(cwd2) {
-    const didChange = this.a !== cwd2;
-    this.a = cwd2;
-    const count = this.b.get(this.a) || 0;
-    this.b.delete(this.a);
-    this.b.set(this.a, count + 1);
+  updateCwd(cwd3) {
+    const didChange = this._cwd !== cwd3;
+    this._cwd = cwd3;
+    const count = this._cwds.get(this._cwd) || 0;
+    this._cwds.delete(this._cwd);
+    this._cwds.set(this._cwd, count + 1);
     if (didChange) {
-      this.c.fire(cwd2);
+      this._onDidChangeCwd.fire(cwd3);
     }
   }
 };
@@ -17361,190 +17361,190 @@ var Constants4;
 (function(Constants5) {
   Constants5[Constants5["MinimumPromptLength"] = 2] = "MinimumPromptLength";
 })(Constants4 || (Constants4 = {}));
-var $RVb = class extends $Ed {
+var PartialCommandDetectionCapability = class extends DisposableStore {
   get commands() {
-    return this.a;
+    return this._commands;
   }
-  constructor(c, h) {
+  constructor(_terminal, _onDidExecuteText) {
     super();
-    this.c = c;
-    this.h = h;
+    this._terminal = _terminal;
+    this._onDidExecuteText = _onDidExecuteText;
     this.type = 3;
-    this.a = [];
-    this.b = this.add(new $qf());
-    this.onCommandFinished = this.b.event;
-    this.add(this.c.onData((e) => this.j(e)));
-    this.add(this.c.parser.registerCsiHandler({ final: "J" }, (params) => {
+    this._commands = [];
+    this._onCommandFinished = this.add(new Emitter());
+    this.onCommandFinished = this._onCommandFinished.event;
+    this.add(this._terminal.onData((e) => this._onData(e)));
+    this.add(this._terminal.parser.registerCsiHandler({ final: "J" }, (params) => {
       if (params.length >= 1 && (params[0] === 2 || params[0] === 3)) {
-        this.n();
+        this._clearCommandsInViewport();
       }
       return false;
     }));
-    if (this.h) {
-      this.add(this.h(() => this.m()));
+    if (this._onDidExecuteText) {
+      this.add(this._onDidExecuteText(() => this._onEnter()));
     }
   }
-  j(data) {
+  _onData(data) {
     if (data === "\r") {
-      this.m();
+      this._onEnter();
     }
   }
-  m() {
-    if (!this.c) {
+  _onEnter() {
+    if (!this._terminal) {
       return;
     }
-    if (this.c.buffer.active.cursorX >= 2) {
-      const marker = this.c.registerMarker(0);
+    if (this._terminal.buffer.active.cursorX >= 2) {
+      const marker = this._terminal.registerMarker(0);
       if (marker) {
-        this.a.push(marker);
-        this.b.fire(marker);
+        this._commands.push(marker);
+        this._onCommandFinished.fire(marker);
       }
     }
   }
-  n() {
+  _clearCommandsInViewport() {
     let count = 0;
-    for (let i = this.a.length - 1; i >= 0; i--) {
-      if (this.a[i].line < this.c.buffer.active.baseY) {
+    for (let i = this._commands.length - 1; i >= 0; i--) {
+      if (this._commands[i].line < this._terminal.buffer.active.baseY) {
         break;
       }
       count++;
     }
-    this.a.splice(this.a.length - count, count);
+    this._commands.splice(this._commands.length - count, count);
   }
 };
 
 // out-build/vs/platform/terminal/common/capabilities/bufferMarkCapability.js
-var $SVb = class extends $Fd {
-  constructor(f) {
+var BufferMarkCapability = class extends Disposable {
+  constructor(_terminal) {
     super();
-    this.f = f;
+    this._terminal = _terminal;
     this.type = 4;
-    this.a = /* @__PURE__ */ new Map();
-    this.b = /* @__PURE__ */ new Map();
-    this.c = this.D(new $qf());
-    this.onMarkAdded = this.c.event;
+    this._idToMarkerMap = /* @__PURE__ */ new Map();
+    this._anonymousMarkers = /* @__PURE__ */ new Map();
+    this._onMarkAdded = this._register(new Emitter());
+    this.onMarkAdded = this._onMarkAdded.event;
   }
   *markers() {
-    for (const m of this.a.values()) {
+    for (const m of this._idToMarkerMap.values()) {
       yield m;
     }
-    for (const m of this.b.values()) {
+    for (const m of this._anonymousMarkers.values()) {
       yield m;
     }
   }
   addMark(properties) {
-    const marker = properties?.marker || this.f.registerMarker();
+    const marker = properties?.marker || this._terminal.registerMarker();
     const id2 = properties?.id;
     if (!marker) {
       return;
     }
     if (id2) {
-      this.a.set(id2, marker);
-      marker.onDispose(() => this.a.delete(id2));
+      this._idToMarkerMap.set(id2, marker);
+      marker.onDispose(() => this._idToMarkerMap.delete(id2));
     } else {
-      this.b.set(marker.id, marker);
-      marker.onDispose(() => this.b.delete(marker.id));
+      this._anonymousMarkers.set(marker.id, marker);
+      marker.onDispose(() => this._anonymousMarkers.delete(marker.id));
     }
-    this.c.fire({ marker, id: id2, hidden: properties?.hidden, hoverMessage: properties?.hoverMessage });
+    this._onMarkAdded.fire({ marker, id: id2, hidden: properties?.hidden, hoverMessage: properties?.hoverMessage });
   }
   getMark(id2) {
-    return this.a.get(id2);
+    return this._idToMarkerMap.get(id2);
   }
 };
 
 // out-build/vs/platform/terminal/common/capabilities/shellEnvDetectionCapability.js
-var $TVb = class extends $Fd {
+var ShellEnvDetectionCapability = class extends Disposable {
   constructor() {
     super(...arguments);
     this.type = 5;
-    this.b = { value: /* @__PURE__ */ new Map(), isTrusted: true };
-    this.c = this.D(new $qf());
-    this.onDidChangeEnv = this.c.event;
+    this._env = { value: /* @__PURE__ */ new Map(), isTrusted: true };
+    this._onDidChangeEnv = this._register(new Emitter());
+    this.onDidChangeEnv = this._onDidChangeEnv.event;
   }
   get env() {
-    return this.g();
+    return this._createStateObject();
   }
-  setEnvironment(env, isTrusted) {
-    if ($xp(this.env.value, env)) {
+  setEnvironment(env2, isTrusted) {
+    if (equals(this.env.value, env2)) {
       return;
     }
-    this.b.value.clear();
-    for (const [key, value] of Object.entries(env)) {
+    this._env.value.clear();
+    for (const [key, value] of Object.entries(env2)) {
       if (value !== void 0) {
-        this.b.value.set(key, value);
+        this._env.value.set(key, value);
       }
     }
-    this.b.isTrusted = isTrusted;
-    this.f();
+    this._env.isTrusted = isTrusted;
+    this._fireEnvChange();
   }
   startEnvironmentSingleVar(clear, isTrusted) {
     if (clear) {
-      this.a = {
+      this._pendingEnv = {
         value: /* @__PURE__ */ new Map(),
         isTrusted
       };
     } else {
-      this.a = {
-        value: new Map(this.b.value),
-        isTrusted: this.b.isTrusted && isTrusted
+      this._pendingEnv = {
+        value: new Map(this._env.value),
+        isTrusted: this._env.isTrusted && isTrusted
       };
     }
   }
   setEnvironmentSingleVar(key, value, isTrusted) {
-    if (!this.a) {
+    if (!this._pendingEnv) {
       return;
     }
     if (key !== void 0 && value !== void 0) {
-      this.a.value.set(key, value);
-      this.a.isTrusted &&= isTrusted;
+      this._pendingEnv.value.set(key, value);
+      this._pendingEnv.isTrusted &&= isTrusted;
     }
   }
   endEnvironmentSingleVar(isTrusted) {
-    if (!this.a) {
+    if (!this._pendingEnv) {
       return;
     }
-    this.a.isTrusted &&= isTrusted;
-    const envDiffers = !$Xc(this.b.value, this.a.value);
+    this._pendingEnv.isTrusted &&= isTrusted;
+    const envDiffers = !mapsStrictEqualIgnoreOrder(this._env.value, this._pendingEnv.value);
     if (envDiffers) {
-      this.b = this.a;
-      this.f();
+      this._env = this._pendingEnv;
+      this._fireEnvChange();
     }
-    this.a = void 0;
+    this._pendingEnv = void 0;
   }
   deleteEnvironmentSingleVar(key, value, isTrusted) {
-    if (!this.a) {
+    if (!this._pendingEnv) {
       return;
     }
     if (key !== void 0 && value !== void 0) {
-      this.a.value.delete(key);
-      this.a.isTrusted &&= isTrusted;
+      this._pendingEnv.value.delete(key);
+      this._pendingEnv.isTrusted &&= isTrusted;
     }
   }
-  f() {
-    this.c.fire(this.g());
+  _fireEnvChange() {
+    this._onDidChangeEnv.fire(this._createStateObject());
   }
-  g() {
+  _createStateObject() {
     return {
-      value: Object.fromEntries(this.b.value),
-      isTrusted: this.b.isTrusted
+      value: Object.fromEntries(this._env.value),
+      isTrusted: this._env.isTrusted
     };
   }
 };
 
 // out-build/vs/platform/terminal/common/capabilities/promptTypeDetectionCapability.js
-var $UVb = class extends $Fd {
+var PromptTypeDetectionCapability = class extends Disposable {
   constructor() {
     super(...arguments);
     this.type = 6;
-    this.b = this.D(new $qf());
-    this.onPromptTypeChanged = this.b.event;
+    this._onPromptTypeChanged = this._register(new Emitter());
+    this.onPromptTypeChanged = this._onPromptTypeChanged.event;
   }
   get promptType() {
-    return this.a;
+    return this._promptType;
   }
   setPromptType(value) {
-    this.a = value;
-    this.b.fire(value);
+    this._promptType = value;
+    this._onPromptTypeChanged.fire(value);
   }
 };
 
@@ -17588,112 +17588,112 @@ var ITermOscPt;
   ITermOscPt2["SetMark"] = "SetMark";
   ITermOscPt2["CurrentDir"] = "CurrentDir";
 })(ITermOscPt || (ITermOscPt = {}));
-var $VVb = class extends $Fd {
+var ShellIntegrationAddon = class extends Disposable {
   get seenSequences() {
-    return this.g;
+    return this._seenSequences;
   }
   get status() {
-    return this.h;
+    return this._status;
   }
-  constructor(n, q, r, s, t) {
+  constructor(_nonce, _disableTelemetry, _onDidExecuteText, _telemetryService, _logService) {
     super();
-    this.n = n;
-    this.q = q;
-    this.r = r;
-    this.s = s;
-    this.t = t;
-    this.capabilities = this.D(new $MVb());
-    this.b = false;
-    this.f = [];
-    this.g = /* @__PURE__ */ new Set();
-    this.h = 0;
-    this.j = new $qf();
-    this.onDidChangeStatus = this.j.event;
-    this.m = new $qf();
-    this.onDidChangeSeenSequences = this.m.event;
-    this.D($Dd(() => {
-      this.G();
-      this.u();
+    this._nonce = _nonce;
+    this._disableTelemetry = _disableTelemetry;
+    this._onDidExecuteText = _onDidExecuteText;
+    this._telemetryService = _telemetryService;
+    this._logService = _logService;
+    this.capabilities = this._register(new TerminalCapabilityStore());
+    this._hasUpdatedTelemetry = false;
+    this._commonProtocolDisposables = [];
+    this._seenSequences = /* @__PURE__ */ new Set();
+    this._status = 0;
+    this._onDidChangeStatus = new Emitter();
+    this.onDidChangeStatus = this._onDidChangeStatus.event;
+    this._onDidChangeSeenSequences = new Emitter();
+    this.onDidChangeSeenSequences = this._onDidChangeSeenSequences.event;
+    this._register(toDisposable(() => {
+      this._clearActivationTimeout();
+      this._disposeCommonProtocol();
     }));
   }
-  u() {
-    $Ad(this.f);
-    this.f.length = 0;
+  _disposeCommonProtocol() {
+    dispose(this._commonProtocolDisposables);
+    this._commonProtocolDisposables.length = 0;
   }
   activate(xterm) {
-    this.a = xterm;
-    this.capabilities.add(3, this.D(new $RVb(this.a, this.r)));
-    this.D(xterm.parser.registerOscHandler(633, (data) => this.C(data)));
-    this.D(xterm.parser.registerOscHandler(1337, (data) => this.M(data)));
-    this.f.push(xterm.parser.registerOscHandler(133, (data) => this.y(data)));
-    this.D(xterm.parser.registerOscHandler(7, (data) => this.O(data)));
-    this.D(xterm.parser.registerOscHandler(9, (data) => this.N(data)));
-    this.F();
+    this._terminal = xterm;
+    this.capabilities.add(3, this._register(new PartialCommandDetectionCapability(this._terminal, this._onDidExecuteText)));
+    this._register(xterm.parser.registerOscHandler(633, (data) => this._handleVSCodeSequence(data)));
+    this._register(xterm.parser.registerOscHandler(1337, (data) => this._doHandleITermSequence(data)));
+    this._commonProtocolDisposables.push(xterm.parser.registerOscHandler(133, (data) => this._handleFinalTermSequence(data)));
+    this._register(xterm.parser.registerOscHandler(7, (data) => this._doHandleSetCwd(data)));
+    this._register(xterm.parser.registerOscHandler(9, (data) => this._doHandleSetWindowsFriendlyCwd(data)));
+    this._ensureCapabilitiesOrAddFailureTelemetry();
   }
   getMarkerId(terminal, vscodeMarkerId) {
-    this.R(terminal).getMark(vscodeMarkerId);
+    this._createOrGetBufferMarkDetection(terminal).getMark(vscodeMarkerId);
   }
   setNextCommandId(command, commandId) {
-    if (this.a) {
-      this.Q(this.a).setNextCommandId(command, commandId);
+    if (this._terminal) {
+      this._createOrGetCommandDetection(this._terminal).setNextCommandId(command, commandId);
     }
   }
-  w(sequence) {
-    if (!this.g.has(sequence)) {
-      this.g.add(sequence);
-      this.m.fire(this.g);
+  _markSequenceSeen(sequence) {
+    if (!this._seenSequences.has(sequence)) {
+      this._seenSequences.add(sequence);
+      this._onDidChangeSeenSequences.fire(this._seenSequences);
     }
   }
-  y(data) {
-    const didHandle = this.z(data);
-    if (this.h === 0) {
-      this.h = 1;
-      this.j.fire(this.h);
+  _handleFinalTermSequence(data) {
+    const didHandle = this._doHandleFinalTermSequence(data);
+    if (this._status === 0) {
+      this._status = 1;
+      this._onDidChangeStatus.fire(this._status);
     }
     return didHandle;
   }
-  z(data) {
-    if (!this.a) {
+  _doHandleFinalTermSequence(data) {
+    if (!this._terminal) {
       return false;
     }
     const [command, ...args] = data.split(";");
-    this.w(command);
+    this._markSequenceSeen(command);
     switch (command) {
       case "A":
-        this.Q(this.a).handlePromptStart();
+        this._createOrGetCommandDetection(this._terminal).handlePromptStart();
         return true;
       case "B":
-        this.Q(this.a).handleCommandStart({ ignoreCommandLine: true });
+        this._createOrGetCommandDetection(this._terminal).handleCommandStart({ ignoreCommandLine: true });
         return true;
       case "C":
-        this.Q(this.a).handleCommandExecuted();
+        this._createOrGetCommandDetection(this._terminal).handleCommandExecuted();
         return true;
       case "D": {
         const exitCode = args.length === 1 ? parseInt(args[0]) : void 0;
-        this.Q(this.a).handleCommandFinished(exitCode);
+        this._createOrGetCommandDetection(this._terminal).handleCommandFinished(exitCode);
         return true;
       }
     }
     return false;
   }
-  C(data) {
-    const didHandle = this.H(data);
-    if (!this.b && didHandle) {
-      this.s?.publicLog2("terminal/shellIntegrationActivationSucceeded");
-      this.b = true;
-      this.G();
+  _handleVSCodeSequence(data) {
+    const didHandle = this._doHandleVSCodeSequence(data);
+    if (!this._hasUpdatedTelemetry && didHandle) {
+      this._telemetryService?.publicLog2("terminal/shellIntegrationActivationSucceeded");
+      this._hasUpdatedTelemetry = true;
+      this._clearActivationTimeout();
     }
-    if (this.h !== 2) {
-      this.h = 2;
-      this.j.fire(this.h);
+    if (this._status !== 2) {
+      this._status = 2;
+      this._onDidChangeStatus.fire(this._status);
     }
     return didHandle;
   }
-  async F() {
-    if (!this.s || this.q) {
+  async _ensureCapabilitiesOrAddFailureTelemetry() {
+    if (!this._telemetryService || this._disableTelemetry) {
       return;
     }
-    this.c = setTimeout(() => {
+    this._activationTimeout = setTimeout(() => {
       if (!this.capabilities.get(
         2
         /* TerminalCapability.CommandDetection */
@@ -17701,40 +17701,40 @@ var $VVb = class extends $Fd {
         0
         /* TerminalCapability.CwdDetection */
       )) {
-        this.s?.publicLog2("terminal/shellIntegrationActivationTimeout");
-        this.t.warn("Shell integration failed to add capabilities within 10 seconds");
+        this._telemetryService?.publicLog2("terminal/shellIntegrationActivationTimeout");
+        this._logService.warn("Shell integration failed to add capabilities within 10 seconds");
       }
-      this.b = true;
+      this._hasUpdatedTelemetry = true;
     }, 1e4);
   }
-  G() {
-    if (this.c !== void 0) {
-      clearTimeout(this.c);
-      this.c = void 0;
+  _clearActivationTimeout() {
+    if (this._activationTimeout !== void 0) {
+      clearTimeout(this._activationTimeout);
+      this._activationTimeout = void 0;
     }
   }
-  H(data) {
-    if (!this.a) {
+  _doHandleVSCodeSequence(data) {
+    if (!this._terminal) {
       return false;
     }
     const argsIndex = data.indexOf(";");
     const command = argsIndex === -1 ? data : data.substring(0, argsIndex);
-    this.w(command);
+    this._markSequenceSeen(command);
     const args = argsIndex === -1 ? [] : data.substring(argsIndex + 1).split(";");
     switch (command) {
       case "A":
-        this.Q(this.a).handlePromptStart();
+        this._createOrGetCommandDetection(this._terminal).handlePromptStart();
         return true;
       case "B":
-        this.Q(this.a).handleCommandStart();
+        this._createOrGetCommandDetection(this._terminal).handleCommandStart();
         return true;
       case "C":
-        this.Q(this.a).handleCommandExecuted();
+        this._createOrGetCommandDetection(this._terminal).handleCommandExecuted();
         return true;
       case "D": {
         const arg0 = args[0];
         const exitCode = arg0 !== void 0 ? parseInt(arg0) : void 0;
-        this.Q(this.a).handleCommandFinished(exitCode);
+        this._createOrGetCommandDetection(this._terminal).handleCommandFinished(exitCode);
         return true;
       }
       case "E": {
@@ -17742,19 +17742,19 @@ var $VVb = class extends $Fd {
         const arg1 = args[1];
         let commandLine;
         if (arg0 !== void 0) {
-          commandLine = $WVb(arg0);
+          commandLine = deserializeVSCodeOscMessage(arg0);
         } else {
           commandLine = "";
         }
-        this.Q(this.a).setCommandLine(commandLine, arg1 === this.n);
+        this._createOrGetCommandDetection(this._terminal).setCommandLine(commandLine, arg1 === this._nonce);
         return true;
       }
       case "F": {
-        this.Q(this.a).handleContinuationStart();
+        this._createOrGetCommandDetection(this._terminal).handleContinuationStart();
         return true;
       }
       case "G": {
-        this.Q(this.a).handleContinuationEnd();
+        this._createOrGetCommandDetection(this._terminal).handleContinuationEnd();
         return true;
       }
       case "EnvJson": {
@@ -17762,16 +17762,16 @@ var $VVb = class extends $Fd {
         const arg1 = args[1];
         if (arg0 !== void 0) {
           try {
-            const env = JSON.parse($WVb(arg0));
-            this.S().setEnvironment(env, arg1 === this.n);
+            const env2 = JSON.parse(deserializeVSCodeOscMessage(arg0));
+            this._createOrGetShellEnvDetection().setEnvironment(env2, arg1 === this._nonce);
           } catch (e) {
-            this.t.warn("Failed to parse environment from shell integration sequence", arg0);
+            this._logService.warn("Failed to parse environment from shell integration sequence", arg0);
           }
         }
         return true;
       }
       case "EnvSingleStart": {
-        this.S().startEnvironmentSingleVar(args[0] === "1", args[1] === this.n);
+        this._createOrGetShellEnvDetection().startEnvironmentSingleVar(args[0] === "1", args[1] === this._nonce);
         return true;
       }
       case "EnvSingleDelete": {
@@ -17779,8 +17779,8 @@ var $VVb = class extends $Fd {
         const arg1 = args[1];
         const arg2 = args[2];
         if (arg0 !== void 0 && arg1 !== void 0) {
-          const env = $WVb(arg1);
-          this.S().deleteEnvironmentSingleVar(arg0, env, arg2 === this.n);
+          const env2 = deserializeVSCodeOscMessage(arg1);
+          this._createOrGetShellEnvDetection().deleteEnvironmentSingleVar(arg0, env2, arg2 === this._nonce);
         }
         return true;
       }
@@ -17789,58 +17789,58 @@ var $VVb = class extends $Fd {
         const arg1 = args[1];
         const arg2 = args[2];
         if (arg0 !== void 0 && arg1 !== void 0) {
-          const env = $WVb(arg1);
-          this.S().setEnvironmentSingleVar(arg0, env, arg2 === this.n);
+          const env2 = deserializeVSCodeOscMessage(arg1);
+          this._createOrGetShellEnvDetection().setEnvironmentSingleVar(arg0, env2, arg2 === this._nonce);
         }
         return true;
       }
       case "EnvSingleEnd": {
-        this.S().endEnvironmentSingleVar(args[0] === this.n);
+        this._createOrGetShellEnvDetection().endEnvironmentSingleVar(args[0] === this._nonce);
         return true;
       }
       case "H": {
-        this.Q(this.a).handleRightPromptStart();
+        this._createOrGetCommandDetection(this._terminal).handleRightPromptStart();
         return true;
       }
       case "I": {
-        this.Q(this.a).handleRightPromptEnd();
+        this._createOrGetCommandDetection(this._terminal).handleRightPromptEnd();
         return true;
       }
       case "P": {
         const arg0 = args[0];
-        const deserialized = arg0 !== void 0 ? $WVb(arg0) : "";
-        const { key, value } = $YVb(deserialized);
+        const deserialized = arg0 !== void 0 ? deserializeVSCodeOscMessage(arg0) : "";
+        const { key, value } = parseKeyValueAssignment(deserialized);
         if (value === void 0) {
           return true;
         }
         switch (key) {
           case "ContinuationPrompt": {
-            this.I($Fg(value));
+            this._updateContinuationPrompt(removeAnsiEscapeCodesFromPrompt(value));
             return true;
           }
           case "Cwd": {
-            this.L(value);
+            this._updateCwd(value);
             return true;
           }
           case "IsWindows": {
-            this.Q(this.a).setIsWindowsPty(value === "True" ? true : false);
+            this._createOrGetCommandDetection(this._terminal).setIsWindowsPty(value === "True" ? true : false);
             return true;
           }
           case "HasRichCommandDetection": {
-            this.Q(this.a).setHasRichCommandDetection(value === "True" ? true : false);
+            this._createOrGetCommandDetection(this._terminal).setHasRichCommandDetection(value === "True" ? true : false);
             return true;
           }
           case "Prompt": {
             const sanitizedValue = value.replace(/\x1b\[[0-9;]*m/g, "");
-            this.J(sanitizedValue);
+            this._updatePromptTerminator(sanitizedValue);
             return true;
           }
           case "PromptType": {
-            this.U().setPromptType(value);
+            this._createOrGetPromptTypeDetection().setPromptType(value);
             return true;
           }
           case "Task": {
-            this.R(this.a);
+            this._createOrGetBufferMarkDetection(this._terminal);
             this.capabilities.get(
               2
               /* TerminalCapability.CommandDetection */
@@ -17850,72 +17850,72 @@ var $VVb = class extends $Fd {
         }
       }
       case "SetMark": {
-        this.R(this.a).addMark($ZVb(args));
+        this._createOrGetBufferMarkDetection(this._terminal).addMark(parseMarkSequence(args));
         return true;
       }
     }
     return false;
   }
-  I(value) {
-    if (!this.a) {
+  _updateContinuationPrompt(value) {
+    if (!this._terminal) {
       return;
     }
-    this.Q(this.a).setContinuationPrompt(value);
+    this._createOrGetCommandDetection(this._terminal).setContinuationPrompt(value);
   }
-  J(prompt) {
-    if (!this.a) {
+  _updatePromptTerminator(prompt) {
+    if (!this._terminal) {
       return;
     }
     const lastPromptLine = prompt.substring(prompt.lastIndexOf("\n") + 1);
     const lastPromptLineTrimmed = lastPromptLine.trim();
     const promptTerminator = lastPromptLineTrimmed.length === 1 ? lastPromptLine : lastPromptLine.substring(lastPromptLine.lastIndexOf(" "));
     if (promptTerminator) {
-      this.Q(this.a).setPromptTerminator(promptTerminator, lastPromptLine);
+      this._createOrGetCommandDetection(this._terminal).setPromptTerminator(promptTerminator, lastPromptLine);
     }
   }
-  L(value) {
-    value = $T4(value);
-    this.P().updateCwd(value);
+  _updateCwd(value) {
+    value = sanitizeCwd(value);
+    this._createOrGetCwdDetection().updateCwd(value);
     const commandDetection = this.capabilities.get(
       2
       /* TerminalCapability.CommandDetection */
     );
     commandDetection?.setCwd(value);
   }
-  M(data) {
-    if (!this.a) {
+  _doHandleITermSequence(data) {
+    if (!this._terminal) {
       return false;
     }
     const [command] = data.split(";");
-    this.w(`${1337};${command}`);
+    this._markSequenceSeen(`${1337};${command}`);
     switch (command) {
       case "SetMark": {
-        this.R(this.a).addMark();
+        this._createOrGetBufferMarkDetection(this._terminal).addMark();
       }
       default: {
-        const { key, value } = $YVb(command);
+        const { key, value } = parseKeyValueAssignment(command);
         if (value === void 0) {
           return true;
         }
         switch (key) {
           case "CurrentDir":
-            this.L(value);
+            this._updateCwd(value);
             return true;
         }
       }
     }
     return false;
   }
-  N(data) {
-    if (!this.a) {
+  _doHandleSetWindowsFriendlyCwd(data) {
+    if (!this._terminal) {
       return false;
     }
     const [command, ...args] = data.split(";");
-    this.w(`${9};${command}`);
+    this._markSequenceSeen(`${9};${command}`);
     switch (command) {
       case "9":
         if (args.length) {
-          this.L(args[0]);
+          this._updateCwd(args[0]);
         }
         return true;
     }
@@ -17924,23 +17924,23 @@ var $VVb = class extends $Fd {
   /**
    * Handles the sequence: `OSC 7 ; scheme://cwd ST`
    */
-  O(data) {
-    if (!this.a) {
+  _doHandleSetCwd(data) {
+    if (!this._terminal) {
       return false;
     }
     const [command] = data.split(";");
-    this.w(`${7};${command}`);
+    this._markSequenceSeen(`${7};${command}`);
     if (command.match(/^file:\/\/.*\//)) {
       const uri = URI.parse(command);
       if (uri.path && uri.path.length > 0) {
-        this.L(uri.path);
+        this._updateCwd(uri.path);
         return true;
       }
     }
     return false;
   }
   serialize() {
-    if (!this.a || !this.capabilities.has(
+    if (!this._terminal || !this.capabilities.has(
       2
       /* TerminalCapability.CommandDetection */
     )) {
@@ -17951,76 +17951,76 @@ var $VVb = class extends $Fd {
         promptInputModel: void 0
       };
     }
-    const result = this.Q(this.a).serialize();
+    const result = this._createOrGetCommandDetection(this._terminal).serialize();
     return result;
   }
   deserialize(serialized) {
-    if (!this.a) {
+    if (!this._terminal) {
       throw new Error("Cannot restore commands before addon is activated");
     }
-    const commandDetection = this.Q(this.a);
+    const commandDetection = this._createOrGetCommandDetection(this._terminal);
     commandDetection.deserialize(serialized);
     if (commandDetection.cwd) {
-      this.L(commandDetection.cwd);
+      this._updateCwd(commandDetection.cwd);
     }
   }
-  P() {
+  _createOrGetCwdDetection() {
     let cwdDetection = this.capabilities.get(
       0
       /* TerminalCapability.CwdDetection */
     );
     if (!cwdDetection) {
-      cwdDetection = this.D(new $QVb());
+      cwdDetection = this._register(new CwdDetectionCapability());
       this.capabilities.add(0, cwdDetection);
     }
     return cwdDetection;
   }
-  Q(terminal) {
+  _createOrGetCommandDetection(terminal) {
     let commandDetection = this.capabilities.get(
       2
       /* TerminalCapability.CommandDetection */
     );
     if (!commandDetection) {
-      commandDetection = this.D(new $OVb(terminal, this.t));
+      commandDetection = this._register(new CommandDetectionCapability(terminal, this._logService));
       this.capabilities.add(2, commandDetection);
     }
     return commandDetection;
   }
-  R(terminal) {
+  _createOrGetBufferMarkDetection(terminal) {
     let bufferMarkDetection = this.capabilities.get(
       4
       /* TerminalCapability.BufferMarkDetection */
     );
     if (!bufferMarkDetection) {
-      bufferMarkDetection = this.D(new $SVb(terminal));
+      bufferMarkDetection = this._register(new BufferMarkCapability(terminal));
       this.capabilities.add(4, bufferMarkDetection);
     }
     return bufferMarkDetection;
   }
-  S() {
+  _createOrGetShellEnvDetection() {
     let shellEnvDetection = this.capabilities.get(
       5
       /* TerminalCapability.ShellEnvDetection */
     );
     if (!shellEnvDetection) {
-      shellEnvDetection = this.D(new $TVb());
+      shellEnvDetection = this._register(new ShellEnvDetectionCapability());
       this.capabilities.add(5, shellEnvDetection);
     }
     return shellEnvDetection;
   }
-  U() {
+  _createOrGetPromptTypeDetection() {
     let promptTypeDetection = this.capabilities.get(
       6
       /* TerminalCapability.PromptTypeDetection */
     );
     if (!promptTypeDetection) {
-      promptTypeDetection = this.D(new $UVb());
+      promptTypeDetection = this._register(new PromptTypeDetectionCapability());
       this.capabilities.add(6, promptTypeDetection);
     }
     return promptTypeDetection;
   }
 };
-function $WVb(message) {
+function deserializeVSCodeOscMessage(message) {
   return message.replaceAll(
     // Backslash ('\') followed by an escape operator: either another '\', or 'x' and two hex chars.
     /\\(\\|x([0-9a-f]{2}))/gi,
@@ -18029,7 +18029,7 @@ function $WVb(message) {
     (_match, op, hex) => hex ? String.fromCharCode(parseInt(hex, 16)) : op
   );
 }
-function $YVb(message) {
+function parseKeyValueAssignment(message) {
   const separatorIndex = message.indexOf("=");
   if (separatorIndex === -1) {
     return { key: message, value: void 0 };
@@ -18039,7 +18039,7 @@ function $YVb(message) {
     value: message.substring(1 + separatorIndex)
   };
 }
-function $ZVb(sequence) {
+function parseMarkSequence(sequence) {
   let id2 = void 0;
   let hidden = false;
   for (const property of sequence) {
@@ -18057,7 +18057,7 @@ function $ZVb(sequence) {
 }
 
 // out-build/vs/platform/terminal/common/terminalStrings.js
-function $krc(message, options = {}) {
+function formatMessageForTerminal(message, options = {}) {
   let result = "";
   if (!options.excludeLeadingNewLine) {
     result += "\r\n";
@@ -18079,10 +18079,10 @@ function _definePolyfillMarks(timeOrigin) {
   if (typeof timeOrigin === "number") {
     _data.push("code/timeOrigin", timeOrigin);
   }
-  function mark(name, markOptions) {
+  function mark2(name, markOptions) {
     _data.push(name, markOptions?.startTime ?? Date.now());
   }
-  function getMarks() {
+  function getMarks2() {
     const result = [];
     for (let i = 0; i < _data.length; i += 2) {
       result.push({
@@ -18092,7 +18092,7 @@ function _definePolyfillMarks(timeOrigin) {
     }
     return result;
   }
-  return { mark, getMarks };
+  return { mark: mark2, getMarks: getMarks2 };
 }
 function _define() {
   if (typeof performance === "object" && typeof performance.mark === "function" && !performance.nodeTiming) {
@@ -18134,93 +18134,93 @@ function _factory(sharedObj) {
   return sharedObj.MonacoPerformanceMarks;
 }
 var perf = _factory(globalThis);
-var $W = perf.mark;
-var $X = perf.getMarks;
+var mark = perf.mark;
+var getMarks = perf.getMarks;
 
 // out-build/vs/platform/terminal/node/ptyService.js
 import pkg from "@xterm/headless";
 
 // out-build/vs/platform/terminal/node/terminalContrib/autoReplies/terminalAutoResponder.js
-var $hPc = class extends $Fd {
+var TerminalAutoResponder = class extends Disposable {
   constructor(proc, matchWord, response, logService) {
     super();
-    this.a = 0;
-    this.b = false;
-    this.c = false;
-    this.D(proc.onProcessData((e) => {
-      if (this.b || this.c) {
+    this._pointer = 0;
+    this._paused = false;
+    this._throttled = false;
+    this._register(proc.onProcessData((e) => {
+      if (this._paused || this._throttled) {
         return;
       }
-      const data = $7c(e) ? e : e.data;
+      const data = isString(e) ? e : e.data;
       for (let i = 0; i < data.length; i++) {
-        if (data[i] === matchWord[this.a]) {
-          this.a++;
+        if (data[i] === matchWord[this._pointer]) {
+          this._pointer++;
         } else {
-          this.f();
+          this._reset();
         }
-        if (this.a === matchWord.length) {
+        if (this._pointer === matchWord.length) {
           logService.debug(`Auto reply match: "${matchWord}", response: "${response}"`);
           proc.input(response);
-          this.c = true;
-          $2h(1e3).then(() => this.c = false);
-          this.f();
+          this._throttled = true;
+          timeout(1e3).then(() => this._throttled = false);
+          this._reset();
         }
       }
     }));
   }
-  f() {
-    this.a = 0;
+  _reset() {
+    this._pointer = 0;
   }
   /**
    * No auto response will happen after a resize on Windows in case the resize is a result of
    * reprinting the screen.
    */
   handleResize() {
-    if ($m) {
-      this.b = true;
+    if (isWindows) {
+      this._paused = true;
     }
   }
   handleInput() {
-    this.b = false;
+    this._paused = false;
   }
 };
 
 // out-build/vs/platform/terminal/node/terminalContrib/autoReplies/autoRepliesContribController.js
-var $iPc = class $iPc2 {
-  constructor(d) {
-    this.d = d;
-    this.a = /* @__PURE__ */ new Map();
-    this.b = /* @__PURE__ */ new Map();
-    this.c = /* @__PURE__ */ new Map();
+var AutoRepliesPtyServiceContribution = class AutoRepliesPtyServiceContribution2 {
+  constructor(_logService) {
+    this._logService = _logService;
+    this._autoReplies = /* @__PURE__ */ new Map();
+    this._terminalProcesses = /* @__PURE__ */ new Map();
+    this._autoResponders = /* @__PURE__ */ new Map();
   }
   async installAutoReply(match, reply) {
-    this.a.set(match, reply);
-    for (const persistentProcessId of this.c.keys()) {
-      const process2 = this.b.get(persistentProcessId);
+    this._autoReplies.set(match, reply);
+    for (const persistentProcessId of this._autoResponders.keys()) {
+      const process2 = this._terminalProcesses.get(persistentProcessId);
       if (!process2) {
-        this.d.error("Could not find terminal process to install auto reply");
+        this._logService.error("Could not find terminal process to install auto reply");
         continue;
       }
-      this.f(persistentProcessId, process2, match, reply);
+      this._processInstallAutoReply(persistentProcessId, process2, match, reply);
     }
   }
   async uninstallAllAutoReplies() {
-    for (const match of this.a.keys()) {
-      for (const processAutoResponders of this.c.values()) {
+    for (const match of this._autoReplies.keys()) {
+      for (const processAutoResponders of this._autoResponders.values()) {
         processAutoResponders.get(match)?.dispose();
         processAutoResponders.delete(match);
       }
     }
   }
   handleProcessReady(persistentProcessId, process2) {
-    this.b.set(persistentProcessId, process2);
-    this.c.set(persistentProcessId, /* @__PURE__ */ new Map());
-    for (const [match, reply] of this.a.entries()) {
-      this.f(persistentProcessId, process2, match, reply);
+    this._terminalProcesses.set(persistentProcessId, process2);
+    this._autoResponders.set(persistentProcessId, /* @__PURE__ */ new Map());
+    for (const [match, reply] of this._autoReplies.entries()) {
+      this._processInstallAutoReply(persistentProcessId, process2, match, reply);
     }
   }
   handleProcessDispose(persistentProcessId) {
-    const processAutoResponders = this.c.get(persistentProcessId);
+    const processAutoResponders = this._autoResponders.get(persistentProcessId);
     if (processAutoResponders) {
       for (const e of processAutoResponders.values()) {
         e.dispose();
@@ -18229,7 +18229,7 @@ var $iPc = class $iPc2 {
     }
   }
   handleProcessInput(persistentProcessId, data) {
-    const processAutoResponders = this.c.get(persistentProcessId);
+    const processAutoResponders = this._autoResponders.get(persistentProcessId);
     if (processAutoResponders) {
       for (const listener of processAutoResponders.values()) {
         listener.handleInput();
@@ -18237,29 +18237,29 @@ var $iPc = class $iPc2 {
     }
   }
   handleProcessResize(persistentProcessId, cols, rows) {
-    const processAutoResponders = this.c.get(persistentProcessId);
+    const processAutoResponders = this._autoResponders.get(persistentProcessId);
     if (processAutoResponders) {
       for (const listener of processAutoResponders.values()) {
         listener.handleResize();
       }
     }
   }
-  f(persistentProcessId, terminalProcess, match, reply) {
-    const processAutoResponders = this.c.get(persistentProcessId);
+  _processInstallAutoReply(persistentProcessId, terminalProcess, match, reply) {
+    const processAutoResponders = this._autoResponders.get(persistentProcessId);
     if (processAutoResponders) {
       processAutoResponders.get(match)?.dispose();
-      processAutoResponders.set(match, new $hPc(terminalProcess, match, reply, this.d));
+      processAutoResponders.set(match, new TerminalAutoResponder(terminalProcess, match, reply, this._logService));
     }
   }
 };
-$iPc = __decorate([
-  __param(0, $po)
-], $iPc);
+AutoRepliesPtyServiceContribution = __decorate([
+  __param(0, ILogService)
+], AutoRepliesPtyServiceContribution);
 
 // out-build/vs/platform/terminal/node/ptyService.js
 var { Terminal: XtermTerminal } = pkg;
-function $jPc(_target, key, descriptor) {
-  if (!$nd(descriptor.value)) {
+function traceRpc(_target, key, descriptor) {
+  if (!isFunction(descriptor.value)) {
     throw new Error("not supported");
   }
   const fnKey = "value";
@@ -18269,7 +18269,7 @@ function $jPc(_target, key, descriptor) {
       this.traceRpcArgs.logService.trace(`[RPC Request] PtyService#${fn.name}(${args.map((e) => JSON.stringify(e)).join(", ")})`);
     }
     if (this.traceRpcArgs.simulatedLatency) {
-      await $2h(this.traceRpcArgs.simulatedLatency);
+      await timeout(this.traceRpcArgs.simulatedLatency);
     }
     let result;
     try {
@@ -18286,86 +18286,86 @@ function $jPc(_target, key, descriptor) {
 }
 var SerializeAddon;
 var Unicode11Addon;
-var $kPc = class extends $Fd {
+var PtyService = class extends Disposable {
   async installAutoReply(match, reply) {
-    await this.n.installAutoReply(match, reply);
+    await this._autoRepliesContribution.installAutoReply(match, reply);
   }
   async uninstallAllAutoReplies() {
-    await this.n.uninstallAllAutoReplies();
+    await this._autoRepliesContribution.uninstallAllAutoReplies();
   }
-  J(name, event) {
+  _traceEvent(name, event) {
     event((e) => {
-      if (this.L.getLevel() === LogLevel.Trace) {
-        this.L.trace(`[RPC Event] PtyService#${name}.fire(${JSON.stringify(e)})`);
+      if (this._logService.getLevel() === LogLevel.Trace) {
+        this._logService.trace(`[RPC Event] PtyService#${name}.fire(${JSON.stringify(e)})`);
       }
     });
     return event;
   }
   get traceRpcArgs() {
     return {
-      logService: this.L,
-      simulatedLatency: this.O
+      logService: this._logService,
+      simulatedLatency: this._simulatedLatency
     };
   }
-  constructor(L, M, N, O) {
+  constructor(_logService, _productService, _reconnectConstants, _simulatedLatency) {
     super();
-    this.L = L;
-    this.M = M;
-    this.N = N;
-    this.O = O;
-    this.a = /* @__PURE__ */ new Map();
-    this.f = /* @__PURE__ */ new Map();
-    this.j = /* @__PURE__ */ new Map();
-    this.u = 0;
-    this.w = this.D(new $qf());
-    this.onHeartbeat = this.J("_onHeartbeat", this.w.event);
-    this.y = this.D(new $qf());
-    this.onProcessData = this.J("_onProcessData", this.y.event);
-    this.z = this.D(new $qf());
-    this.onProcessReplay = this.J("_onProcessReplay", this.z.event);
-    this.C = this.D(new $qf());
-    this.onProcessReady = this.J("_onProcessReady", this.C.event);
-    this.F = this.D(new $qf());
-    this.onProcessExit = this.J("_onProcessExit", this.F.event);
-    this.G = this.D(new $qf());
-    this.onProcessOrphanQuestion = this.J("_onProcessOrphanQuestion", this.G.event);
-    this.H = this.D(new $qf());
-    this.onDidRequestDetach = this.J("_onDidRequestDetach", this.H.event);
-    this.I = this.D(new $qf());
-    this.onDidChangeProperty = this.J("_onDidChangeProperty", this.I.event);
-    this.D($Dd(() => {
-      for (const pty of this.a.values()) {
+    this._logService = _logService;
+    this._productService = _productService;
+    this._reconnectConstants = _reconnectConstants;
+    this._simulatedLatency = _simulatedLatency;
+    this._ptys = /* @__PURE__ */ new Map();
+    this._workspaceLayoutInfos = /* @__PURE__ */ new Map();
+    this._revivedPtyIdMap = /* @__PURE__ */ new Map();
+    this._lastPtyId = 0;
+    this._onHeartbeat = this._register(new Emitter());
+    this.onHeartbeat = this._traceEvent("_onHeartbeat", this._onHeartbeat.event);
+    this._onProcessData = this._register(new Emitter());
+    this.onProcessData = this._traceEvent("_onProcessData", this._onProcessData.event);
+    this._onProcessReplay = this._register(new Emitter());
+    this.onProcessReplay = this._traceEvent("_onProcessReplay", this._onProcessReplay.event);
+    this._onProcessReady = this._register(new Emitter());
+    this.onProcessReady = this._traceEvent("_onProcessReady", this._onProcessReady.event);
+    this._onProcessExit = this._register(new Emitter());
+    this.onProcessExit = this._traceEvent("_onProcessExit", this._onProcessExit.event);
+    this._onProcessOrphanQuestion = this._register(new Emitter());
+    this.onProcessOrphanQuestion = this._traceEvent("_onProcessOrphanQuestion", this._onProcessOrphanQuestion.event);
+    this._onDidRequestDetach = this._register(new Emitter());
+    this.onDidRequestDetach = this._traceEvent("_onDidRequestDetach", this._onDidRequestDetach.event);
+    this._onDidChangeProperty = this._register(new Emitter());
+    this.onDidChangeProperty = this._traceEvent("_onDidChangeProperty", this._onDidChangeProperty.event);
+    this._register(toDisposable(() => {
+      for (const pty of this._ptys.values()) {
         pty.shutdown(true);
       }
-      this.a.clear();
+      this._ptys.clear();
     }));
-    this.g = this.D(new $TA(void 0, this.L));
-    this.g.onCreateRequest(this.H.fire, this.H);
-    this.n = new $iPc(this.L);
-    this.q = [this.n];
+    this._detachInstanceRequestStore = this._register(new RequestStore(void 0, this._logService));
+    this._detachInstanceRequestStore.onCreateRequest(this._onDidRequestDetach.fire, this._onDidRequestDetach);
+    this._autoRepliesContribution = new AutoRepliesPtyServiceContribution(this._logService);
+    this._contributions = [this._autoRepliesContribution];
   }
   async refreshIgnoreProcessNames(names) {
-    $cPc.length = 0;
-    $cPc.push(...names);
+    ignoreProcessNames.length = 0;
+    ignoreProcessNames.push(...names);
   }
   async requestDetachInstance(workspaceId, instanceId) {
-    return this.g.createRequest({ workspaceId, instanceId });
+    return this._detachInstanceRequestStore.createRequest({ workspaceId, instanceId });
   }
   async acceptDetachInstanceReply(requestId, persistentProcessId) {
     let processDetails = void 0;
-    const pty = this.a.get(persistentProcessId);
+    const pty = this._ptys.get(persistentProcessId);
     if (pty) {
-      processDetails = await this.W(persistentProcessId, pty);
+      processDetails = await this._buildProcessDetails(persistentProcessId, pty);
     }
-    this.g.acceptReply(requestId, processDetails);
+    this._detachInstanceRequestStore.acceptReply(requestId, processDetails);
   }
   async freePortKillProcess(port) {
-    const stdout = await new Promise((resolve2, reject) => {
-      exec3($m ? `netstat -ano | findstr "${port}"` : `lsof -nP -iTCP -sTCP:LISTEN | grep ${port}`, {}, (err, stdout2) => {
+    const stdout = await new Promise((resolve3, reject) => {
+      exec3(isWindows ? `netstat -ano | findstr "${port}"` : `lsof -nP -iTCP -sTCP:LISTEN | grep ${port}`, {}, (err, stdout2) => {
         if (err) {
           return reject("Problem occurred when listing active processes");
         }
-        resolve2(stdout2);
+        resolve3(stdout2);
       });
     });
     const processesForPort = stdout.split(/\r?\n/).filter((s) => !!s.trim());
@@ -18386,13 +18386,13 @@ var $kPc = class extends $Fd {
   }
   async serializeTerminalState(ids) {
     const promises4 = [];
-    for (const [persistentProcessId, persistentProcess] of this.a.entries()) {
+    for (const [persistentProcessId, persistentProcess] of this._ptys.entries()) {
       if (persistentProcess.hasWrittenData && ids.indexOf(persistentProcessId) !== -1) {
         promises4.push(Promises.withAsyncBody(async (r) => {
           r({
             id: persistentProcessId,
             shellLaunchConfig: persistentProcess.shellLaunchConfig,
-            processDetails: await this.W(persistentProcessId, persistentProcess),
+            processDetails: await this._buildProcessDetails(persistentProcessId, persistentProcess),
             processLaunchConfig: persistentProcess.processLaunchOptions,
             unicodeVersion: persistentProcess.unicodeVersion,
             replayEvent: await persistentProcess.serializeNormalBuffer(),
@@ -18410,14 +18410,14 @@ var $kPc = class extends $Fd {
   async reviveTerminalProcesses(workspaceId, state, dateTimeFormatLocale) {
     const promises4 = [];
     for (const terminal of state) {
-      promises4.push(this.P(workspaceId, terminal));
+      promises4.push(this._reviveTerminalProcess(workspaceId, terminal));
     }
     await Promise.all(promises4);
   }
-  async P(workspaceId, terminal) {
+  async _reviveTerminalProcess(workspaceId, terminal) {
     const restoreMessage = localize(2365, null);
     let postRestoreMessage = "";
-    if ($m) {
+    if (isWindows) {
       const lastReplayEvent = terminal.replayEvent.events.length > 0 ? terminal.replayEvent.events.at(-1) : void 0;
       if (lastReplayEvent) {
         postRestoreMessage += "\r\n".repeat(lastReplayEvent.rows - 1) + `\x1B[H`;
@@ -18429,163 +18429,163 @@ var $kPc = class extends $Fd {
       color: terminal.processDetails.color,
       icon: terminal.processDetails.icon,
       name: terminal.processDetails.titleSource === TitleEventSource.Api ? terminal.processDetails.title : void 0,
-      initialText: terminal.replayEvent.events[0].data + $krc(restoreMessage, { loudFormatting: true }) + postRestoreMessage
+      initialText: terminal.replayEvent.events[0].data + formatMessageForTerminal(restoreMessage, { loudFormatting: true }) + postRestoreMessage
     }, terminal.processDetails.cwd, terminal.replayEvent.events[0].cols, terminal.replayEvent.events[0].rows, terminal.unicodeVersion, terminal.processLaunchConfig.env, terminal.processLaunchConfig.executableEnv, terminal.processLaunchConfig.options, true, terminal.processDetails.workspaceId, terminal.processDetails.workspaceName, true, terminal.replayEvent.events[0].data);
-    const oldId = this.U(workspaceId, terminal.id);
-    this.j.set(oldId, { newId, state: terminal });
-    this.L.info(`Revived process, old id ${oldId} -> new id ${newId}`);
+    const oldId = this._getRevivingProcessId(workspaceId, terminal.id);
+    this._revivedPtyIdMap.set(oldId, { newId, state: terminal });
+    this._logService.info(`Revived process, old id ${oldId} -> new id ${newId}`);
   }
   async shutdownAll() {
     this.dispose();
   }
-  async createProcess(shellLaunchConfig, cwd2, cols, rows, unicodeVersion, env, executableEnv, options, shouldPersist, workspaceId, workspaceName, isReviving, rawReviveBuffer) {
+  async createProcess(shellLaunchConfig, cwd3, cols, rows, unicodeVersion, env2, executableEnv, options, shouldPersist, workspaceId, workspaceName, isReviving, rawReviveBuffer) {
     if (shellLaunchConfig.attachPersistentProcess) {
       throw new Error("Attempt to create a process when attach object was provided");
     }
-    const id2 = ++this.u;
-    const process2 = new $gPc(shellLaunchConfig, cwd2, cols, rows, env, executableEnv, options, this.L, this.M);
+    const id2 = ++this._lastPtyId;
+    const process2 = new TerminalProcess(shellLaunchConfig, cwd3, cols, rows, env2, executableEnv, options, this._logService, this._productService);
     const processLaunchOptions = {
-      env,
+      env: env2,
       executableEnv,
       options
     };
-    const persistentProcess = new PersistentTerminalProcess(id2, process2, workspaceId, workspaceName, shouldPersist, cols, rows, processLaunchOptions, unicodeVersion, this.N, this.L, isReviving && $7c(shellLaunchConfig.initialText) ? shellLaunchConfig.initialText : void 0, rawReviveBuffer, shellLaunchConfig.icon, shellLaunchConfig.color, shellLaunchConfig.name, shellLaunchConfig.fixedDimensions);
+    const persistentProcess = new PersistentTerminalProcess(id2, process2, workspaceId, workspaceName, shouldPersist, cols, rows, processLaunchOptions, unicodeVersion, this._reconnectConstants, this._logService, isReviving && isString(shellLaunchConfig.initialText) ? shellLaunchConfig.initialText : void 0, rawReviveBuffer, shellLaunchConfig.icon, shellLaunchConfig.color, shellLaunchConfig.name, shellLaunchConfig.fixedDimensions);
     process2.onProcessExit((event) => {
-      for (const contrib of this.q) {
+      for (const contrib of this._contributions) {
         contrib.handleProcessDispose(id2);
       }
       persistentProcess.dispose();
-      this.a.delete(id2);
-      this.F.fire({ id: id2, event });
+      this._ptys.delete(id2);
+      this._onProcessExit.fire({ id: id2, event });
     });
-    persistentProcess.onProcessData((event) => this.y.fire({ id: id2, event }));
-    persistentProcess.onProcessReplay((event) => this.z.fire({ id: id2, event }));
-    persistentProcess.onProcessReady((event) => this.C.fire({ id: id2, event }));
-    persistentProcess.onProcessOrphanQuestion(() => this.G.fire({ id: id2 }));
-    persistentProcess.onDidChangeProperty((property) => this.I.fire({ id: id2, property }));
+    persistentProcess.onProcessData((event) => this._onProcessData.fire({ id: id2, event }));
+    persistentProcess.onProcessReplay((event) => this._onProcessReplay.fire({ id: id2, event }));
+    persistentProcess.onProcessReady((event) => this._onProcessReady.fire({ id: id2, event }));
+    persistentProcess.onProcessOrphanQuestion(() => this._onProcessOrphanQuestion.fire({ id: id2 }));
+    persistentProcess.onDidChangeProperty((property) => this._onDidChangeProperty.fire({ id: id2, property }));
     persistentProcess.onPersistentProcessReady(() => {
-      for (const contrib of this.q) {
+      for (const contrib of this._contributions) {
         contrib.handleProcessReady(id2, process2);
       }
     });
-    this.a.set(id2, persistentProcess);
+    this._ptys.set(id2, persistentProcess);
     return id2;
   }
   async attachToProcess(id2) {
     try {
-      await this.X(id2).attach();
-      this.L.info(`Persistent process reconnection "${id2}"`);
+      await this._throwIfNoPty(id2).attach();
+      this._logService.info(`Persistent process reconnection "${id2}"`);
     } catch (e) {
-      this.L.warn(`Persistent process reconnection "${id2}" failed`, e.message);
+      this._logService.warn(`Persistent process reconnection "${id2}" failed`, e.message);
       throw e;
     }
   }
   async updateTitle(id2, title, titleSource) {
-    this.X(id2).setTitle(title, titleSource);
+    this._throwIfNoPty(id2).setTitle(title, titleSource);
   }
   async updateIcon(id2, userInitiated, icon, color) {
-    this.X(id2).setIcon(userInitiated, icon, color);
+    this._throwIfNoPty(id2).setIcon(userInitiated, icon, color);
   }
   async clearBuffer(id2) {
-    this.X(id2).clearBuffer();
+    this._throwIfNoPty(id2).clearBuffer();
   }
   async refreshProperty(id2, type) {
-    return this.X(id2).refreshProperty(type);
+    return this._throwIfNoPty(id2).refreshProperty(type);
   }
   async updateProperty(id2, type, value) {
-    return this.X(id2).updateProperty(type, value);
+    return this._throwIfNoPty(id2).updateProperty(type, value);
   }
   async detachFromProcess(id2, forcePersist) {
-    return this.X(id2).detach(forcePersist);
+    return this._throwIfNoPty(id2).detach(forcePersist);
   }
   async reduceConnectionGraceTime() {
-    for (const pty of this.a.values()) {
+    for (const pty of this._ptys.values()) {
       pty.reduceGraceTime();
     }
   }
   async listProcesses() {
-    const persistentProcesses = Array.from(this.a.entries()).filter(([_, pty]) => pty.shouldPersistTerminal);
-    this.L.info(`Listing ${persistentProcesses.length} persistent terminals, ${this.a.size} total terminals`);
-    const promises4 = persistentProcesses.map(async ([id2, terminalProcessData]) => this.W(id2, terminalProcessData));
+    const persistentProcesses = Array.from(this._ptys.entries()).filter(([_, pty]) => pty.shouldPersistTerminal);
+    this._logService.info(`Listing ${persistentProcesses.length} persistent terminals, ${this._ptys.size} total terminals`);
+    const promises4 = persistentProcesses.map(async ([id2, terminalProcessData]) => this._buildProcessDetails(id2, terminalProcessData));
     const allTerminals = await Promise.all(promises4);
     return allTerminals.filter((entry) => entry.isOrphan);
   }
   async getPerformanceMarks() {
-    return $X();
+    return getMarks();
   }
   async start(id2) {
-    const pty = this.a.get(id2);
+    const pty = this._ptys.get(id2);
     return pty ? pty.start() : { message: `Could not find pty with id "${id2}"` };
   }
   async shutdown(id2, immediate) {
-    return this.a.get(id2)?.shutdown(immediate);
+    return this._ptys.get(id2)?.shutdown(immediate);
   }
   async input(id2, data) {
-    const pty = this.X(id2);
+    const pty = this._throwIfNoPty(id2);
     if (pty) {
-      for (const contrib of this.q) {
+      for (const contrib of this._contributions) {
         contrib.handleProcessInput(id2, data);
       }
       pty.input(data);
     }
   }
   async sendSignal(id2, signal) {
-    return this.X(id2).sendSignal(signal);
+    return this._throwIfNoPty(id2).sendSignal(signal);
   }
   async processBinary(id2, data) {
-    return this.X(id2).writeBinary(data);
+    return this._throwIfNoPty(id2).writeBinary(data);
   }
   async resize(id2, cols, rows) {
-    const pty = this.X(id2);
+    const pty = this._throwIfNoPty(id2);
     if (pty) {
-      for (const contrib of this.q) {
+      for (const contrib of this._contributions) {
         contrib.handleProcessResize(id2, cols, rows);
       }
       pty.resize(cols, rows);
     }
   }
   async getInitialCwd(id2) {
-    return this.X(id2).getInitialCwd();
+    return this._throwIfNoPty(id2).getInitialCwd();
   }
   async getCwd(id2) {
-    return this.X(id2).getCwd();
+    return this._throwIfNoPty(id2).getCwd();
   }
   async acknowledgeDataEvent(id2, charCount) {
-    return this.X(id2).acknowledgeDataEvent(charCount);
+    return this._throwIfNoPty(id2).acknowledgeDataEvent(charCount);
   }
   async setUnicodeVersion(id2, version) {
-    return this.X(id2).setUnicodeVersion(version);
+    return this._throwIfNoPty(id2).setUnicodeVersion(version);
   }
   async setNextCommandId(id2, commandLine, commandId) {
-    return this.X(id2).setNextCommandId(commandLine, commandId);
+    return this._throwIfNoPty(id2).setNextCommandId(commandLine, commandId);
   }
   async getLatency() {
     return [];
   }
   async orphanQuestionReply(id2) {
-    return this.X(id2).orphanQuestionReply();
+    return this._throwIfNoPty(id2).orphanQuestionReply();
   }
   async getDefaultSystemShell(osOverride = OS) {
-    return $Rw(osOverride, process.env);
+    return getSystemShell(osOverride, process.env);
   }
   async getEnvironment() {
     return { ...process.env };
   }
   async getWslPath(original, direction) {
     if (direction === "win-to-unix") {
-      if (!$m) {
+      if (!isWindows) {
         return original;
       }
-      if ($0A() < 17063) {
+      if (getWindowsBuildNumber() < 17063) {
         return original.replace(/\\/g, "/");
       }
-      const wslExecutable = this.Q();
+      const wslExecutable = this._getWSLExecutablePath();
       if (!wslExecutable) {
         return original;
       }
       return new Promise((c) => {
         const proc = execFile(wslExecutable, ["-e", "wslpath", original], {}, (error, stdout, stderr) => {
-          c(error ? original : $R4(
+          c(error ? original : escapeNonWindowsPath(
             stdout.trim(),
             "bash"
             /* PosixShellType.Bash */
@@ -18595,11 +18595,11 @@ var $kPc = class extends $Fd {
       });
     }
     if (direction === "unix-to-win") {
-      if ($m) {
-        if ($0A() < 17063) {
+      if (isWindows) {
+        if (getWindowsBuildNumber() < 17063) {
           return original;
         }
-        const wslExecutable = this.Q();
+        const wslExecutable = this._getWSLExecutablePath();
         if (!wslExecutable) {
           return original;
         }
@@ -18613,42 +18613,42 @@ var $kPc = class extends $Fd {
     }
     return original;
   }
-  Q() {
-    const useWSLexe = $0A() >= 16299;
+  _getWSLExecutablePath() {
+    const useWSLexe = getWindowsBuildNumber() >= 16299;
     const is32ProcessOn64Windows = process.env.hasOwnProperty("PROCESSOR_ARCHITEW6432");
     const systemRoot = process.env["SystemRoot"];
     if (systemRoot) {
-      return $0(systemRoot, is32ProcessOn64Windows ? "Sysnative" : "System32", useWSLexe ? "wsl.exe" : "bash.exe");
+      return join(systemRoot, is32ProcessOn64Windows ? "Sysnative" : "System32", useWSLexe ? "wsl.exe" : "bash.exe");
     }
     return void 0;
   }
   async getRevivedPtyNewId(workspaceId, id2) {
     try {
-      return this.j.get(this.U(workspaceId, id2))?.newId;
+      return this._revivedPtyIdMap.get(this._getRevivingProcessId(workspaceId, id2))?.newId;
     } catch (e) {
-      this.L.warn(`Couldn't find terminal ID ${workspaceId}-${id2}`, e.message);
+      this._logService.warn(`Couldn't find terminal ID ${workspaceId}-${id2}`, e.message);
     }
     return void 0;
   }
   async setTerminalLayoutInfo(args) {
-    this.f.set(args.workspaceId, args);
+    this._workspaceLayoutInfos.set(args.workspaceId, args);
   }
   async getTerminalLayoutInfo(args) {
-    $W("code/willGetTerminalLayoutInfo");
-    const layout = this.f.get(args.workspaceId);
+    mark("code/willGetTerminalLayoutInfo");
+    const layout = this._workspaceLayoutInfos.get(args.workspaceId);
     if (layout) {
       const doneSet = /* @__PURE__ */ new Set();
-      const expandedTabs = await Promise.all(layout.tabs.map(async (tab) => this.R(args.workspaceId, tab, doneSet)));
+      const expandedTabs = await Promise.all(layout.tabs.map(async (tab) => this._expandTerminalTab(args.workspaceId, tab, doneSet)));
       const tabs = expandedTabs.filter((t) => t.terminals.length > 0);
-      const expandedBackground = (await Promise.all(layout.background?.map((b) => this.S(args.workspaceId, b, doneSet)) ?? [])).filter((b) => b.terminal !== null).map((b) => b.terminal);
-      $W("code/didGetTerminalLayoutInfo");
+      const expandedBackground = (await Promise.all(layout.background?.map((b) => this._expandTerminalInstance(args.workspaceId, b, doneSet)) ?? [])).filter((b) => b.terminal !== null).map((b) => b.terminal);
+      mark("code/didGetTerminalLayoutInfo");
       return { tabs, background: expandedBackground };
     }
-    $W("code/didGetTerminalLayoutInfo");
+    mark("code/didGetTerminalLayoutInfo");
     return void 0;
   }
-  async R(workspaceId, tab, doneSet) {
-    const expandedTerminals = await Promise.all(tab.terminals.map((t) => this.S(workspaceId, t, doneSet)));
+  async _expandTerminalTab(workspaceId, tab, doneSet) {
+    const expandedTerminals = await Promise.all(tab.terminals.map((t) => this._expandTerminalInstance(workspaceId, t, doneSet)));
     const filtered = expandedTerminals.filter((term) => term.terminal !== null);
     return {
       isActive: tab.isActive,
@@ -18656,42 +18656,42 @@ var $kPc = class extends $Fd {
       terminals: filtered
     };
   }
-  async S(workspaceId, t, doneSet) {
-    const hasLayout = !$_c(t);
+  async _expandTerminalInstance(workspaceId, t, doneSet) {
+    const hasLayout = !isNumber(t);
     const ptyId = hasLayout ? t.terminal : t;
     try {
-      const oldId = this.U(workspaceId, ptyId);
-      const revivedPtyId = this.j.get(oldId)?.newId;
-      this.L.info(`Expanding terminal instance, old id ${oldId} -> new id ${revivedPtyId}`);
-      this.j.delete(oldId);
+      const oldId = this._getRevivingProcessId(workspaceId, ptyId);
+      const revivedPtyId = this._revivedPtyIdMap.get(oldId)?.newId;
+      this._logService.info(`Expanding terminal instance, old id ${oldId} -> new id ${revivedPtyId}`);
+      this._revivedPtyIdMap.delete(oldId);
       const persistentProcessId = revivedPtyId ?? ptyId;
       if (doneSet.has(persistentProcessId)) {
         throw new Error(`Terminal ${persistentProcessId} has already been expanded`);
       }
       doneSet.add(persistentProcessId);
-      const persistentProcess = this.X(persistentProcessId);
-      const processDetails = persistentProcess && await this.W(ptyId, persistentProcess, revivedPtyId !== void 0);
+      const persistentProcess = this._throwIfNoPty(persistentProcessId);
+      const processDetails = persistentProcess && await this._buildProcessDetails(ptyId, persistentProcess, revivedPtyId !== void 0);
       return {
         terminal: { ...processDetails, id: persistentProcessId },
         relativeSize: hasLayout ? t.relativeSize : 0
       };
     } catch (e) {
-      this.L.warn(`Couldn't get layout info, a terminal was probably disconnected`, e.message);
-      this.L.debug("Reattach to wrong terminal debug info - layout info by id", t);
-      this.L.debug("Reattach to wrong terminal debug info - _revivePtyIdMap", Array.from(this.j.values()));
-      this.L.debug("Reattach to wrong terminal debug info - _ptys ids", Array.from(this.a.keys()));
+      this._logService.warn(`Couldn't get layout info, a terminal was probably disconnected`, e.message);
+      this._logService.debug("Reattach to wrong terminal debug info - layout info by id", t);
+      this._logService.debug("Reattach to wrong terminal debug info - _revivePtyIdMap", Array.from(this._revivedPtyIdMap.values()));
+      this._logService.debug("Reattach to wrong terminal debug info - _ptys ids", Array.from(this._ptys.keys()));
       return {
         terminal: null,
         relativeSize: hasLayout ? t.relativeSize : 0
       };
     }
   }
-  U(workspaceId, ptyId) {
+  _getRevivingProcessId(workspaceId, ptyId) {
     return `${workspaceId}-${ptyId}`;
   }
-  async W(id2, persistentProcess, wasRevived = false) {
-    $W(`code/willBuildProcessDetails/${id2}`);
-    const [cwd2, isOrphan] = await Promise.all([persistentProcess.getCwd(), wasRevived ? true : persistentProcess.isOrphaned()]);
+  async _buildProcessDetails(id2, persistentProcess, wasRevived = false) {
+    mark(`code/willBuildProcessDetails/${id2}`);
+    const [cwd3, isOrphan] = await Promise.all([persistentProcess.getCwd(), wasRevived ? true : persistentProcess.isOrphaned()]);
     const result = {
       id: id2,
       title: persistentProcess.title,
@@ -18699,7 +18699,7 @@ var $kPc = class extends $Fd {
       pid: persistentProcess.pid,
       workspaceId: persistentProcess.workspaceId,
       workspaceName: persistentProcess.workspaceName,
-      cwd: cwd2,
+      cwd: cwd3,
       isOrphan,
       icon: persistentProcess.icon,
       color: persistentProcess.color,
@@ -18714,496 +18714,496 @@ var $kPc = class extends $Fd {
       shellIntegrationNonce: persistentProcess.processLaunchOptions.options.shellIntegration.nonce,
       tabActions: persistentProcess.shellLaunchConfig.tabActions
     };
-    $W(`code/didBuildProcessDetails/${id2}`);
+    mark(`code/didBuildProcessDetails/${id2}`);
     return result;
   }
-  X(id2) {
-    const pty = this.a.get(id2);
+  _throwIfNoPty(id2) {
+    const pty = this._ptys.get(id2);
     if (!pty) {
-      throw new $Db(`Could not find pty ${id2} on pty host`);
+      throw new ErrorNoTelemetry(`Could not find pty ${id2} on pty host`);
     }
     return pty;
   }
 };
 __decorate([
-  $jPc
-], $kPc.prototype, "installAutoReply", null);
+  traceRpc
+], PtyService.prototype, "installAutoReply", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "uninstallAllAutoReplies", null);
+  traceRpc
+], PtyService.prototype, "uninstallAllAutoReplies", null);
 __decorate([
-  $Qm
-], $kPc.prototype, "traceRpcArgs", null);
+  memoize
+], PtyService.prototype, "traceRpcArgs", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "refreshIgnoreProcessNames", null);
+  traceRpc
+], PtyService.prototype, "refreshIgnoreProcessNames", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "requestDetachInstance", null);
+  traceRpc
+], PtyService.prototype, "requestDetachInstance", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "acceptDetachInstanceReply", null);
+  traceRpc
+], PtyService.prototype, "acceptDetachInstanceReply", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "freePortKillProcess", null);
+  traceRpc
+], PtyService.prototype, "freePortKillProcess", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "serializeTerminalState", null);
+  traceRpc
+], PtyService.prototype, "serializeTerminalState", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "reviveTerminalProcesses", null);
+  traceRpc
+], PtyService.prototype, "reviveTerminalProcesses", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "shutdownAll", null);
+  traceRpc
+], PtyService.prototype, "shutdownAll", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "createProcess", null);
+  traceRpc
+], PtyService.prototype, "createProcess", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "attachToProcess", null);
+  traceRpc
+], PtyService.prototype, "attachToProcess", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "updateTitle", null);
+  traceRpc
+], PtyService.prototype, "updateTitle", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "updateIcon", null);
+  traceRpc
+], PtyService.prototype, "updateIcon", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "clearBuffer", null);
+  traceRpc
+], PtyService.prototype, "clearBuffer", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "refreshProperty", null);
+  traceRpc
+], PtyService.prototype, "refreshProperty", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "updateProperty", null);
+  traceRpc
+], PtyService.prototype, "updateProperty", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "detachFromProcess", null);
+  traceRpc
+], PtyService.prototype, "detachFromProcess", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "reduceConnectionGraceTime", null);
+  traceRpc
+], PtyService.prototype, "reduceConnectionGraceTime", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "listProcesses", null);
+  traceRpc
+], PtyService.prototype, "listProcesses", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "getPerformanceMarks", null);
+  traceRpc
+], PtyService.prototype, "getPerformanceMarks", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "start", null);
+  traceRpc
+], PtyService.prototype, "start", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "shutdown", null);
+  traceRpc
+], PtyService.prototype, "shutdown", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "input", null);
+  traceRpc
+], PtyService.prototype, "input", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "sendSignal", null);
+  traceRpc
+], PtyService.prototype, "sendSignal", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "processBinary", null);
+  traceRpc
+], PtyService.prototype, "processBinary", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "resize", null);
+  traceRpc
+], PtyService.prototype, "resize", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "getInitialCwd", null);
+  traceRpc
+], PtyService.prototype, "getInitialCwd", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "getCwd", null);
+  traceRpc
+], PtyService.prototype, "getCwd", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "acknowledgeDataEvent", null);
+  traceRpc
+], PtyService.prototype, "acknowledgeDataEvent", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "setUnicodeVersion", null);
+  traceRpc
+], PtyService.prototype, "setUnicodeVersion", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "setNextCommandId", null);
+  traceRpc
+], PtyService.prototype, "setNextCommandId", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "getLatency", null);
+  traceRpc
+], PtyService.prototype, "getLatency", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "orphanQuestionReply", null);
+  traceRpc
+], PtyService.prototype, "orphanQuestionReply", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "getDefaultSystemShell", null);
+  traceRpc
+], PtyService.prototype, "getDefaultSystemShell", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "getEnvironment", null);
+  traceRpc
+], PtyService.prototype, "getEnvironment", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "getWslPath", null);
+  traceRpc
+], PtyService.prototype, "getWslPath", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "getRevivedPtyNewId", null);
+  traceRpc
+], PtyService.prototype, "getRevivedPtyNewId", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "setTerminalLayoutInfo", null);
+  traceRpc
+], PtyService.prototype, "setTerminalLayoutInfo", null);
 __decorate([
-  $jPc
-], $kPc.prototype, "getTerminalLayoutInfo", null);
+  traceRpc
+], PtyService.prototype, "getTerminalLayoutInfo", null);
 var InteractionState;
 (function(InteractionState2) {
   InteractionState2["None"] = "None";
   InteractionState2["ReplayOnly"] = "ReplayOnly";
   InteractionState2["Session"] = "Session";
 })(InteractionState || (InteractionState = {}));
-var PersistentTerminalProcess = class extends $Fd {
+var PersistentTerminalProcess = class extends Disposable {
   get pid() {
-    return this.L;
+    return this._pid;
   }
   get shellLaunchConfig() {
-    return this.W.shellLaunchConfig;
+    return this._terminalProcess.shellLaunchConfig;
   }
   get hasWrittenData() {
-    return this.j.value !== "None";
+    return this._interactionState.value !== "None";
   }
   get title() {
-    return this.N || this.W.currentTitle;
+    return this._title || this._terminalProcess.currentTitle;
   }
   get titleSource() {
-    return this.O;
+    return this._titleSource;
   }
   get icon() {
-    return this.Y;
+    return this._icon;
   }
   get color() {
-    return this.Z;
+    return this._color;
   }
   get fixedDimensions() {
-    return this.R;
+    return this._fixedDimensions;
   }
   get hasChildProcesses() {
-    return this.W.hasChildProcesses;
+    return this._terminalProcess.hasChildProcesses;
   }
   setTitle(title, titleSource) {
     if (titleSource === TitleEventSource.Api) {
-      this.j.setValue("Session", "setTitle");
-      this.P.freeRawReviveBuffer();
+      this._interactionState.setValue("Session", "setTitle");
+      this._serializer.freeRawReviveBuffer();
     }
-    this.N = title;
-    this.O = titleSource;
+    this._title = title;
+    this._titleSource = titleSource;
   }
   setIcon(userInitiated, icon, color) {
-    if (!this.Y || $sd(icon, { id: true }) && $sd(this.Y, { id: true }) && icon.id !== this.Y.id || !this.color || color !== this.Z) {
-      this.P.freeRawReviveBuffer();
+    if (!this._icon || hasKey(icon, { id: true }) && hasKey(this._icon, { id: true }) && icon.id !== this._icon.id || !this.color || color !== this._color) {
+      this._serializer.freeRawReviveBuffer();
       if (userInitiated) {
-        this.j.setValue("Session", "setIcon");
+        this._interactionState.setValue("Session", "setIcon");
       }
     }
-    this.Y = icon;
-    this.Z = color;
+    this._icon = icon;
+    this._color = color;
   }
-  S(fixedDimensions) {
-    this.R = fixedDimensions;
+  _setFixedDimensions(fixedDimensions) {
+    this._fixedDimensions = fixedDimensions;
   }
-  constructor(U, W, workspaceId, workspaceName, shouldPersistTerminal, cols, rows, processLaunchOptions, unicodeVersion, reconnectConstants, X, reviveBuffer, rawReviveBuffer, Y, Z, name, fixedDimensions) {
+  constructor(_persistentProcessId, _terminalProcess, workspaceId, workspaceName, shouldPersistTerminal, cols, rows, processLaunchOptions, unicodeVersion, reconnectConstants, _logService, reviveBuffer, rawReviveBuffer, _icon, _color, name, fixedDimensions) {
     super();
-    this.U = U;
-    this.W = W;
+    this._persistentProcessId = _persistentProcessId;
+    this._terminalProcess = _terminalProcess;
     this.workspaceId = workspaceId;
     this.workspaceName = workspaceName;
     this.shouldPersistTerminal = shouldPersistTerminal;
     this.processLaunchOptions = processLaunchOptions;
     this.unicodeVersion = unicodeVersion;
-    this.X = X;
-    this.Y = Y;
-    this.Z = Z;
-    this.f = /* @__PURE__ */ new Map();
-    this.g = false;
-    this.u = new $8h();
-    this.z = this.D(new $qf());
-    this.onProcessReplay = this.z.event;
-    this.C = this.D(new $qf());
-    this.onProcessReady = this.C.event;
-    this.F = this.D(new $qf());
-    this.onPersistentProcessReady = this.F.event;
-    this.G = this.D(new $qf());
-    this.onProcessData = this.G.event;
-    this.H = this.D(new $qf());
-    this.onProcessOrphanQuestion = this.H.event;
-    this.I = this.D(new $qf());
-    this.onDidChangeProperty = this.I.event;
-    this.J = false;
-    this.L = -1;
-    this.M = "";
-    this.O = TitleEventSource.Process;
-    this.j = new MutationLogger(`Persistent process "${this.U}" interaction state`, "None", this.X);
-    this.Q = reviveBuffer !== void 0;
-    this.P = new XtermSerializer(cols, rows, reconnectConstants.scrollback, unicodeVersion, reviveBuffer, processLaunchOptions.options.shellIntegration.nonce, shouldPersistTerminal ? rawReviveBuffer : void 0, this.X);
+    this._logService = _logService;
+    this._icon = _icon;
+    this._color = _color;
+    this._pendingCommands = /* @__PURE__ */ new Map();
+    this._isStarted = false;
+    this._orphanRequestQueue = new Queue();
+    this._onProcessReplay = this._register(new Emitter());
+    this.onProcessReplay = this._onProcessReplay.event;
+    this._onProcessReady = this._register(new Emitter());
+    this.onProcessReady = this._onProcessReady.event;
+    this._onPersistentProcessReady = this._register(new Emitter());
+    this.onPersistentProcessReady = this._onPersistentProcessReady.event;
+    this._onProcessData = this._register(new Emitter());
+    this.onProcessData = this._onProcessData.event;
+    this._onProcessOrphanQuestion = this._register(new Emitter());
+    this.onProcessOrphanQuestion = this._onProcessOrphanQuestion.event;
+    this._onDidChangeProperty = this._register(new Emitter());
+    this.onDidChangeProperty = this._onDidChangeProperty.event;
+    this._inReplay = false;
+    this._pid = -1;
+    this._cwd = "";
+    this._titleSource = TitleEventSource.Process;
+    this._interactionState = new MutationLogger(`Persistent process "${this._persistentProcessId}" interaction state`, "None", this._logService);
+    this._wasRevived = reviveBuffer !== void 0;
+    this._serializer = new XtermSerializer(cols, rows, reconnectConstants.scrollback, unicodeVersion, reviveBuffer, processLaunchOptions.options.shellIntegration.nonce, shouldPersistTerminal ? rawReviveBuffer : void 0, this._logService);
     if (name) {
       this.setTitle(name, TitleEventSource.Api);
     }
-    this.R = fixedDimensions;
-    this.n = null;
-    this.q = 0;
-    this.w = this.D(new $ci(() => {
-      this.X.info(`Persistent process "${this.U}": The reconnection grace time of ${printTime(reconnectConstants.graceTime)} has expired, shutting down pid "${this.L}"`);
+    this._fixedDimensions = fixedDimensions;
+    this._orphanQuestionBarrier = null;
+    this._orphanQuestionReplyTime = 0;
+    this._disconnectRunner1 = this._register(new ProcessTimeRunOnceScheduler(() => {
+      this._logService.info(`Persistent process "${this._persistentProcessId}": The reconnection grace time of ${printTime(reconnectConstants.graceTime)} has expired, shutting down pid "${this._pid}"`);
       this.shutdown(true);
     }, reconnectConstants.graceTime));
-    this.y = this.D(new $ci(() => {
-      this.X.info(`Persistent process "${this.U}": The short reconnection grace time of ${printTime(reconnectConstants.shortGraceTime)} has expired, shutting down pid ${this.L}`);
+    this._disconnectRunner2 = this._register(new ProcessTimeRunOnceScheduler(() => {
+      this._logService.info(`Persistent process "${this._persistentProcessId}": The short reconnection grace time of ${printTime(reconnectConstants.shortGraceTime)} has expired, shutting down pid ${this._pid}`);
       this.shutdown(true);
     }, reconnectConstants.shortGraceTime));
-    this.D(this.W.onProcessExit(() => this.a.stopBuffering(this.U)));
-    this.D(this.W.onProcessReady((e) => {
-      this.L = e.pid;
-      this.M = e.cwd;
-      this.C.fire(e);
+    this._register(this._terminalProcess.onProcessExit(() => this._bufferer.stopBuffering(this._persistentProcessId)));
+    this._register(this._terminalProcess.onProcessReady((e) => {
+      this._pid = e.pid;
+      this._cwd = e.cwd;
+      this._onProcessReady.fire(e);
     }));
-    this.D(this.W.onDidChangeProperty((e) => {
-      this.I.fire(e);
+    this._register(this._terminalProcess.onDidChangeProperty((e) => {
+      this._onDidChangeProperty.fire(e);
     }));
-    this.a = new $t4b((_, data) => this.G.fire(data));
-    this.D(this.a.startBuffering(this.U, this.W.onProcessData));
-    this.D(this.onProcessData((e) => this.P.handleData(e)));
+    this._bufferer = new TerminalDataBufferer((_, data) => this._onProcessData.fire(data));
+    this._register(this._bufferer.startBuffering(this._persistentProcessId, this._terminalProcess.onProcessData));
+    this._register(this.onProcessData((e) => this._serializer.handleData(e)));
   }
   async attach() {
-    if (!this.w.isScheduled() && !this.y.isScheduled()) {
-      this.X.warn(`Persistent process "${this.U}": Process had no disconnect runners but was an orphan`);
+    if (!this._disconnectRunner1.isScheduled() && !this._disconnectRunner2.isScheduled()) {
+      this._logService.warn(`Persistent process "${this._persistentProcessId}": Process had no disconnect runners but was an orphan`);
     }
-    this.w.cancel();
-    this.y.cancel();
+    this._disconnectRunner1.cancel();
+    this._disconnectRunner2.cancel();
   }
   async detach(forcePersist) {
-    if (this.shouldPersistTerminal && (this.j.value !== "None" || forcePersist)) {
-      this.w.schedule();
+    if (this.shouldPersistTerminal && (this._interactionState.value !== "None" || forcePersist)) {
+      this._disconnectRunner1.schedule();
     } else {
       this.shutdown(true);
     }
   }
   serializeNormalBuffer() {
-    return this.P.generateReplayEvent(
+    return this._serializer.generateReplayEvent(
       true,
-      this.j.value !== "Session"
+      this._interactionState.value !== "Session"
       /* InteractionState.Session */
     );
   }
   async refreshProperty(type) {
-    return this.W.refreshProperty(type);
+    return this._terminalProcess.refreshProperty(type);
   }
   async updateProperty(type, value) {
     if (type === "fixedDimensions") {
-      return this.S(value);
+      return this._setFixedDimensions(value);
     }
   }
   async start() {
-    if (!this.g) {
-      const result = await this.W.start();
-      if (result && $sd(result, { message: true })) {
+    if (!this._isStarted) {
+      const result = await this._terminalProcess.start();
+      if (result && hasKey(result, { message: true })) {
         return result;
       }
-      this.g = true;
-      if (this.Q) {
+      this._isStarted = true;
+      if (this._wasRevived) {
         this.triggerReplay();
       } else {
-        this.F.fire();
+        this._onPersistentProcessReady.fire();
       }
       return result;
     }
-    this.C.fire({ pid: this.L, cwd: this.M, windowsPty: this.W.getWindowsPty() });
-    this.I.fire({ type: "title", value: this.W.currentTitle });
-    this.I.fire({ type: "shellType", value: this.W.shellType });
+    this._onProcessReady.fire({ pid: this._pid, cwd: this._cwd, windowsPty: this._terminalProcess.getWindowsPty() });
+    this._onDidChangeProperty.fire({ type: "title", value: this._terminalProcess.currentTitle });
+    this._onDidChangeProperty.fire({ type: "shellType", value: this._terminalProcess.shellType });
     this.triggerReplay();
     return void 0;
   }
   shutdown(immediate) {
-    return this.W.shutdown(immediate);
+    return this._terminalProcess.shutdown(immediate);
   }
   input(data) {
-    this.j.setValue("Session", "input");
-    this.P.freeRawReviveBuffer();
-    if (this.J) {
+    this._interactionState.setValue("Session", "input");
+    this._serializer.freeRawReviveBuffer();
+    if (this._inReplay) {
       return;
     }
-    return this.W.input(data);
+    return this._terminalProcess.input(data);
   }
   sendSignal(signal) {
-    if (this.J) {
+    if (this._inReplay) {
       return;
     }
-    return this.W.sendSignal(signal);
+    return this._terminalProcess.sendSignal(signal);
   }
   writeBinary(data) {
-    return this.W.processBinary(data);
+    return this._terminalProcess.processBinary(data);
   }
   resize(cols, rows) {
-    if (this.J) {
+    if (this._inReplay) {
       return;
     }
-    this.P.handleResize(cols, rows);
-    this.a.flushBuffer(this.U);
-    return this.W.resize(cols, rows);
+    this._serializer.handleResize(cols, rows);
+    this._bufferer.flushBuffer(this._persistentProcessId);
+    return this._terminalProcess.resize(cols, rows);
   }
   async clearBuffer() {
-    this.P.clearBuffer();
-    this.W.clearBuffer();
+    this._serializer.clearBuffer();
+    this._terminalProcess.clearBuffer();
   }
   setUnicodeVersion(version) {
     this.unicodeVersion = version;
-    this.P.setUnicodeVersion?.(version);
+    this._serializer.setUnicodeVersion?.(version);
   }
   async setNextCommandId(commandLine, commandId) {
-    this.P.setNextCommandId?.(commandLine, commandId);
+    this._serializer.setNextCommandId?.(commandLine, commandId);
   }
   acknowledgeDataEvent(charCount) {
-    if (this.J) {
+    if (this._inReplay) {
       return;
     }
-    return this.W.acknowledgeDataEvent(charCount);
+    return this._terminalProcess.acknowledgeDataEvent(charCount);
   }
   getInitialCwd() {
-    return this.W.getInitialCwd();
+    return this._terminalProcess.getInitialCwd();
   }
   getCwd() {
-    return this.W.getCwd();
+    return this._terminalProcess.getCwd();
   }
   async triggerReplay() {
-    if (this.j.value === "None") {
-      this.j.setValue("ReplayOnly", "triggerReplay");
+    if (this._interactionState.value === "None") {
+      this._interactionState.setValue("ReplayOnly", "triggerReplay");
     }
-    const ev = await this.P.generateReplayEvent();
+    const ev = await this._serializer.generateReplayEvent();
     let dataLength = 0;
     for (const e of ev.events) {
       dataLength += e.data.length;
     }
-    this.X.info(`Persistent process "${this.U}": Replaying ${dataLength} chars and ${ev.events.length} size events`);
-    this.z.fire(ev);
-    this.W.clearUnacknowledgedChars();
-    this.F.fire();
+    this._logService.info(`Persistent process "${this._persistentProcessId}": Replaying ${dataLength} chars and ${ev.events.length} size events`);
+    this._onProcessReplay.fire(ev);
+    this._terminalProcess.clearUnacknowledgedChars();
+    this._onPersistentProcessReady.fire();
   }
   sendCommandResult(reqId, isError, serializedPayload) {
-    const data = this.f.get(reqId);
+    const data = this._pendingCommands.get(reqId);
     if (!data) {
       return;
     }
-    this.f.delete(reqId);
+    this._pendingCommands.delete(reqId);
   }
   orphanQuestionReply() {
-    this.q = Date.now();
-    if (this.n) {
-      const barrier = this.n;
-      this.n = null;
+    this._orphanQuestionReplyTime = Date.now();
+    if (this._orphanQuestionBarrier) {
+      const barrier = this._orphanQuestionBarrier;
+      this._orphanQuestionBarrier = null;
       barrier.open();
     }
   }
   reduceGraceTime() {
-    if (this.y.isScheduled()) {
+    if (this._disconnectRunner2.isScheduled()) {
       return;
     }
-    if (this.w.isScheduled()) {
-      this.y.schedule();
+    if (this._disconnectRunner1.isScheduled()) {
+      this._disconnectRunner2.schedule();
     }
   }
   async isOrphaned() {
-    return await this.u.queue(async () => this.$());
+    return await this._orphanRequestQueue.queue(async () => this._isOrphaned());
   }
-  async $() {
-    if (this.w.isScheduled() || this.y.isScheduled()) {
+  async _isOrphaned() {
+    if (this._disconnectRunner1.isScheduled() || this._disconnectRunner2.isScheduled()) {
       return true;
     }
-    if (!this.n) {
-      this.n = new $1h(4e3);
-      this.q = 0;
-      this.H.fire();
+    if (!this._orphanQuestionBarrier) {
+      this._orphanQuestionBarrier = new AutoOpenBarrier(4e3);
+      this._orphanQuestionReplyTime = 0;
+      this._onProcessOrphanQuestion.fire();
     }
-    await this.n.wait();
-    return Date.now() - this.q > 500;
+    await this._orphanQuestionBarrier.wait();
+    return Date.now() - this._orphanQuestionReplyTime > 500;
   }
 };
 var MutationLogger = class {
   get value() {
-    return this.d;
+    return this._value;
   }
   setValue(value, reason) {
-    if (this.d !== value) {
-      this.d = value;
-      this.g(reason);
+    if (this._value !== value) {
+      this._value = value;
+      this._log(reason);
     }
   }
-  constructor(a, d, f) {
-    this.a = a;
-    this.d = d;
-    this.f = f;
-    this.g("initialized");
+  constructor(_name, _value, _logService) {
+    this._name = _name;
+    this._value = _value;
+    this._logService = _logService;
+    this._log("initialized");
   }
-  g(reason) {
-    this.f.debug(`MutationLogger "${this.a}" set to "${this.d}", reason: ${reason}`);
+  _log(reason) {
+    this._logService.debug(`MutationLogger "${this._name}" set to "${this._value}", reason: ${reason}`);
   }
 };
 var XtermSerializer = class {
-  constructor(cols, rows, scrollback, unicodeVersion, reviveBufferWithRestoreMessage, shellIntegrationNonce, g, logService) {
-    this.g = g;
-    this.a = new XtermTerminal({
+  constructor(cols, rows, scrollback, unicodeVersion, reviveBufferWithRestoreMessage, shellIntegrationNonce, _rawReviveBuffer, logService) {
+    this._rawReviveBuffer = _rawReviveBuffer;
+    this._xterm = new XtermTerminal({
       cols,
       rows,
       scrollback,
       allowProposedApi: true
     });
     if (reviveBufferWithRestoreMessage) {
-      this.a.writeln(reviveBufferWithRestoreMessage);
+      this._xterm.writeln(reviveBufferWithRestoreMessage);
     }
     this.setUnicodeVersion(unicodeVersion);
-    this.d = new $VVb(shellIntegrationNonce, true, void 0, void 0, logService);
-    this.a.loadAddon(this.d);
+    this._shellIntegrationAddon = new ShellIntegrationAddon(shellIntegrationNonce, true, void 0, void 0, logService);
+    this._xterm.loadAddon(this._shellIntegrationAddon);
   }
   freeRawReviveBuffer() {
-    this.g = void 0;
+    this._rawReviveBuffer = void 0;
   }
   handleData(data) {
-    this.a.write(data);
+    this._xterm.write(data);
   }
   handleResize(cols, rows) {
-    this.a.resize(cols, rows);
+    this._xterm.resize(cols, rows);
   }
   clearBuffer() {
-    this.a.clear();
+    this._xterm.clear();
   }
   setNextCommandId(commandLine, commandId) {
-    this.d.setNextCommandId(commandLine, commandId);
+    this._shellIntegrationAddon.setNextCommandId(commandLine, commandId);
   }
   async generateReplayEvent(normalBufferOnly, restoreToLastReviveBuffer) {
-    const serialize = new (await this._getSerializeConstructor())();
-    this.a.loadAddon(serialize);
+    const serialize2 = new (await this._getSerializeConstructor())();
+    this._xterm.loadAddon(serialize2);
     const options = {
-      scrollback: this.a.options.scrollback
+      scrollback: this._xterm.options.scrollback
     };
     if (normalBufferOnly) {
       options.excludeAltBuffer = true;
       options.excludeModes = true;
     }
     let serialized;
-    if (restoreToLastReviveBuffer && this.g) {
-      serialized = this.g;
+    if (restoreToLastReviveBuffer && this._rawReviveBuffer) {
+      serialized = this._rawReviveBuffer;
     } else {
-      serialized = serialize.serialize(options);
+      serialized = serialize2.serialize(options);
     }
     return {
       events: [
         {
-          cols: this.a.cols,
-          rows: this.a.rows,
+          cols: this._xterm.cols,
+          rows: this._xterm.rows,
           data: serialized
         }
       ],
-      commands: this.d.serialize()
+      commands: this._shellIntegrationAddon.serialize()
     };
   }
   async setUnicodeVersion(version) {
-    if (this.a.unicode.activeVersion === version) {
+    if (this._xterm.unicode.activeVersion === version) {
       return;
     }
     if (version === "11") {
-      this.f = new (await this._getUnicode11Constructor())();
-      this.a.loadAddon(this.f);
+      this._unicodeAddon = new (await this._getUnicode11Constructor())();
+      this._xterm.loadAddon(this._unicodeAddon);
     } else {
-      this.f?.dispose();
-      this.f = void 0;
+      this._unicodeAddon?.dispose();
+      this._unicodeAddon = void 0;
     }
-    this.a.unicode.activeVersion = version;
+    this._xterm.unicode.activeVersion = version;
   }
   async _getUnicode11Constructor() {
     if (!Unicode11Addon) {
@@ -19257,31 +19257,31 @@ async function startPtyHost() {
   delete process.env.VSCODE_LATENCY;
   delete process.env.VSCODE_STARTUP_DELAY;
   if (startupDelay) {
-    await $2h(startupDelay);
+    await timeout(startupDelay);
   }
-  const _isUtilityProcess = $e_(process);
+  const _isUtilityProcess = isUtilityProcess(process);
   let server;
   if (_isUtilityProcess) {
-    server = new $f_();
+    server = new Server2();
   } else {
-    server = new $ox(TerminalIpcChannels.PtyHost);
+    server = new Server(TerminalIpcChannels.PtyHost);
   }
   const productService = { _serviceBrand: void 0, ...product_default };
-  const environmentService = new $Sn($bl(process.argv, $al), productService);
-  const loggerService = new $0v($Fo(environmentService), environmentService.logsHome);
-  server.registerChannel(TerminalIpcChannels.Logger, new $RA(loggerService, () => $wx));
+  const environmentService = new NativeEnvironmentService(parseArgs(process.argv, OPTIONS), productService);
+  const loggerService = new LoggerService(getLogLevel(environmentService), environmentService.logsHome);
+  server.registerChannel(TerminalIpcChannels.Logger, new LoggerChannel(loggerService, () => DefaultURITransformer));
   const logger = loggerService.createLogger("ptyhost", { name: localize(2364, null) });
-  const logService = new $vC(logger);
+  const logService = new LogService(logger);
   if (startupDelay) {
     logService.warn(`Pty Host startup is delayed ${startupDelay}ms`);
   }
   if (simulatedLatency) {
     logService.warn(`Pty host is simulating ${simulatedLatency}ms latency`);
   }
-  const disposables = new $Ed();
-  const heartbeatService = new $ePc();
+  const disposables = new DisposableStore();
+  const heartbeatService = new HeartbeatService();
   server.registerChannel(TerminalIpcChannels.Heartbeat, ProxyChannel.fromService(heartbeatService, disposables));
-  const ptyService = new $kPc(logService, productService, reconnectConstants, simulatedLatency);
+  const ptyService = new PtyService(logService, productService, reconnectConstants, simulatedLatency);
   const ptyServiceChannel = ProxyChannel.fromService(ptyService, disposables);
   server.registerChannel(TerminalIpcChannels.PtyHost, ptyServiceChannel);
   if (_isUtilityProcess) {

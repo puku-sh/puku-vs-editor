@@ -377,15 +377,15 @@ export default {
 
 
 // out-build/vs/nls.messages.js
-function $g() {
+function getNLSMessages() {
   return globalThis._VSCODE_NLS_MESSAGES;
 }
-function $h() {
+function getNLSLanguage() {
   return globalThis._VSCODE_NLS_LANGUAGE;
 }
 
 // out-build/vs/nls.js
-var isPseudo = $h() === "pseudo" || typeof document !== "undefined" && document.location && typeof document.location.hash === "string" && document.location.hash.indexOf("pseudo=true") >= 0;
+var isPseudo = getNLSLanguage() === "pseudo" || typeof document !== "undefined" && document.location && typeof document.location.hash === "string" && document.location.hash.indexOf("pseudo=true") >= 0;
 function _format(message, args) {
   let result;
   if (args.length === 0) {
@@ -415,7 +415,7 @@ function localize(data, message, ...args) {
   return _format(message, args);
 }
 function lookupMessage(index, fallback) {
-  const message = $g()?.[index];
+  const message = getNLSMessages()?.[index];
   if (typeof message !== "string") {
     if (typeof fallback === "string") {
       return fallback;
@@ -426,7 +426,7 @@ function lookupMessage(index, fallback) {
 }
 
 // out-build/vs/base/common/platform.js
-var $k = "en";
+var LANGUAGE_DEFAULT = "en";
 var _isWindows = false;
 var _isMacintosh = false;
 var _isLinux = false;
@@ -438,8 +438,8 @@ var _isIOS = false;
 var _isCI = false;
 var _isMobile = false;
 var _locale = void 0;
-var _language = $k;
-var _platformLocale = $k;
+var _language = LANGUAGE_DEFAULT;
+var _platformLocale = LANGUAGE_DEFAULT;
 var _translationsConfigFile = void 0;
 var _userAgent = void 0;
 var $globalThis = globalThis;
@@ -458,15 +458,15 @@ if (typeof nodeProcess === "object") {
   _isLinuxSnap = _isLinux && !!nodeProcess.env["SNAP"] && !!nodeProcess.env["SNAP_REVISION"];
   _isElectron = isElectronProcess;
   _isCI = !!nodeProcess.env["CI"] || !!nodeProcess.env["BUILD_ARTIFACTSTAGINGDIRECTORY"] || !!nodeProcess.env["GITHUB_WORKSPACE"];
-  _locale = $k;
-  _language = $k;
+  _locale = LANGUAGE_DEFAULT;
+  _language = LANGUAGE_DEFAULT;
   const rawNlsConfig = nodeProcess.env["VSCODE_NLS_CONFIG"];
   if (rawNlsConfig) {
     try {
       const nlsConfig = JSON.parse(rawNlsConfig);
       _locale = nlsConfig.userLocale;
       _platformLocale = nlsConfig.osLocale;
-      _language = nlsConfig.resolvedLanguage || $k;
+      _language = nlsConfig.resolvedLanguage || LANGUAGE_DEFAULT;
       _translationsConfigFile = nlsConfig.languagePack?.translationsConfigFile;
     } catch (e) {
     }
@@ -480,7 +480,7 @@ if (typeof nodeProcess === "object") {
   _isLinux = _userAgent.indexOf("Linux") >= 0;
   _isMobile = _userAgent?.indexOf("Mobi") >= 0;
   _isWeb = true;
-  _language = $h() || $k;
+  _language = getNLSLanguage() || LANGUAGE_DEFAULT;
   _locale = navigator.language.toLowerCase();
   _platformLocale = _locale;
 } else {
@@ -501,39 +501,39 @@ if (_isMacintosh) {
 } else if (_isLinux) {
   _platform = 2;
 }
-var $m = _isWindows;
-var $n = _isMacintosh;
-var $o = _isLinux;
-var $q = _isNative;
-var $s = _isWeb;
-var $t = _isWeb && typeof $globalThis.importScripts === "function";
-var $u = $t ? $globalThis.origin : void 0;
-var $z = _userAgent;
-var $A = _language;
+var isWindows = _isWindows;
+var isMacintosh = _isMacintosh;
+var isLinux = _isLinux;
+var isNative = _isNative;
+var isWeb = _isWeb;
+var isWebWorker = _isWeb && typeof $globalThis.importScripts === "function";
+var webWorkerOrigin = isWebWorker ? $globalThis.origin : void 0;
+var userAgent = _userAgent;
+var language = _language;
 var Language;
 (function(Language2) {
   function value() {
-    return $A;
+    return language;
   }
   Language2.value = value;
   function isDefaultVariant() {
-    if ($A.length === 2) {
-      return $A === "en";
-    } else if ($A.length >= 3) {
-      return $A[0] === "e" && $A[1] === "n" && $A[2] === "-";
+    if (language.length === 2) {
+      return language === "en";
+    } else if (language.length >= 3) {
+      return language[0] === "e" && language[1] === "n" && language[2] === "-";
     } else {
       return false;
     }
   }
   Language2.isDefaultVariant = isDefaultVariant;
   function isDefault() {
-    return $A === "en";
+    return language === "en";
   }
   Language2.isDefault = isDefault;
 })(Language || (Language = {}));
-var $E = typeof $globalThis.postMessage === "function" && !$globalThis.importScripts;
-var $F = (() => {
-  if ($E) {
+var setTimeout0IsFaster = typeof $globalThis.postMessage === "function" && !$globalThis.importScripts;
+var setTimeout0 = (() => {
+  if (setTimeout0IsFaster) {
     const pending = [];
     $globalThis.addEventListener("message", (e) => {
       if (e.data && e.data.vscodeScheduleAsyncWork) {
@@ -565,11 +565,11 @@ var OperatingSystem;
   OperatingSystem2[OperatingSystem2["Macintosh"] = 2] = "Macintosh";
   OperatingSystem2[OperatingSystem2["Linux"] = 3] = "Linux";
 })(OperatingSystem || (OperatingSystem = {}));
-var $I = !!($z && $z.indexOf("Chrome") >= 0);
-var $J = !!($z && $z.indexOf("Firefox") >= 0);
-var $K = !!(!$I && ($z && $z.indexOf("Safari") >= 0));
-var $L = !!($z && $z.indexOf("Edg/") >= 0);
-var $M = !!($z && $z.indexOf("Android") >= 0);
+var isChrome = !!(userAgent && userAgent.indexOf("Chrome") >= 0);
+var isFirefox = !!(userAgent && userAgent.indexOf("Firefox") >= 0);
+var isSafari = !!(!isChrome && (userAgent && userAgent.indexOf("Safari") >= 0));
+var isEdge = !!(userAgent && userAgent.indexOf("Edg/") >= 0);
+var isAndroid = !!(userAgent && userAgent.indexOf("Android") >= 0);
 
 // out-build/vs/base/common/process.js
 var safeProcess;
@@ -609,7 +609,7 @@ if (typeof vscodeGlobal !== "undefined" && typeof vscodeGlobal.process !== "unde
   safeProcess = {
     // Supported
     get platform() {
-      return $m ? "win32" : $n ? "darwin" : "linux";
+      return isWindows ? "win32" : isMacintosh ? "darwin" : "linux";
     },
     get arch() {
       return void 0;
@@ -623,10 +623,10 @@ if (typeof vscodeGlobal !== "undefined" && typeof vscodeGlobal.process !== "unde
     }
   };
 }
-var $2 = safeProcess.cwd;
-var $3 = safeProcess.env;
-var $4 = safeProcess.platform;
-var $5 = safeProcess.arch;
+var cwd = safeProcess.cwd;
+var env = safeProcess.env;
+var platform = safeProcess.platform;
+var arch = safeProcess.arch;
 
 // out-build/vs/base/common/path.js
 var CHAR_UPPERCASE_A = 65;
@@ -664,7 +664,7 @@ function validateString(value, name) {
     throw new ErrorInvalidArgType(name, "string", value);
   }
 }
-var platformIsWin32 = $4 === "win32";
+var platformIsWin32 = platform === "win32";
 function isPathSeparator(code) {
   return code === CHAR_FORWARD_SLASH || code === CHAR_BACKWARD_SLASH;
 }
@@ -674,7 +674,7 @@ function isPosixPathSeparator(code) {
 function isWindowsDeviceRoot(code) {
   return code >= CHAR_UPPERCASE_A && code <= CHAR_UPPERCASE_Z || code >= CHAR_LOWERCASE_A && code <= CHAR_LOWERCASE_Z;
 }
-function normalizeString(path, allowAboveRoot, separator, isPathSeparator2) {
+function normalizeString(path, allowAboveRoot, separator, isPathSeparator3) {
   let res = "";
   let lastSegmentLength = 0;
   let lastSlash = -1;
@@ -683,12 +683,12 @@ function normalizeString(path, allowAboveRoot, separator, isPathSeparator2) {
   for (let i = 0; i <= path.length; ++i) {
     if (i < path.length) {
       code = path.charCodeAt(i);
-    } else if (isPathSeparator2(code)) {
+    } else if (isPathSeparator3(code)) {
       break;
     } else {
       code = CHAR_FORWARD_SLASH;
     }
-    if (isPathSeparator2(code)) {
+    if (isPathSeparator3(code)) {
       if (lastSlash === i - 1 || dots === 1) {
       } else if (dots === 2) {
         if (res.length < 2 || lastSegmentLength !== 2 || res.charCodeAt(res.length - 1) !== CHAR_DOT || res.charCodeAt(res.length - 2) !== CHAR_DOT) {
@@ -746,7 +746,7 @@ function _format2(sep2, pathObject) {
   }
   return dir === pathObject.root ? `${dir}${base}` : `${dir}${sep2}${base}`;
 }
-var $6 = {
+var win32 = {
   // path.resolve([from ...], to)
   resolve(...pathSegments) {
     let resolvedDevice = "";
@@ -761,9 +761,9 @@ var $6 = {
           continue;
         }
       } else if (resolvedDevice.length === 0) {
-        path = $2();
+        path = cwd();
       } else {
-        path = $3[`=${resolvedDevice}`] || $2();
+        path = env[`=${resolvedDevice}`] || cwd();
         if (path === void 0 || path.slice(0, 2).toLowerCase() !== resolvedDevice.toLowerCase() && path.charCodeAt(2) === CHAR_BACKWARD_SLASH) {
           path = `${resolvedDevice}\\`;
         }
@@ -771,15 +771,15 @@ var $6 = {
       const len = path.length;
       let rootEnd = 0;
       let device = "";
-      let isAbsolute = false;
+      let isAbsolute2 = false;
       const code = path.charCodeAt(0);
       if (len === 1) {
         if (isPathSeparator(code)) {
           rootEnd = 1;
-          isAbsolute = true;
+          isAbsolute2 = true;
         }
       } else if (isPathSeparator(code)) {
-        isAbsolute = true;
+        isAbsolute2 = true;
         if (isPathSeparator(path.charCodeAt(1))) {
           let j = 2;
           let last = j;
@@ -810,7 +810,7 @@ var $6 = {
         device = path.slice(0, 2);
         rootEnd = 2;
         if (len > 2 && isPathSeparator(path.charCodeAt(2))) {
-          isAbsolute = true;
+          isAbsolute2 = true;
           rootEnd = 3;
         }
       }
@@ -829,8 +829,8 @@ var $6 = {
         }
       } else {
         resolvedTail = `${path.slice(rootEnd)}\\${resolvedTail}`;
-        resolvedAbsolute = isAbsolute;
-        if (isAbsolute && resolvedDevice.length > 0) {
+        resolvedAbsolute = isAbsolute2;
+        if (isAbsolute2 && resolvedDevice.length > 0) {
           break;
         }
       }
@@ -846,13 +846,13 @@ var $6 = {
     }
     let rootEnd = 0;
     let device;
-    let isAbsolute = false;
+    let isAbsolute2 = false;
     const code = path.charCodeAt(0);
     if (len === 1) {
       return isPosixPathSeparator(code) ? "\\" : path;
     }
     if (isPathSeparator(code)) {
-      isAbsolute = true;
+      isAbsolute2 = true;
       if (isPathSeparator(path.charCodeAt(1))) {
         let j = 2;
         let last = j;
@@ -886,18 +886,18 @@ var $6 = {
       device = path.slice(0, 2);
       rootEnd = 2;
       if (len > 2 && isPathSeparator(path.charCodeAt(2))) {
-        isAbsolute = true;
+        isAbsolute2 = true;
         rootEnd = 3;
       }
     }
-    let tail = rootEnd < len ? normalizeString(path.slice(rootEnd), !isAbsolute, "\\", isPathSeparator) : "";
-    if (tail.length === 0 && !isAbsolute) {
+    let tail = rootEnd < len ? normalizeString(path.slice(rootEnd), !isAbsolute2, "\\", isPathSeparator) : "";
+    if (tail.length === 0 && !isAbsolute2) {
       tail = ".";
     }
     if (tail.length > 0 && isPathSeparator(path.charCodeAt(len - 1))) {
       tail += "\\";
     }
-    if (!isAbsolute && device === void 0 && path.includes(":")) {
+    if (!isAbsolute2 && device === void 0 && path.includes(":")) {
       if (tail.length >= 2 && isWindowsDeviceRoot(tail.charCodeAt(0)) && tail.charCodeAt(1) === CHAR_COLON) {
         return `.\\${tail}`;
       }
@@ -909,9 +909,9 @@ var $6 = {
       } while ((index = path.indexOf(":", index + 1)) !== -1);
     }
     if (device === void 0) {
-      return isAbsolute ? `\\${tail}` : tail;
+      return isAbsolute2 ? `\\${tail}` : tail;
     }
-    return isAbsolute ? `${device}\\${tail}` : `${device}${tail}`;
+    return isAbsolute2 ? `${device}\\${tail}` : `${device}${tail}`;
   },
   isAbsolute(path) {
     validateString(path, "path");
@@ -967,7 +967,7 @@ var $6 = {
         joined = `\\${joined.slice(slashCount)}`;
       }
     }
-    return $6.normalize(joined);
+    return win32.normalize(joined);
   },
   // It will solve the relative path from `from` to `to`, for instance:
   //  from = 'C:\\orandea\\test\\aaa'
@@ -979,8 +979,8 @@ var $6 = {
     if (from === to) {
       return "";
     }
-    const fromOrig = $6.resolve(from);
-    const toOrig = $6.resolve(to);
+    const fromOrig = win32.resolve(from);
+    const toOrig = win32.resolve(to);
     if (fromOrig === toOrig) {
       return "";
     }
@@ -1092,7 +1092,7 @@ var $6 = {
     if (typeof path !== "string" || path.length === 0) {
       return path;
     }
-    const resolvedPath = $6.resolve(path);
+    const resolvedPath = win32.resolve(path);
     if (resolvedPath.length <= 2) {
       return path;
     }
@@ -1394,13 +1394,13 @@ var posixCwd = (() => {
   if (platformIsWin32) {
     const regexp = /\\/g;
     return () => {
-      const cwd = $2().replace(regexp, "/");
-      return cwd.slice(cwd.indexOf("/"));
+      const cwd2 = cwd().replace(regexp, "/");
+      return cwd2.slice(cwd2.indexOf("/"));
     };
   }
-  return () => $2();
+  return () => cwd();
 })();
-var $7 = {
+var posix = {
   // path.resolve([from ...], to)
   resolve(...pathSegments) {
     let resolvedPath = "";
@@ -1415,9 +1415,9 @@ var $7 = {
       resolvedAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     }
     if (!resolvedAbsolute) {
-      const cwd = posixCwd();
-      resolvedPath = `${cwd}/${resolvedPath}`;
-      resolvedAbsolute = cwd.charCodeAt(0) === CHAR_FORWARD_SLASH;
+      const cwd2 = posixCwd();
+      resolvedPath = `${cwd2}/${resolvedPath}`;
+      resolvedAbsolute = cwd2.charCodeAt(0) === CHAR_FORWARD_SLASH;
     }
     resolvedPath = normalizeString(resolvedPath, !resolvedAbsolute, "/", isPosixPathSeparator);
     if (resolvedAbsolute) {
@@ -1430,11 +1430,11 @@ var $7 = {
     if (path.length === 0) {
       return ".";
     }
-    const isAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+    const isAbsolute2 = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     const trailingSeparator = path.charCodeAt(path.length - 1) === CHAR_FORWARD_SLASH;
-    path = normalizeString(path, !isAbsolute, "/", isPosixPathSeparator);
+    path = normalizeString(path, !isAbsolute2, "/", isPosixPathSeparator);
     if (path.length === 0) {
-      if (isAbsolute) {
+      if (isAbsolute2) {
         return "/";
       }
       return trailingSeparator ? "./" : ".";
@@ -1442,7 +1442,7 @@ var $7 = {
     if (trailingSeparator) {
       path += "/";
     }
-    return isAbsolute ? `/${path}` : path;
+    return isAbsolute2 ? `/${path}` : path;
   },
   isAbsolute(path) {
     validateString(path, "path");
@@ -1463,7 +1463,7 @@ var $7 = {
     if (path.length === 0) {
       return ".";
     }
-    return $7.normalize(path.join("/"));
+    return posix.normalize(path.join("/"));
   },
   relative(from, to) {
     validateString(from, "from");
@@ -1471,8 +1471,8 @@ var $7 = {
     if (from === to) {
       return "";
     }
-    from = $7.resolve(from);
-    to = $7.resolve(to);
+    from = posix.resolve(from);
+    to = posix.resolve(to);
     if (from === to) {
       return "";
     }
@@ -1651,9 +1651,9 @@ var $7 = {
     if (path.length === 0) {
       return ret;
     }
-    const isAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+    const isAbsolute2 = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     let start;
-    if (isAbsolute) {
+    if (isAbsolute2) {
       ret.root = "/";
       start = 1;
     } else {
@@ -1689,7 +1689,7 @@ var $7 = {
       }
     }
     if (end !== -1) {
-      const start2 = startPart === 0 && isAbsolute ? 1 : startPart;
+      const start2 = startPart === 0 && isAbsolute2 ? 1 : startPart;
       if (startDot === -1 || // We saw a non-dot character immediately before the dot
       preDotState === 0 || // The (right-most) trimmed path component is exactly '..'
       preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
@@ -1702,7 +1702,7 @@ var $7 = {
     }
     if (startPart > 0) {
       ret.dir = path.slice(0, startPart - 1);
-    } else if (isAbsolute) {
+    } else if (isAbsolute2) {
       ret.dir = "/";
     }
     return ret;
@@ -1712,21 +1712,21 @@ var $7 = {
   win32: null,
   posix: null
 };
-$7.win32 = $6.win32 = $6;
-$7.posix = $6.posix = $7;
-var $8 = platformIsWin32 ? $6.normalize : $7.normalize;
-var $9 = platformIsWin32 ? $6.isAbsolute : $7.isAbsolute;
-var $0 = platformIsWin32 ? $6.join : $7.join;
-var $$ = platformIsWin32 ? $6.resolve : $7.resolve;
-var $_ = platformIsWin32 ? $6.relative : $7.relative;
-var $ab = platformIsWin32 ? $6.dirname : $7.dirname;
-var $bb = platformIsWin32 ? $6.basename : $7.basename;
-var $cb = platformIsWin32 ? $6.extname : $7.extname;
-var $db = platformIsWin32 ? $6.format : $7.format;
-var $eb = platformIsWin32 ? $6.parse : $7.parse;
-var $fb = platformIsWin32 ? $6.toNamespacedPath : $7.toNamespacedPath;
-var sep = platformIsWin32 ? $6.sep : $7.sep;
-var $hb = platformIsWin32 ? $6.delimiter : $7.delimiter;
+posix.win32 = win32.win32 = win32;
+posix.posix = win32.posix = posix;
+var normalize = platformIsWin32 ? win32.normalize : posix.normalize;
+var isAbsolute = platformIsWin32 ? win32.isAbsolute : posix.isAbsolute;
+var join = platformIsWin32 ? win32.join : posix.join;
+var resolve = platformIsWin32 ? win32.resolve : posix.resolve;
+var relative = platformIsWin32 ? win32.relative : posix.relative;
+var dirname = platformIsWin32 ? win32.dirname : posix.dirname;
+var basename = platformIsWin32 ? win32.basename : posix.basename;
+var extname = platformIsWin32 ? win32.extname : posix.extname;
+var format = platformIsWin32 ? win32.format : posix.format;
+var parse = platformIsWin32 ? win32.parse : posix.parse;
+var toNamespacedPath = platformIsWin32 ? win32.toNamespacedPath : posix.toNamespacedPath;
+var sep = platformIsWin32 ? win32.sep : posix.sep;
+var delimiter = platformIsWin32 ? win32.delimiter : posix.delimiter;
 
 // out-build/vs/base/common/uri.js
 var _schemePattern = /^\w[\w\d+.-]*$/;
@@ -1829,7 +1829,7 @@ var URI = class _URI {
    * with URIs that represent files on disk (`file` scheme).
    */
   get fsPath() {
-    return $Lc(this, false);
+    return uriToFsPath(this, false);
   }
   // ---- modify to new -------------------------
   with(change) {
@@ -1904,7 +1904,7 @@ var URI = class _URI {
    */
   static file(path) {
     let authority = _empty;
-    if ($m) {
+    if (isWindows) {
       path = path.replace(/\\/g, _slash);
     }
     if (path[0] === _slash && path[1] === _slash) {
@@ -1942,10 +1942,10 @@ var URI = class _URI {
       throw new Error(`[UriError]: cannot call joinPath on URI without path`);
     }
     let newPath;
-    if ($m && uri.scheme === "file") {
-      newPath = _URI.file($6.join($Lc(uri, true), ...pathFragment)).path;
+    if (isWindows && uri.scheme === "file") {
+      newPath = _URI.file(win32.join(uriToFsPath(uri, true), ...pathFragment)).path;
     } else {
-      newPath = $7.join(uri.path, ...pathFragment);
+      newPath = posix.join(uri.path, ...pathFragment);
     }
     return uri.with({ path: newPath });
   }
@@ -1983,7 +1983,7 @@ var URI = class _URI {
     return `URI(${this.toString()})`;
   }
 };
-var _pathSepMarker = $m ? 1 : void 0;
+var _pathSepMarker = isWindows ? 1 : void 0;
 var Uri = class extends URI {
   constructor() {
     super(...arguments);
@@ -1992,7 +1992,7 @@ var Uri = class extends URI {
   }
   get fsPath() {
     if (!this._fsPath) {
-      this._fsPath = $Lc(this, false);
+      this._fsPath = uriToFsPath(this, false);
     }
     return this._fsPath;
   }
@@ -2167,7 +2167,7 @@ function encodeURIComponentMinimal(path) {
   }
   return res !== void 0 ? res : path;
 }
-function $Lc(uri, keepDriveLetterCasing) {
+function uriToFsPath(uri, keepDriveLetterCasing) {
   let value;
   if (uri.authority && uri.path.length > 1 && uri.scheme === "file") {
     value = `//${uri.authority}${uri.path}`;
@@ -2180,7 +2180,7 @@ function $Lc(uri, keepDriveLetterCasing) {
   } else {
     value = uri.path;
   }
-  if ($m) {
+  if (isWindows) {
     value = value.replace(/\//g, "\\");
   }
   return value;
@@ -2265,11 +2265,11 @@ function percentDecode(str) {
 }
 
 // out-build/vs/base/common/arraysFind.js
-function $Kb(array, predicate) {
-  const idx = $Lb(array, predicate);
+function findLastMonotonous(array, predicate) {
+  const idx = findLastIdxMonotonous(array, predicate);
   return idx === -1 ? void 0 : array[idx];
 }
-function $Lb(array, predicate, startIdx = 0, endIdxEx = array.length) {
+function findLastIdxMonotonous(array, predicate, startIdx = 0, endIdxEx = array.length) {
   let i = startIdx;
   let j = endIdxEx;
   while (i < j) {
@@ -2282,7 +2282,7 @@ function $Lb(array, predicate, startIdx = 0, endIdxEx = array.length) {
   }
   return i - 1;
 }
-function $Nb(array, predicate, startIdx = 0, endIdxEx = array.length) {
+function findFirstIdxMonotonousOrArrLen(array, predicate, startIdx = 0, endIdxEx = array.length) {
   let i = startIdx;
   let j = endIdxEx;
   while (i < j) {
@@ -2295,44 +2295,44 @@ function $Nb(array, predicate, startIdx = 0, endIdxEx = array.length) {
   }
   return i;
 }
-var $Pb = class _$Pb {
+var MonotonousArray = class _MonotonousArray {
   static {
     this.assertInvariants = false;
   }
-  constructor(e) {
-    this.e = e;
-    this.c = 0;
+  constructor(_array) {
+    this._array = _array;
+    this._findLastMonotonousLastIdx = 0;
   }
   /**
    * The predicate must be monotonous, i.e. `arr.map(predicate)` must be like `[true, ..., true, false, ..., false]`!
    * For subsequent calls, current predicate must be weaker than (or equal to) the previous predicate, i.e. more entries must be `true`.
    */
   findLastMonotonous(predicate) {
-    if (_$Pb.assertInvariants) {
-      if (this.d) {
-        for (const item of this.e) {
-          if (this.d(item) && !predicate(item)) {
+    if (_MonotonousArray.assertInvariants) {
+      if (this._prevFindLastPredicate) {
+        for (const item of this._array) {
+          if (this._prevFindLastPredicate(item) && !predicate(item)) {
             throw new Error("MonotonousArray: current predicate must be weaker than (or equal to) the previous predicate.");
           }
         }
       }
-      this.d = predicate;
+      this._prevFindLastPredicate = predicate;
     }
-    const idx = $Lb(this.e, predicate, this.c);
-    this.c = idx + 1;
-    return idx === -1 ? void 0 : this.e[idx];
+    const idx = findLastIdxMonotonous(this._array, predicate, this._findLastMonotonousLastIdx);
+    this._findLastMonotonousLastIdx = idx + 1;
+    return idx === -1 ? void 0 : this._array[idx];
   }
 };
 
 // out-build/vs/base/common/errors.js
-var $ib = class {
+var ErrorHandler = class {
   constructor() {
-    this.b = [];
-    this.a = function(e) {
+    this.listeners = [];
+    this.unexpectedErrorHandler = function(e) {
       setTimeout(() => {
         if (e.stack) {
-          if ($Db.isErrorNoTelemetry(e)) {
-            throw new $Db(e.message + "\n\n" + e.stack);
+          if (ErrorNoTelemetry.isErrorNoTelemetry(e)) {
+            throw new ErrorNoTelemetry(e.message + "\n\n" + e.stack);
           }
           throw new Error(e.message + "\n\n" + e.stack);
         }
@@ -2341,46 +2341,46 @@ var $ib = class {
     };
   }
   addListener(listener) {
-    this.b.push(listener);
+    this.listeners.push(listener);
     return () => {
-      this.d(listener);
+      this._removeListener(listener);
     };
   }
-  c(e) {
-    this.b.forEach((listener) => {
+  emit(e) {
+    this.listeners.forEach((listener) => {
       listener(e);
     });
   }
-  d(listener) {
-    this.b.splice(this.b.indexOf(listener), 1);
+  _removeListener(listener) {
+    this.listeners.splice(this.listeners.indexOf(listener), 1);
   }
   setUnexpectedErrorHandler(newUnexpectedErrorHandler) {
-    this.a = newUnexpectedErrorHandler;
+    this.unexpectedErrorHandler = newUnexpectedErrorHandler;
   }
   getUnexpectedErrorHandler() {
-    return this.a;
+    return this.unexpectedErrorHandler;
   }
   onUnexpectedError(e) {
-    this.a(e);
-    this.c(e);
+    this.unexpectedErrorHandler(e);
+    this.emit(e);
   }
   // For external errors, we don't want the listeners to be called
   onUnexpectedExternalError(e) {
-    this.a(e);
+    this.unexpectedErrorHandler(e);
   }
 };
-var $jb = new $ib();
-function $mb(e) {
-  $jb.onUnexpectedError(e);
+var errorHandler = new ErrorHandler();
+function onBugIndicatingError(e) {
+  errorHandler.onUnexpectedError(e);
   return void 0;
 }
-function $nb(e) {
-  if (!$sb(e)) {
-    $jb.onUnexpectedError(e);
+function onUnexpectedError(e) {
+  if (!isCancellationError(e)) {
+    errorHandler.onUnexpectedError(e);
   }
   return void 0;
 }
-function $pb(error) {
+function transformErrorForSerialization(error) {
   if (error instanceof Error) {
     const { name, message, cause } = error;
     const stack = error.stacktrace || error.stack;
@@ -2389,48 +2389,48 @@ function $pb(error) {
       name,
       message,
       stack,
-      noTelemetry: $Db.isErrorNoTelemetry(error),
-      cause: cause ? $pb(cause) : void 0,
+      noTelemetry: ErrorNoTelemetry.isErrorNoTelemetry(error),
+      cause: cause ? transformErrorForSerialization(cause) : void 0,
       code: error.code
     };
   }
   return error;
 }
-var $rb = "Canceled";
-function $sb(error) {
-  if (error instanceof $tb) {
+var canceledName = "Canceled";
+function isCancellationError(error) {
+  if (error instanceof CancellationError) {
     return true;
   }
-  return error instanceof Error && error.name === $rb && error.message === $rb;
+  return error instanceof Error && error.name === canceledName && error.message === canceledName;
 }
-var $tb = class extends Error {
+var CancellationError = class extends Error {
   constructor() {
-    super($rb);
+    super(canceledName);
     this.name = this.message;
   }
 };
-var $ub = class _$ub extends Error {
+var PendingMigrationError = class _PendingMigrationError extends Error {
   static {
-    this.a = "PendingMigrationError";
+    this._name = "PendingMigrationError";
   }
   static is(error) {
-    return error instanceof _$ub || error instanceof Error && error.name === _$ub.a;
+    return error instanceof _PendingMigrationError || error instanceof Error && error.name === _PendingMigrationError._name;
   }
   constructor(message) {
     super(message);
-    this.name = _$ub.a;
+    this.name = _PendingMigrationError._name;
   }
 };
-var $Db = class _$Db extends Error {
+var ErrorNoTelemetry = class _ErrorNoTelemetry extends Error {
   constructor(msg) {
     super(msg);
     this.name = "CodeExpectedError";
   }
   static fromError(err) {
-    if (err instanceof _$Db) {
+    if (err instanceof _ErrorNoTelemetry) {
       return err;
     }
-    const result = new _$Db();
+    const result = new _ErrorNoTelemetry();
     result.message = err.message;
     result.stack = err.stack;
     return result;
@@ -2439,15 +2439,15 @@ var $Db = class _$Db extends Error {
     return err.name === "CodeExpectedError";
   }
 };
-var $Eb = class _$Eb extends Error {
+var BugIndicatingError = class _BugIndicatingError extends Error {
   constructor(message) {
     super(message || "An unexpected bug occurred.");
-    Object.setPrototypeOf(this, _$Eb.prototype);
+    Object.setPrototypeOf(this, _BugIndicatingError.prototype);
   }
 };
 
 // out-build/vs/base/common/arrays.js
-function $lc(target, insertIndex, insertArr) {
+function arrayInsert(target, insertIndex, insertArr) {
   const before = target.slice(0, insertIndex);
   const after = target.slice(insertIndex);
   return before.concat(insertArr, after);
@@ -2474,13 +2474,13 @@ var CompareResult;
   CompareResult2.lessThan = -1;
   CompareResult2.neitherLessOrGreaterThan = 0;
 })(CompareResult || (CompareResult = {}));
-function $xc(selector, comparator) {
+function compareBy(selector, comparator) {
   return (a, b) => comparator(selector(a), selector(b));
 }
-var $zc = (a, b) => a - b;
-var $Ec = class _$Ec {
+var numberComparator = (a, b) => a - b;
+var CallbackIterable = class _CallbackIterable {
   static {
-    this.empty = new _$Ec((_callback) => {
+    this.empty = new _CallbackIterable((_callback) => {
     });
   }
   constructor(iterate) {
@@ -2501,10 +2501,10 @@ var $Ec = class _$Ec {
     return result;
   }
   filter(predicate) {
-    return new _$Ec((cb) => this.iterate((item) => predicate(item) ? cb(item) : true));
+    return new _CallbackIterable((cb) => this.iterate((item) => predicate(item) ? cb(item) : true));
   }
   map(mapFn) {
-    return new _$Ec((cb) => this.iterate((item) => cb(mapFn(item))));
+    return new _CallbackIterable((cb) => this.iterate((item) => cb(mapFn(item))));
   }
   some(predicate) {
     let result = false;
@@ -2551,7 +2551,7 @@ var $Ec = class _$Ec {
 
 // out-build/vs/base/common/collections.js
 var _a;
-function $a(data, groupFn) {
+function groupBy(data, groupFn) {
   const result = /* @__PURE__ */ Object.create(null);
   for (const element of data) {
     const key = groupFn(element);
@@ -2563,34 +2563,34 @@ function $a(data, groupFn) {
   }
   return result;
 }
-var $f = class {
+var SetWithKey = class {
   static {
     _a = Symbol.toStringTag;
   }
-  constructor(values, b) {
-    this.b = b;
-    this.a = /* @__PURE__ */ new Map();
+  constructor(values, toKey) {
+    this.toKey = toKey;
+    this._map = /* @__PURE__ */ new Map();
     this[_a] = "SetWithKey";
     for (const value of values) {
       this.add(value);
     }
   }
   get size() {
-    return this.a.size;
+    return this._map.size;
   }
   add(value) {
-    const key = this.b(value);
-    this.a.set(key, value);
+    const key = this.toKey(value);
+    this._map.set(key, value);
     return this;
   }
   delete(value) {
-    return this.a.delete(this.b(value));
+    return this._map.delete(this.toKey(value));
   }
   has(value) {
-    return this.a.has(this.b(value));
+    return this._map.has(this.toKey(value));
   }
   *entries() {
-    for (const entry of this.a.values()) {
+    for (const entry of this._map.values()) {
       yield [entry, entry];
     }
   }
@@ -2598,15 +2598,15 @@ var $f = class {
     return this.values();
   }
   *values() {
-    for (const entry of this.a.values()) {
+    for (const entry of this._map.values()) {
       yield entry;
     }
   }
   clear() {
-    this.a.clear();
+    this._map.clear();
   }
   forEach(callbackfn, thisArg) {
-    this.a.forEach((entry) => callbackfn.call(thisArg, entry, entry, this));
+    this._map.forEach((entry) => callbackfn.call(thisArg, entry, entry, this));
   }
   [Symbol.iterator]() {
     return this.values();
@@ -2626,111 +2626,111 @@ var ResourceMapEntry = class {
 function isEntries(arg) {
   return Array.isArray(arg);
 }
-var $Pc = class _$Pc {
+var ResourceMap = class _ResourceMap {
   static {
-    this.c = (resource) => resource.toString();
+    this.defaultToKey = (resource) => resource.toString();
   }
   constructor(arg, toKey) {
     this[_a2] = "ResourceMap";
-    if (arg instanceof _$Pc) {
-      this.d = new Map(arg.d);
-      this.e = toKey ?? _$Pc.c;
+    if (arg instanceof _ResourceMap) {
+      this.map = new Map(arg.map);
+      this.toKey = toKey ?? _ResourceMap.defaultToKey;
     } else if (isEntries(arg)) {
-      this.d = /* @__PURE__ */ new Map();
-      this.e = toKey ?? _$Pc.c;
+      this.map = /* @__PURE__ */ new Map();
+      this.toKey = toKey ?? _ResourceMap.defaultToKey;
       for (const [resource, value] of arg) {
         this.set(resource, value);
       }
     } else {
-      this.d = /* @__PURE__ */ new Map();
-      this.e = arg ?? _$Pc.c;
+      this.map = /* @__PURE__ */ new Map();
+      this.toKey = arg ?? _ResourceMap.defaultToKey;
     }
   }
   set(resource, value) {
-    this.d.set(this.e(resource), new ResourceMapEntry(resource, value));
+    this.map.set(this.toKey(resource), new ResourceMapEntry(resource, value));
     return this;
   }
   get(resource) {
-    return this.d.get(this.e(resource))?.value;
+    return this.map.get(this.toKey(resource))?.value;
   }
   has(resource) {
-    return this.d.has(this.e(resource));
+    return this.map.has(this.toKey(resource));
   }
   get size() {
-    return this.d.size;
+    return this.map.size;
   }
   clear() {
-    this.d.clear();
+    this.map.clear();
   }
   delete(resource) {
-    return this.d.delete(this.e(resource));
+    return this.map.delete(this.toKey(resource));
   }
   forEach(clb, thisArg) {
     if (typeof thisArg !== "undefined") {
       clb = clb.bind(thisArg);
     }
-    for (const [_, entry] of this.d) {
+    for (const [_, entry] of this.map) {
       clb(entry.value, entry.uri, this);
     }
   }
   *values() {
-    for (const entry of this.d.values()) {
+    for (const entry of this.map.values()) {
       yield entry.value;
     }
   }
   *keys() {
-    for (const entry of this.d.values()) {
+    for (const entry of this.map.values()) {
       yield entry.uri;
     }
   }
   *entries() {
-    for (const entry of this.d.values()) {
+    for (const entry of this.map.values()) {
       yield [entry.uri, entry.value];
     }
   }
   *[(_a2 = Symbol.toStringTag, Symbol.iterator)]() {
-    for (const [, entry] of this.d) {
+    for (const [, entry] of this.map) {
       yield [entry.uri, entry.value];
     }
   }
 };
-var $Qc = class {
+var ResourceSet = class {
   constructor(entriesOrKey, toKey) {
     this[_b] = "ResourceSet";
     if (!entriesOrKey || typeof entriesOrKey === "function") {
-      this.c = new $Pc(entriesOrKey);
+      this._map = new ResourceMap(entriesOrKey);
     } else {
-      this.c = new $Pc(toKey);
+      this._map = new ResourceMap(toKey);
       entriesOrKey.forEach(this.add, this);
     }
   }
   get size() {
-    return this.c.size;
+    return this._map.size;
   }
   add(value) {
-    this.c.set(value, value);
+    this._map.set(value, value);
     return this;
   }
   clear() {
-    this.c.clear();
+    this._map.clear();
   }
   delete(value) {
-    return this.c.delete(value);
+    return this._map.delete(value);
   }
   forEach(callbackfn, thisArg) {
-    this.c.forEach((_value, key) => callbackfn.call(thisArg, key, key, this));
+    this._map.forEach((_value, key) => callbackfn.call(thisArg, key, key, this));
   }
   has(value) {
-    return this.c.has(value);
+    return this._map.has(value);
   }
   entries() {
-    return this.c.entries();
+    return this._map.entries();
   }
   keys() {
-    return this.c.keys();
+    return this._map.keys();
   }
   values() {
-    return this.c.keys();
+    return this._map.keys();
   }
   [(_b = Symbol.toStringTag, Symbol.iterator)]() {
     return this.keys();
@@ -2742,72 +2742,72 @@ var Touch;
   Touch2[Touch2["AsOld"] = 1] = "AsOld";
   Touch2[Touch2["AsNew"] = 2] = "AsNew";
 })(Touch || (Touch = {}));
-var $Rc = class {
+var LinkedMap = class {
   constructor() {
     this[_c] = "LinkedMap";
-    this.c = /* @__PURE__ */ new Map();
-    this.d = void 0;
-    this.e = void 0;
-    this.f = 0;
-    this.g = 0;
+    this._map = /* @__PURE__ */ new Map();
+    this._head = void 0;
+    this._tail = void 0;
+    this._size = 0;
+    this._state = 0;
   }
   clear() {
-    this.c.clear();
-    this.d = void 0;
-    this.e = void 0;
-    this.f = 0;
-    this.g++;
+    this._map.clear();
+    this._head = void 0;
+    this._tail = void 0;
+    this._size = 0;
+    this._state++;
   }
   isEmpty() {
-    return !this.d && !this.e;
+    return !this._head && !this._tail;
   }
   get size() {
-    return this.f;
+    return this._size;
   }
   get first() {
-    return this.d?.value;
+    return this._head?.value;
   }
   get last() {
-    return this.e?.value;
+    return this._tail?.value;
   }
   has(key) {
-    return this.c.has(key);
+    return this._map.has(key);
   }
   get(key, touch = 0) {
-    const item = this.c.get(key);
+    const item = this._map.get(key);
     if (!item) {
       return void 0;
     }
     if (touch !== 0) {
-      this.n(item, touch);
+      this.touch(item, touch);
     }
     return item.value;
   }
   set(key, value, touch = 0) {
-    let item = this.c.get(key);
+    let item = this._map.get(key);
     if (item) {
       item.value = value;
       if (touch !== 0) {
-        this.n(item, touch);
+        this.touch(item, touch);
       }
     } else {
       item = { key, value, next: void 0, previous: void 0 };
       switch (touch) {
         case 0:
-          this.l(item);
+          this.addItemLast(item);
           break;
         case 1:
-          this.k(item);
+          this.addItemFirst(item);
           break;
         case 2:
-          this.l(item);
+          this.addItemLast(item);
           break;
         default:
-          this.l(item);
+          this.addItemLast(item);
           break;
       }
-      this.c.set(key, item);
-      this.f++;
+      this._map.set(key, item);
+      this._size++;
     }
     return this;
   }
@@ -2815,38 +2815,38 @@ var $Rc = class {
     return !!this.remove(key);
   }
   remove(key) {
-    const item = this.c.get(key);
+    const item = this._map.get(key);
     if (!item) {
       return void 0;
     }
-    this.c.delete(key);
-    this.m(item);
-    this.f--;
+    this._map.delete(key);
+    this.removeItem(item);
+    this._size--;
     return item.value;
   }
   shift() {
-    if (!this.d && !this.e) {
+    if (!this._head && !this._tail) {
       return void 0;
     }
-    if (!this.d || !this.e) {
+    if (!this._head || !this._tail) {
       throw new Error("Invalid list");
     }
-    const item = this.d;
-    this.c.delete(item.key);
-    this.m(item);
-    this.f--;
+    const item = this._head;
+    this._map.delete(item.key);
+    this.removeItem(item);
+    this._size--;
     return item.value;
   }
   forEach(callbackfn, thisArg) {
-    const state = this.g;
-    let current = this.d;
+    const state = this._state;
+    let current = this._head;
     while (current) {
       if (thisArg) {
         callbackfn.bind(thisArg)(current.value, current.key, this);
       } else {
         callbackfn(current.value, current.key, this);
       }
-      if (this.g !== state) {
+      if (this._state !== state) {
         throw new Error(`LinkedMap got modified during iteration.`);
       }
       current = current.next;
@@ -2854,14 +2854,14 @@ var $Rc = class {
   }
   keys() {
     const map = this;
-    const state = this.g;
-    let current = this.d;
+    const state = this._state;
+    let current = this._head;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map.g !== state) {
+        if (map._state !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -2877,14 +2877,14 @@ var $Rc = class {
   }
   values() {
     const map = this;
-    const state = this.g;
-    let current = this.d;
+    const state = this._state;
+    let current = this._head;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map.g !== state) {
+        if (map._state !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -2900,14 +2900,14 @@ var $Rc = class {
   }
   entries() {
     const map = this;
-    const state = this.g;
-    let current = this.d;
+    const state = this._state;
+    let current = this._head;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map.g !== state) {
+        if (map._state !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -2924,7 +2924,7 @@ var $Rc = class {
   [(_c = Symbol.toStringTag, Symbol.iterator)]() {
     return this.entries();
   }
-  h(newSize) {
+  trimOld(newSize) {
     if (newSize >= this.size) {
       return;
     }
@@ -2932,21 +2932,21 @@ var $Rc = class {
       this.clear();
       return;
     }
-    let current = this.d;
+    let current = this._head;
     let currentSize = this.size;
     while (current && currentSize > newSize) {
-      this.c.delete(current.key);
+      this._map.delete(current.key);
       current = current.next;
       currentSize--;
     }
-    this.d = current;
-    this.f = currentSize;
+    this._head = current;
+    this._size = currentSize;
     if (current) {
       current.previous = void 0;
     }
-    this.g++;
+    this._state++;
   }
-  j(newSize) {
+  trimNew(newSize) {
     if (newSize >= this.size) {
       return;
     }
@@ -2954,60 +2954,60 @@ var $Rc = class {
       this.clear();
       return;
     }
-    let current = this.e;
+    let current = this._tail;
     let currentSize = this.size;
     while (current && currentSize > newSize) {
-      this.c.delete(current.key);
+      this._map.delete(current.key);
       current = current.previous;
       currentSize--;
     }
-    this.e = current;
-    this.f = currentSize;
+    this._tail = current;
+    this._size = currentSize;
     if (current) {
       current.next = void 0;
     }
-    this.g++;
+    this._state++;
   }
-  k(item) {
-    if (!this.d && !this.e) {
-      this.e = item;
-    } else if (!this.d) {
+  addItemFirst(item) {
+    if (!this._head && !this._tail) {
+      this._tail = item;
+    } else if (!this._head) {
       throw new Error("Invalid list");
     } else {
-      item.next = this.d;
-      this.d.previous = item;
+      item.next = this._head;
+      this._head.previous = item;
     }
-    this.d = item;
-    this.g++;
+    this._head = item;
+    this._state++;
   }
-  l(item) {
-    if (!this.d && !this.e) {
-      this.d = item;
-    } else if (!this.e) {
+  addItemLast(item) {
+    if (!this._head && !this._tail) {
+      this._head = item;
+    } else if (!this._tail) {
       throw new Error("Invalid list");
     } else {
-      item.previous = this.e;
-      this.e.next = item;
+      item.previous = this._tail;
+      this._tail.next = item;
     }
-    this.e = item;
-    this.g++;
+    this._tail = item;
+    this._state++;
   }
-  m(item) {
-    if (item === this.d && item === this.e) {
-      this.d = void 0;
-      this.e = void 0;
-    } else if (item === this.d) {
+  removeItem(item) {
+    if (item === this._head && item === this._tail) {
+      this._head = void 0;
+      this._tail = void 0;
+    } else if (item === this._head) {
       if (!item.next) {
         throw new Error("Invalid list");
       }
       item.next.previous = void 0;
-      this.d = item.next;
-    } else if (item === this.e) {
+      this._head = item.next;
+    } else if (item === this._tail) {
       if (!item.previous) {
         throw new Error("Invalid list");
       }
       item.previous.next = void 0;
-      this.e = item.previous;
+      this._tail = item.previous;
     } else {
       const next = item.next;
       const previous = item.previous;
@@ -3019,51 +3019,51 @@ var $Rc = class {
     }
     item.next = void 0;
     item.previous = void 0;
-    this.g++;
+    this._state++;
   }
-  n(item, touch) {
-    if (!this.d || !this.e) {
+  touch(item, touch) {
+    if (!this._head || !this._tail) {
       throw new Error("Invalid list");
     }
     if (touch !== 1 && touch !== 2) {
       return;
     }
     if (touch === 1) {
-      if (item === this.d) {
+      if (item === this._head) {
         return;
       }
       const next = item.next;
       const previous = item.previous;
-      if (item === this.e) {
+      if (item === this._tail) {
         previous.next = void 0;
-        this.e = previous;
+        this._tail = previous;
       } else {
         next.previous = previous;
         previous.next = next;
       }
       item.previous = void 0;
-      item.next = this.d;
-      this.d.previous = item;
-      this.d = item;
-      this.g++;
+      item.next = this._head;
+      this._head.previous = item;
+      this._head = item;
+      this._state++;
     } else if (touch === 2) {
-      if (item === this.e) {
+      if (item === this._tail) {
         return;
       }
       const next = item.next;
       const previous = item.previous;
-      if (item === this.d) {
+      if (item === this._head) {
         next.previous = void 0;
-        this.d = next;
+        this._head = next;
       } else {
         next.previous = previous;
         previous.next = next;
       }
       item.next = void 0;
-      item.previous = this.e;
-      this.e.next = item;
-      this.e = item;
-      this.g++;
+      item.previous = this._tail;
+      this._tail.next = item;
+      this._tail = item;
+      this._state++;
     }
   }
   toJSON() {
@@ -3080,37 +3080,37 @@ var $Rc = class {
     }
   }
 };
-var $Wc = class {
+var SetMap = class {
   constructor() {
-    this.c = /* @__PURE__ */ new Map();
+    this.map = /* @__PURE__ */ new Map();
   }
   add(key, value) {
-    let values = this.c.get(key);
+    let values = this.map.get(key);
     if (!values) {
       values = /* @__PURE__ */ new Set();
-      this.c.set(key, values);
+      this.map.set(key, values);
     }
     values.add(value);
   }
   delete(key, value) {
-    const values = this.c.get(key);
+    const values = this.map.get(key);
     if (!values) {
       return;
     }
     values.delete(value);
     if (values.size === 0) {
-      this.c.delete(key);
+      this.map.delete(key);
     }
   }
   forEach(key, fn) {
-    const values = this.c.get(key);
+    const values = this.map.get(key);
     if (!values) {
       return;
     }
     values.forEach(fn);
   }
   get(key) {
-    const values = this.c.get(key);
+    const values = this.map.get(key);
     if (!values) {
       return /* @__PURE__ */ new Set();
     }
@@ -3119,29 +3119,29 @@ var $Wc = class {
 };
 
 // out-build/vs/base/common/assert.js
-function $5c(condition) {
+function assertFn(condition) {
   if (!condition()) {
     debugger;
     condition();
-    $nb(new $Eb("Assertion Failed"));
+    onUnexpectedError(new BugIndicatingError("Assertion Failed"));
   }
 }
 
 // out-build/vs/base/common/types.js
-function $7c(str) {
+function isString(str) {
   return typeof str === "string";
 }
-function $ad(obj) {
+function isIterable(obj) {
   return !!obj && typeof obj[Symbol.iterator] === "function";
 }
-function $dd(obj) {
+function isUndefined(obj) {
   return typeof obj === "undefined";
 }
-function $ed(arg) {
-  return !$fd(arg);
+function isDefined(arg) {
+  return !isUndefinedOrNull(arg);
 }
-function $fd(obj) {
-  return $dd(obj) || obj === null;
+function isUndefinedOrNull(obj) {
+  return isUndefined(obj) || obj === null;
 }
 
 // out-build/vs/base/common/iterator.js
@@ -3239,7 +3239,7 @@ var Iterable;
   Iterable2.flatMap = flatMap;
   function* concat(...iterables) {
     for (const item of iterables) {
-      if ($ad(item)) {
+      if (isIterable(item)) {
         yield* item;
       } else {
         yield item;
@@ -3319,49 +3319,49 @@ var Iterable;
 // out-build/vs/base/common/lifecycle.js
 var TRACK_DISPOSABLES = false;
 var disposableTracker = null;
-var $ud = class _$ud {
+var DisposableTracker = class _DisposableTracker {
   constructor() {
-    this.b = /* @__PURE__ */ new Map();
+    this.livingDisposables = /* @__PURE__ */ new Map();
   }
   static {
-    this.a = 0;
+    this.idx = 0;
   }
-  c(d) {
-    let val = this.b.get(d);
+  getDisposableData(d) {
+    let val = this.livingDisposables.get(d);
     if (!val) {
-      val = { parent: null, source: null, isSingleton: false, value: d, idx: _$ud.a++ };
-      this.b.set(d, val);
+      val = { parent: null, source: null, isSingleton: false, value: d, idx: _DisposableTracker.idx++ };
+      this.livingDisposables.set(d, val);
     }
     return val;
   }
   trackDisposable(d) {
-    const data = this.c(d);
+    const data = this.getDisposableData(d);
     if (!data.source) {
       data.source = new Error().stack;
     }
   }
   setParent(child, parent) {
-    const data = this.c(child);
+    const data = this.getDisposableData(child);
     data.parent = parent;
   }
   markAsDisposed(x) {
-    this.b.delete(x);
+    this.livingDisposables.delete(x);
   }
   markAsSingleton(disposable) {
-    this.c(disposable).isSingleton = true;
+    this.getDisposableData(disposable).isSingleton = true;
   }
-  f(data, cache2) {
+  getRootParent(data, cache2) {
     const cacheValue = cache2.get(data);
     if (cacheValue) {
       return cacheValue;
     }
-    const result = data.parent ? this.f(this.c(data.parent), cache2) : data;
+    const result = data.parent ? this.getRootParent(this.getDisposableData(data.parent), cache2) : data;
     cache2.set(data, result);
     return result;
   }
   getTrackedDisposables() {
     const rootParentCache = /* @__PURE__ */ new Map();
-    const leaking = [...this.b.entries()].filter(([, v]) => v.source !== null && !this.f(v, rootParentCache).isSingleton).flatMap(([k]) => k);
+    const leaking = [...this.livingDisposables.entries()].filter(([, v]) => v.source !== null && !this.getRootParent(v, rootParentCache).isSingleton).flatMap(([k]) => k);
     return leaking;
   }
   computeLeakingDisposables(maxReported = 10, preComputedLeaks) {
@@ -3370,7 +3370,7 @@ var $ud = class _$ud {
       uncoveredLeakingObjs = preComputedLeaks;
     } else {
       const rootParentCache = /* @__PURE__ */ new Map();
-      const leakingObjects = [...this.b.values()].filter((info) => info.source !== null && !this.f(info, rootParentCache).isSingleton);
+      const leakingObjects = [...this.livingDisposables.values()].filter((info) => info.source !== null && !this.getRootParent(info, rootParentCache).isSingleton);
       if (leakingObjects.length === 0) {
         return;
       }
@@ -3395,14 +3395,14 @@ var $ud = class _$ud {
       removePrefix(lines, ["Error", /^trackDisposable \(.*\)$/, /^DisposableTracker.trackDisposable \(.*\)$/]);
       return lines.reverse();
     }
-    const stackTraceStarts = new $Wc();
+    const stackTraceStarts = new SetMap();
     for (const leaking of uncoveredLeakingObjs) {
       const stackTracePath = getStackTracePath(leaking);
       for (let i2 = 0; i2 <= stackTracePath.length; i2++) {
         stackTraceStarts.add(stackTracePath.slice(0, i2).join("\n"), leaking);
       }
     }
-    uncoveredLeakingObjs.sort($xc((l) => l.idx, $zc));
+    uncoveredLeakingObjs.sort(compareBy((l) => l.idx, numberComparator));
     let message = "";
     let i = 0;
     for (const leaking of uncoveredLeakingObjs.slice(0, maxReported)) {
@@ -3414,7 +3414,7 @@ var $ud = class _$ud {
         const starts = stackTraceStarts.get(stackTracePath.slice(0, i2 + 1).join("\n"));
         line = `(shared with ${starts.size}/${uncoveredLeakingObjs.length} leaks) at ${line}`;
         const prevStarts = stackTraceStarts.get(stackTracePath.slice(0, i2).join("\n"));
-        const continuations = $a([...prevStarts].map((d) => getStackTracePath(d)[i2]), (v) => v);
+        const continuations = groupBy([...prevStarts].map((d) => getStackTracePath(d)[i2]), (v) => v);
         delete continuations[stackTracePath[i2]];
         for (const [cont, set] of Object.entries(continuations)) {
           if (set) {
@@ -3443,12 +3443,12 @@ ${stackTraceFormattedLines.join("\n")}
     return { leaks: uncoveredLeakingObjs, details: message };
   }
 };
-function $vd(tracker) {
+function setDisposableTracker(tracker) {
   disposableTracker = tracker;
 }
 if (TRACK_DISPOSABLES) {
   const __is_disposable_tracked__ = "__is_disposable_tracked__";
-  $vd(new class {
+  setDisposableTracker(new class {
     trackDisposable(x) {
       const stack = new Error("Potentially leaked disposable").stack;
       setTimeout(() => {
@@ -3458,7 +3458,7 @@ if (TRACK_DISPOSABLES) {
       }, 3e3);
     }
     setParent(child, parent) {
-      if (child && child !== $Fd.None) {
+      if (child && child !== Disposable.None) {
         try {
           child[__is_disposable_tracked__] = true;
         } catch {
@@ -3466,7 +3466,7 @@ if (TRACK_DISPOSABLES) {
       }
     }
     markAsDisposed(disposable) {
-      if (disposable && disposable !== $Fd.None) {
+      if (disposable && disposable !== Disposable.None) {
         try {
           disposable[__is_disposable_tracked__] = true;
         } catch {
@@ -3477,11 +3477,11 @@ if (TRACK_DISPOSABLES) {
     }
   }());
 }
-function $wd(x) {
+function trackDisposable(x) {
   disposableTracker?.trackDisposable(x);
   return x;
 }
-function $xd(disposable) {
+function markAsDisposed(disposable) {
   disposableTracker?.markAsDisposed(disposable);
 }
 function setParentOfDisposable(child, parent) {
@@ -3495,7 +3495,7 @@ function setParentOfDisposables(children, parent) {
     disposableTracker.setParent(child, parent);
   }
 }
-function $Ad(arg) {
+function dispose(arg) {
   if (Iterable.is(arg)) {
     const errors = [];
     for (const d of arg) {
@@ -3518,40 +3518,40 @@ function $Ad(arg) {
     return arg;
   }
 }
-function $Cd(...disposables) {
-  const parent = $Dd(() => $Ad(disposables));
+function combinedDisposable(...disposables) {
+  const parent = toDisposable(() => dispose(disposables));
   setParentOfDisposables(disposables, parent);
   return parent;
 }
 var FunctionDisposable = class {
   constructor(fn) {
-    this.a = false;
-    this.b = fn;
-    $wd(this);
+    this._isDisposed = false;
+    this._fn = fn;
+    trackDisposable(this);
   }
   dispose() {
-    if (this.a) {
+    if (this._isDisposed) {
       return;
     }
-    if (!this.b) {
+    if (!this._fn) {
       throw new Error(`Unbound disposable context: Need to use an arrow function to preserve the value of this`);
     }
-    this.a = true;
-    $xd(this);
-    this.b();
+    this._isDisposed = true;
+    markAsDisposed(this);
+    this._fn();
   }
 };
-function $Dd(fn) {
+function toDisposable(fn) {
   return new FunctionDisposable(fn);
 }
-var $Ed = class _$Ed {
+var DisposableStore = class _DisposableStore {
   static {
     this.DISABLE_DISPOSED_WARNING = false;
   }
   constructor() {
-    this.f = /* @__PURE__ */ new Set();
-    this.g = false;
-    $wd(this);
+    this._toDispose = /* @__PURE__ */ new Set();
+    this._isDisposed = false;
+    trackDisposable(this);
   }
   /**
    * Dispose of all registered disposables and mark this object as disposed.
@@ -3559,49 +3559,49 @@ var $Ed = class _$Ed {
    * Any future disposables added to this object will be disposed of on `add`.
    */
   dispose() {
-    if (this.g) {
+    if (this._isDisposed) {
       return;
     }
-    $xd(this);
-    this.g = true;
+    markAsDisposed(this);
+    this._isDisposed = true;
     this.clear();
   }
   /**
    * @return `true` if this object has been disposed of.
    */
   get isDisposed() {
-    return this.g;
+    return this._isDisposed;
   }
   /**
    * Dispose of all registered disposables but do not mark this object as disposed.
    */
   clear() {
-    if (this.f.size === 0) {
+    if (this._toDispose.size === 0) {
       return;
     }
     try {
-      $Ad(this.f);
+      dispose(this._toDispose);
     } finally {
-      this.f.clear();
+      this._toDispose.clear();
     }
   }
   /**
    * Add a new {@link IDisposable disposable} to the collection.
    */
   add(o) {
-    if (!o || o === $Fd.None) {
+    if (!o || o === Disposable.None) {
       return o;
     }
     if (o === this) {
       throw new Error("Cannot register a disposable on itself!");
     }
     setParentOfDisposable(o, this);
-    if (this.g) {
-      if (!_$Ed.DISABLE_DISPOSED_WARNING) {
+    if (this._isDisposed) {
+      if (!_DisposableStore.DISABLE_DISPOSED_WARNING) {
         console.warn(new Error("Trying to add a disposable to a DisposableStore that has already been disposed of. The added object will be leaked!").stack);
       }
     } else {
-      this.f.add(o);
+      this._toDispose.add(o);
     }
     return o;
   }
@@ -3616,7 +3616,7 @@ var $Ed = class _$Ed {
     if (o === this) {
       throw new Error("Cannot dispose a disposable on itself!");
     }
-    this.f.delete(o);
+    this._toDispose.delete(o);
     o.dispose();
   }
   /**
@@ -3626,39 +3626,39 @@ var $Ed = class _$Ed {
     if (!o) {
       return;
     }
-    if (this.f.has(o)) {
-      this.f.delete(o);
+    if (this._toDispose.has(o)) {
+      this._toDispose.delete(o);
       setParentOfDisposable(o, null);
     }
   }
   assertNotDisposed() {
-    if (this.g) {
-      $nb(new $Eb("Object disposed"));
+    if (this._isDisposed) {
+      onUnexpectedError(new BugIndicatingError("Object disposed"));
     }
   }
 };
-var $Fd = class {
+var Disposable = class {
   static {
     this.None = Object.freeze({ dispose() {
     } });
   }
   constructor() {
-    this.B = new $Ed();
-    $wd(this);
-    setParentOfDisposable(this.B, this);
+    this._store = new DisposableStore();
+    trackDisposable(this);
+    setParentOfDisposable(this._store, this);
   }
   dispose() {
-    $xd(this);
-    this.B.dispose();
+    markAsDisposed(this);
+    this._store.dispose();
   }
   /**
    * Adds `o` to the collection of disposables managed by this object.
    */
-  D(o) {
+  _register(o) {
     if (o === this) {
       throw new Error("Cannot register a disposable on itself!");
     }
-    return this.B.add(o);
+    return this._store.add(o);
   }
 };
 
@@ -3676,27 +3676,27 @@ var Node = class _Node {
 
 // out-build/vs/base/common/stopwatch.js
 var performanceNow = globalThis.performance.now.bind(globalThis.performance);
-var $kf = class _$kf {
+var StopWatch = class _StopWatch {
   static create(highResolution) {
-    return new _$kf(highResolution);
+    return new _StopWatch(highResolution);
   }
   constructor(highResolution) {
-    this.c = highResolution === false ? Date.now : performanceNow;
-    this.a = this.c();
-    this.b = -1;
+    this._now = highResolution === false ? Date.now : performanceNow;
+    this._startTime = this._now();
+    this._stopTime = -1;
   }
   stop() {
-    this.b = this.c();
+    this._stopTime = this._now();
   }
   reset() {
-    this.a = this.c();
-    this.b = -1;
+    this._startTime = this._now();
+    this._stopTime = -1;
   }
   elapsed() {
-    if (this.b !== -1) {
-      return this.b - this.a;
+    if (this._stopTime !== -1) {
+      return this._stopTime - this._startTime;
     }
-    return this.c() - this.a;
+    return this._now() - this._startTime;
   }
 };
 
@@ -3705,7 +3705,7 @@ var _enableDisposeWithListenerWarning = false;
 var _enableSnapshotPotentialLeakWarning = false;
 var Event;
 (function(Event2) {
-  Event2.None = () => $Fd.None;
+  Event2.None = () => Disposable.None;
   function _addLeakageTraceLogic(options) {
     if (_enableSnapshotPotentialLeakWarning) {
       const { onDidAddListener: origListenerDidAdd } = options;
@@ -3770,7 +3770,7 @@ var Event;
   Event2.signal = signal;
   function any(...events) {
     return (listener, thisArgs = null, disposables) => {
-      const disposable = $Cd(...events.map((event) => event((e) => listener.call(thisArgs, e))));
+      const disposable = combinedDisposable(...events.map((event) => event((e) => listener.call(thisArgs, e))));
       return addAndReturnDisposable(disposable, disposables);
     };
   }
@@ -3796,7 +3796,7 @@ var Event;
     if (!disposable) {
       _addLeakageTraceLogic(options);
     }
-    const emitter = new $qf(options);
+    const emitter = new Emitter(options);
     disposable?.add(emitter);
     return emitter.event;
   }
@@ -3859,7 +3859,7 @@ var Event;
     if (!disposable) {
       _addLeakageTraceLogic(options);
     }
-    const emitter = new $qf(options);
+    const emitter = new Emitter(options);
     disposable?.add(emitter);
     return emitter.event;
   }
@@ -3874,11 +3874,11 @@ var Event;
     }, delay, void 0, true, void 0, disposable);
   }
   Event2.accumulate = accumulate;
-  function latch(event, equals = (a, b) => a === b, disposable) {
+  function latch(event, equals2 = (a, b) => a === b, disposable) {
     let firstCall = true;
     let cache2;
     return filter(event, (value) => {
-      const shouldEmit = firstCall || !equals(value, cache2);
+      const shouldEmit = firstCall || !equals2(value, cache2);
       firstCall = false;
       cache2 = value;
       return shouldEmit;
@@ -3908,7 +3908,7 @@ var Event;
       buffer2?.forEach((e) => emitter.fire(e));
       buffer2 = null;
     };
-    const emitter = new $qf({
+    const emitter = new Emitter({
       onWillAddFirstListener() {
         if (!listener) {
           listener = event((e) => emitter.fire(e));
@@ -3955,36 +3955,36 @@ var Event;
   const HaltChainable = Symbol("HaltChainable");
   class ChainableSynthesis {
     constructor() {
-      this.f = [];
+      this.steps = [];
     }
     map(fn) {
-      this.f.push(fn);
+      this.steps.push(fn);
       return this;
     }
     forEach(fn) {
-      this.f.push((v) => {
+      this.steps.push((v) => {
         fn(v);
         return v;
       });
       return this;
     }
     filter(fn) {
-      this.f.push((v) => fn(v) ? v : HaltChainable);
+      this.steps.push((v) => fn(v) ? v : HaltChainable);
       return this;
     }
     reduce(merge, initial) {
       let last = initial;
-      this.f.push((v) => {
+      this.steps.push((v) => {
         last = merge(last, v);
         return last;
       });
       return this;
     }
-    latch(equals = (a, b) => a === b) {
+    latch(equals2 = (a, b) => a === b) {
       let firstCall = true;
       let cache2;
-      this.f.push((value) => {
-        const shouldEmit = firstCall || !equals(value, cache2);
+      this.steps.push((value) => {
+        const shouldEmit = firstCall || !equals2(value, cache2);
         firstCall = false;
         cache2 = value;
         return shouldEmit ? value : HaltChainable;
@@ -3992,7 +3992,7 @@ var Event;
       return this;
     }
     evaluate(value) {
-      for (const step of this.f) {
+      for (const step of this.steps) {
         value = step(value);
         if (value === HaltChainable) {
           break;
@@ -4005,7 +4005,7 @@ var Event;
     const fn = (...args) => result.fire(map2(...args));
     const onFirstListenerAdd = () => emitter.on(eventName, fn);
     const onLastListenerRemove = () => emitter.removeListener(eventName, fn);
-    const result = new $qf({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
+    const result = new Emitter({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
     return result.event;
   }
   Event2.fromNodeEventEmitter = fromNodeEventEmitter;
@@ -4013,15 +4013,15 @@ var Event;
     const fn = (...args) => result.fire(map2(...args));
     const onFirstListenerAdd = () => emitter.addEventListener(eventName, fn);
     const onLastListenerRemove = () => emitter.removeEventListener(eventName, fn);
-    const result = new $qf({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
+    const result = new Emitter({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
     return result.event;
   }
   Event2.fromDOMEventEmitter = fromDOMEventEmitter;
   function toPromise(event, disposables) {
     let cancelRef;
     let listener;
-    const promise = new Promise((resolve) => {
-      listener = once(event)(resolve);
+    const promise = new Promise((resolve2) => {
+      listener = once(event)(resolve2);
       addToDisposables(listener, disposables);
       cancelRef = () => {
         disposeAndRemove(listener, disposables);
@@ -4046,8 +4046,8 @@ var Event;
   class EmitterObserver {
     constructor(_observable, store) {
       this._observable = _observable;
-      this.f = 0;
-      this.g = false;
+      this._counter = 0;
+      this._hasChanged = false;
       const options = {
         onWillAddFirstListener: () => {
           _observable.addObserver(this);
@@ -4060,25 +4060,25 @@ var Event;
       if (!store) {
         _addLeakageTraceLogic(options);
       }
-      this.emitter = new $qf(options);
+      this.emitter = new Emitter(options);
       if (store) {
         store.add(this.emitter);
       }
     }
     beginUpdate(_observable) {
-      this.f++;
+      this._counter++;
     }
     handlePossibleChange(_observable) {
     }
     handleChange(_observable, _change) {
-      this.g = true;
+      this._hasChanged = true;
     }
     endUpdate(_observable) {
-      this.f--;
-      if (this.f === 0) {
+      this._counter--;
+      if (this._counter === 0) {
         this._observable.reportChanges();
-        if (this.g) {
-          this.g = false;
+        if (this._hasChanged) {
+          this._hasChanged = false;
           this.emitter.fire(this._observable.get());
         }
       }
@@ -4126,81 +4126,81 @@ var Event;
   }
   Event2.fromObservableLight = fromObservableLight;
 })(Event || (Event = {}));
-var $mf = class _$mf {
+var EventProfiling = class _EventProfiling {
   static {
     this.all = /* @__PURE__ */ new Set();
   }
   static {
-    this.f = 0;
+    this._idPool = 0;
   }
   constructor(name) {
     this.listenerCount = 0;
     this.invocationCount = 0;
     this.elapsedOverall = 0;
     this.durations = [];
-    this.name = `${name}_${_$mf.f++}`;
-    _$mf.all.add(this);
+    this.name = `${name}_${_EventProfiling._idPool++}`;
+    _EventProfiling.all.add(this);
   }
   start(listenerCount) {
-    this.g = new $kf();
+    this._stopWatch = new StopWatch();
     this.listenerCount = listenerCount;
   }
   stop() {
-    if (this.g) {
-      const elapsed = this.g.elapsed();
+    if (this._stopWatch) {
+      const elapsed = this._stopWatch.elapsed();
       this.durations.push(elapsed);
       this.elapsedOverall += elapsed;
       this.invocationCount += 1;
-      this.g = void 0;
+      this._stopWatch = void 0;
     }
   }
 };
 var _globalLeakWarningThreshold = -1;
 var LeakageMonitor = class _LeakageMonitor {
   static {
-    this.f = 1;
+    this._idPool = 1;
   }
-  constructor(j, threshold, name = (_LeakageMonitor.f++).toString(16).padStart(3, "0")) {
-    this.j = j;
+  constructor(_errorHandler, threshold, name = (_LeakageMonitor._idPool++).toString(16).padStart(3, "0")) {
+    this._errorHandler = _errorHandler;
     this.threshold = threshold;
     this.name = name;
-    this.h = 0;
+    this._warnCountdown = 0;
   }
   dispose() {
-    this.g?.clear();
+    this._stacks?.clear();
   }
   check(stack, listenerCount) {
     const threshold = this.threshold;
     if (threshold <= 0 || listenerCount < threshold) {
       return void 0;
     }
-    if (!this.g) {
-      this.g = /* @__PURE__ */ new Map();
+    if (!this._stacks) {
+      this._stacks = /* @__PURE__ */ new Map();
     }
-    const count = this.g.get(stack.value) || 0;
-    this.g.set(stack.value, count + 1);
-    this.h -= 1;
-    if (this.h <= 0) {
-      this.h = threshold * 0.5;
+    const count = this._stacks.get(stack.value) || 0;
+    this._stacks.set(stack.value, count + 1);
+    this._warnCountdown -= 1;
+    if (this._warnCountdown <= 0) {
+      this._warnCountdown = threshold * 0.5;
       const [topStack, topCount] = this.getMostFrequentStack();
       const message = `[${this.name}] potential listener LEAK detected, having ${listenerCount} listeners already. MOST frequent listener (${topCount}):`;
       console.warn(message);
       console.warn(topStack);
-      const error = new $of(message, topStack);
-      this.j(error);
+      const error = new ListenerLeakError(message, topStack);
+      this._errorHandler(error);
     }
     return () => {
-      const count2 = this.g.get(stack.value) || 0;
-      this.g.set(stack.value, count2 - 1);
+      const count2 = this._stacks.get(stack.value) || 0;
+      this._stacks.set(stack.value, count2 - 1);
     };
   }
   getMostFrequentStack() {
-    if (!this.g) {
+    if (!this._stacks) {
       return void 0;
     }
     let topStack;
     let topCount = 0;
-    for (const [stack, count] of this.g) {
+    for (const [stack, count] of this._stacks) {
       if (!topStack || topCount < count) {
         topStack = [stack, count];
         topCount = count;
@@ -4221,14 +4221,14 @@ var Stacktrace = class _Stacktrace {
     console.warn(this.value.split("\n").slice(2).join("\n"));
   }
 };
-var $of = class extends Error {
+var ListenerLeakError = class extends Error {
   constructor(message, stack) {
     super(message);
     this.name = "ListenerLeakError";
     this.stack = stack;
   }
 };
-var $pf = class extends Error {
+var ListenerRefusalError = class extends Error {
   constructor(message, stack) {
     super(message);
     this.name = "ListenerRefusalError";
@@ -4255,32 +4255,32 @@ var forEachListener = (listeners, fn) => {
     }
   }
 };
-var $qf = class {
+var Emitter = class {
   constructor(options) {
-    this.A = 0;
-    this.g = options;
-    this.j = _globalLeakWarningThreshold > 0 || this.g?.leakWarningThreshold ? new LeakageMonitor(options?.onListenerError ?? $nb, this.g?.leakWarningThreshold ?? _globalLeakWarningThreshold) : void 0;
-    this.m = this.g?._profName ? new $mf(this.g._profName) : void 0;
-    this.z = this.g?.deliveryQueue;
+    this._size = 0;
+    this._options = options;
+    this._leakageMon = _globalLeakWarningThreshold > 0 || this._options?.leakWarningThreshold ? new LeakageMonitor(options?.onListenerError ?? onUnexpectedError, this._options?.leakWarningThreshold ?? _globalLeakWarningThreshold) : void 0;
+    this._perfMon = this._options?._profName ? new EventProfiling(this._options._profName) : void 0;
+    this._deliveryQueue = this._options?.deliveryQueue;
   }
   dispose() {
-    if (!this.q) {
-      this.q = true;
-      if (this.z?.current === this) {
-        this.z.reset();
+    if (!this._disposed) {
+      this._disposed = true;
+      if (this._deliveryQueue?.current === this) {
+        this._deliveryQueue.reset();
       }
-      if (this.w) {
+      if (this._listeners) {
         if (_enableDisposeWithListenerWarning) {
-          const listeners = this.w;
+          const listeners = this._listeners;
           queueMicrotask(() => {
             forEachListener(listeners, (l) => l.stack?.print());
           });
         }
-        this.w = void 0;
-        this.A = 0;
+        this._listeners = void 0;
+        this._size = 0;
       }
-      this.g?.onDidRemoveLastListener?.();
-      this.j?.dispose();
+      this._options?.onDidRemoveLastListener?.();
+      this._leakageMon?.dispose();
     }
   }
   /**
@@ -4288,18 +4288,18 @@ var $qf = class {
    * to events from this Emitter
    */
   get event() {
-    this.u ??= (callback, thisArgs, disposables) => {
-      if (this.j && this.A > this.j.threshold ** 2) {
-        const message = `[${this.j.name}] REFUSES to accept new listeners because it exceeded its threshold by far (${this.A} vs ${this.j.threshold})`;
+    this._event ??= (callback, thisArgs, disposables) => {
+      if (this._leakageMon && this._size > this._leakageMon.threshold ** 2) {
+        const message = `[${this._leakageMon.name}] REFUSES to accept new listeners because it exceeded its threshold by far (${this._size} vs ${this._leakageMon.threshold})`;
         console.warn(message);
-        const tuple = this.j.getMostFrequentStack() ?? ["UNKNOWN stack", -1];
-        const error = new $pf(`${message}. HINT: Stack shows most frequent listener (${tuple[1]}-times)`, tuple[0]);
-        const errorHandler = this.g?.onListenerError || $nb;
-        errorHandler(error);
-        return $Fd.None;
+        const tuple = this._leakageMon.getMostFrequentStack() ?? ["UNKNOWN stack", -1];
+        const error = new ListenerRefusalError(`${message}. HINT: Stack shows most frequent listener (${tuple[1]}-times)`, tuple[0]);
+        const errorHandler2 = this._options?.onListenerError || onUnexpectedError;
+        errorHandler2(error);
+        return Disposable.None;
       }
-      if (this.q) {
-        return $Fd.None;
+      if (this._disposed) {
+        return Disposable.None;
       }
       if (thisArgs) {
         callback = callback.bind(thisArgs);
@@ -4307,91 +4307,91 @@ var $qf = class {
       const contained = new UniqueContainer(callback);
       let removeMonitor;
       let stack;
-      if (this.j && this.A >= Math.ceil(this.j.threshold * 0.2)) {
+      if (this._leakageMon && this._size >= Math.ceil(this._leakageMon.threshold * 0.2)) {
         contained.stack = Stacktrace.create();
-        removeMonitor = this.j.check(contained.stack, this.A + 1);
+        removeMonitor = this._leakageMon.check(contained.stack, this._size + 1);
       }
       if (_enableDisposeWithListenerWarning) {
         contained.stack = stack ?? Stacktrace.create();
       }
-      if (!this.w) {
-        this.g?.onWillAddFirstListener?.(this);
-        this.w = contained;
-        this.g?.onDidAddFirstListener?.(this);
-      } else if (this.w instanceof UniqueContainer) {
-        this.z ??= new EventDeliveryQueuePrivate();
-        this.w = [this.w, contained];
+      if (!this._listeners) {
+        this._options?.onWillAddFirstListener?.(this);
+        this._listeners = contained;
+        this._options?.onDidAddFirstListener?.(this);
+      } else if (this._listeners instanceof UniqueContainer) {
+        this._deliveryQueue ??= new EventDeliveryQueuePrivate();
+        this._listeners = [this._listeners, contained];
       } else {
-        this.w.push(contained);
+        this._listeners.push(contained);
       }
-      this.g?.onDidAddListener?.(this);
-      this.A++;
-      const result = $Dd(() => {
+      this._options?.onDidAddListener?.(this);
+      this._size++;
+      const result = toDisposable(() => {
         removeMonitor?.();
-        this.B(contained);
+        this._removeListener(contained);
       });
       addToDisposables(result, disposables);
       return result;
     };
-    return this.u;
+    return this._event;
   }
-  B(listener) {
-    this.g?.onWillRemoveListener?.(this);
-    if (!this.w) {
+  _removeListener(listener) {
+    this._options?.onWillRemoveListener?.(this);
+    if (!this._listeners) {
       return;
     }
-    if (this.A === 1) {
-      this.w = void 0;
-      this.g?.onDidRemoveLastListener?.(this);
-      this.A = 0;
+    if (this._size === 1) {
+      this._listeners = void 0;
+      this._options?.onDidRemoveLastListener?.(this);
+      this._size = 0;
       return;
     }
-    const listeners = this.w;
+    const listeners = this._listeners;
     const index = listeners.indexOf(listener);
     if (index === -1) {
-      console.log("disposed?", this.q);
-      console.log("size?", this.A);
-      console.log("arr?", JSON.stringify(this.w));
+      console.log("disposed?", this._disposed);
+      console.log("size?", this._size);
+      console.log("arr?", JSON.stringify(this._listeners));
       throw new Error("Attempted to dispose unknown listener");
     }
-    this.A--;
+    this._size--;
     listeners[index] = void 0;
-    const adjustDeliveryQueue = this.z.current === this;
-    if (this.A * compactionThreshold <= listeners.length) {
+    const adjustDeliveryQueue = this._deliveryQueue.current === this;
+    if (this._size * compactionThreshold <= listeners.length) {
       let n = 0;
       for (let i = 0; i < listeners.length; i++) {
         if (listeners[i]) {
           listeners[n++] = listeners[i];
-        } else if (adjustDeliveryQueue && n < this.z.end) {
-          this.z.end--;
-          if (n < this.z.i) {
-            this.z.i--;
+        } else if (adjustDeliveryQueue && n < this._deliveryQueue.end) {
+          this._deliveryQueue.end--;
+          if (n < this._deliveryQueue.i) {
+            this._deliveryQueue.i--;
           }
         }
       }
       listeners.length = n;
     }
   }
-  C(listener, value) {
+  _deliver(listener, value) {
     if (!listener) {
       return;
     }
-    const errorHandler = this.g?.onListenerError || $nb;
-    if (!errorHandler) {
+    const errorHandler2 = this._options?.onListenerError || onUnexpectedError;
+    if (!errorHandler2) {
       listener.value(value);
       return;
     }
     try {
       listener.value(value);
     } catch (e) {
-      errorHandler(e);
+      errorHandler2(e);
     }
   }
   /** Delivers items in the queue. Assumes the queue is ready to go. */
-  D(dq) {
-    const listeners = dq.current.w;
+  _deliverQueue(dq) {
+    const listeners = dq.current._listeners;
     while (dq.i < dq.end) {
-      this.C(listeners[dq.i++], dq.value);
+      this._deliver(listeners[dq.i++], dq.value);
     }
     dq.reset();
   }
@@ -4400,23 +4400,23 @@ var $qf = class {
    * subscribers
    */
   fire(event) {
-    if (this.z?.current) {
-      this.D(this.z);
-      this.m?.stop();
+    if (this._deliveryQueue?.current) {
+      this._deliverQueue(this._deliveryQueue);
+      this._perfMon?.stop();
     }
-    this.m?.start(this.A);
-    if (!this.w) {
-    } else if (this.w instanceof UniqueContainer) {
-      this.C(this.w, event);
+    this._perfMon?.start(this._size);
+    if (!this._listeners) {
+    } else if (this._listeners instanceof UniqueContainer) {
+      this._deliver(this._listeners, event);
     } else {
-      const dq = this.z;
-      dq.enqueue(this, event, this.w.length);
-      this.D(dq);
+      const dq = this._deliveryQueue;
+      dq.enqueue(this, event, this._listeners.length);
+      this._deliverQueue(dq);
     }
-    this.m?.stop();
+    this._perfMon?.stop();
   }
   hasListeners() {
-    return this.A > 0;
+    return this._size > 0;
   }
 };
 var EventDeliveryQueuePrivate = class {
@@ -4437,14 +4437,14 @@ var EventDeliveryQueuePrivate = class {
   }
 };
 function addToDisposables(result, disposables) {
-  if (disposables instanceof $Ed) {
+  if (disposables instanceof DisposableStore) {
     disposables.add(result);
   } else if (Array.isArray(disposables)) {
     disposables.push(result);
   }
 }
 function disposeAndRemove(result, disposables) {
-  if (disposables instanceof $Ed) {
+  if (disposables instanceof DisposableStore) {
     disposables.delete(result);
   } else if (Array.isArray(disposables)) {
     const index = disposables.indexOf(result);
@@ -4488,61 +4488,61 @@ var CancellationToken;
 })(CancellationToken || (CancellationToken = {}));
 var MutableToken = class {
   constructor() {
-    this.a = false;
-    this.b = null;
+    this._isCancelled = false;
+    this._emitter = null;
   }
   cancel() {
-    if (!this.a) {
-      this.a = true;
-      if (this.b) {
-        this.b.fire(void 0);
+    if (!this._isCancelled) {
+      this._isCancelled = true;
+      if (this._emitter) {
+        this._emitter.fire(void 0);
         this.dispose();
       }
     }
   }
   get isCancellationRequested() {
-    return this.a;
+    return this._isCancelled;
   }
   get onCancellationRequested() {
-    if (this.a) {
+    if (this._isCancelled) {
       return shortcutEvent;
     }
-    if (!this.b) {
-      this.b = new $qf();
+    if (!this._emitter) {
+      this._emitter = new Emitter();
     }
-    return this.b.event;
+    return this._emitter.event;
   }
   dispose() {
-    if (this.b) {
-      this.b.dispose();
-      this.b = null;
+    if (this._emitter) {
+      this._emitter.dispose();
+      this._emitter = null;
     }
   }
 };
 
 // out-build/vs/base/common/cache.js
-function $Gf(t) {
+function identity(t) {
   return t;
 }
-var $Hf = class {
+var LRUCachedFunction = class {
   constructor(arg1, arg2) {
-    this.a = void 0;
-    this.b = void 0;
+    this.lastCache = void 0;
+    this.lastArgKey = void 0;
     if (typeof arg1 === "function") {
-      this.c = arg1;
-      this.d = $Gf;
+      this._fn = arg1;
+      this._computeKey = identity;
     } else {
-      this.c = arg2;
-      this.d = arg1.getCacheKey;
+      this._fn = arg2;
+      this._computeKey = arg1.getCacheKey;
     }
   }
   get(arg) {
-    const key = this.d(arg);
-    if (this.b !== key) {
-      this.b = key;
-      this.a = this.c(arg);
+    const key = this._computeKey(arg);
+    if (this.lastArgKey !== key) {
+      this.lastArgKey = key;
+      this.lastCache = this._fn(arg);
     }
-    return this.a;
+    return this.lastCache;
   }
 };
 
@@ -4553,16 +4553,16 @@ var LazyValueState;
   LazyValueState2[LazyValueState2["Running"] = 1] = "Running";
   LazyValueState2[LazyValueState2["Completed"] = 2] = "Completed";
 })(LazyValueState || (LazyValueState = {}));
-var $Kf = class {
-  constructor(d) {
-    this.d = d;
-    this.a = LazyValueState.Uninitialized;
+var Lazy = class {
+  constructor(executor) {
+    this.executor = executor;
+    this._state = LazyValueState.Uninitialized;
   }
   /**
    * True if the lazy value has been resolved.
    */
   get hasValue() {
-    return this.a === LazyValueState.Completed;
+    return this._state === LazyValueState.Completed;
   }
   /**
    * Get the wrapped value.
@@ -4571,36 +4571,36 @@ var $Kf = class {
    * resolved once. `getValue` will re-throw exceptions that are hit while resolving the value
    */
   get value() {
-    if (this.a === LazyValueState.Uninitialized) {
-      this.a = LazyValueState.Running;
+    if (this._state === LazyValueState.Uninitialized) {
+      this._state = LazyValueState.Running;
       try {
-        this.b = this.d();
+        this._value = this.executor();
       } catch (err) {
-        this.c = err;
+        this._error = err;
       } finally {
-        this.a = LazyValueState.Completed;
+        this._state = LazyValueState.Completed;
       }
-    } else if (this.a === LazyValueState.Running) {
+    } else if (this._state === LazyValueState.Running) {
       throw new Error("Cannot read the value of a lazy that is being initialized");
     }
-    if (this.c) {
-      throw this.c;
+    if (this._error) {
+      throw this._error;
     }
-    return this.b;
+    return this._value;
   }
   /**
    * Get the wrapped value without forcing evaluation.
    */
   get rawValue() {
-    return this.b;
+    return this._value;
   }
 };
 
 // out-build/vs/base/common/strings.js
-function $4f(str) {
+function splitLines(str) {
   return str.split(/\r\n|\r|\n/);
 }
-function $_f(a, b) {
+function compare(a, b) {
   if (a < b) {
     return -1;
   } else if (a > b) {
@@ -4609,7 +4609,7 @@ function $_f(a, b) {
     return 0;
   }
 }
-function $ag(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
+function compareSubstring(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   for (; aStart < aEnd && bStart < bEnd; aStart++, bStart++) {
     const codeA = a.charCodeAt(aStart);
     const codeB = b.charCodeAt(bStart);
@@ -4628,7 +4628,7 @@ function $ag(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   }
   return 0;
 }
-function $cg(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
+function compareSubstringIgnoreCase(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   for (; aStart < aEnd && bStart < bEnd; aStart++, bStart++) {
     let codeA = a.charCodeAt(aStart);
     let codeB = b.charCodeAt(bStart);
@@ -4636,12 +4636,12 @@ function $cg(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
       continue;
     }
     if (codeA >= 128 || codeB >= 128) {
-      return $ag(a.toLowerCase(), b.toLowerCase(), aStart, aEnd, bStart, bEnd);
+      return compareSubstring(a.toLowerCase(), b.toLowerCase(), aStart, aEnd, bStart, bEnd);
     }
-    if ($eg(codeA)) {
+    if (isLowerAsciiLetter(codeA)) {
       codeA -= 32;
     }
-    if ($eg(codeB)) {
+    if (isLowerAsciiLetter(codeB)) {
       codeB -= 32;
     }
     const diff = codeA - codeB;
@@ -4659,18 +4659,18 @@ function $cg(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   }
   return 0;
 }
-function $eg(code) {
+function isLowerAsciiLetter(code) {
   return code >= 97 && code <= 122;
 }
-function $fg(code) {
+function isUpperAsciiLetter(code) {
   return code >= 65 && code <= 90;
 }
-function $gg(a, b) {
-  return a.length === b.length && $cg(a, b) === 0;
+function equalsIgnoreCase(a, b) {
+  return a.length === b.length && compareSubstringIgnoreCase(a, b) === 0;
 }
-function $ig(str, candidate) {
+function startsWithIgnoreCase(str, candidate) {
   const len = candidate.length;
-  return len <= str.length && $cg(str, candidate, 0, len) === 0;
+  return len <= str.length && compareSubstringIgnoreCase(str, candidate, 0, len) === 0;
 }
 var CSI_SEQUENCE = /(?:\x1b\[|\x9b)[=?>!]?[\d;:]*["$#'* ]?[a-zA-Z@^`{}|~]/;
 var OSC_SEQUENCE = /(?:\x1b\]|\x9d).*?(?:\x1b\\|\x07|\x9c)/;
@@ -4680,7 +4680,7 @@ var CONTROL_SEQUENCES = new RegExp("(?:" + [
   OSC_SEQUENCE.source,
   ESC_SEQUENCE.source
 ].join("|") + ")", "g");
-var $Gg = String.fromCharCode(
+var UTF8_BOM_CHARACTER = String.fromCharCode(
   65279
   /* CharCode.UTF8_BOM */
 );
@@ -4704,16 +4704,16 @@ var GraphemeBreakType;
 })(GraphemeBreakType || (GraphemeBreakType = {}));
 var GraphemeBreakTree = class _GraphemeBreakTree {
   static {
-    this.c = null;
+    this._INSTANCE = null;
   }
   static getInstance() {
-    if (!_GraphemeBreakTree.c) {
-      _GraphemeBreakTree.c = new _GraphemeBreakTree();
+    if (!_GraphemeBreakTree._INSTANCE) {
+      _GraphemeBreakTree._INSTANCE = new _GraphemeBreakTree();
     }
-    return _GraphemeBreakTree.c;
+    return _GraphemeBreakTree._INSTANCE;
   }
   constructor() {
-    this.d = getGraphemeBreakRawData();
+    this._data = getGraphemeBreakRawData();
   }
   getGraphemeBreakType(codePoint) {
     if (codePoint < 32) {
@@ -4728,7 +4728,7 @@ var GraphemeBreakTree = class _GraphemeBreakTree {
     if (codePoint < 127) {
       return 0;
     }
-    const data = this.d;
+    const data = this._data;
     const nodeCount = data.length / 3;
     let nodeIndex = 1;
     while (nodeIndex <= nodeCount) {
@@ -4753,14 +4753,14 @@ var CodePoint;
   CodePoint2[CodePoint2["enclosingKeyCap"] = 8419] = "enclosingKeyCap";
   CodePoint2[CodePoint2["space"] = 32] = "space";
 })(CodePoint || (CodePoint = {}));
-var $Rg = class _$Rg {
+var AmbiguousCharacters = class _AmbiguousCharacters {
   static {
-    this.c = new $Kf(() => {
+    this.ambiguousCharacterData = new Lazy(() => {
       return JSON.parse('{"_common":[8232,32,8233,32,5760,32,8192,32,8193,32,8194,32,8195,32,8196,32,8197,32,8198,32,8200,32,8201,32,8202,32,8287,32,8199,32,8239,32,2042,95,65101,95,65102,95,65103,95,8208,45,8209,45,8210,45,65112,45,1748,45,8259,45,727,45,8722,45,10134,45,11450,45,1549,44,1643,44,184,44,42233,44,894,59,2307,58,2691,58,1417,58,1795,58,1796,58,5868,58,65072,58,6147,58,6153,58,8282,58,1475,58,760,58,42889,58,8758,58,720,58,42237,58,451,33,11601,33,660,63,577,63,2429,63,5038,63,42731,63,119149,46,8228,46,1793,46,1794,46,42510,46,68176,46,1632,46,1776,46,42232,46,1373,96,65287,96,8219,96,1523,96,8242,96,1370,96,8175,96,65344,96,900,96,8189,96,8125,96,8127,96,8190,96,697,96,884,96,712,96,714,96,715,96,756,96,699,96,701,96,700,96,702,96,42892,96,1497,96,2036,96,2037,96,5194,96,5836,96,94033,96,94034,96,65339,91,10088,40,10098,40,12308,40,64830,40,65341,93,10089,41,10099,41,12309,41,64831,41,10100,123,119060,123,10101,125,65342,94,8270,42,1645,42,8727,42,66335,42,5941,47,8257,47,8725,47,8260,47,9585,47,10187,47,10744,47,119354,47,12755,47,12339,47,11462,47,20031,47,12035,47,65340,92,65128,92,8726,92,10189,92,10741,92,10745,92,119311,92,119355,92,12756,92,20022,92,12034,92,42872,38,708,94,710,94,5869,43,10133,43,66203,43,8249,60,10094,60,706,60,119350,60,5176,60,5810,60,5120,61,11840,61,12448,61,42239,61,8250,62,10095,62,707,62,119351,62,5171,62,94015,62,8275,126,732,126,8128,126,8764,126,65372,124,65293,45,118002,50,120784,50,120794,50,120804,50,120814,50,120824,50,130034,50,42842,50,423,50,1000,50,42564,50,5311,50,42735,50,119302,51,118003,51,120785,51,120795,51,120805,51,120815,51,120825,51,130035,51,42923,51,540,51,439,51,42858,51,11468,51,1248,51,94011,51,71882,51,118004,52,120786,52,120796,52,120806,52,120816,52,120826,52,130036,52,5070,52,71855,52,118005,53,120787,53,120797,53,120807,53,120817,53,120827,53,130037,53,444,53,71867,53,118006,54,120788,54,120798,54,120808,54,120818,54,120828,54,130038,54,11474,54,5102,54,71893,54,119314,55,118007,55,120789,55,120799,55,120809,55,120819,55,120829,55,130039,55,66770,55,71878,55,2819,56,2538,56,2666,56,125131,56,118008,56,120790,56,120800,56,120810,56,120820,56,120830,56,130040,56,547,56,546,56,66330,56,2663,57,2920,57,2541,57,3437,57,118009,57,120791,57,120801,57,120811,57,120821,57,120831,57,130041,57,42862,57,11466,57,71884,57,71852,57,71894,57,9082,97,65345,97,119834,97,119886,97,119938,97,119990,97,120042,97,120094,97,120146,97,120198,97,120250,97,120302,97,120354,97,120406,97,120458,97,593,97,945,97,120514,97,120572,97,120630,97,120688,97,120746,97,65313,65,117974,65,119808,65,119860,65,119912,65,119964,65,120016,65,120068,65,120120,65,120172,65,120224,65,120276,65,120328,65,120380,65,120432,65,913,65,120488,65,120546,65,120604,65,120662,65,120720,65,5034,65,5573,65,42222,65,94016,65,66208,65,119835,98,119887,98,119939,98,119991,98,120043,98,120095,98,120147,98,120199,98,120251,98,120303,98,120355,98,120407,98,120459,98,388,98,5071,98,5234,98,5551,98,65314,66,8492,66,117975,66,119809,66,119861,66,119913,66,120017,66,120069,66,120121,66,120173,66,120225,66,120277,66,120329,66,120381,66,120433,66,42932,66,914,66,120489,66,120547,66,120605,66,120663,66,120721,66,5108,66,5623,66,42192,66,66178,66,66209,66,66305,66,65347,99,8573,99,119836,99,119888,99,119940,99,119992,99,120044,99,120096,99,120148,99,120200,99,120252,99,120304,99,120356,99,120408,99,120460,99,7428,99,1010,99,11429,99,43951,99,66621,99,128844,67,71913,67,71922,67,65315,67,8557,67,8450,67,8493,67,117976,67,119810,67,119862,67,119914,67,119966,67,120018,67,120174,67,120226,67,120278,67,120330,67,120382,67,120434,67,1017,67,11428,67,5087,67,42202,67,66210,67,66306,67,66581,67,66844,67,8574,100,8518,100,119837,100,119889,100,119941,100,119993,100,120045,100,120097,100,120149,100,120201,100,120253,100,120305,100,120357,100,120409,100,120461,100,1281,100,5095,100,5231,100,42194,100,8558,68,8517,68,117977,68,119811,68,119863,68,119915,68,119967,68,120019,68,120071,68,120123,68,120175,68,120227,68,120279,68,120331,68,120383,68,120435,68,5024,68,5598,68,5610,68,42195,68,8494,101,65349,101,8495,101,8519,101,119838,101,119890,101,119942,101,120046,101,120098,101,120150,101,120202,101,120254,101,120306,101,120358,101,120410,101,120462,101,43826,101,1213,101,8959,69,65317,69,8496,69,117978,69,119812,69,119864,69,119916,69,120020,69,120072,69,120124,69,120176,69,120228,69,120280,69,120332,69,120384,69,120436,69,917,69,120492,69,120550,69,120608,69,120666,69,120724,69,11577,69,5036,69,42224,69,71846,69,71854,69,66182,69,119839,102,119891,102,119943,102,119995,102,120047,102,120099,102,120151,102,120203,102,120255,102,120307,102,120359,102,120411,102,120463,102,43829,102,42905,102,383,102,7837,102,1412,102,119315,70,8497,70,117979,70,119813,70,119865,70,119917,70,120021,70,120073,70,120125,70,120177,70,120229,70,120281,70,120333,70,120385,70,120437,70,42904,70,988,70,120778,70,5556,70,42205,70,71874,70,71842,70,66183,70,66213,70,66853,70,65351,103,8458,103,119840,103,119892,103,119944,103,120048,103,120100,103,120152,103,120204,103,120256,103,120308,103,120360,103,120412,103,120464,103,609,103,7555,103,397,103,1409,103,117980,71,119814,71,119866,71,119918,71,119970,71,120022,71,120074,71,120126,71,120178,71,120230,71,120282,71,120334,71,120386,71,120438,71,1292,71,5056,71,5107,71,42198,71,65352,104,8462,104,119841,104,119945,104,119997,104,120049,104,120101,104,120153,104,120205,104,120257,104,120309,104,120361,104,120413,104,120465,104,1211,104,1392,104,5058,104,65320,72,8459,72,8460,72,8461,72,117981,72,119815,72,119867,72,119919,72,120023,72,120179,72,120231,72,120283,72,120335,72,120387,72,120439,72,919,72,120494,72,120552,72,120610,72,120668,72,120726,72,11406,72,5051,72,5500,72,42215,72,66255,72,731,105,9075,105,65353,105,8560,105,8505,105,8520,105,119842,105,119894,105,119946,105,119998,105,120050,105,120102,105,120154,105,120206,105,120258,105,120310,105,120362,105,120414,105,120466,105,120484,105,618,105,617,105,953,105,8126,105,890,105,120522,105,120580,105,120638,105,120696,105,120754,105,1110,105,42567,105,1231,105,43893,105,5029,105,71875,105,65354,106,8521,106,119843,106,119895,106,119947,106,119999,106,120051,106,120103,106,120155,106,120207,106,120259,106,120311,106,120363,106,120415,106,120467,106,1011,106,1112,106,65322,74,117983,74,119817,74,119869,74,119921,74,119973,74,120025,74,120077,74,120129,74,120181,74,120233,74,120285,74,120337,74,120389,74,120441,74,42930,74,895,74,1032,74,5035,74,5261,74,42201,74,119844,107,119896,107,119948,107,120000,107,120052,107,120104,107,120156,107,120208,107,120260,107,120312,107,120364,107,120416,107,120468,107,8490,75,65323,75,117984,75,119818,75,119870,75,119922,75,119974,75,120026,75,120078,75,120130,75,120182,75,120234,75,120286,75,120338,75,120390,75,120442,75,922,75,120497,75,120555,75,120613,75,120671,75,120729,75,11412,75,5094,75,5845,75,42199,75,66840,75,1472,108,8739,73,9213,73,65512,73,1633,108,1777,73,66336,108,125127,108,118001,108,120783,73,120793,73,120803,73,120813,73,120823,73,130033,73,65321,73,8544,73,8464,73,8465,73,117982,108,119816,73,119868,73,119920,73,120024,73,120128,73,120180,73,120232,73,120284,73,120336,73,120388,73,120440,73,65356,108,8572,73,8467,108,119845,108,119897,108,119949,108,120001,108,120053,108,120105,73,120157,73,120209,73,120261,73,120313,73,120365,73,120417,73,120469,73,448,73,120496,73,120554,73,120612,73,120670,73,120728,73,11410,73,1030,73,1216,73,1493,108,1503,108,1575,108,126464,108,126592,108,65166,108,65165,108,1994,108,11599,73,5825,73,42226,73,93992,73,66186,124,66313,124,119338,76,8556,76,8466,76,117985,76,119819,76,119871,76,119923,76,120027,76,120079,76,120131,76,120183,76,120235,76,120287,76,120339,76,120391,76,120443,76,11472,76,5086,76,5290,76,42209,76,93974,76,71843,76,71858,76,66587,76,66854,76,65325,77,8559,77,8499,77,117986,77,119820,77,119872,77,119924,77,120028,77,120080,77,120132,77,120184,77,120236,77,120288,77,120340,77,120392,77,120444,77,924,77,120499,77,120557,77,120615,77,120673,77,120731,77,1018,77,11416,77,5047,77,5616,77,5846,77,42207,77,66224,77,66321,77,119847,110,119899,110,119951,110,120003,110,120055,110,120107,110,120159,110,120211,110,120263,110,120315,110,120367,110,120419,110,120471,110,1400,110,1404,110,65326,78,8469,78,117987,78,119821,78,119873,78,119925,78,119977,78,120029,78,120081,78,120185,78,120237,78,120289,78,120341,78,120393,78,120445,78,925,78,120500,78,120558,78,120616,78,120674,78,120732,78,11418,78,42208,78,66835,78,3074,111,3202,111,3330,111,3458,111,2406,111,2662,111,2790,111,3046,111,3174,111,3302,111,3430,111,3664,111,3792,111,4160,111,1637,111,1781,111,65359,111,8500,111,119848,111,119900,111,119952,111,120056,111,120108,111,120160,111,120212,111,120264,111,120316,111,120368,111,120420,111,120472,111,7439,111,7441,111,43837,111,959,111,120528,111,120586,111,120644,111,120702,111,120760,111,963,111,120532,111,120590,111,120648,111,120706,111,120764,111,11423,111,4351,111,1413,111,1505,111,1607,111,126500,111,126564,111,126596,111,65259,111,65260,111,65258,111,65257,111,1726,111,64428,111,64429,111,64427,111,64426,111,1729,111,64424,111,64425,111,64423,111,64422,111,1749,111,3360,111,4125,111,66794,111,71880,111,71895,111,66604,111,1984,79,2534,79,2918,79,12295,79,70864,79,71904,79,118000,79,120782,79,120792,79,120802,79,120812,79,120822,79,130032,79,65327,79,117988,79,119822,79,119874,79,119926,79,119978,79,120030,79,120082,79,120134,79,120186,79,120238,79,120290,79,120342,79,120394,79,120446,79,927,79,120502,79,120560,79,120618,79,120676,79,120734,79,11422,79,1365,79,11604,79,4816,79,2848,79,66754,79,42227,79,71861,79,66194,79,66219,79,66564,79,66838,79,9076,112,65360,112,119849,112,119901,112,119953,112,120005,112,120057,112,120109,112,120161,112,120213,112,120265,112,120317,112,120369,112,120421,112,120473,112,961,112,120530,112,120544,112,120588,112,120602,112,120646,112,120660,112,120704,112,120718,112,120762,112,120776,112,11427,112,65328,80,8473,80,117989,80,119823,80,119875,80,119927,80,119979,80,120031,80,120083,80,120187,80,120239,80,120291,80,120343,80,120395,80,120447,80,929,80,120504,80,120562,80,120620,80,120678,80,120736,80,11426,80,5090,80,5229,80,42193,80,66197,80,119850,113,119902,113,119954,113,120006,113,120058,113,120110,113,120162,113,120214,113,120266,113,120318,113,120370,113,120422,113,120474,113,1307,113,1379,113,1382,113,8474,81,117990,81,119824,81,119876,81,119928,81,119980,81,120032,81,120084,81,120188,81,120240,81,120292,81,120344,81,120396,81,120448,81,11605,81,119851,114,119903,114,119955,114,120007,114,120059,114,120111,114,120163,114,120215,114,120267,114,120319,114,120371,114,120423,114,120475,114,43847,114,43848,114,7462,114,11397,114,43905,114,119318,82,8475,82,8476,82,8477,82,117991,82,119825,82,119877,82,119929,82,120033,82,120189,82,120241,82,120293,82,120345,82,120397,82,120449,82,422,82,5025,82,5074,82,66740,82,5511,82,42211,82,94005,82,65363,115,119852,115,119904,115,119956,115,120008,115,120060,115,120112,115,120164,115,120216,115,120268,115,120320,115,120372,115,120424,115,120476,115,42801,115,445,115,1109,115,43946,115,71873,115,66632,115,65331,83,117992,83,119826,83,119878,83,119930,83,119982,83,120034,83,120086,83,120138,83,120190,83,120242,83,120294,83,120346,83,120398,83,120450,83,1029,83,1359,83,5077,83,5082,83,42210,83,94010,83,66198,83,66592,83,119853,116,119905,116,119957,116,120009,116,120061,116,120113,116,120165,116,120217,116,120269,116,120321,116,120373,116,120425,116,120477,116,8868,84,10201,84,128872,84,65332,84,117993,84,119827,84,119879,84,119931,84,119983,84,120035,84,120087,84,120139,84,120191,84,120243,84,120295,84,120347,84,120399,84,120451,84,932,84,120507,84,120565,84,120623,84,120681,84,120739,84,11430,84,5026,84,42196,84,93962,84,71868,84,66199,84,66225,84,66325,84,119854,117,119906,117,119958,117,120010,117,120062,117,120114,117,120166,117,120218,117,120270,117,120322,117,120374,117,120426,117,120478,117,42911,117,7452,117,43854,117,43858,117,651,117,965,117,120534,117,120592,117,120650,117,120708,117,120766,117,1405,117,66806,117,71896,117,8746,85,8899,85,117994,85,119828,85,119880,85,119932,85,119984,85,120036,85,120088,85,120140,85,120192,85,120244,85,120296,85,120348,85,120400,85,120452,85,1357,85,4608,85,66766,85,5196,85,42228,85,94018,85,71864,85,8744,118,8897,118,65366,118,8564,118,119855,118,119907,118,119959,118,120011,118,120063,118,120115,118,120167,118,120219,118,120271,118,120323,118,120375,118,120427,118,120479,118,7456,118,957,118,120526,118,120584,118,120642,118,120700,118,120758,118,1141,118,1496,118,71430,118,43945,118,71872,118,119309,86,1639,86,1783,86,8548,86,117995,86,119829,86,119881,86,119933,86,119985,86,120037,86,120089,86,120141,86,120193,86,120245,86,120297,86,120349,86,120401,86,120453,86,1140,86,11576,86,5081,86,5167,86,42719,86,42214,86,93960,86,71840,86,66845,86,623,119,119856,119,119908,119,119960,119,120012,119,120064,119,120116,119,120168,119,120220,119,120272,119,120324,119,120376,119,120428,119,120480,119,7457,119,1121,119,1309,119,1377,119,71434,119,71438,119,71439,119,43907,119,71910,87,71919,87,117996,87,119830,87,119882,87,119934,87,119986,87,120038,87,120090,87,120142,87,120194,87,120246,87,120298,87,120350,87,120402,87,120454,87,1308,87,5043,87,5076,87,42218,87,5742,120,10539,120,10540,120,10799,120,65368,120,8569,120,119857,120,119909,120,119961,120,120013,120,120065,120,120117,120,120169,120,120221,120,120273,120,120325,120,120377,120,120429,120,120481,120,5441,120,5501,120,5741,88,9587,88,66338,88,71916,88,65336,88,8553,88,117997,88,119831,88,119883,88,119935,88,119987,88,120039,88,120091,88,120143,88,120195,88,120247,88,120299,88,120351,88,120403,88,120455,88,42931,88,935,88,120510,88,120568,88,120626,88,120684,88,120742,88,11436,88,11613,88,5815,88,42219,88,66192,88,66228,88,66327,88,66855,88,611,121,7564,121,65369,121,119858,121,119910,121,119962,121,120014,121,120066,121,120118,121,120170,121,120222,121,120274,121,120326,121,120378,121,120430,121,120482,121,655,121,7935,121,43866,121,947,121,8509,121,120516,121,120574,121,120632,121,120690,121,120748,121,1199,121,4327,121,71900,121,65337,89,117998,89,119832,89,119884,89,119936,89,119988,89,120040,89,120092,89,120144,89,120196,89,120248,89,120300,89,120352,89,120404,89,120456,89,933,89,978,89,120508,89,120566,89,120624,89,120682,89,120740,89,11432,89,1198,89,5033,89,5053,89,42220,89,94019,89,71844,89,66226,89,119859,122,119911,122,119963,122,120015,122,120067,122,120119,122,120171,122,120223,122,120275,122,120327,122,120379,122,120431,122,120483,122,7458,122,43923,122,71876,122,71909,90,66293,90,65338,90,8484,90,8488,90,117999,90,119833,90,119885,90,119937,90,119989,90,120041,90,120197,90,120249,90,120301,90,120353,90,120405,90,120457,90,918,90,120493,90,120551,90,120609,90,120667,90,120725,90,5059,90,42204,90,71849,90,65282,34,65283,35,65284,36,65285,37,65286,38,65290,42,65291,43,65294,46,65295,47,65296,48,65298,50,65299,51,65300,52,65301,53,65302,54,65303,55,65304,56,65305,57,65308,60,65309,61,65310,62,65312,64,65316,68,65318,70,65319,71,65324,76,65329,81,65330,82,65333,85,65334,86,65335,87,65343,95,65346,98,65348,100,65350,102,65355,107,65357,109,65358,110,65361,113,65362,114,65364,116,65365,117,65367,119,65370,122,65371,123,65373,125,119846,109],"_default":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8216,96,8217,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"cs":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"de":[65374,126,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"es":[8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"fr":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"it":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"ja":[8211,45,8218,44,65281,33,8216,96,8245,96,180,96,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65292,44,65297,49,65307,59],"ko":[8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"pl":[65374,126,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"pt-BR":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"qps-ploc":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"ru":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,305,105,921,73,1009,112,215,120,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"tr":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"zh-hans":[160,32,65374,126,8218,44,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65297,49],"zh-hant":[8211,45,65374,126,8218,44,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89]}');
     });
   }
   static {
-    this.d = new $Hf((localesStr) => {
+    this.cache = new LRUCachedFunction((localesStr) => {
       const locales = localesStr.split(",");
       function arrayToMap(arr) {
         const result = /* @__PURE__ */ new Map();
@@ -4788,7 +4788,7 @@ var $Rg = class _$Rg {
         }
         return result;
       }
-      const data = this.c.value;
+      const data = this.ambiguousCharacterData.value;
       let filteredLocales = locales.filter((l) => !l.startsWith("_") && Object.hasOwn(data, l));
       if (filteredLocales.length === 0) {
         filteredLocales = ["_default"];
@@ -4800,23 +4800,23 @@ var $Rg = class _$Rg {
       }
       const commonMap = arrayToMap(data["_common"]);
       const map = mergeMaps(commonMap, languageSpecificMap);
-      return new _$Rg(map);
+      return new _AmbiguousCharacters(map);
     });
   }
   static getInstance(locales) {
-    return _$Rg.d.get(Array.from(locales).join(","));
+    return _AmbiguousCharacters.cache.get(Array.from(locales).join(","));
   }
   static {
-    this.e = new $Kf(() => Object.keys(_$Rg.c.value).filter((k) => !k.startsWith("_")));
+    this._locales = new Lazy(() => Object.keys(_AmbiguousCharacters.ambiguousCharacterData.value).filter((k) => !k.startsWith("_")));
   }
   static getLocales() {
-    return _$Rg.e.value;
+    return _AmbiguousCharacters._locales.value;
   }
-  constructor(f) {
-    this.f = f;
+  constructor(confusableDictionary) {
+    this.confusableDictionary = confusableDictionary;
   }
   isAmbiguous(codePoint) {
-    return this.f.has(codePoint);
+    return this.confusableDictionary.has(codePoint);
   }
   containsAmbiguousCharacter(str) {
     for (let i = 0; i < str.length; i++) {
@@ -4832,78 +4832,78 @@ var $Rg = class _$Rg {
    * or undefined if such code point does note exist.
    */
   getPrimaryConfusable(codePoint) {
-    return this.f.get(codePoint);
+    return this.confusableDictionary.get(codePoint);
   }
   getConfusableCodePoints() {
-    return new Set(this.f.keys());
+    return new Set(this.confusableDictionary.keys());
   }
 };
-var $Sg = class _$Sg {
-  static c() {
+var InvisibleCharacters = class _InvisibleCharacters {
+  static getRawData() {
     return JSON.parse('{"_common":[11,12,13,127,847,1564,4447,4448,6068,6069,6155,6156,6157,6158,7355,7356,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8204,8205,8206,8207,8234,8235,8236,8237,8238,8239,8287,8288,8289,8290,8291,8292,8293,8294,8295,8296,8297,8298,8299,8300,8301,8302,8303,10240,12644,65024,65025,65026,65027,65028,65029,65030,65031,65032,65033,65034,65035,65036,65037,65038,65039,65279,65440,65520,65521,65522,65523,65524,65525,65526,65527,65528,65532,78844,119155,119156,119157,119158,119159,119160,119161,119162,917504,917505,917506,917507,917508,917509,917510,917511,917512,917513,917514,917515,917516,917517,917518,917519,917520,917521,917522,917523,917524,917525,917526,917527,917528,917529,917530,917531,917532,917533,917534,917535,917536,917537,917538,917539,917540,917541,917542,917543,917544,917545,917546,917547,917548,917549,917550,917551,917552,917553,917554,917555,917556,917557,917558,917559,917560,917561,917562,917563,917564,917565,917566,917567,917568,917569,917570,917571,917572,917573,917574,917575,917576,917577,917578,917579,917580,917581,917582,917583,917584,917585,917586,917587,917588,917589,917590,917591,917592,917593,917594,917595,917596,917597,917598,917599,917600,917601,917602,917603,917604,917605,917606,917607,917608,917609,917610,917611,917612,917613,917614,917615,917616,917617,917618,917619,917620,917621,917622,917623,917624,917625,917626,917627,917628,917629,917630,917631,917760,917761,917762,917763,917764,917765,917766,917767,917768,917769,917770,917771,917772,917773,917774,917775,917776,917777,917778,917779,917780,917781,917782,917783,917784,917785,917786,917787,917788,917789,917790,917791,917792,917793,917794,917795,917796,917797,917798,917799,917800,917801,917802,917803,917804,917805,917806,917807,917808,917809,917810,917811,917812,917813,917814,917815,917816,917817,917818,917819,917820,917821,917822,917823,917824,917825,917826,917827,917828,917829,917830,917831,917832,917833,917834,917835,917836,917837,917838,917839,917840,917841,917842,917843,917844,917845,917846,917847,917848,917849,917850,917851,917852,917853,917854,917855,917856,917857,917858,917859,917860,917861,917862,917863,917864,917865,917866,917867,917868,917869,917870,917871,917872,917873,917874,917875,917876,917877,917878,917879,917880,917881,917882,917883,917884,917885,917886,917887,917888,917889,917890,917891,917892,917893,917894,917895,917896,917897,917898,917899,917900,917901,917902,917903,917904,917905,917906,917907,917908,917909,917910,917911,917912,917913,917914,917915,917916,917917,917918,917919,917920,917921,917922,917923,917924,917925,917926,917927,917928,917929,917930,917931,917932,917933,917934,917935,917936,917937,917938,917939,917940,917941,917942,917943,917944,917945,917946,917947,917948,917949,917950,917951,917952,917953,917954,917955,917956,917957,917958,917959,917960,917961,917962,917963,917964,917965,917966,917967,917968,917969,917970,917971,917972,917973,917974,917975,917976,917977,917978,917979,917980,917981,917982,917983,917984,917985,917986,917987,917988,917989,917990,917991,917992,917993,917994,917995,917996,917997,917998,917999],"cs":[173,8203,12288],"de":[173,8203,12288],"es":[8203,12288],"fr":[173,8203,12288],"it":[160,173,12288],"ja":[173],"ko":[173,12288],"pl":[173,8203,12288],"pt-BR":[173,8203,12288],"qps-ploc":[160,173,8203,12288],"ru":[173,12288],"tr":[160,173,8203,12288],"zh-hans":[160,173,8203,12288],"zh-hant":[173,12288]}');
   }
   static {
-    this.d = void 0;
+    this._data = void 0;
   }
-  static e() {
-    if (!this.d) {
-      this.d = new Set([...Object.values(_$Sg.c())].flat());
+  static getData() {
+    if (!this._data) {
+      this._data = new Set([...Object.values(_InvisibleCharacters.getRawData())].flat());
     }
-    return this.d;
+    return this._data;
   }
   static isInvisibleCharacter(codePoint) {
-    return _$Sg.e().has(codePoint);
+    return _InvisibleCharacters.getData().has(codePoint);
   }
   static containsInvisibleCharacter(str) {
     for (let i = 0; i < str.length; i++) {
       const codePoint = str.codePointAt(i);
-      if (typeof codePoint === "number" && (_$Sg.isInvisibleCharacter(codePoint) || codePoint === 32)) {
+      if (typeof codePoint === "number" && (_InvisibleCharacters.isInvisibleCharacter(codePoint) || codePoint === 32)) {
         return true;
       }
     }
     return false;
   }
   static get codePoints() {
-    return _$Sg.e();
+    return _InvisibleCharacters.getData();
   }
 };
 
 // out-build/vs/base/common/extpath.js
-function $Vg(code) {
+function isPathSeparator2(code) {
   return code === 47 || code === 92;
 }
-function $Wg(osPath) {
-  return osPath.replace(/[\\/]/g, $7.sep);
+function toSlashes(osPath) {
+  return osPath.replace(/[\\/]/g, posix.sep);
 }
-function $Xg(osPath) {
+function toPosixPath(osPath) {
   if (osPath.indexOf("/") === -1) {
-    osPath = $Wg(osPath);
+    osPath = toSlashes(osPath);
   }
   if (/^[a-zA-Z]:(\/|$)/.test(osPath)) {
     osPath = "/" + osPath;
   }
   return osPath;
 }
-function $Yg(path, sep2 = $7.sep) {
+function getRoot(path, sep2 = posix.sep) {
   if (!path) {
     return "";
   }
   const len = path.length;
   const firstLetter = path.charCodeAt(0);
-  if ($Vg(firstLetter)) {
-    if ($Vg(path.charCodeAt(1))) {
-      if (!$Vg(path.charCodeAt(2))) {
+  if (isPathSeparator2(firstLetter)) {
+    if (isPathSeparator2(path.charCodeAt(1))) {
+      if (!isPathSeparator2(path.charCodeAt(2))) {
         let pos2 = 3;
         const start = pos2;
         for (; pos2 < len; pos2++) {
-          if ($Vg(path.charCodeAt(pos2))) {
+          if (isPathSeparator2(path.charCodeAt(pos2))) {
             break;
           }
         }
-        if (start !== pos2 && !$Vg(path.charCodeAt(pos2 + 1))) {
+        if (start !== pos2 && !isPathSeparator2(path.charCodeAt(pos2 + 1))) {
           pos2 += 1;
           for (; pos2 < len; pos2++) {
-            if ($Vg(path.charCodeAt(pos2))) {
+            if (isPathSeparator2(path.charCodeAt(pos2))) {
               return path.slice(0, pos2 + 1).replace(/[\\/]/g, sep2);
             }
           }
@@ -4911,9 +4911,9 @@ function $Yg(path, sep2 = $7.sep) {
       }
     }
     return sep2;
-  } else if ($4g(firstLetter)) {
+  } else if (isWindowsDriveLetter(firstLetter)) {
     if (path.charCodeAt(1) === 58) {
-      if ($Vg(path.charCodeAt(2))) {
+      if (isPathSeparator2(path.charCodeAt(2))) {
         return path.slice(0, 2) + sep2;
       } else {
         return path.slice(0, 2);
@@ -4924,14 +4924,14 @@ function $Yg(path, sep2 = $7.sep) {
   if (pos !== -1) {
     pos += 3;
     for (; pos < len; pos++) {
-      if ($Vg(path.charCodeAt(pos))) {
+      if (isPathSeparator2(path.charCodeAt(pos))) {
         return path.slice(0, pos + 1);
       }
     }
   }
   return "";
 }
-function $3g(base, parentCandidate, ignoreCase, separator = sep) {
+function isEqualOrParent(base, parentCandidate, ignoreCase, separator = sep) {
   if (base === parentCandidate) {
     return true;
   }
@@ -4942,7 +4942,7 @@ function $3g(base, parentCandidate, ignoreCase, separator = sep) {
     return false;
   }
   if (ignoreCase) {
-    const beginsWith = $ig(base, parentCandidate);
+    const beginsWith = startsWithIgnoreCase(base, parentCandidate);
     if (!beginsWith) {
       return false;
     }
@@ -4960,7 +4960,7 @@ function $3g(base, parentCandidate, ignoreCase, separator = sep) {
   }
   return base.indexOf(parentCandidate) === 0;
 }
-function $4g(char0) {
+function isWindowsDriveLetter(char0) {
   return char0 >= 65 && char0 <= 90 || char0 >= 97 && char0 <= 122;
 }
 
@@ -5014,79 +5014,79 @@ var Schemas;
   Schemas2.chatEditingModel = "chat-editing-text-model";
   Schemas2.copilotPr = "copilot-pr";
 })(Schemas || (Schemas = {}));
-var $dh = "tkn";
+var connectionTokenQueryName = "tkn";
 var RemoteAuthoritiesImpl = class {
   constructor() {
-    this.a = /* @__PURE__ */ Object.create(null);
-    this.b = /* @__PURE__ */ Object.create(null);
-    this.c = /* @__PURE__ */ Object.create(null);
-    this.d = "http";
-    this.e = null;
-    this.f = "/";
+    this._hosts = /* @__PURE__ */ Object.create(null);
+    this._ports = /* @__PURE__ */ Object.create(null);
+    this._connectionTokens = /* @__PURE__ */ Object.create(null);
+    this._preferredWebSchema = "http";
+    this._delegate = null;
+    this._serverRootPath = "/";
   }
   setPreferredWebSchema(schema) {
-    this.d = schema;
+    this._preferredWebSchema = schema;
   }
   setDelegate(delegate) {
-    this.e = delegate;
+    this._delegate = delegate;
   }
   setServerRootPath(product, serverBasePath) {
-    this.f = $7.join(serverBasePath ?? "/", $fh(product));
+    this._serverRootPath = posix.join(serverBasePath ?? "/", getServerProductSegment(product));
   }
   getServerRootPath() {
-    return this.f;
+    return this._serverRootPath;
   }
-  get g() {
-    return $7.join(this.f, Schemas.vscodeRemoteResource);
+  get _remoteResourcesPath() {
+    return posix.join(this._serverRootPath, Schemas.vscodeRemoteResource);
   }
   set(authority, host, port) {
-    this.a[authority] = host;
-    this.b[authority] = port;
+    this._hosts[authority] = host;
+    this._ports[authority] = port;
   }
   setConnectionToken(authority, connectionToken) {
-    this.c[authority] = connectionToken;
+    this._connectionTokens[authority] = connectionToken;
   }
   getPreferredWebSchema() {
-    return this.d;
+    return this._preferredWebSchema;
   }
   rewrite(uri) {
-    if (this.e) {
+    if (this._delegate) {
       try {
-        return this.e(uri);
+        return this._delegate(uri);
       } catch (err) {
-        $nb(err);
+        onUnexpectedError(err);
         return uri;
       }
     }
     const authority = uri.authority;
-    let host = this.a[authority];
+    let host = this._hosts[authority];
     if (host && host.indexOf(":") !== -1 && host.indexOf("[") === -1) {
       host = `[${host}]`;
     }
-    const port = this.b[authority];
-    const connectionToken = this.c[authority];
+    const port = this._ports[authority];
+    const connectionToken = this._connectionTokens[authority];
     let query = `path=${encodeURIComponent(uri.path)}`;
     if (typeof connectionToken === "string") {
-      query += `&${$dh}=${encodeURIComponent(connectionToken)}`;
+      query += `&${connectionTokenQueryName}=${encodeURIComponent(connectionToken)}`;
     }
     return URI.from({
-      scheme: $s ? this.d : Schemas.vscodeRemoteResource,
+      scheme: isWeb ? this._preferredWebSchema : Schemas.vscodeRemoteResource,
       authority: `${host}:${port}`,
-      path: this.g,
+      path: this._remoteResourcesPath,
       query
     });
   }
 };
-var $eh = new RemoteAuthoritiesImpl();
-function $fh(product) {
+var RemoteAuthorities = new RemoteAuthoritiesImpl();
+function getServerProductSegment(product) {
   return `${product.quality ?? "oss"}-${product.commit ?? "dev"}`;
 }
-var $hh = "vs/../../node_modules";
-var $ih = "vs/../../node_modules.asar";
-var $kh = "vscode-app";
+var nodeModulesPath = "vs/../../node_modules";
+var nodeModulesAsarPath = "vs/../../node_modules.asar";
+var VSCODE_AUTHORITY = "vscode-app";
 var FileAccessImpl = class _FileAccessImpl {
   static {
-    this.a = $kh;
+    this.FALLBACK_AUTHORITY = VSCODE_AUTHORITY;
   }
   /**
    * Returns a URI to use in contexts where the browser is responsible
@@ -5095,7 +5095,7 @@ var FileAccessImpl = class _FileAccessImpl {
    * **Note:** use `dom.ts#asCSSUrl` whenever the URL is to be used in CSS context.
    */
   asBrowserUri(resourcePath) {
-    const uri = this.b(resourcePath);
+    const uri = this.toUri(resourcePath);
     return this.uriToBrowserUri(uri);
   }
   /**
@@ -5106,13 +5106,13 @@ var FileAccessImpl = class _FileAccessImpl {
    */
   uriToBrowserUri(uri) {
     if (uri.scheme === Schemas.vscodeRemote) {
-      return $eh.rewrite(uri);
+      return RemoteAuthorities.rewrite(uri);
     }
     if (
       // ...only ever for `file` resources
       uri.scheme === Schemas.file && // ...and we run in native environments
-      ($q || // ...or web worker extensions on desktop
-      $u === `${Schemas.vscodeFileResource}://${_FileAccessImpl.a}`)
+      (isNative || // ...or web worker extensions on desktop
+      webWorkerOrigin === `${Schemas.vscodeFileResource}://${_FileAccessImpl.FALLBACK_AUTHORITY}`)
     ) {
       return uri.with({
         scheme: Schemas.vscodeFileResource,
@@ -5120,7 +5120,7 @@ var FileAccessImpl = class _FileAccessImpl {
         // as origin for network and loading matters in chromium.
         // If the URI is not coming with an authority already, we
         // add our own
-        authority: uri.authority || _FileAccessImpl.a,
+        authority: uri.authority || _FileAccessImpl.FALLBACK_AUTHORITY,
         query: null,
         fragment: null
       });
@@ -5132,7 +5132,7 @@ var FileAccessImpl = class _FileAccessImpl {
    * is responsible for loading.
    */
   asFileUri(resourcePath) {
-    const uri = this.b(resourcePath);
+    const uri = this.toUri(resourcePath);
     return this.uriToFileUri(uri);
   }
   /**
@@ -5146,14 +5146,14 @@ var FileAccessImpl = class _FileAccessImpl {
         // Only preserve the `authority` if it is different from
         // our fallback authority. This ensures we properly preserve
         // Windows UNC paths that come with their own authority.
-        authority: uri.authority !== _FileAccessImpl.a ? uri.authority : null,
+        authority: uri.authority !== _FileAccessImpl.FALLBACK_AUTHORITY ? uri.authority : null,
         query: null,
         fragment: null
       });
     }
     return uri;
   }
-  b(uriOrModule) {
+  toUri(uriOrModule) {
     if (URI.isUri(uriOrModule)) {
       return uriOrModule;
     }
@@ -5162,17 +5162,17 @@ var FileAccessImpl = class _FileAccessImpl {
       if (/^\w[\w\d+.-]*:\/\//.test(rootUriOrPath)) {
         return URI.joinPath(URI.parse(rootUriOrPath, true), uriOrModule);
       }
-      const modulePath = $0(rootUriOrPath, uriOrModule);
+      const modulePath = join(rootUriOrPath, uriOrModule);
       return URI.file(modulePath);
     }
     throw new Error("Cannot determine URI for module id!");
   }
 };
-var $lh = new FileAccessImpl();
-var $mh = Object.freeze({
+var FileAccess = new FileAccessImpl();
+var CacheControlheaders = Object.freeze({
   "Cache-Control": "no-cache, no-store"
 });
-var $nh = Object.freeze({
+var DocumentPolicyheaders = Object.freeze({
   "Document-Policy": "include-js-call-stacks-in-crash-reports"
 });
 var COI;
@@ -5215,18 +5215,18 @@ var COI;
 })(COI || (COI = {}));
 
 // out-build/vs/base/common/resources.js
-function $oh(uri) {
-  return $Lc(uri, true);
+function originalFSPath(uri) {
+  return uriToFsPath(uri, true);
 }
-var $ph = class {
-  constructor(a) {
-    this.a = a;
+var ExtUri = class {
+  constructor(_ignorePathCasing) {
+    this._ignorePathCasing = _ignorePathCasing;
   }
   compare(uri1, uri2, ignoreFragment = false) {
     if (uri1 === uri2) {
       return 0;
     }
-    return $_f(this.getComparisonKey(uri1, ignoreFragment), this.getComparisonKey(uri2, ignoreFragment));
+    return compare(this.getComparisonKey(uri1, ignoreFragment), this.getComparisonKey(uri2, ignoreFragment));
   }
   isEqual(uri1, uri2, ignoreFragment = false) {
     if (uri1 === uri2) {
@@ -5239,20 +5239,20 @@ var $ph = class {
   }
   getComparisonKey(uri, ignoreFragment = false) {
     return uri.with({
-      path: this.a(uri) ? uri.path.toLowerCase() : void 0,
+      path: this._ignorePathCasing(uri) ? uri.path.toLowerCase() : void 0,
       fragment: ignoreFragment ? null : void 0
     }).toString();
   }
   ignorePathCasing(uri) {
-    return this.a(uri);
+    return this._ignorePathCasing(uri);
   }
   isEqualOrParent(base, parentCandidate, ignoreFragment = false) {
     if (base.scheme === parentCandidate.scheme) {
       if (base.scheme === Schemas.file) {
-        return $3g($oh(base), $oh(parentCandidate), this.a(base)) && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
+        return isEqualOrParent(originalFSPath(base), originalFSPath(parentCandidate), this._ignorePathCasing(base)) && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
       }
-      if ($Fh(base.authority, parentCandidate.authority)) {
-        return $3g(base.path, parentCandidate.path, this.a(base), "/") && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
+      if (isEqualAuthority(base.authority, parentCandidate.authority)) {
+        return isEqualOrParent(base.path, parentCandidate.path, this._ignorePathCasing(base), "/") && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
       }
     }
     return false;
@@ -5262,30 +5262,30 @@ var $ph = class {
     return URI.joinPath(resource, ...pathFragment);
   }
   basenameOrAuthority(resource) {
-    return $xh(resource) || resource.authority;
+    return basename2(resource) || resource.authority;
   }
   basename(resource) {
-    return $7.basename(resource.path);
+    return posix.basename(resource.path);
   }
   extname(resource) {
-    return $7.extname(resource.path);
+    return posix.extname(resource.path);
   }
   dirname(resource) {
     if (resource.path.length === 0) {
       return resource;
     }
-    let dirname;
+    let dirname3;
     if (resource.scheme === Schemas.file) {
-      dirname = URI.file($ab($oh(resource))).path;
+      dirname3 = URI.file(dirname(originalFSPath(resource))).path;
     } else {
-      dirname = $7.dirname(resource.path);
-      if (resource.authority && dirname.length && dirname.charCodeAt(0) !== 47) {
+      dirname3 = posix.dirname(resource.path);
+      if (resource.authority && dirname3.length && dirname3.charCodeAt(0) !== 47) {
         console.error(`dirname("${resource.toString})) resulted in a relative path`);
-        dirname = "/";
+        dirname3 = "/";
       }
     }
     return resource.with({
-      path: dirname
+      path: dirname3
     });
   }
   normalizePath(resource) {
@@ -5294,25 +5294,25 @@ var $ph = class {
     }
     let normalizedPath;
     if (resource.scheme === Schemas.file) {
-      normalizedPath = URI.file($8($oh(resource))).path;
+      normalizedPath = URI.file(normalize(originalFSPath(resource))).path;
     } else {
-      normalizedPath = $7.normalize(resource.path);
+      normalizedPath = posix.normalize(resource.path);
     }
     return resource.with({
       path: normalizedPath
     });
   }
   relativePath(from, to) {
-    if (from.scheme !== to.scheme || !$Fh(from.authority, to.authority)) {
+    if (from.scheme !== to.scheme || !isEqualAuthority(from.authority, to.authority)) {
       return void 0;
     }
     if (from.scheme === Schemas.file) {
-      const relativePath = $_($oh(from), $oh(to));
-      return $m ? $Wg(relativePath) : relativePath;
+      const relativePath2 = relative(originalFSPath(from), originalFSPath(to));
+      return isWindows ? toSlashes(relativePath2) : relativePath2;
     }
     let fromPath = from.path || "/";
     const toPath = to.path || "/";
-    if (this.a(from)) {
+    if (this._ignorePathCasing(from)) {
       let i = 0;
       for (const len = Math.min(fromPath.length, toPath.length); i < len; i++) {
         if (fromPath.charCodeAt(i) !== toPath.charCodeAt(i)) {
@@ -5323,19 +5323,19 @@ var $ph = class {
       }
       fromPath = toPath.substr(0, i) + fromPath.substr(i);
     }
-    return $7.relative(fromPath, toPath);
+    return posix.relative(fromPath, toPath);
   }
   resolvePath(base, path) {
     if (base.scheme === Schemas.file) {
-      const newURI = URI.file($$($oh(base), path));
+      const newURI = URI.file(resolve(originalFSPath(base), path));
       return base.with({
         authority: newURI.authority,
         path: newURI.path
       });
     }
-    path = $Xg(path);
+    path = toPosixPath(path);
     return base.with({
-      path: $7.resolve(base.path, path)
+      path: posix.resolve(base.path, path)
     });
   }
   // --- misc
@@ -5343,19 +5343,19 @@ var $ph = class {
     return !!resource.path && resource.path[0] === "/";
   }
   isEqualAuthority(a1, a2) {
-    return a1 === a2 || a1 !== void 0 && a2 !== void 0 && $gg(a1, a2);
+    return a1 === a2 || a1 !== void 0 && a2 !== void 0 && equalsIgnoreCase(a1, a2);
   }
   hasTrailingPathSeparator(resource, sep2 = sep) {
     if (resource.scheme === Schemas.file) {
-      const fsp = $oh(resource);
-      return fsp.length > $Yg(fsp).length && fsp[fsp.length - 1] === sep2;
+      const fsp = originalFSPath(resource);
+      return fsp.length > getRoot(fsp).length && fsp[fsp.length - 1] === sep2;
     } else {
       const p = resource.path;
       return p.length > 1 && p.charCodeAt(p.length - 1) === 47 && !/^[a-zA-Z]:(\/$|\\$)/.test(resource.fsPath);
     }
   }
   removeTrailingPathSeparator(resource, sep2 = sep) {
-    if ($Gh(resource, sep2)) {
+    if (hasTrailingPathSeparator(resource, sep2)) {
       return resource.with({ path: resource.path.substr(0, resource.path.length - 1) });
     }
     return resource;
@@ -5363,40 +5363,40 @@ var $ph = class {
   addTrailingPathSeparator(resource, sep2 = sep) {
     let isRootSep = false;
     if (resource.scheme === Schemas.file) {
-      const fsp = $oh(resource);
-      isRootSep = fsp !== void 0 && fsp.length === $Yg(fsp).length && fsp[fsp.length - 1] === sep2;
+      const fsp = originalFSPath(resource);
+      isRootSep = fsp !== void 0 && fsp.length === getRoot(fsp).length && fsp[fsp.length - 1] === sep2;
     } else {
       sep2 = "/";
       const p = resource.path;
       isRootSep = p.length === 1 && p.charCodeAt(p.length - 1) === 47;
     }
-    if (!isRootSep && !$Gh(resource, sep2)) {
+    if (!isRootSep && !hasTrailingPathSeparator(resource, sep2)) {
       return resource.with({ path: resource.path + "/" });
     }
     return resource;
   }
 };
-var $qh = new $ph(() => false);
-var $rh = new $ph((uri) => {
-  return uri.scheme === Schemas.file ? !$o : true;
+var extUri = new ExtUri(() => false);
+var extUriBiasedIgnorePathCase = new ExtUri((uri) => {
+  return uri.scheme === Schemas.file ? !isLinux : true;
 });
-var $sh = new $ph((_) => true);
-var $th = $qh.isEqual.bind($qh);
-var $uh = $qh.isEqualOrParent.bind($qh);
-var $vh = $qh.getComparisonKey.bind($qh);
-var $wh = $qh.basenameOrAuthority.bind($qh);
-var $xh = $qh.basename.bind($qh);
-var $yh = $qh.extname.bind($qh);
-var $zh = $qh.dirname.bind($qh);
-var $Ah = $qh.joinPath.bind($qh);
-var $Bh = $qh.normalizePath.bind($qh);
-var $Ch = $qh.relativePath.bind($qh);
-var $Dh = $qh.resolvePath.bind($qh);
-var $Eh = $qh.isAbsolutePath.bind($qh);
-var $Fh = $qh.isEqualAuthority.bind($qh);
-var $Gh = $qh.hasTrailingPathSeparator.bind($qh);
-var $Hh = $qh.removeTrailingPathSeparator.bind($qh);
-var $Ih = $qh.addTrailingPathSeparator.bind($qh);
+var extUriIgnorePathCase = new ExtUri((_) => true);
+var isEqual = extUri.isEqual.bind(extUri);
+var isEqualOrParent2 = extUri.isEqualOrParent.bind(extUri);
+var getComparisonKey = extUri.getComparisonKey.bind(extUri);
+var basenameOrAuthority = extUri.basenameOrAuthority.bind(extUri);
+var basename2 = extUri.basename.bind(extUri);
+var extname2 = extUri.extname.bind(extUri);
+var dirname2 = extUri.dirname.bind(extUri);
+var joinPath = extUri.joinPath.bind(extUri);
+var normalizePath = extUri.normalizePath.bind(extUri);
+var relativePath = extUri.relativePath.bind(extUri);
+var resolvePath = extUri.resolvePath.bind(extUri);
+var isAbsolutePath = extUri.isAbsolutePath.bind(extUri);
+var isEqualAuthority = extUri.isEqualAuthority.bind(extUri);
+var hasTrailingPathSeparator = extUri.hasTrailingPathSeparator.bind(extUri);
+var removeTrailingPathSeparator = extUri.removeTrailingPathSeparator.bind(extUri);
+var addTrailingPathSeparator = extUri.addTrailingPathSeparator.bind(extUri);
 var DataUri;
 (function(DataUri2) {
   DataUri2.META_DATA_LABEL = "label";
@@ -5422,54 +5422,54 @@ var DataUri;
 })(DataUri || (DataUri = {}));
 
 // out-build/vs/workbench/services/textMate/common/TMScopeRegistry.js
-var $A$b = class {
+var TMScopeRegistry = class {
   constructor() {
-    this.a = /* @__PURE__ */ Object.create(null);
+    this._scopeNameToLanguageRegistration = /* @__PURE__ */ Object.create(null);
   }
   reset() {
-    this.a = /* @__PURE__ */ Object.create(null);
+    this._scopeNameToLanguageRegistration = /* @__PURE__ */ Object.create(null);
   }
   register(def) {
-    if (this.a[def.scopeName]) {
-      const existingRegistration = this.a[def.scopeName];
-      if (!$th(existingRegistration.location, def.location)) {
+    if (this._scopeNameToLanguageRegistration[def.scopeName]) {
+      const existingRegistration = this._scopeNameToLanguageRegistration[def.scopeName];
+      if (!isEqual(existingRegistration.location, def.location)) {
         console.warn(`Overwriting grammar scope name to file mapping for scope ${def.scopeName}.
 Old grammar file: ${existingRegistration.location.toString()}.
 New grammar file: ${def.location.toString()}`);
       }
     }
-    this.a[def.scopeName] = def;
+    this._scopeNameToLanguageRegistration[def.scopeName] = def;
   }
   getGrammarDefinition(scopeName) {
-    return this.a[scopeName] || null;
+    return this._scopeNameToLanguageRegistration[scopeName] || null;
   }
 };
 
 // out-build/vs/workbench/services/textMate/common/TMGrammarFactory.js
-var $B$b = "No TM Grammar registered for this language.";
-var $C$b = class extends $Fd {
+var missingTMGrammarErrorMessage = "No TM Grammar registered for this language.";
+var TMGrammarFactory = class extends Disposable {
   constructor(host, grammarDefinitions, vscodeTextmate, onigLib) {
     super();
-    this.a = host;
-    this.b = vscodeTextmate.INITIAL;
-    this.c = new $A$b();
-    this.f = {};
-    this.g = {};
-    this.h = /* @__PURE__ */ new Map();
-    this.j = this.D(new vscodeTextmate.Registry({
+    this._host = host;
+    this._initialState = vscodeTextmate.INITIAL;
+    this._scopeRegistry = new TMScopeRegistry();
+    this._injections = {};
+    this._injectedEmbeddedLanguages = {};
+    this._languageToScope = /* @__PURE__ */ new Map();
+    this._grammarRegistry = this._register(new vscodeTextmate.Registry({
       onigLib,
       loadGrammar: async (scopeName) => {
-        const grammarDefinition = this.c.getGrammarDefinition(scopeName);
+        const grammarDefinition = this._scopeRegistry.getGrammarDefinition(scopeName);
         if (!grammarDefinition) {
-          this.a.logTrace(`No grammar found for scope ${scopeName}`);
+          this._host.logTrace(`No grammar found for scope ${scopeName}`);
           return null;
         }
         const location = grammarDefinition.location;
         try {
-          const content = await this.a.readFile(location);
+          const content = await this._host.readFile(location);
           return vscodeTextmate.parseRawGrammar(content, location.path);
         } catch (e) {
-          this.a.logError(`Unable to load and parse grammar for scope ${scopeName} from ${location}`, e);
+          this._host.logError(`Unable to load and parse grammar for scope ${scopeName} from ${location}`, e);
           return null;
         }
       },
@@ -5478,57 +5478,57 @@ var $C$b = class extends $Fd {
         let injections = [];
         for (let i = 1; i <= scopeParts.length; i++) {
           const subScopeName = scopeParts.slice(0, i).join(".");
-          injections = [...injections, ...this.f[subScopeName] || []];
+          injections = [...injections, ...this._injections[subScopeName] || []];
         }
         return injections;
       }
     }));
     for (const validGrammar of grammarDefinitions) {
-      this.c.register(validGrammar);
+      this._scopeRegistry.register(validGrammar);
       if (validGrammar.injectTo) {
         for (const injectScope of validGrammar.injectTo) {
-          let injections = this.f[injectScope];
+          let injections = this._injections[injectScope];
           if (!injections) {
-            this.f[injectScope] = injections = [];
+            this._injections[injectScope] = injections = [];
           }
           injections.push(validGrammar.scopeName);
         }
         if (validGrammar.embeddedLanguages) {
           for (const injectScope of validGrammar.injectTo) {
-            let injectedEmbeddedLanguages = this.g[injectScope];
+            let injectedEmbeddedLanguages = this._injectedEmbeddedLanguages[injectScope];
             if (!injectedEmbeddedLanguages) {
-              this.g[injectScope] = injectedEmbeddedLanguages = [];
+              this._injectedEmbeddedLanguages[injectScope] = injectedEmbeddedLanguages = [];
             }
             injectedEmbeddedLanguages.push(validGrammar.embeddedLanguages);
           }
         }
       }
       if (validGrammar.language) {
-        this.h.set(validGrammar.language, validGrammar.scopeName);
+        this._languageToScope.set(validGrammar.language, validGrammar.scopeName);
       }
     }
   }
   has(languageId) {
-    return this.h.has(languageId);
+    return this._languageToScope.has(languageId);
   }
   setTheme(theme, colorMap) {
-    this.j.setTheme(theme, colorMap);
+    this._grammarRegistry.setTheme(theme, colorMap);
   }
   getColorMap() {
-    return this.j.getColorMap();
+    return this._grammarRegistry.getColorMap();
   }
   async createGrammar(languageId, encodedLanguageId) {
-    const scopeName = this.h.get(languageId);
+    const scopeName = this._languageToScope.get(languageId);
     if (typeof scopeName !== "string") {
-      throw new Error($B$b);
+      throw new Error(missingTMGrammarErrorMessage);
     }
-    const grammarDefinition = this.c.getGrammarDefinition(scopeName);
+    const grammarDefinition = this._scopeRegistry.getGrammarDefinition(scopeName);
     if (!grammarDefinition) {
-      throw new Error($B$b);
+      throw new Error(missingTMGrammarErrorMessage);
     }
     const embeddedLanguages = grammarDefinition.embeddedLanguages;
-    if (this.g[scopeName]) {
-      const injectedEmbeddedLanguages = this.g[scopeName];
+    if (this._injectedEmbeddedLanguages[scopeName]) {
+      const injectedEmbeddedLanguages = this._injectedEmbeddedLanguages[scopeName];
       for (const injected of injectedEmbeddedLanguages) {
         for (const scope of Object.keys(injected)) {
           embeddedLanguages[scope] = injected[scope];
@@ -5538,7 +5538,7 @@ var $C$b = class extends $Fd {
     const containsEmbeddedLanguages = Object.keys(embeddedLanguages).length > 0;
     let grammar;
     try {
-      grammar = await this.j.loadGrammarWithConfiguration(scopeName, encodedLanguageId, {
+      grammar = await this._grammarRegistry.loadGrammarWithConfiguration(scopeName, encodedLanguageId, {
         embeddedLanguages,
         // eslint-disable-next-line local/code-no-any-casts
         tokenTypes: grammarDefinition.tokenTypes,
@@ -5547,14 +5547,14 @@ var $C$b = class extends $Fd {
       });
     } catch (err) {
       if (err.message && err.message.startsWith("No grammar provided for")) {
-        throw new Error($B$b);
+        throw new Error(missingTMGrammarErrorMessage);
       }
       throw err;
     }
     return {
       languageId,
       grammar,
-      initialState: this.b,
+      initialState: this._initialState,
       containsEmbeddedLanguages,
       sourceExtensionId: grammarDefinition.sourceExtensionId
     };
@@ -5562,7 +5562,7 @@ var $C$b = class extends $Fd {
 };
 
 // out-build/vs/base/common/uuid.js
-var $cn = function() {
+var generateUuid = function() {
   if (typeof crypto.randomUUID === "function") {
     return crypto.randomUUID.bind(crypto);
   }
@@ -5571,7 +5571,7 @@ var $cn = function() {
   for (let i = 0; i < 256; i++) {
     _hex.push(i.toString(16).padStart(2, "0"));
   }
-  return function generateUuid() {
+  return function generateUuid2() {
     crypto.getRandomValues(_data);
     _data[6] = _data[6] & 15 | 64;
     _data[8] = _data[8] & 63 | 128;
@@ -5602,7 +5602,7 @@ var $cn = function() {
 }();
 
 // out-build/vs/amdX.js
-var $OK = false;
+var canASAR = false;
 var DefineCall = class {
   constructor(id2, dependencies, callback) {
     this.id = id2;
@@ -5621,21 +5621,21 @@ var AMDModuleImporter = class _AMDModuleImporter {
     this.INSTANCE = new _AMDModuleImporter();
   }
   constructor() {
-    this.a = typeof self === "object" && self.constructor && self.constructor.name === "DedicatedWorkerGlobalScope";
-    this.b = typeof document === "object";
-    this.c = [];
-    this.d = AMDModuleImporterState.Uninitialized;
+    this._isWebWorker = typeof self === "object" && self.constructor && self.constructor.name === "DedicatedWorkerGlobalScope";
+    this._isRenderer = typeof document === "object";
+    this._defineCalls = [];
+    this._state = AMDModuleImporterState.Uninitialized;
   }
-  g() {
-    if (this.d === AMDModuleImporterState.Uninitialized) {
+  _initialize() {
+    if (this._state === AMDModuleImporterState.Uninitialized) {
       if (globalThis.define) {
-        this.d = AMDModuleImporterState.InitializedExternal;
+        this._state = AMDModuleImporterState.InitializedExternal;
         return;
       }
     } else {
       return;
     }
-    this.d = AMDModuleImporterState.InitializedInternal;
+    this._state = AMDModuleImporterState.InitializedInternal;
     globalThis.define = (id2, dependencies, callback) => {
       if (typeof id2 !== "string") {
         callback = dependencies;
@@ -5646,23 +5646,23 @@ var AMDModuleImporter = class _AMDModuleImporter {
         callback = dependencies;
         dependencies = null;
       }
-      this.c.push(new DefineCall(id2, dependencies, callback));
+      this._defineCalls.push(new DefineCall(id2, dependencies, callback));
     };
     globalThis.define.amd = true;
-    if (this.b) {
-      this.f = globalThis._VSCODE_WEB_PACKAGE_TTP ?? window.trustedTypes?.createPolicy("amdLoader", {
+    if (this._isRenderer) {
+      this._amdPolicy = globalThis._VSCODE_WEB_PACKAGE_TTP ?? window.trustedTypes?.createPolicy("amdLoader", {
         createScriptURL(value) {
           if (value.startsWith(window.location.origin)) {
             return value;
           }
-          if (value.startsWith(`${Schemas.vscodeFileResource}://${$kh}`)) {
+          if (value.startsWith(`${Schemas.vscodeFileResource}://${VSCODE_AUTHORITY}`)) {
             return value;
           }
           throw new Error(`[trusted_script_src] Invalid script url: ${value}`);
         }
       });
-    } else if (this.a) {
-      this.f = globalThis._VSCODE_WEB_PACKAGE_TTP ?? globalThis.trustedTypes?.createPolicy("amdLoader", {
+    } else if (this._isWebWorker) {
+      this._amdPolicy = globalThis._VSCODE_WEB_PACKAGE_TTP ?? globalThis.trustedTypes?.createPolicy("amdLoader", {
         createScriptURL(value) {
           return value;
         }
@@ -5670,16 +5670,16 @@ var AMDModuleImporter = class _AMDModuleImporter {
     }
   }
   async load(scriptSrc) {
-    this.g();
-    if (this.d === AMDModuleImporterState.InitializedExternal) {
-      return new Promise((resolve) => {
-        const tmpModuleId = $cn();
+    this._initialize();
+    if (this._state === AMDModuleImporterState.InitializedExternal) {
+      return new Promise((resolve2) => {
+        const tmpModuleId = generateUuid();
         globalThis.define(tmpModuleId, [scriptSrc], function(moduleResult) {
-          resolve(moduleResult);
+          resolve2(moduleResult);
         });
       });
     }
-    const defineCall = await (this.a ? this.i(scriptSrc) : this.b ? this.h(scriptSrc) : this.j(scriptSrc));
+    const defineCall = await (this._isWebWorker ? this._workerLoadScript(scriptSrc) : this._isRenderer ? this._rendererLoadScript(scriptSrc) : this._nodeJSLoadScript(scriptSrc));
     if (!defineCall) {
       console.warn(`Did not receive a define call from script ${scriptSrc}`);
       return void 0;
@@ -5705,8 +5705,8 @@ var AMDModuleImporter = class _AMDModuleImporter {
       return defineCall.callback;
     }
   }
-  h(scriptSrc) {
-    return new Promise((resolve, reject) => {
+  _rendererLoadScript(scriptSrc) {
+    return new Promise((resolve2, reject) => {
       const scriptElement = document.createElement("script");
       scriptElement.setAttribute("async", "async");
       scriptElement.setAttribute("type", "text/javascript");
@@ -5716,7 +5716,7 @@ var AMDModuleImporter = class _AMDModuleImporter {
       };
       const loadEventListener = (e) => {
         unbind();
-        resolve(this.c.pop());
+        resolve2(this._defineCalls.pop());
       };
       const errorEventListener = (e) => {
         unbind();
@@ -5724,21 +5724,21 @@ var AMDModuleImporter = class _AMDModuleImporter {
       };
       scriptElement.addEventListener("load", loadEventListener);
       scriptElement.addEventListener("error", errorEventListener);
-      if (this.f) {
-        scriptSrc = this.f.createScriptURL(scriptSrc);
+      if (this._amdPolicy) {
+        scriptSrc = this._amdPolicy.createScriptURL(scriptSrc);
       }
       scriptElement.setAttribute("src", scriptSrc);
       window.document.getElementsByTagName("head")[0].appendChild(scriptElement);
     });
   }
-  async i(scriptSrc) {
-    if (this.f) {
-      scriptSrc = this.f.createScriptURL(scriptSrc);
+  async _workerLoadScript(scriptSrc) {
+    if (this._amdPolicy) {
+      scriptSrc = this._amdPolicy.createScriptURL(scriptSrc);
     }
     await import(scriptSrc);
-    return this.c.pop();
+    return this._defineCalls.pop();
   }
-  async j(scriptSrc) {
+  async _nodeJSLoadScript(scriptSrc) {
     try {
       const fs = (await import(`${"fs"}`)).default;
       const vm = (await import(`${"vm"}`)).default;
@@ -5749,14 +5749,14 @@ var AMDModuleImporter = class _AMDModuleImporter {
       const script = new vm.Script(scriptSource);
       const compileWrapper = script.runInThisContext();
       compileWrapper.apply();
-      return this.c.pop();
+      return this._defineCalls.pop();
     } catch (error) {
       throw error;
     }
   }
 };
 var cache = /* @__PURE__ */ new Map();
-async function $PK(nodeModuleName, pathInsideNodeModule, isBuilt) {
+async function importAMDNodeModule(nodeModuleName, pathInsideNodeModule, isBuilt) {
   if (isBuilt === void 0) {
     const product = globalThis._VSCODE_PRODUCT_JSON;
     isBuilt = Boolean((product ?? globalThis.vscode?.context?.configuration()?.product)?.commit);
@@ -5769,10 +5769,10 @@ async function $PK(nodeModuleName, pathInsideNodeModule, isBuilt) {
   if (/^\w[\w\d+.-]*:\/\//.test(nodeModulePath)) {
     scriptSrc = nodeModulePath;
   } else {
-    const useASAR = $OK && isBuilt && !$s;
-    const actualNodeModulesPath = useASAR ? $ih : $hh;
+    const useASAR = canASAR && isBuilt && !isWeb;
+    const actualNodeModulesPath = useASAR ? nodeModulesAsarPath : nodeModulesPath;
     const resourcePath = `${actualNodeModulesPath}/${nodeModulePath}`;
-    scriptSrc = $lh.asBrowserUri(resourcePath).toString(true);
+    scriptSrc = FileAccess.asBrowserUri(resourcePath).toString(true);
   }
   const result = AMDModuleImporter.INSTANCE.load(scriptSrc);
   cache.set(nodeModulePath, result);
@@ -5780,74 +5780,74 @@ async function $PK(nodeModuleName, pathInsideNodeModule, isBuilt) {
 }
 
 // out-build/vs/base/common/symbols.js
-var $lf = Symbol("MicrotaskDelay");
+var MicrotaskDelay = Symbol("MicrotaskDelay");
 
 // out-build/vs/base/common/async.js
-var $bi = class {
+var RunOnceScheduler = class {
   constructor(runner, delay) {
-    this.b = void 0;
-    this.a = runner;
-    this.d = delay;
-    this.f = this.g.bind(this);
+    this.timeoutToken = void 0;
+    this.runner = runner;
+    this.timeout = delay;
+    this.timeoutHandler = this.onTimeout.bind(this);
   }
   /**
    * Dispose RunOnceScheduler
    */
   dispose() {
     this.cancel();
-    this.a = null;
+    this.runner = null;
   }
   /**
    * Cancel current scheduled runner (if any).
    */
   cancel() {
     if (this.isScheduled()) {
-      clearTimeout(this.b);
-      this.b = void 0;
+      clearTimeout(this.timeoutToken);
+      this.timeoutToken = void 0;
     }
   }
   /**
    * Cancel previous runner (if any) & schedule a new runner.
    */
-  schedule(delay = this.d) {
+  schedule(delay = this.timeout) {
     this.cancel();
-    this.b = setTimeout(this.f, delay);
+    this.timeoutToken = setTimeout(this.timeoutHandler, delay);
   }
   get delay() {
-    return this.d;
+    return this.timeout;
   }
   set delay(value) {
-    this.d = value;
+    this.timeout = value;
   }
   /**
    * Returns true if scheduled.
    */
   isScheduled() {
-    return this.b !== void 0;
+    return this.timeoutToken !== void 0;
   }
   flush() {
     if (this.isScheduled()) {
       this.cancel();
-      this.h();
+      this.doRun();
     }
   }
-  g() {
-    this.b = void 0;
-    if (this.a) {
-      this.h();
+  onTimeout() {
+    this.timeoutToken = void 0;
+    if (this.runner) {
+      this.doRun();
     }
   }
-  h() {
-    this.a?.();
+  doRun() {
+    this.runner?.();
   }
 };
-var $fi;
-var $gi;
+var runWhenGlobalIdle;
+var _runWhenIdle;
 (function() {
   const safeGlobal = globalThis;
   if (typeof safeGlobal.requestIdleCallback !== "function" || typeof safeGlobal.cancelIdleCallback !== "function") {
-    $gi = (_targetWindow, runner, timeout) => {
-      $F(() => {
+    _runWhenIdle = (_targetWindow, runner, timeout) => {
+      setTimeout0(() => {
         if (disposed) {
           return;
         }
@@ -5871,7 +5871,7 @@ var $gi;
       };
     };
   } else {
-    $gi = (targetWindow, runner, timeout) => {
+    _runWhenIdle = (targetWindow, runner, timeout) => {
       const handle = targetWindow.requestIdleCallback(runner, typeof timeout === "number" ? { timeout } : void 0);
       let disposed = false;
       return {
@@ -5885,62 +5885,62 @@ var $gi;
       };
     };
   }
-  $fi = (runner, timeout) => $gi(globalThis, runner, timeout);
+  runWhenGlobalIdle = (runner, timeout) => _runWhenIdle(globalThis, runner, timeout);
 })();
 var DeferredOutcome;
 (function(DeferredOutcome2) {
   DeferredOutcome2[DeferredOutcome2["Resolved"] = 0] = "Resolved";
   DeferredOutcome2[DeferredOutcome2["Rejected"] = 1] = "Rejected";
 })(DeferredOutcome || (DeferredOutcome = {}));
-var $mi = class _$mi {
+var DeferredPromise = class _DeferredPromise {
   static fromPromise(promise) {
-    const deferred = new _$mi();
+    const deferred = new _DeferredPromise();
     deferred.settleWith(promise);
     return deferred;
   }
   get isRejected() {
-    return this.d?.outcome === 1;
+    return this.outcome?.outcome === 1;
   }
   get isResolved() {
-    return this.d?.outcome === 0;
+    return this.outcome?.outcome === 0;
   }
   get isSettled() {
-    return !!this.d;
+    return !!this.outcome;
   }
   get value() {
-    return this.d?.outcome === 0 ? this.d?.value : void 0;
+    return this.outcome?.outcome === 0 ? this.outcome?.value : void 0;
   }
   constructor() {
     this.p = new Promise((c, e) => {
-      this.a = c;
-      this.b = e;
+      this.completeCallback = c;
+      this.errorCallback = e;
     });
   }
   complete(value) {
     if (this.isSettled) {
       return Promise.resolve();
     }
-    return new Promise((resolve) => {
-      this.a(value);
-      this.d = { outcome: 0, value };
-      resolve();
+    return new Promise((resolve2) => {
+      this.completeCallback(value);
+      this.outcome = { outcome: 0, value };
+      resolve2();
     });
   }
   error(err) {
     if (this.isSettled) {
       return Promise.resolve();
     }
-    return new Promise((resolve) => {
-      this.b(err);
-      this.d = { outcome: 1, value: err };
-      resolve();
+    return new Promise((resolve2) => {
+      this.errorCallback(err);
+      this.outcome = { outcome: 1, value: err };
+      resolve2();
     });
   }
   settleWith(promise) {
     return promise.then((value) => this.complete(value), (error) => this.error(error));
   }
   cancel() {
-    return this.error(new $tb());
+    return this.error(new CancellationError());
   }
 };
 var Promises;
@@ -5960,9 +5960,9 @@ var Promises;
   }
   Promises2.settled = settled;
   function withAsyncBody(bodyFn) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve2, reject) => {
       try {
-        await bodyFn(resolve, reject);
+        await bodyFn(resolve2, reject);
       } catch (error) {
         reject(error);
       }
@@ -5976,24 +5976,24 @@ var AsyncIterableSourceState;
   AsyncIterableSourceState2[AsyncIterableSourceState2["DoneOK"] = 1] = "DoneOK";
   AsyncIterableSourceState2[AsyncIterableSourceState2["DoneError"] = 2] = "DoneError";
 })(AsyncIterableSourceState || (AsyncIterableSourceState = {}));
-var $pi = class _$pi {
+var AsyncIterableObject = class _AsyncIterableObject {
   static fromArray(items) {
-    return new _$pi((writer) => {
+    return new _AsyncIterableObject((writer) => {
       writer.emitMany(items);
     });
   }
   static fromPromise(promise) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       emitter.emitMany(await promise);
     });
   }
   static fromPromisesResolveOrder(promises) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       await Promise.all(promises.map(async (p) => emitter.emitOne(await p)));
     });
   }
   static merge(iterables) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       await Promise.all(iterables.map(async (iterable) => {
         for await (const item of iterable) {
           emitter.emitOne(item);
@@ -6002,25 +6002,25 @@ var $pi = class _$pi {
     });
   }
   static {
-    this.EMPTY = _$pi.fromArray([]);
+    this.EMPTY = _AsyncIterableObject.fromArray([]);
   }
   constructor(executor, onReturn) {
-    this.a = 0;
-    this.b = [];
-    this.d = null;
-    this.f = onReturn;
-    this.g = new $qf();
+    this._state = 0;
+    this._results = [];
+    this._error = null;
+    this._onReturn = onReturn;
+    this._onStateChanged = new Emitter();
     queueMicrotask(async () => {
       const writer = {
-        emitOne: (item) => this.h(item),
-        emitMany: (items) => this.j(items),
-        reject: (error) => this.l(error)
+        emitOne: (item) => this.emitOne(item),
+        emitMany: (items) => this.emitMany(items),
+        reject: (error) => this.reject(error)
       };
       try {
         await Promise.resolve(executor(writer));
-        this.k();
+        this.resolve();
       } catch (err) {
-        this.l(err);
+        this.reject(err);
       } finally {
         writer.emitOne = void 0;
         writer.emitMany = void 0;
@@ -6033,36 +6033,36 @@ var $pi = class _$pi {
     return {
       next: async () => {
         do {
-          if (this.a === 2) {
-            throw this.d;
+          if (this._state === 2) {
+            throw this._error;
           }
-          if (i < this.b.length) {
-            return { done: false, value: this.b[i++] };
+          if (i < this._results.length) {
+            return { done: false, value: this._results[i++] };
           }
-          if (this.a === 1) {
+          if (this._state === 1) {
             return { done: true, value: void 0 };
           }
-          await Event.toPromise(this.g.event);
+          await Event.toPromise(this._onStateChanged.event);
         } while (true);
       },
       return: async () => {
-        this.f?.();
+        this._onReturn?.();
         return { done: true, value: void 0 };
       }
     };
   }
   static map(iterable, mapFn) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       for await (const item of iterable) {
         emitter.emitOne(mapFn(item));
       }
     });
   }
   map(mapFn) {
-    return _$pi.map(this, mapFn);
+    return _AsyncIterableObject.map(this, mapFn);
   }
   static filter(iterable, filterFn) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       for await (const item of iterable) {
         if (filterFn(item)) {
           emitter.emitOne(item);
@@ -6071,13 +6071,13 @@ var $pi = class _$pi {
     });
   }
   filter(filterFn) {
-    return _$pi.filter(this, filterFn);
+    return _AsyncIterableObject.filter(this, filterFn);
   }
   static coalesce(iterable) {
-    return _$pi.filter(iterable, (item) => !!item);
+    return _AsyncIterableObject.filter(iterable, (item) => !!item);
   }
   coalesce() {
-    return _$pi.coalesce(this);
+    return _AsyncIterableObject.coalesce(this);
   }
   static async toPromise(iterable) {
     const result = [];
@@ -6087,31 +6087,31 @@ var $pi = class _$pi {
     return result;
   }
   toPromise() {
-    return _$pi.toPromise(this);
+    return _AsyncIterableObject.toPromise(this);
   }
   /**
    * The value will be appended at the end.
    *
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  h(value) {
-    if (this.a !== 0) {
+  emitOne(value) {
+    if (this._state !== 0) {
       return;
     }
-    this.b.push(value);
-    this.g.fire();
+    this._results.push(value);
+    this._onStateChanged.fire();
   }
   /**
    * The values will be appended at the end.
    *
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  j(values) {
-    if (this.a !== 0) {
+  emitMany(values) {
+    if (this._state !== 0) {
       return;
     }
-    this.b = this.b.concat(values);
-    this.g.fire();
+    this._results = this._results.concat(values);
+    this._onStateChanged.fire();
   }
   /**
    * Calling `resolve()` will mark the result array as complete.
@@ -6119,12 +6119,12 @@ var $pi = class _$pi {
    * **NOTE** `resolve()` must be called, otherwise all consumers of this iterable will hang indefinitely, similar to a non-resolved promise.
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  k() {
-    if (this.a !== 0) {
+  resolve() {
+    if (this._state !== 0) {
       return;
     }
-    this.a = 1;
-    this.g.fire();
+    this._state = 1;
+    this._onStateChanged.fire();
   }
   /**
    * Writing an error will permanently invalidate this iterable.
@@ -6132,46 +6132,46 @@ var $pi = class _$pi {
    *
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  l(error) {
-    if (this.a !== 0) {
+  reject(error) {
+    if (this._state !== 0) {
       return;
     }
-    this.a = 2;
-    this.d = error;
-    this.g.fire();
+    this._state = 2;
+    this._error = error;
+    this._onStateChanged.fire();
   }
 };
 var ProducerConsumer = class {
   constructor() {
-    this.a = [];
-    this.b = [];
+    this._unsatisfiedConsumers = [];
+    this._unconsumedValues = [];
   }
   get hasFinalValue() {
-    return !!this.d;
+    return !!this._finalValue;
   }
   produce(value) {
-    this.f();
-    if (this.a.length > 0) {
-      const deferred = this.a.shift();
-      this.g(deferred, value);
+    this._ensureNoFinalValue();
+    if (this._unsatisfiedConsumers.length > 0) {
+      const deferred = this._unsatisfiedConsumers.shift();
+      this._resolveOrRejectDeferred(deferred, value);
     } else {
-      this.b.push(value);
+      this._unconsumedValues.push(value);
     }
   }
   produceFinal(value) {
-    this.f();
-    this.d = value;
-    for (const deferred of this.a) {
-      this.g(deferred, value);
+    this._ensureNoFinalValue();
+    this._finalValue = value;
+    for (const deferred of this._unsatisfiedConsumers) {
+      this._resolveOrRejectDeferred(deferred, value);
     }
-    this.a.length = 0;
+    this._unsatisfiedConsumers.length = 0;
   }
-  f() {
-    if (this.d) {
-      throw new $Eb("ProducerConsumer: cannot produce after final value has been set");
+  _ensureNoFinalValue() {
+    if (this._finalValue) {
+      throw new BugIndicatingError("ProducerConsumer: cannot produce after final value has been set");
     }
   }
-  g(deferred, value) {
+  _resolveOrRejectDeferred(deferred, value) {
     if (value.ok) {
       deferred.complete(value.value);
     } else {
@@ -6179,72 +6179,72 @@ var ProducerConsumer = class {
     }
   }
   consume() {
-    if (this.b.length > 0 || this.d) {
-      const value = this.b.length > 0 ? this.b.shift() : this.d;
+    if (this._unconsumedValues.length > 0 || this._finalValue) {
+      const value = this._unconsumedValues.length > 0 ? this._unconsumedValues.shift() : this._finalValue;
       if (value.ok) {
         return Promise.resolve(value.value);
       } else {
         return Promise.reject(value.error);
       }
     } else {
-      const deferred = new $mi();
-      this.a.push(deferred);
+      const deferred = new DeferredPromise();
+      this._unsatisfiedConsumers.push(deferred);
       return deferred.p;
     }
   }
 };
-var $ti = class _$ti {
-  constructor(executor, b) {
-    this.b = b;
-    this.a = new ProducerConsumer();
-    this.g = {
-      next: () => this.a.consume(),
+var AsyncIterableProducer = class _AsyncIterableProducer {
+  constructor(executor, _onReturn) {
+    this._onReturn = _onReturn;
+    this._producerConsumer = new ProducerConsumer();
+    this._iterator = {
+      next: () => this._producerConsumer.consume(),
       return: () => {
-        this.b?.();
+        this._onReturn?.();
         return Promise.resolve({ done: true, value: void 0 });
       },
       throw: async (e) => {
-        this.f(e);
+        this._finishError(e);
         return { done: true, value: void 0 };
       }
     };
     queueMicrotask(async () => {
       const p = executor({
-        emitOne: (value) => this.a.produce({ ok: true, value: { done: false, value } }),
+        emitOne: (value) => this._producerConsumer.produce({ ok: true, value: { done: false, value } }),
         emitMany: (values) => {
           for (const value of values) {
-            this.a.produce({ ok: true, value: { done: false, value } });
+            this._producerConsumer.produce({ ok: true, value: { done: false, value } });
           }
         },
-        reject: (error) => this.f(error)
+        reject: (error) => this._finishError(error)
       });
-      if (!this.a.hasFinalValue) {
+      if (!this._producerConsumer.hasFinalValue) {
         try {
           await p;
-          this.d();
+          this._finishOk();
         } catch (error) {
-          this.f(error);
+          this._finishError(error);
         }
       }
     });
   }
   static fromArray(items) {
-    return new _$ti((writer) => {
+    return new _AsyncIterableProducer((writer) => {
       writer.emitMany(items);
     });
   }
   static fromPromise(promise) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       emitter.emitMany(await promise);
     });
   }
   static fromPromisesResolveOrder(promises) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       await Promise.all(promises.map(async (p) => emitter.emitOne(await p)));
     });
   }
   static merge(iterables) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       await Promise.all(iterables.map(async (iterable) => {
         for await (const item of iterable) {
           emitter.emitOne(item);
@@ -6253,10 +6253,10 @@ var $ti = class _$ti {
     });
   }
   static {
-    this.EMPTY = _$ti.fromArray([]);
+    this.EMPTY = _AsyncIterableProducer.fromArray([]);
   }
   static map(iterable, mapFn) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       for await (const item of iterable) {
         emitter.emitOne(mapFn(item));
       }
@@ -6265,7 +6265,7 @@ var $ti = class _$ti {
   static tee(iterable) {
     let emitter1;
     let emitter2;
-    const defer = new $mi();
+    const defer = new DeferredPromise();
     const start = async () => {
       if (!emitter1 || !emitter2) {
         return;
@@ -6282,12 +6282,12 @@ var $ti = class _$ti {
         defer.complete();
       }
     };
-    const p1 = new _$ti(async (emitter) => {
+    const p1 = new _AsyncIterableProducer(async (emitter) => {
       emitter1 = emitter;
       start();
       return defer.p;
     });
-    const p2 = new _$ti(async (emitter) => {
+    const p2 = new _AsyncIterableProducer(async (emitter) => {
       emitter2 = emitter;
       start();
       return defer.p;
@@ -6295,16 +6295,16 @@ var $ti = class _$ti {
     return [p1, p2];
   }
   map(mapFn) {
-    return _$ti.map(this, mapFn);
+    return _AsyncIterableProducer.map(this, mapFn);
   }
   static coalesce(iterable) {
-    return _$ti.filter(iterable, (item) => !!item);
+    return _AsyncIterableProducer.filter(iterable, (item) => !!item);
   }
   coalesce() {
-    return _$ti.coalesce(this);
+    return _AsyncIterableProducer.coalesce(this);
   }
   static filter(iterable, filterFn) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       for await (const item of iterable) {
         if (filterFn(item)) {
           emitter.emitOne(item);
@@ -6313,38 +6313,38 @@ var $ti = class _$ti {
     });
   }
   filter(filterFn) {
-    return _$ti.filter(this, filterFn);
+    return _AsyncIterableProducer.filter(this, filterFn);
   }
-  d() {
-    if (!this.a.hasFinalValue) {
-      this.a.produceFinal({ ok: true, value: { done: true, value: void 0 } });
+  _finishOk() {
+    if (!this._producerConsumer.hasFinalValue) {
+      this._producerConsumer.produceFinal({ ok: true, value: { done: true, value: void 0 } });
     }
   }
-  f(error) {
-    if (!this.a.hasFinalValue) {
-      this.a.produceFinal({ ok: false, error });
+  _finishError(error) {
+    if (!this._producerConsumer.hasFinalValue) {
+      this._producerConsumer.produceFinal({ ok: false, error });
     }
   }
   [Symbol.asyncIterator]() {
-    return this.g;
+    return this._iterator;
   }
 };
-var $vi = Symbol("AsyncReaderEndOfStream");
+var AsyncReaderEndOfStream = Symbol("AsyncReaderEndOfStream");
 
 // out-build/vs/base/common/observableInternal/debugName.js
-var $Zd = class {
+var DebugNameData = class {
   constructor(owner, debugNameSource, referenceFn) {
     this.owner = owner;
     this.debugNameSource = debugNameSource;
     this.referenceFn = referenceFn;
   }
   getDebugName(target) {
-    return $1d(target, this);
+    return getDebugName(target, this);
   }
 };
 var countPerName = /* @__PURE__ */ new Map();
 var cachedDebugName = /* @__PURE__ */ new WeakMap();
-function $1d(target, data) {
+function getDebugName(target, data) {
   const cached = cachedDebugName.get(target);
   if (cached) {
     return cached;
@@ -6380,7 +6380,7 @@ function computeDebugName(self2, data) {
   }
   const referenceFn = data.referenceFn;
   if (referenceFn !== void 0) {
-    result = $3d(referenceFn);
+    result = getFunctionName(referenceFn);
     if (result !== void 0) {
       return ownerStr + result;
     }
@@ -6408,7 +6408,7 @@ function formatOwner(owner) {
   if (id2) {
     return id2;
   }
-  const className = $2d(owner) ?? "Object";
+  const className = getClassName(owner) ?? "Object";
   let count = countPerClassName.get(className) ?? 0;
   count++;
   countPerClassName.set(className, count);
@@ -6416,7 +6416,7 @@ function formatOwner(owner) {
   ownerId.set(owner, result);
   return result;
 }
-function $2d(obj) {
+function getClassName(obj) {
   const ctor = obj.constructor;
   if (ctor) {
     if (ctor.name === "Object") {
@@ -6426,7 +6426,7 @@ function $2d(obj) {
   }
   return void 0;
 }
-function $3d(fn) {
+function getFunctionName(fn) {
   const fnSrc = fn.toString();
   const regexp = /\/\*\*\s*@description\s*([^*]*)\*\//;
   const match = regexp.exec(fnSrc);
@@ -6435,18 +6435,18 @@ function $3d(fn) {
 }
 
 // out-build/vs/base/common/equals.js
-var $Rd = (a, b) => a === b;
+var strictEquals = (a, b) => a === b;
 
 // out-build/vs/base/common/observableInternal/base.js
-function $Yd(message) {
+function handleBugIndicatingErrorRecovery(message) {
   const err = new Error("BugIndicatingErrorRecovery: " + message);
-  $nb(err);
+  onUnexpectedError(err);
   console.error("recovered from an error that indicates a bug", err);
 }
 
 // out-build/vs/base/common/observableInternal/logging/logging.js
 var globalObservableLogger;
-function $Je(logger) {
+function addLogger(logger) {
   if (!globalObservableLogger) {
     globalObservableLogger = logger;
   } else if (globalObservableLogger instanceof ComposedLogger) {
@@ -6455,14 +6455,14 @@ function $Je(logger) {
     globalObservableLogger = new ComposedLogger([globalObservableLogger, logger]);
   }
 }
-function $Ke() {
+function getLogger() {
   return globalObservableLogger;
 }
 var globalObservableLoggerFn = void 0;
-function $Le(fn) {
+function setLogObservableFn(fn) {
   globalObservableLoggerFn = fn;
 }
-function $Me(obs) {
+function logObservable(obs) {
   if (globalObservableLoggerFn) {
     globalObservableLoggerFn(obs);
   }
@@ -6486,34 +6486,34 @@ var ComposedLogger = class {
       logger.handleObservableUpdated(observable, info);
     }
   }
-  handleAutorunCreated(autorun, location) {
+  handleAutorunCreated(autorun2, location) {
     for (const logger of this.loggers) {
-      logger.handleAutorunCreated(autorun, location);
+      logger.handleAutorunCreated(autorun2, location);
     }
   }
-  handleAutorunDisposed(autorun) {
+  handleAutorunDisposed(autorun2) {
     for (const logger of this.loggers) {
-      logger.handleAutorunDisposed(autorun);
+      logger.handleAutorunDisposed(autorun2);
     }
   }
-  handleAutorunDependencyChanged(autorun, observable, change) {
+  handleAutorunDependencyChanged(autorun2, observable, change) {
     for (const logger of this.loggers) {
-      logger.handleAutorunDependencyChanged(autorun, observable, change);
+      logger.handleAutorunDependencyChanged(autorun2, observable, change);
     }
   }
-  handleAutorunStarted(autorun) {
+  handleAutorunStarted(autorun2) {
     for (const logger of this.loggers) {
-      logger.handleAutorunStarted(autorun);
+      logger.handleAutorunStarted(autorun2);
     }
   }
-  handleAutorunFinished(autorun) {
+  handleAutorunFinished(autorun2) {
     for (const logger of this.loggers) {
-      logger.handleAutorunFinished(autorun);
+      logger.handleAutorunFinished(autorun2);
     }
   }
-  handleDerivedDependencyChanged(derived, observable, change) {
+  handleDerivedDependencyChanged(derived2, observable, change) {
     for (const logger of this.loggers) {
-      logger.handleDerivedDependencyChanged(derived, observable, change);
+      logger.handleDerivedDependencyChanged(derived2, observable, change);
     }
   }
   handleDerivedCleared(observable) {
@@ -6521,73 +6521,73 @@ var ComposedLogger = class {
       logger.handleDerivedCleared(observable);
     }
   }
-  handleBeginTransaction(transaction) {
+  handleBeginTransaction(transaction2) {
     for (const logger of this.loggers) {
-      logger.handleBeginTransaction(transaction);
+      logger.handleBeginTransaction(transaction2);
     }
   }
-  handleEndTransaction(transaction) {
+  handleEndTransaction(transaction2) {
     for (const logger of this.loggers) {
-      logger.handleEndTransaction(transaction);
+      logger.handleEndTransaction(transaction2);
     }
   }
 };
 
 // out-build/vs/base/common/observableInternal/transaction.js
-function $Ne(fn, getDebugName) {
-  const tx = new $Re(fn, getDebugName);
+function transaction(fn, getDebugName2) {
+  const tx = new TransactionImpl(fn, getDebugName2);
   try {
     fn(tx);
   } finally {
     tx.finish();
   }
 }
-function $Qe(tx, fn, getDebugName) {
+function subtransaction(tx, fn, getDebugName2) {
   if (!tx) {
-    $Ne(fn, getDebugName);
+    transaction(fn, getDebugName2);
   } else {
     fn(tx);
   }
 }
-var $Re = class {
-  constructor(_fn, b) {
+var TransactionImpl = class {
+  constructor(_fn, _getDebugName) {
     this._fn = _fn;
-    this.b = b;
-    this.a = [];
-    $Ke()?.handleBeginTransaction(this);
+    this._getDebugName = _getDebugName;
+    this._updatingObservers = [];
+    getLogger()?.handleBeginTransaction(this);
   }
   getDebugName() {
-    if (this.b) {
-      return this.b();
+    if (this._getDebugName) {
+      return this._getDebugName();
     }
-    return $3d(this._fn);
+    return getFunctionName(this._fn);
   }
   updateObserver(observer, observable) {
-    if (!this.a) {
-      $Yd("Transaction already finished!");
-      $Ne((tx) => {
+    if (!this._updatingObservers) {
+      handleBugIndicatingErrorRecovery("Transaction already finished!");
+      transaction((tx) => {
         tx.updateObserver(observer, observable);
       });
       return;
     }
-    this.a.push({ observer, observable });
+    this._updatingObservers.push({ observer, observable });
     observer.beginUpdate(observable);
   }
   finish() {
-    const updatingObservers = this.a;
+    const updatingObservers = this._updatingObservers;
     if (!updatingObservers) {
-      $Yd("transaction.finish() has already been called!");
+      handleBugIndicatingErrorRecovery("transaction.finish() has already been called!");
       return;
     }
     for (let i = 0; i < updatingObservers.length; i++) {
       const { observer, observable } = updatingObservers[i];
       observer.endUpdate(observable);
     }
-    this.a = null;
-    $Ke()?.handleEndTransaction(this);
+    this._updatingObservers = null;
+    getLogger()?.handleEndTransaction(this);
   }
   debugGetUpdatingObservers() {
-    return this.a;
+    return this._updatingObservers;
   }
 };
 
@@ -6653,22 +6653,22 @@ function parseLine(stackLine) {
 
 // out-build/vs/base/common/observableInternal/observables/baseObservable.js
 var _derived;
-function $Be(derived) {
-  _derived = derived;
+function _setDerivedOpts(derived2) {
+  _derived = derived2;
 }
 var _recomputeInitiallyAndOnChange;
-function $Ce(recomputeInitiallyAndOnChange) {
-  _recomputeInitiallyAndOnChange = recomputeInitiallyAndOnChange;
+function _setRecomputeInitiallyAndOnChange(recomputeInitiallyAndOnChange2) {
+  _recomputeInitiallyAndOnChange = recomputeInitiallyAndOnChange2;
 }
 var _keepObserved;
-function $De(keepObserved) {
-  _keepObserved = keepObserved;
+function _setKeepObserved(keepObserved2) {
+  _keepObserved = keepObserved2;
 }
 var _debugGetObservableGraph;
-function $Ee(debugGetObservableGraph) {
-  _debugGetObservableGraph = debugGetObservableGraph;
+function _setDebugGetObservableGraph(debugGetObservableGraph2) {
+  _debugGetObservableGraph = debugGetObservableGraph2;
 }
-var $Fe = class {
+var ConvenientObservable = class {
   get TChange() {
     return null;
   }
@@ -6689,7 +6689,7 @@ var $Fe = class {
     return _derived({
       owner,
       debugName: () => {
-        const name = $3d(fn);
+        const name = getFunctionName(fn);
         if (name !== void 0) {
           return name;
         }
@@ -6729,7 +6729,7 @@ var $Fe = class {
     store.add(_keepObserved(this));
     return this;
   }
-  get b() {
+  get debugValue() {
     return this.get();
   }
   get debug() {
@@ -6747,86 +6747,86 @@ var DebugHelper = class {
     return _debugGetObservableGraph(this.observable, { type: "observers" });
   }
 };
-var $Ge = class extends $Fe {
+var BaseObservable = class extends ConvenientObservable {
   constructor(debugLocation) {
     super();
-    this.f = /* @__PURE__ */ new Set();
-    $Ke()?.handleObservableCreated(this, debugLocation);
+    this._observers = /* @__PURE__ */ new Set();
+    getLogger()?.handleObservableCreated(this, debugLocation);
   }
   addObserver(observer) {
-    const len = this.f.size;
-    this.f.add(observer);
+    const len = this._observers.size;
+    this._observers.add(observer);
     if (len === 0) {
-      this.g();
+      this.onFirstObserverAdded();
     }
-    if (len !== this.f.size) {
-      $Ke()?.handleOnListenerCountChanged(this, this.f.size);
+    if (len !== this._observers.size) {
+      getLogger()?.handleOnListenerCountChanged(this, this._observers.size);
     }
   }
   removeObserver(observer) {
-    const deleted = this.f.delete(observer);
-    if (deleted && this.f.size === 0) {
-      this.h();
+    const deleted = this._observers.delete(observer);
+    if (deleted && this._observers.size === 0) {
+      this.onLastObserverRemoved();
     }
     if (deleted) {
-      $Ke()?.handleOnListenerCountChanged(this, this.f.size);
+      getLogger()?.handleOnListenerCountChanged(this, this._observers.size);
     }
   }
-  g() {
+  onFirstObserverAdded() {
   }
-  h() {
+  onLastObserverRemoved() {
   }
   log() {
-    const hadLogger = !!$Ke();
-    $Me(this);
+    const hadLogger = !!getLogger();
+    logObservable(this);
     if (!hadLogger) {
-      $Ke()?.handleObservableCreated(this, DebugLocation.ofCaller());
+      getLogger()?.handleObservableCreated(this, DebugLocation.ofCaller());
     }
     return this;
   }
   debugGetObservers() {
-    return this.f;
+    return this._observers;
   }
 };
 
 // out-build/vs/base/common/observableInternal/observables/observableValue.js
-function $Se(nameOrOwner, initialValue, debugLocation = DebugLocation.ofCaller()) {
+function observableValue(nameOrOwner, initialValue, debugLocation = DebugLocation.ofCaller()) {
   let debugNameData;
   if (typeof nameOrOwner === "string") {
-    debugNameData = new $Zd(void 0, nameOrOwner, void 0);
+    debugNameData = new DebugNameData(void 0, nameOrOwner, void 0);
   } else {
-    debugNameData = new $Zd(nameOrOwner, void 0, void 0);
+    debugNameData = new DebugNameData(nameOrOwner, void 0, void 0);
   }
-  return new $Te(debugNameData, initialValue, $Rd, debugLocation);
+  return new ObservableValue(debugNameData, initialValue, strictEquals, debugLocation);
 }
-var $Te = class extends $Ge {
+var ObservableValue = class extends BaseObservable {
   get debugName() {
-    return this.c.getDebugName(this) ?? "ObservableValue";
+    return this._debugNameData.getDebugName(this) ?? "ObservableValue";
   }
-  constructor(c, initialValue, d, debugLocation) {
+  constructor(_debugNameData, initialValue, _equalityComparator, debugLocation) {
     super(debugLocation);
-    this.c = c;
-    this.d = d;
-    this.a = initialValue;
-    $Ke()?.handleObservableUpdated(this, { hadValue: false, newValue: initialValue, change: void 0, didChange: true, oldValue: void 0 });
+    this._debugNameData = _debugNameData;
+    this._equalityComparator = _equalityComparator;
+    this._value = initialValue;
+    getLogger()?.handleObservableUpdated(this, { hadValue: false, newValue: initialValue, change: void 0, didChange: true, oldValue: void 0 });
   }
   get() {
-    return this.a;
+    return this._value;
   }
   set(value, tx, change) {
-    if (change === void 0 && this.d(this.a, value)) {
+    if (change === void 0 && this._equalityComparator(this._value, value)) {
       return;
     }
     let _tx;
     if (!tx) {
-      tx = _tx = new $Re(() => {
+      tx = _tx = new TransactionImpl(() => {
       }, () => `Setting ${this.debugName}`);
     }
     try {
-      const oldValue = this.a;
-      this.i(value);
-      $Ke()?.handleObservableUpdated(this, { oldValue, newValue: value, change, didChange: true, hadValue: true });
-      for (const observer of this.f) {
+      const oldValue = this._value;
+      this._setValue(value);
+      getLogger()?.handleObservableUpdated(this, { oldValue, newValue: value, change, didChange: true, hadValue: true });
+      for (const observer of this._observers) {
         tx.updateObserver(observer, this);
         observer.handleChange(this, change);
       }
@@ -6837,18 +6837,18 @@ var $Te = class extends $Ge {
     }
   }
   toString() {
-    return `${this.debugName}: ${this.a}`;
+    return `${this.debugName}: ${this._value}`;
   }
-  i(newValue) {
-    this.a = newValue;
+  _setValue(newValue) {
+    this._value = newValue;
   }
   debugGetState() {
     return {
-      value: this.a
+      value: this._value
     };
   }
   debugSetValue(value) {
-    this.a = value;
+    this._value = value;
   }
 };
 
@@ -6871,86 +6871,86 @@ function autorunStateToString(state) {
       return "<unknown>";
   }
 }
-var $6d = class {
+var AutorunObserver = class {
   get debugName() {
     return this._debugNameData.getDebugName(this) ?? "(anonymous)";
   }
-  constructor(_debugNameData, _runFn, j, debugLocation) {
+  constructor(_debugNameData, _runFn, _changeTracker, debugLocation) {
     this._debugNameData = _debugNameData;
     this._runFn = _runFn;
-    this.j = j;
-    this.a = 2;
-    this.b = 0;
-    this.c = false;
-    this.f = /* @__PURE__ */ new Set();
-    this.g = /* @__PURE__ */ new Set();
-    this.i = false;
-    this.n = void 0;
-    this.p = void 0;
-    this.h = this.j?.createChangeSummary(void 0);
-    $Ke()?.handleAutorunCreated(this, debugLocation);
-    this.k();
-    $wd(this);
+    this._changeTracker = _changeTracker;
+    this._state = 2;
+    this._updateCount = 0;
+    this._disposed = false;
+    this._dependencies = /* @__PURE__ */ new Set();
+    this._dependenciesToBeRemoved = /* @__PURE__ */ new Set();
+    this._isRunning = false;
+    this._store = void 0;
+    this._delayedStore = void 0;
+    this._changeSummary = this._changeTracker?.createChangeSummary(void 0);
+    getLogger()?.handleAutorunCreated(this, debugLocation);
+    this._run();
+    trackDisposable(this);
   }
   dispose() {
-    if (this.c) {
+    if (this._disposed) {
       return;
     }
-    this.c = true;
-    for (const o of this.f) {
+    this._disposed = true;
+    for (const o of this._dependencies) {
       o.removeObserver(this);
     }
-    this.f.clear();
-    if (this.n !== void 0) {
-      this.n.dispose();
+    this._dependencies.clear();
+    if (this._store !== void 0) {
+      this._store.dispose();
     }
-    if (this.p !== void 0) {
-      this.p.dispose();
+    if (this._delayedStore !== void 0) {
+      this._delayedStore.dispose();
     }
-    $Ke()?.handleAutorunDisposed(this);
-    $xd(this);
+    getLogger()?.handleAutorunDisposed(this);
+    markAsDisposed(this);
   }
-  k() {
-    const emptySet = this.g;
-    this.g = this.f;
-    this.f = emptySet;
-    this.a = 3;
+  _run() {
+    const emptySet = this._dependenciesToBeRemoved;
+    this._dependenciesToBeRemoved = this._dependencies;
+    this._dependencies = emptySet;
+    this._state = 3;
     try {
-      if (!this.c) {
-        $Ke()?.handleAutorunStarted(this);
-        const changeSummary = this.h;
-        const delayedStore = this.p;
+      if (!this._disposed) {
+        getLogger()?.handleAutorunStarted(this);
+        const changeSummary = this._changeSummary;
+        const delayedStore = this._delayedStore;
         if (delayedStore !== void 0) {
-          this.p = void 0;
+          this._delayedStore = void 0;
         }
         try {
-          this.i = true;
-          if (this.j) {
-            this.j.beforeUpdate?.(this, changeSummary);
-            this.h = this.j.createChangeSummary(changeSummary);
+          this._isRunning = true;
+          if (this._changeTracker) {
+            this._changeTracker.beforeUpdate?.(this, changeSummary);
+            this._changeSummary = this._changeTracker.createChangeSummary(changeSummary);
           }
-          if (this.n !== void 0) {
-            this.n.dispose();
-            this.n = void 0;
+          if (this._store !== void 0) {
+            this._store.dispose();
+            this._store = void 0;
           }
           this._runFn(this, changeSummary);
         } catch (e) {
-          $mb(e);
+          onBugIndicatingError(e);
         } finally {
-          this.i = false;
+          this._isRunning = false;
           if (delayedStore !== void 0) {
             delayedStore.dispose();
           }
         }
       }
     } finally {
-      if (!this.c) {
-        $Ke()?.handleAutorunFinished(this);
+      if (!this._disposed) {
+        getLogger()?.handleAutorunFinished(this);
       }
-      for (const o of this.g) {
+      for (const o of this._dependenciesToBeRemoved) {
         o.removeObserver(this);
       }
-      this.g.clear();
+      this._dependenciesToBeRemoved.clear();
     }
   }
   toString() {
@@ -6958,111 +6958,111 @@ var $6d = class {
   }
   // IObserver implementation
   beginUpdate(_observable) {
-    if (this.a === 3) {
-      this.a = 1;
+    if (this._state === 3) {
+      this._state = 1;
     }
-    this.b++;
+    this._updateCount++;
   }
   endUpdate(_observable) {
     try {
-      if (this.b === 1) {
+      if (this._updateCount === 1) {
         do {
-          if (this.a === 1) {
-            this.a = 3;
-            for (const d of this.f) {
+          if (this._state === 1) {
+            this._state = 3;
+            for (const d of this._dependencies) {
               d.reportChanges();
-              if (this.a === 2) {
+              if (this._state === 2) {
                 break;
               }
             }
           }
-          if (this.a !== 3) {
-            this.k();
+          if (this._state !== 3) {
+            this._run();
           }
-        } while (this.a !== 3);
+        } while (this._state !== 3);
       }
     } finally {
-      this.b--;
+      this._updateCount--;
     }
-    $5c(() => this.b >= 0);
+    assertFn(() => this._updateCount >= 0);
   }
   handlePossibleChange(observable) {
-    if (this.a === 3 && this.l(observable)) {
-      this.a = 1;
+    if (this._state === 3 && this._isDependency(observable)) {
+      this._state = 1;
     }
   }
   handleChange(observable, change) {
-    if (this.l(observable)) {
-      $Ke()?.handleAutorunDependencyChanged(this, observable, change);
+    if (this._isDependency(observable)) {
+      getLogger()?.handleAutorunDependencyChanged(this, observable, change);
       try {
-        const shouldReact = this.j ? this.j.handleChange({
+        const shouldReact = this._changeTracker ? this._changeTracker.handleChange({
           changedObservable: observable,
           change,
           // eslint-disable-next-line local/code-no-any-casts
           didChange: (o) => o === observable
-        }, this.h) : true;
+        }, this._changeSummary) : true;
         if (shouldReact) {
-          this.a = 2;
+          this._state = 2;
         }
       } catch (e) {
-        $mb(e);
+        onBugIndicatingError(e);
       }
     }
   }
-  l(observable) {
-    return this.f.has(observable) && !this.g.has(observable);
+  _isDependency(observable) {
+    return this._dependencies.has(observable) && !this._dependenciesToBeRemoved.has(observable);
   }
   // IReader implementation
-  m() {
-    if (!this.i) {
-      throw new $Eb("The reader object cannot be used outside its compute function!");
+  _ensureNoRunning() {
+    if (!this._isRunning) {
+      throw new BugIndicatingError("The reader object cannot be used outside its compute function!");
     }
   }
   readObservable(observable) {
-    this.m();
-    if (this.c) {
+    this._ensureNoRunning();
+    if (this._disposed) {
       return observable.get();
     }
     observable.addObserver(this);
     const value = observable.get();
-    this.f.add(observable);
-    this.g.delete(observable);
+    this._dependencies.add(observable);
+    this._dependenciesToBeRemoved.delete(observable);
     return value;
   }
   get store() {
-    this.m();
-    if (this.c) {
-      throw new $Eb("Cannot access store after dispose");
+    this._ensureNoRunning();
+    if (this._disposed) {
+      throw new BugIndicatingError("Cannot access store after dispose");
     }
-    if (this.n === void 0) {
-      this.n = new $Ed();
+    if (this._store === void 0) {
+      this._store = new DisposableStore();
     }
-    return this.n;
+    return this._store;
   }
   get delayedStore() {
-    this.m();
-    if (this.c) {
-      throw new $Eb("Cannot access store after dispose");
+    this._ensureNoRunning();
+    if (this._disposed) {
+      throw new BugIndicatingError("Cannot access store after dispose");
     }
-    if (this.p === void 0) {
-      this.p = new $Ed();
+    if (this._delayedStore === void 0) {
+      this._delayedStore = new DisposableStore();
     }
-    return this.p;
+    return this._delayedStore;
   }
   debugGetState() {
     return {
-      isRunning: this.i,
-      updateCount: this.b,
-      dependencies: this.f,
-      state: this.a,
-      stateStr: autorunStateToString(this.a)
+      isRunning: this._isRunning,
+      updateCount: this._updateCount,
+      dependencies: this._dependencies,
+      state: this._state,
+      stateStr: autorunStateToString(this._state)
     };
   }
   debugRerun() {
-    if (!this.i) {
-      this.k();
+    if (!this._isRunning) {
+      this._run();
     } else {
-      this.a = 2;
+      this._state = 2;
     }
   }
 };
@@ -7089,148 +7089,148 @@ function derivedStateToString(state) {
       return "<unknown>";
   }
 }
-var $He = class extends $Ge {
+var Derived = class extends BaseObservable {
   get debugName() {
     return this._debugNameData.getDebugName(this) ?? "(anonymous)";
   }
-  constructor(_debugNameData, _computeFn, w, x = void 0, y, debugLocation) {
+  constructor(_debugNameData, _computeFn, _changeTracker, _handleLastObserverRemoved = void 0, _equalityComparator, debugLocation) {
     super(debugLocation);
     this._debugNameData = _debugNameData;
     this._computeFn = _computeFn;
-    this.w = w;
-    this.x = x;
-    this.y = y;
-    this.a = 0;
-    this.c = void 0;
-    this.i = 0;
-    this.j = /* @__PURE__ */ new Set();
-    this.k = /* @__PURE__ */ new Set();
-    this.l = void 0;
-    this.m = false;
-    this.n = false;
-    this.p = false;
-    this.q = false;
-    this.s = false;
-    this.t = void 0;
-    this.u = void 0;
-    this.v = null;
-    this.l = this.w?.createChangeSummary(void 0);
+    this._changeTracker = _changeTracker;
+    this._handleLastObserverRemoved = _handleLastObserverRemoved;
+    this._equalityComparator = _equalityComparator;
+    this._state = 0;
+    this._value = void 0;
+    this._updateCount = 0;
+    this._dependencies = /* @__PURE__ */ new Set();
+    this._dependenciesToBeRemoved = /* @__PURE__ */ new Set();
+    this._changeSummary = void 0;
+    this._isUpdating = false;
+    this._isComputing = false;
+    this._didReportChange = false;
+    this._isInBeforeUpdate = false;
+    this._isReaderValid = false;
+    this._store = void 0;
+    this._delayedStore = void 0;
+    this._removedObserverToCallEndUpdateOn = null;
+    this._changeSummary = this._changeTracker?.createChangeSummary(void 0);
   }
-  h() {
-    this.a = 0;
-    this.c = void 0;
-    $Ke()?.handleDerivedCleared(this);
-    for (const d of this.j) {
+  onLastObserverRemoved() {
+    this._state = 0;
+    this._value = void 0;
+    getLogger()?.handleDerivedCleared(this);
+    for (const d of this._dependencies) {
       d.removeObserver(this);
     }
-    this.j.clear();
-    if (this.t !== void 0) {
-      this.t.dispose();
-      this.t = void 0;
+    this._dependencies.clear();
+    if (this._store !== void 0) {
+      this._store.dispose();
+      this._store = void 0;
     }
-    if (this.u !== void 0) {
-      this.u.dispose();
-      this.u = void 0;
+    if (this._delayedStore !== void 0) {
+      this._delayedStore.dispose();
+      this._delayedStore = void 0;
     }
-    this.x?.();
+    this._handleLastObserverRemoved?.();
   }
   get() {
     const checkEnabled = false;
-    if (this.n && checkEnabled) {
-      throw new $Eb("Cyclic deriveds are not supported yet!");
+    if (this._isComputing && checkEnabled) {
+      throw new BugIndicatingError("Cyclic deriveds are not supported yet!");
     }
-    if (this.f.size === 0) {
+    if (this._observers.size === 0) {
       let result;
       try {
-        this.s = true;
+        this._isReaderValid = true;
         let changeSummary = void 0;
-        if (this.w) {
-          changeSummary = this.w.createChangeSummary(void 0);
-          this.w.beforeUpdate?.(this, changeSummary);
+        if (this._changeTracker) {
+          changeSummary = this._changeTracker.createChangeSummary(void 0);
+          this._changeTracker.beforeUpdate?.(this, changeSummary);
         }
         result = this._computeFn(this, changeSummary);
       } finally {
-        this.s = false;
+        this._isReaderValid = false;
       }
-      this.h();
+      this.onLastObserverRemoved();
       return result;
     } else {
       do {
-        if (this.a === 1) {
-          for (const d of this.j) {
+        if (this._state === 1) {
+          for (const d of this._dependencies) {
             d.reportChanges();
-            if (this.a === 2) {
+            if (this._state === 2) {
               break;
             }
           }
         }
-        if (this.a === 1) {
-          this.a = 3;
+        if (this._state === 1) {
+          this._state = 3;
         }
-        if (this.a !== 3) {
-          this.A();
+        if (this._state !== 3) {
+          this._recompute();
         }
-      } while (this.a !== 3);
-      return this.c;
+      } while (this._state !== 3);
+      return this._value;
     }
   }
-  A() {
+  _recompute() {
     let didChange = false;
-    this.n = true;
-    this.p = false;
-    const emptySet = this.k;
-    this.k = this.j;
-    this.j = emptySet;
+    this._isComputing = true;
+    this._didReportChange = false;
+    const emptySet = this._dependenciesToBeRemoved;
+    this._dependenciesToBeRemoved = this._dependencies;
+    this._dependencies = emptySet;
     try {
-      const changeSummary = this.l;
-      this.s = true;
-      if (this.w) {
-        this.q = true;
-        this.w.beforeUpdate?.(this, changeSummary);
-        this.q = false;
-        this.l = this.w?.createChangeSummary(changeSummary);
+      const changeSummary = this._changeSummary;
+      this._isReaderValid = true;
+      if (this._changeTracker) {
+        this._isInBeforeUpdate = true;
+        this._changeTracker.beforeUpdate?.(this, changeSummary);
+        this._isInBeforeUpdate = false;
+        this._changeSummary = this._changeTracker?.createChangeSummary(changeSummary);
       }
-      const hadValue = this.a !== 0;
-      const oldValue = this.c;
-      this.a = 3;
-      const delayedStore = this.u;
+      const hadValue = this._state !== 0;
+      const oldValue = this._value;
+      this._state = 3;
+      const delayedStore = this._delayedStore;
       if (delayedStore !== void 0) {
-        this.u = void 0;
+        this._delayedStore = void 0;
       }
       try {
-        if (this.t !== void 0) {
-          this.t.dispose();
-          this.t = void 0;
+        if (this._store !== void 0) {
+          this._store.dispose();
+          this._store = void 0;
         }
-        this.c = this._computeFn(this, changeSummary);
+        this._value = this._computeFn(this, changeSummary);
       } finally {
-        this.s = false;
-        for (const o of this.k) {
+        this._isReaderValid = false;
+        for (const o of this._dependenciesToBeRemoved) {
           o.removeObserver(this);
         }
-        this.k.clear();
+        this._dependenciesToBeRemoved.clear();
         if (delayedStore !== void 0) {
           delayedStore.dispose();
         }
       }
-      didChange = this.p || hadValue && !this.y(oldValue, this.c);
-      $Ke()?.handleObservableUpdated(this, {
+      didChange = this._didReportChange || hadValue && !this._equalityComparator(oldValue, this._value);
+      getLogger()?.handleObservableUpdated(this, {
         oldValue,
-        newValue: this.c,
+        newValue: this._value,
         change: void 0,
         didChange,
         hadValue
       });
     } catch (e) {
-      $mb(e);
+      onBugIndicatingError(e);
     }
-    this.n = false;
-    if (!this.p && didChange) {
-      for (const r of this.f) {
+    this._isComputing = false;
+    if (!this._didReportChange && didChange) {
+      for (const r of this._observers) {
         r.handleChange(this, void 0);
       }
     } else {
-      this.p = false;
+      this._didReportChange = false;
     }
   }
   toString() {
@@ -7238,74 +7238,74 @@ var $He = class extends $Ge {
   }
   // IObserver Implementation
   beginUpdate(_observable) {
-    if (this.m) {
-      throw new $Eb("Cyclic deriveds are not supported yet!");
+    if (this._isUpdating) {
+      throw new BugIndicatingError("Cyclic deriveds are not supported yet!");
     }
-    this.i++;
-    this.m = true;
+    this._updateCount++;
+    this._isUpdating = true;
     try {
-      const propagateBeginUpdate = this.i === 1;
-      if (this.a === 3) {
-        this.a = 1;
+      const propagateBeginUpdate = this._updateCount === 1;
+      if (this._state === 3) {
+        this._state = 1;
         if (!propagateBeginUpdate) {
-          for (const r of this.f) {
+          for (const r of this._observers) {
             r.handlePossibleChange(this);
           }
         }
       }
       if (propagateBeginUpdate) {
-        for (const r of this.f) {
+        for (const r of this._observers) {
           r.beginUpdate(this);
         }
       }
     } finally {
-      this.m = false;
+      this._isUpdating = false;
     }
   }
   endUpdate(_observable) {
-    this.i--;
-    if (this.i === 0) {
-      const observers = [...this.f];
+    this._updateCount--;
+    if (this._updateCount === 0) {
+      const observers = [...this._observers];
       for (const r of observers) {
         r.endUpdate(this);
       }
-      if (this.v) {
-        const observers2 = [...this.v];
-        this.v = null;
+      if (this._removedObserverToCallEndUpdateOn) {
+        const observers2 = [...this._removedObserverToCallEndUpdateOn];
+        this._removedObserverToCallEndUpdateOn = null;
         for (const r of observers2) {
           r.endUpdate(this);
         }
       }
     }
-    $5c(() => this.i >= 0);
+    assertFn(() => this._updateCount >= 0);
   }
   handlePossibleChange(observable) {
-    if (this.a === 3 && this.j.has(observable) && !this.k.has(observable)) {
-      this.a = 1;
-      for (const r of this.f) {
+    if (this._state === 3 && this._dependencies.has(observable) && !this._dependenciesToBeRemoved.has(observable)) {
+      this._state = 1;
+      for (const r of this._observers) {
         r.handlePossibleChange(this);
       }
     }
   }
   handleChange(observable, change) {
-    if (this.j.has(observable) && !this.k.has(observable) || this.q) {
-      $Ke()?.handleDerivedDependencyChanged(this, observable, change);
+    if (this._dependencies.has(observable) && !this._dependenciesToBeRemoved.has(observable) || this._isInBeforeUpdate) {
+      getLogger()?.handleDerivedDependencyChanged(this, observable, change);
       let shouldReact = false;
       try {
-        shouldReact = this.w ? this.w.handleChange({
+        shouldReact = this._changeTracker ? this._changeTracker.handleChange({
           changedObservable: observable,
           change,
           // eslint-disable-next-line local/code-no-any-casts
           didChange: (o) => o === observable
-        }, this.l) : true;
+        }, this._changeSummary) : true;
       } catch (e) {
-        $mb(e);
+        onBugIndicatingError(e);
       }
-      const wasUpToDate = this.a === 3;
-      if (shouldReact && (this.a === 1 || wasUpToDate)) {
-        this.a = 2;
+      const wasUpToDate = this._state === 3;
+      if (shouldReact && (this._state === 1 || wasUpToDate)) {
+        this._state = 2;
         if (wasUpToDate) {
-          for (const r of this.f) {
+          for (const r of this._observers) {
             r.handlePossibleChange(this);
           }
         }
@@ -7313,83 +7313,83 @@ var $He = class extends $Ge {
     }
   }
   // IReader Implementation
-  B() {
-    if (!this.s) {
-      throw new $Eb("The reader object cannot be used outside its compute function!");
+  _ensureReaderValid() {
+    if (!this._isReaderValid) {
+      throw new BugIndicatingError("The reader object cannot be used outside its compute function!");
     }
   }
   readObservable(observable) {
-    this.B();
+    this._ensureReaderValid();
     observable.addObserver(this);
     const value = observable.get();
-    this.j.add(observable);
-    this.k.delete(observable);
+    this._dependencies.add(observable);
+    this._dependenciesToBeRemoved.delete(observable);
     return value;
   }
   reportChange(change) {
-    this.B();
-    this.p = true;
-    for (const r of this.f) {
+    this._ensureReaderValid();
+    this._didReportChange = true;
+    for (const r of this._observers) {
       r.handleChange(this, change);
     }
   }
   get store() {
-    this.B();
-    if (this.t === void 0) {
-      this.t = new $Ed();
+    this._ensureReaderValid();
+    if (this._store === void 0) {
+      this._store = new DisposableStore();
     }
-    return this.t;
+    return this._store;
   }
   get delayedStore() {
-    this.B();
-    if (this.u === void 0) {
-      this.u = new $Ed();
+    this._ensureReaderValid();
+    if (this._delayedStore === void 0) {
+      this._delayedStore = new DisposableStore();
     }
-    return this.u;
+    return this._delayedStore;
   }
   addObserver(observer) {
-    const shouldCallBeginUpdate = !this.f.has(observer) && this.i > 0;
+    const shouldCallBeginUpdate = !this._observers.has(observer) && this._updateCount > 0;
     super.addObserver(observer);
     if (shouldCallBeginUpdate) {
-      if (this.v && this.v.has(observer)) {
-        this.v.delete(observer);
+      if (this._removedObserverToCallEndUpdateOn && this._removedObserverToCallEndUpdateOn.has(observer)) {
+        this._removedObserverToCallEndUpdateOn.delete(observer);
       } else {
         observer.beginUpdate(this);
       }
     }
   }
   removeObserver(observer) {
-    if (this.f.has(observer) && this.i > 0) {
-      if (!this.v) {
-        this.v = /* @__PURE__ */ new Set();
+    if (this._observers.has(observer) && this._updateCount > 0) {
+      if (!this._removedObserverToCallEndUpdateOn) {
+        this._removedObserverToCallEndUpdateOn = /* @__PURE__ */ new Set();
       }
-      this.v.add(observer);
+      this._removedObserverToCallEndUpdateOn.add(observer);
     }
     super.removeObserver(observer);
   }
   debugGetState() {
     return {
-      state: this.a,
-      stateStr: derivedStateToString(this.a),
-      updateCount: this.i,
-      isComputing: this.n,
-      dependencies: this.j,
-      value: this.c
+      state: this._state,
+      stateStr: derivedStateToString(this._state),
+      updateCount: this._updateCount,
+      isComputing: this._isComputing,
+      dependencies: this._dependencies,
+      value: this._value
     };
   }
   debugSetValue(newValue) {
-    this.c = newValue;
+    this._value = newValue;
   }
   debugRecompute() {
-    if (!this.n) {
-      this.A();
+    if (!this._isComputing) {
+      this._recompute();
     } else {
-      this.a = 2;
+      this._state = 2;
     }
   }
   setValue(newValue, tx, change) {
-    this.c = newValue;
-    const observers = this.f;
+    this._value = newValue;
+    const observers = this._observers;
     tx.updateObserver(this, this);
     for (const d of observers) {
       d.handleChange(this, change);
@@ -7398,13 +7398,13 @@ var $He = class extends $Ge {
 };
 
 // out-build/vs/base/common/observableInternal/observables/derived.js
-function $le(options, computeFn, debugLocation = DebugLocation.ofCaller()) {
-  return new $He(new $Zd(options.owner, options.debugName, options.debugReferenceFn), computeFn, void 0, options.onLastObserverRemoved, options.equalsFn ?? $Rd, debugLocation);
+function derivedOpts(options, computeFn, debugLocation = DebugLocation.ofCaller()) {
+  return new Derived(new DebugNameData(options.owner, options.debugName, options.debugReferenceFn), computeFn, void 0, options.onLastObserverRemoved, options.equalsFn ?? strictEquals, debugLocation);
 }
-$Be($le);
+_setDerivedOpts(derivedOpts);
 
 // out-build/vs/base/common/observableInternal/observables/observableFromEvent.js
-function $7d(...args) {
+function observableFromEvent(...args) {
   let owner;
   let event;
   let getValue;
@@ -7414,137 +7414,137 @@ function $7d(...args) {
   } else {
     [owner, event, getValue, debugLocation] = args;
   }
-  return new $9d(new $Zd(owner, void 0, getValue), event, getValue, () => $9d.globalTransaction, $Rd, debugLocation ?? DebugLocation.ofCaller());
+  return new FromEventObservable(new DebugNameData(owner, void 0, getValue), event, getValue, () => FromEventObservable.globalTransaction, strictEquals, debugLocation ?? DebugLocation.ofCaller());
 }
-var $9d = class extends $Ge {
-  constructor(e, i, _getValue, j, k, debugLocation) {
+var FromEventObservable = class extends BaseObservable {
+  constructor(_debugNameData, event, _getValue, _getTransaction, _equalityComparator, debugLocation) {
     super(debugLocation);
-    this.e = e;
-    this.i = i;
+    this._debugNameData = _debugNameData;
+    this.event = event;
     this._getValue = _getValue;
-    this.j = j;
-    this.k = k;
-    this.c = false;
-    this.n = (args) => {
+    this._getTransaction = _getTransaction;
+    this._equalityComparator = _equalityComparator;
+    this._hasValue = false;
+    this.handleEvent = (args) => {
       const newValue = this._getValue(args);
-      const oldValue = this.a;
-      const didChange = !this.c || !this.k(oldValue, newValue);
+      const oldValue = this._value;
+      const didChange = !this._hasValue || !this._equalityComparator(oldValue, newValue);
       let didRunTransaction = false;
       if (didChange) {
-        this.a = newValue;
-        if (this.c) {
+        this._value = newValue;
+        if (this._hasValue) {
           didRunTransaction = true;
-          $Qe(this.j(), (tx) => {
-            $Ke()?.handleObservableUpdated(this, { oldValue, newValue, change: void 0, didChange, hadValue: this.c });
-            for (const o of this.f) {
+          subtransaction(this._getTransaction(), (tx) => {
+            getLogger()?.handleObservableUpdated(this, { oldValue, newValue, change: void 0, didChange, hadValue: this._hasValue });
+            for (const o of this._observers) {
               tx.updateObserver(o, this);
               o.handleChange(this, void 0);
             }
           }, () => {
-            const name = this.l();
+            const name = this.getDebugName();
             return "Event fired" + (name ? `: ${name}` : "");
           });
         }
-        this.c = true;
+        this._hasValue = true;
       }
       if (!didRunTransaction) {
-        $Ke()?.handleObservableUpdated(this, { oldValue, newValue, change: void 0, didChange, hadValue: this.c });
+        getLogger()?.handleObservableUpdated(this, { oldValue, newValue, change: void 0, didChange, hadValue: this._hasValue });
       }
     };
   }
-  l() {
-    return this.e.getDebugName(this);
+  getDebugName() {
+    return this._debugNameData.getDebugName(this);
   }
   get debugName() {
-    const name = this.l();
+    const name = this.getDebugName();
     return "From Event" + (name ? `: ${name}` : "");
   }
-  g() {
-    this.d = this.i(this.n);
+  onFirstObserverAdded() {
+    this._subscription = this.event(this.handleEvent);
   }
-  h() {
-    this.d.dispose();
-    this.d = void 0;
-    this.c = false;
-    this.a = void 0;
+  onLastObserverRemoved() {
+    this._subscription.dispose();
+    this._subscription = void 0;
+    this._hasValue = false;
+    this._value = void 0;
   }
   get() {
-    if (this.d) {
-      if (!this.c) {
-        this.n(void 0);
+    if (this._subscription) {
+      if (!this._hasValue) {
+        this.handleEvent(void 0);
       }
-      return this.a;
+      return this._value;
     } else {
       const value = this._getValue(void 0);
       return value;
     }
   }
   debugSetValue(value) {
-    this.a = value;
+    this._value = value;
   }
   debugGetState() {
-    return { value: this.a, hasValue: this.c };
+    return { value: this._value, hasValue: this._hasValue };
   }
 };
-(function($7d2) {
-  $7d2.Observer = $9d;
+(function(observableFromEvent2) {
+  observableFromEvent2.Observer = FromEventObservable;
   function batchEventsGlobally(tx, fn) {
     let didSet = false;
-    if ($9d.globalTransaction === void 0) {
-      $9d.globalTransaction = tx;
+    if (FromEventObservable.globalTransaction === void 0) {
+      FromEventObservable.globalTransaction = tx;
       didSet = true;
     }
     try {
       fn();
     } finally {
       if (didSet) {
-        $9d.globalTransaction = void 0;
+        FromEventObservable.globalTransaction = void 0;
       }
     }
   }
-  $7d2.batchEventsGlobally = batchEventsGlobally;
-})($7d || ($7d = {}));
+  observableFromEvent2.batchEventsGlobally = batchEventsGlobally;
+})(observableFromEvent || (observableFromEvent = {}));
 
 // out-build/vs/base/common/observableInternal/utils/utils.js
-function $ve(observable) {
-  const o = new $xe(false, void 0);
+function keepObserved(observable) {
+  const o = new KeepAliveObserver(false, void 0);
   observable.addObserver(o);
-  return $Dd(() => {
+  return toDisposable(() => {
     observable.removeObserver(o);
   });
 }
-$De($ve);
-function $we(observable, handleValue) {
-  const o = new $xe(true, handleValue);
+_setKeepObserved(keepObserved);
+function recomputeInitiallyAndOnChange(observable, handleValue) {
+  const o = new KeepAliveObserver(true, handleValue);
   observable.addObserver(o);
   try {
     o.beginUpdate(observable);
   } finally {
     o.endUpdate(observable);
   }
-  return $Dd(() => {
+  return toDisposable(() => {
     observable.removeObserver(o);
   });
 }
-$Ce($we);
-var $xe = class {
-  constructor(b, c) {
-    this.b = b;
-    this.c = c;
-    this.a = 0;
+_setRecomputeInitiallyAndOnChange(recomputeInitiallyAndOnChange);
+var KeepAliveObserver = class {
+  constructor(_forceRecompute, _handleValue) {
+    this._forceRecompute = _forceRecompute;
+    this._handleValue = _handleValue;
+    this._counter = 0;
   }
   beginUpdate(observable) {
-    this.a++;
+    this._counter++;
   }
   endUpdate(observable) {
-    if (this.a === 1 && this.b) {
-      if (this.c) {
-        this.c(observable.get());
+    if (this._counter === 1 && this._forceRecompute) {
+      if (this._handleValue) {
+        this._handleValue(observable.get());
       } else {
         observable.reportChanges();
       }
     }
-    this.a--;
+    this._counter--;
   }
   handlePossibleChange(observable) {
   }
@@ -7554,38 +7554,38 @@ var $xe = class {
 
 // out-build/vs/base/common/observableInternal/logging/consoleObservableLogger.js
 var consoleObservableLogger;
-function $0d(obs) {
+function logObservableToConsole(obs) {
   if (!consoleObservableLogger) {
-    consoleObservableLogger = new $$d();
-    $Je(consoleObservableLogger);
+    consoleObservableLogger = new ConsoleObservableLogger();
+    addLogger(consoleObservableLogger);
   }
   consoleObservableLogger.addFilteredObj(obs);
 }
-var $$d = class {
+var ConsoleObservableLogger = class {
   constructor() {
-    this.a = 0;
-    this.f = /* @__PURE__ */ new WeakMap();
+    this.indentation = 0;
+    this.changedObservablesSets = /* @__PURE__ */ new WeakMap();
   }
   addFilteredObj(obj) {
-    if (!this.b) {
-      this.b = /* @__PURE__ */ new Set();
+    if (!this._filteredObjects) {
+      this._filteredObjects = /* @__PURE__ */ new Set();
     }
-    this.b.add(obj);
+    this._filteredObjects.add(obj);
   }
-  c(obj) {
-    return this.b?.has(obj) ?? true;
+  _isIncluded(obj) {
+    return this._filteredObjects?.has(obj) ?? true;
   }
-  d(text) {
+  textToConsoleArgs(text) {
     return consoleTextToArgs([
-      normalText(repeat("|  ", this.a)),
+      normalText(repeat("|  ", this.indentation)),
       text
     ]);
   }
-  e(info) {
+  formatInfo(info) {
     if (!info.hadValue) {
       return [
         normalText(` `),
-        styled($_d(info.newValue, 60), {
+        styled(formatValue(info.newValue, 60), {
           color: "green"
         }),
         normalText(` (initial)`)
@@ -7593,37 +7593,37 @@ var $$d = class {
     }
     return info.didChange ? [
       normalText(` `),
-      styled($_d(info.oldValue, 70), {
+      styled(formatValue(info.oldValue, 70), {
         color: "red",
         strikeThrough: true
       }),
       normalText(` `),
-      styled($_d(info.newValue, 60), {
+      styled(formatValue(info.newValue, 60), {
         color: "green"
       })
     ] : [normalText(` (unchanged)`)];
   }
   handleObservableCreated(observable) {
-    if (observable instanceof $He) {
-      const derived = observable;
-      this.f.set(derived, /* @__PURE__ */ new Set());
+    if (observable instanceof Derived) {
+      const derived2 = observable;
+      this.changedObservablesSets.set(derived2, /* @__PURE__ */ new Set());
       const debugTrackUpdating = false;
       if (debugTrackUpdating) {
         const updating = [];
-        derived.__debugUpdating = updating;
-        const existingBeginUpdate = derived.beginUpdate;
-        derived.beginUpdate = (obs) => {
+        derived2.__debugUpdating = updating;
+        const existingBeginUpdate = derived2.beginUpdate;
+        derived2.beginUpdate = (obs) => {
           updating.push(obs);
-          return existingBeginUpdate.apply(derived, [obs]);
+          return existingBeginUpdate.apply(derived2, [obs]);
         };
-        const existingEndUpdate = derived.endUpdate;
-        derived.endUpdate = (obs) => {
+        const existingEndUpdate = derived2.endUpdate;
+        derived2.endUpdate = (obs) => {
           const idx = updating.indexOf(obs);
           if (idx === -1) {
-            console.error("endUpdate called without beginUpdate", derived.debugName, obs.debugName);
+            console.error("endUpdate called without beginUpdate", derived2.debugName, obs.debugName);
           }
           updating.splice(idx, 1);
-          return existingEndUpdate.apply(derived, [obs]);
+          return existingEndUpdate.apply(derived2, [obs]);
         };
       }
     }
@@ -7631,17 +7631,17 @@ var $$d = class {
   handleOnListenerCountChanged(observable, newCount) {
   }
   handleObservableUpdated(observable, info) {
-    if (!this.c(observable)) {
+    if (!this._isIncluded(observable)) {
       return;
     }
-    if (observable instanceof $He) {
+    if (observable instanceof Derived) {
       this._handleDerivedRecomputed(observable, info);
       return;
     }
-    console.log(...this.d([
+    console.log(...this.textToConsoleArgs([
       formatKind("observable value changed"),
       styled(observable.debugName, { color: "BlueViolet" }),
-      ...this.e(info)
+      ...this.formatInfo(info)
     ]));
   }
   formatChanges(changes) {
@@ -7650,98 +7650,98 @@ var $$d = class {
     }
     return styled(" (changed deps: " + [...changes].map((o) => o.debugName).join(", ") + ")", { color: "gray" });
   }
-  handleDerivedDependencyChanged(derived, observable, change) {
-    if (!this.c(derived)) {
+  handleDerivedDependencyChanged(derived2, observable, change) {
+    if (!this._isIncluded(derived2)) {
       return;
     }
-    this.f.get(derived)?.add(observable);
+    this.changedObservablesSets.get(derived2)?.add(observable);
   }
-  _handleDerivedRecomputed(derived, info) {
-    if (!this.c(derived)) {
+  _handleDerivedRecomputed(derived2, info) {
+    if (!this._isIncluded(derived2)) {
       return;
     }
-    const changedObservables = this.f.get(derived);
+    const changedObservables = this.changedObservablesSets.get(derived2);
     if (!changedObservables) {
       return;
     }
-    console.log(...this.d([
+    console.log(...this.textToConsoleArgs([
       formatKind("derived recomputed"),
-      styled(derived.debugName, { color: "BlueViolet" }),
-      ...this.e(info),
+      styled(derived2.debugName, { color: "BlueViolet" }),
+      ...this.formatInfo(info),
       this.formatChanges(changedObservables),
-      { data: [{ fn: derived._debugNameData.referenceFn ?? derived._computeFn }] }
+      { data: [{ fn: derived2._debugNameData.referenceFn ?? derived2._computeFn }] }
     ]));
     changedObservables.clear();
   }
-  handleDerivedCleared(derived) {
-    if (!this.c(derived)) {
+  handleDerivedCleared(derived2) {
+    if (!this._isIncluded(derived2)) {
       return;
     }
-    console.log(...this.d([
+    console.log(...this.textToConsoleArgs([
       formatKind("derived cleared"),
-      styled(derived.debugName, { color: "BlueViolet" })
+      styled(derived2.debugName, { color: "BlueViolet" })
     ]));
   }
   handleFromEventObservableTriggered(observable, info) {
-    if (!this.c(observable)) {
+    if (!this._isIncluded(observable)) {
       return;
     }
-    console.log(...this.d([
+    console.log(...this.textToConsoleArgs([
       formatKind("observable from event triggered"),
       styled(observable.debugName, { color: "BlueViolet" }),
-      ...this.e(info),
+      ...this.formatInfo(info),
       { data: [{ fn: observable._getValue }] }
     ]));
   }
-  handleAutorunCreated(autorun) {
-    if (!this.c(autorun)) {
+  handleAutorunCreated(autorun2) {
+    if (!this._isIncluded(autorun2)) {
       return;
     }
-    this.f.set(autorun, /* @__PURE__ */ new Set());
+    this.changedObservablesSets.set(autorun2, /* @__PURE__ */ new Set());
   }
-  handleAutorunDisposed(autorun) {
+  handleAutorunDisposed(autorun2) {
   }
-  handleAutorunDependencyChanged(autorun, observable, change) {
-    if (!this.c(autorun)) {
+  handleAutorunDependencyChanged(autorun2, observable, change) {
+    if (!this._isIncluded(autorun2)) {
       return;
     }
-    this.f.get(autorun).add(observable);
+    this.changedObservablesSets.get(autorun2).add(observable);
   }
-  handleAutorunStarted(autorun) {
-    const changedObservables = this.f.get(autorun);
+  handleAutorunStarted(autorun2) {
+    const changedObservables = this.changedObservablesSets.get(autorun2);
     if (!changedObservables) {
       return;
     }
-    if (this.c(autorun)) {
-      console.log(...this.d([
+    if (this._isIncluded(autorun2)) {
+      console.log(...this.textToConsoleArgs([
         formatKind("autorun"),
-        styled(autorun.debugName, { color: "BlueViolet" }),
+        styled(autorun2.debugName, { color: "BlueViolet" }),
         this.formatChanges(changedObservables),
-        { data: [{ fn: autorun._debugNameData.referenceFn ?? autorun._runFn }] }
+        { data: [{ fn: autorun2._debugNameData.referenceFn ?? autorun2._runFn }] }
       ]));
     }
     changedObservables.clear();
-    this.a++;
+    this.indentation++;
   }
-  handleAutorunFinished(autorun) {
-    this.a--;
+  handleAutorunFinished(autorun2) {
+    this.indentation--;
   }
-  handleBeginTransaction(transaction) {
-    let transactionName = transaction.getDebugName();
+  handleBeginTransaction(transaction2) {
+    let transactionName = transaction2.getDebugName();
     if (transactionName === void 0) {
       transactionName = "";
     }
-    if (this.c(transaction)) {
-      console.log(...this.d([
+    if (this._isIncluded(transaction2)) {
+      console.log(...this.textToConsoleArgs([
         formatKind("transaction"),
         styled(transactionName, { color: "BlueViolet" }),
-        { data: [{ fn: transaction._fn }] }
+        { data: [{ fn: transaction2._fn }] }
       ]));
     }
-    this.a++;
+    this.indentation++;
   }
   handleEndTransaction() {
-    this.a--;
+    this.indentation--;
   }
 };
 function consoleTextToArgs(text) {
@@ -7798,7 +7798,7 @@ function styled(text, options = {
     style: objToCss(style)
   };
 }
-function $_d(value, availableLen) {
+function formatValue(value, availableLen) {
   switch (typeof value) {
     case "number":
       return "" + value;
@@ -7839,7 +7839,7 @@ function formatArray(value, availableLen) {
       break;
     }
     first = false;
-    result += `${$_d(val, availableLen - result.length)}`;
+    result += `${formatValue(val, availableLen - result.length)}`;
   }
   result += " ]";
   return result;
@@ -7852,7 +7852,7 @@ function formatObject(value, availableLen) {
     }
     return val.substring(0, availableLen - 3) + "...";
   }
-  const className = $2d(value);
+  const className = getClassName(value);
   let result = className ? className + "(" : "{ ";
   let first = true;
   for (const [key, val] of Object.entries(value)) {
@@ -7864,7 +7864,7 @@ function formatObject(value, availableLen) {
       break;
     }
     first = false;
-    result += `${key}: ${$_d(val, availableLen - result.length)}`;
+    result += `${key}: ${formatValue(val, availableLen - result.length)}`;
   }
   result += className ? ")" : " }";
   return result;
@@ -7884,20 +7884,20 @@ function padStr(str, length) {
 }
 
 // out-build/vs/base/common/observableInternal/logging/debugger/rpc.js
-var $df = class _$df {
+var SimpleTypedRpcConnection = class _SimpleTypedRpcConnection {
   static createHost(channelFactory, getHandler) {
-    return new _$df(channelFactory, getHandler);
+    return new _SimpleTypedRpcConnection(channelFactory, getHandler);
   }
   static createClient(channelFactory, getHandler) {
-    return new _$df(channelFactory, getHandler);
+    return new _SimpleTypedRpcConnection(channelFactory, getHandler);
   }
-  constructor(b, c) {
-    this.b = b;
-    this.c = c;
-    this.a = this.b({
+  constructor(_channelFactory, _getHandler) {
+    this._channelFactory = _channelFactory;
+    this._getHandler = _getHandler;
+    this._channel = this._channelFactory({
       handleNotification: (notificationData) => {
         const m = notificationData;
-        const fn = this.c().notifications[m[0]];
+        const fn = this._getHandler().notifications[m[0]];
         if (!fn) {
           throw new Error(`Unknown notification "${m[0]}"!`);
         }
@@ -7906,7 +7906,7 @@ var $df = class _$df {
       handleRequest: (requestData) => {
         const m = requestData;
         try {
-          const result = this.c().requests[m[0]](...m[1]);
+          const result = this._getHandler().requests[m[0]](...m[1]);
           return { type: "result", value: result };
         } catch (e) {
           return { type: "error", value: e };
@@ -7916,7 +7916,7 @@ var $df = class _$df {
     const requests = new Proxy({}, {
       get: (target, key) => {
         return async (...args) => {
-          const result = await this.a.sendRequest([key, args]);
+          const result = await this._channel.sendRequest([key, args]);
           if (result.type === "error") {
             throw result.value;
           } else {
@@ -7928,7 +7928,7 @@ var $df = class _$df {
     const notifications = new Proxy({}, {
       get: (target, key) => {
         return (...args) => {
-          this.a.sendNotification([key, args]);
+          this._channel.sendNotification([key, args]);
         };
       }
     });
@@ -7937,7 +7937,7 @@ var $df = class _$df {
 };
 
 // out-build/vs/base/common/observableInternal/logging/debugger/debuggerRpc.js
-function $ef(channelId, createClient) {
+function registerDebugChannel(channelId, createClient) {
   const g = globalThis;
   let queuedNotifications = [];
   let curHost = void 0;
@@ -7960,7 +7960,7 @@ function $ef(channelId, createClient) {
     queuedNotifications = [];
     return handler;
   };
-  return $df.createClient(channel, () => {
+  return SimpleTypedRpcConnection.createClient(channel, () => {
     if (!curClient) {
       throw new Error("Not supported");
     }
@@ -7995,39 +7995,39 @@ function createChannelFactoryFromDebugChannel(host) {
 }
 
 // out-build/vs/base/common/observableInternal/logging/debugger/utils.js
-var $gf = class {
+var Throttler = class {
   constructor() {
-    this.a = void 0;
+    this._timeout = void 0;
   }
   throttle(fn, timeoutMs) {
-    if (this.a === void 0) {
-      this.a = setTimeout(() => {
-        this.a = void 0;
+    if (this._timeout === void 0) {
+      this._timeout = setTimeout(() => {
+        this._timeout = void 0;
         fn();
       }, timeoutMs);
     }
   }
   dispose() {
-    if (this.a !== void 0) {
-      clearTimeout(this.a);
+    if (this._timeout !== void 0) {
+      clearTimeout(this._timeout);
     }
   }
 };
-function $hf(target, source) {
+function deepAssign(target, source) {
   for (const key in source) {
     if (!!target[key] && typeof target[key] === "object" && !!source[key] && typeof source[key] === "object") {
-      $hf(target[key], source[key]);
+      deepAssign(target[key], source[key]);
     } else {
       target[key] = source[key];
     }
   }
 }
-function $if(target, source) {
+function deepAssignDeleteNulls(target, source) {
   for (const key in source) {
     if (source[key] === null) {
       delete target[key];
     } else if (!!target[key] && typeof target[key] === "object" && !!source[key] && typeof source[key] === "object") {
-      $if(target[key], source[key]);
+      deepAssignDeleteNulls(target[key], source[key]);
     } else {
       target[key] = source[key];
     }
@@ -8035,19 +8035,19 @@ function $if(target, source) {
 }
 
 // out-build/vs/base/common/observableInternal/logging/debugger/devToolsLogger.js
-var $jf = class _$jf {
+var DevToolsLogger = class _DevToolsLogger {
   static {
-    this.a = void 0;
+    this._instance = void 0;
   }
   static getInstance() {
-    if (_$jf.a === void 0) {
-      _$jf.a = new _$jf();
+    if (_DevToolsLogger._instance === void 0) {
+      _DevToolsLogger._instance = new _DevToolsLogger();
     }
-    return _$jf.a;
+    return _DevToolsLogger._instance;
   }
-  j() {
+  getTransactionState() {
     const affected = [];
-    const txs = [...this.h];
+    const txs = [...this._activeTransactions];
     if (txs.length === 0) {
       return void 0;
     }
@@ -8059,7 +8059,7 @@ var $jf = class _$jf {
         continue;
       }
       processedObservers.add(observer);
-      const state = this.m(observer, (d) => {
+      const state = this._getInfo(observer, (d) => {
         if (!processedObservers.has(d)) {
           observerQueue.push(d);
         }
@@ -8070,35 +8070,35 @@ var $jf = class _$jf {
     }
     return { names: txs.map((t) => t.getDebugName() ?? "tx"), affected };
   }
-  k(observable) {
-    const info = this.f.get(observable);
+  _getObservableInfo(observable) {
+    const info = this._instanceInfos.get(observable);
     if (!info) {
-      $nb(new $Eb("No info found"));
+      onUnexpectedError(new BugIndicatingError("No info found"));
       return void 0;
     }
     return info;
   }
-  l(autorun) {
-    const info = this.f.get(autorun);
+  _getAutorunInfo(autorun2) {
+    const info = this._instanceInfos.get(autorun2);
     if (!info) {
-      $nb(new $Eb("No info found"));
+      onUnexpectedError(new BugIndicatingError("No info found"));
       return void 0;
     }
     return info;
   }
-  m(observer, queue) {
-    if (observer instanceof $He) {
+  _getInfo(observer, queue) {
+    if (observer instanceof Derived) {
       const observersToUpdate = [...observer.debugGetObservers()];
       for (const o of observersToUpdate) {
         queue(o);
       }
-      const info = this.k(observer);
+      const info = this._getObservableInfo(observer);
       if (!info) {
         return;
       }
       const observerState = observer.debugGetState();
       const base = { name: observer.debugName, instanceId: info.instanceId, updateCount: observerState.updateCount };
-      const changedDependencies = [...info.changedObservables].map((o) => this.f.get(o)?.instanceId).filter($ed);
+      const changedDependencies = [...info.changedObservables].map((o) => this._instanceInfos.get(o)?.instanceId).filter(isDefined);
       if (observerState.isComputing) {
         return { ...base, type: "observable/derived", state: "updating", changedDependencies, initialComputation: false };
       }
@@ -8112,13 +8112,13 @@ var $jf = class _$jf {
         case 1:
           return { ...base, type: "observable/derived", state: "possiblyStale" };
       }
-    } else if (observer instanceof $6d) {
-      const info = this.l(observer);
+    } else if (observer instanceof AutorunObserver) {
+      const info = this._getAutorunInfo(observer);
       if (!info) {
         return void 0;
       }
       const base = { name: observer.debugName, instanceId: info.instanceId, updateCount: info.updateCount };
-      const changedDependencies = [...info.changedObservables].map((o) => this.f.get(o).instanceId);
+      const changedDependencies = [...info.changedObservables].map((o) => this._instanceInfos.get(o).instanceId);
       if (observer.debugGetState().isRunning) {
         return { ...base, type: "autorun", state: "updating", changedDependencies };
       }
@@ -8133,31 +8133,31 @@ var $jf = class _$jf {
     }
     return void 0;
   }
-  n(obs) {
-    const info = this.k(obs);
+  _formatObservable(obs) {
+    const info = this._getObservableInfo(obs);
     if (!info) {
       return void 0;
     }
     return { name: obs.debugName, instanceId: info.instanceId };
   }
-  p(obs) {
-    if (obs instanceof $He) {
-      return { name: obs.toString(), instanceId: this.k(obs)?.instanceId };
+  _formatObserver(obs) {
+    if (obs instanceof Derived) {
+      return { name: obs.toString(), instanceId: this._getObservableInfo(obs)?.instanceId };
     }
-    const autorunInfo = this.l(obs);
+    const autorunInfo = this._getAutorunInfo(obs);
     if (autorunInfo) {
       return { name: obs.toString(), instanceId: autorunInfo.instanceId };
     }
     return void 0;
   }
   constructor() {
-    this.b = 0;
-    this.c = 0;
-    this.e = /* @__PURE__ */ new Map();
-    this.f = /* @__PURE__ */ new WeakMap();
-    this.g = /* @__PURE__ */ new Map();
-    this.h = /* @__PURE__ */ new Set();
-    this.i = $ef("observableDevTools", () => {
+    this._declarationId = 0;
+    this._instanceId = 0;
+    this._declarations = /* @__PURE__ */ new Map();
+    this._instanceInfos = /* @__PURE__ */ new WeakMap();
+    this._aliveInstances = /* @__PURE__ */ new Map();
+    this._activeTransactions = /* @__PURE__ */ new Set();
+    this._channel = registerDebugChannel("observableDevTools", () => {
       return {
         notifications: {
           setDeclarationIdFilter: (declarationIds) => {
@@ -8166,17 +8166,17 @@ var $jf = class _$jf {
             console.log("logObservableValue", observableId);
           },
           flushUpdates: () => {
-            this.v();
+            this._flushUpdates();
           },
           resetUpdates: () => {
-            this.q = null;
-            this.i.api.notifications.handleChange(this.s, true);
+            this._pendingChanges = null;
+            this._channel.api.notifications.handleChange(this._fullState, true);
           }
         },
         requests: {
           getDeclarations: () => {
             const result = {};
-            for (const decl of this.e.values()) {
+            for (const decl of this._declarations.values()) {
               result[decl.id] = decl;
             }
             return { decls: result };
@@ -8185,37 +8185,37 @@ var $jf = class _$jf {
             return null;
           },
           getObservableValueInfo: (instanceId) => {
-            const obs = this.g.get(instanceId);
+            const obs = this._aliveInstances.get(instanceId);
             return {
-              observers: [...obs.debugGetObservers()].map((d) => this.p(d)).filter($ed)
+              observers: [...obs.debugGetObservers()].map((d) => this._formatObserver(d)).filter(isDefined)
             };
           },
           getDerivedInfo: (instanceId) => {
-            const d = this.g.get(instanceId);
+            const d = this._aliveInstances.get(instanceId);
             return {
-              dependencies: [...d.debugGetState().dependencies].map((d2) => this.n(d2)).filter($ed),
-              observers: [...d.debugGetObservers()].map((d2) => this.p(d2)).filter($ed)
+              dependencies: [...d.debugGetState().dependencies].map((d2) => this._formatObservable(d2)).filter(isDefined),
+              observers: [...d.debugGetObservers()].map((d2) => this._formatObserver(d2)).filter(isDefined)
             };
           },
           getAutorunInfo: (instanceId) => {
-            const obs = this.g.get(instanceId);
+            const obs = this._aliveInstances.get(instanceId);
             return {
-              dependencies: [...obs.debugGetState().dependencies].map((d) => this.n(d)).filter($ed)
+              dependencies: [...obs.debugGetState().dependencies].map((d) => this._formatObservable(d)).filter(isDefined)
             };
           },
           getTransactionState: () => {
-            return this.j();
+            return this.getTransactionState();
           },
           setValue: (instanceId, jsonValue) => {
-            const obs = this.g.get(instanceId);
-            if (obs instanceof $He) {
+            const obs = this._aliveInstances.get(instanceId);
+            if (obs instanceof Derived) {
               obs.debugSetValue(jsonValue);
-            } else if (obs instanceof $Te) {
+            } else if (obs instanceof ObservableValue) {
               obs.debugSetValue(jsonValue);
-            } else if (obs instanceof $9d) {
+            } else if (obs instanceof FromEventObservable) {
               obs.debugSetValue(jsonValue);
             } else {
-              throw new $Eb("Observable is not supported");
+              throw new BugIndicatingError("Observable is not supported");
             }
             const observers = [...obs.debugGetObservers()];
             for (const d of observers) {
@@ -8229,94 +8229,94 @@ var $jf = class _$jf {
             }
           },
           getValue: (instanceId) => {
-            const obs = this.g.get(instanceId);
-            if (obs instanceof $He) {
-              return $_d(obs.debugGetState().value, 200);
-            } else if (obs instanceof $Te) {
-              return $_d(obs.debugGetState().value, 200);
+            const obs = this._aliveInstances.get(instanceId);
+            if (obs instanceof Derived) {
+              return formatValue(obs.debugGetState().value, 200);
+            } else if (obs instanceof ObservableValue) {
+              return formatValue(obs.debugGetState().value, 200);
             }
             return void 0;
           },
           logValue: (instanceId) => {
-            const obs = this.g.get(instanceId);
+            const obs = this._aliveInstances.get(instanceId);
             if (obs && "get" in obs) {
               console.log("Logged Value:", obs.get());
             } else {
-              throw new $Eb("Observable is not supported");
+              throw new BugIndicatingError("Observable is not supported");
             }
           },
           rerun: (instanceId) => {
-            const obs = this.g.get(instanceId);
-            if (obs instanceof $He) {
+            const obs = this._aliveInstances.get(instanceId);
+            if (obs instanceof Derived) {
               obs.debugRecompute();
-            } else if (obs instanceof $6d) {
+            } else if (obs instanceof AutorunObserver) {
               obs.debugRerun();
             } else {
-              throw new $Eb("Observable is not supported");
+              throw new BugIndicatingError("Observable is not supported");
             }
           }
         }
       };
     });
-    this.q = null;
-    this.r = new $gf();
-    this.s = {};
-    this.v = () => {
-      if (this.q !== null) {
-        this.i.api.notifications.handleChange(this.q, false);
-        this.q = null;
+    this._pendingChanges = null;
+    this._changeThrottler = new Throttler();
+    this._fullState = {};
+    this._flushUpdates = () => {
+      if (this._pendingChanges !== null) {
+        this._channel.api.notifications.handleChange(this._pendingChanges, false);
+        this._pendingChanges = null;
       }
     };
     DebugLocation.enable();
   }
-  u(update) {
-    $if(this.s, update);
-    if (this.q === null) {
-      this.q = update;
+  _handleChange(update) {
+    deepAssignDeleteNulls(this._fullState, update);
+    if (this._pendingChanges === null) {
+      this._pendingChanges = update;
     } else {
-      $hf(this.q, update);
+      deepAssign(this._pendingChanges, update);
     }
-    this.r.throttle(this.v, 10);
+    this._changeThrottler.throttle(this._flushUpdates, 10);
   }
-  w(type, location) {
+  _getDeclarationId(type, location) {
     if (!location) {
       return -1;
     }
-    let decInfo = this.e.get(location.id);
+    let decInfo = this._declarations.get(location.id);
     if (decInfo === void 0) {
       decInfo = {
-        id: this.b++,
+        id: this._declarationId++,
         type,
         url: location.fileName,
         line: location.line,
         column: location.column
       };
-      this.e.set(location.id, decInfo);
-      this.u({ decls: { [decInfo.id]: decInfo } });
+      this._declarations.set(location.id, decInfo);
+      this._handleChange({ decls: { [decInfo.id]: decInfo } });
     }
     return decInfo.id;
   }
   handleObservableCreated(observable, location) {
-    const declarationId = this.w("observable/value", location);
+    const declarationId = this._getDeclarationId("observable/value", location);
     const info = {
       declarationId,
-      instanceId: this.c++,
+      instanceId: this._instanceId++,
       listenerCount: 0,
       lastValue: void 0,
       updateCount: 0,
       changedObservables: /* @__PURE__ */ new Set()
     };
-    this.f.set(observable, info);
+    this._instanceInfos.set(observable, info);
   }
   handleOnListenerCountChanged(observable, newCount) {
-    const info = this.k(observable);
+    const info = this._getObservableInfo(observable);
     if (!info) {
       return;
     }
     if (info.listenerCount === 0 && newCount > 0) {
-      const type = observable instanceof $He ? "observable/derived" : "observable/value";
-      this.g.set(info.instanceId, observable);
-      this.u({
+      const type = observable instanceof Derived ? "observable/derived" : "observable/value";
+      this._aliveInstances.set(info.instanceId, observable);
+      this._handleChange({
         instances: {
           [info.instanceId]: {
             instanceId: info.instanceId,
@@ -8328,115 +8328,115 @@ var $jf = class _$jf {
         }
       });
     } else if (info.listenerCount > 0 && newCount === 0) {
-      this.u({
+      this._handleChange({
         instances: { [info.instanceId]: null }
       });
-      this.g.delete(info.instanceId);
+      this._aliveInstances.delete(info.instanceId);
     }
     info.listenerCount = newCount;
   }
   handleObservableUpdated(observable, changeInfo) {
-    if (observable instanceof $He) {
+    if (observable instanceof Derived) {
       this._handleDerivedRecomputed(observable, changeInfo);
       return;
     }
-    const info = this.k(observable);
+    const info = this._getObservableInfo(observable);
     if (info) {
       if (changeInfo.didChange) {
-        info.lastValue = $_d(changeInfo.newValue, 30);
+        info.lastValue = formatValue(changeInfo.newValue, 30);
         if (info.listenerCount > 0) {
-          this.u({
+          this._handleChange({
             instances: { [info.instanceId]: { formattedValue: info.lastValue } }
           });
         }
       }
     }
   }
-  handleAutorunCreated(autorun, location) {
-    const declarationId = this.w("autorun", location);
+  handleAutorunCreated(autorun2, location) {
+    const declarationId = this._getDeclarationId("autorun", location);
     const info = {
       declarationId,
-      instanceId: this.c++,
+      instanceId: this._instanceId++,
       updateCount: 0,
       changedObservables: /* @__PURE__ */ new Set()
     };
-    this.f.set(autorun, info);
-    this.g.set(info.instanceId, autorun);
+    this._instanceInfos.set(autorun2, info);
+    this._aliveInstances.set(info.instanceId, autorun2);
     if (info) {
-      this.u({
+      this._handleChange({
         instances: {
           [info.instanceId]: {
             instanceId: info.instanceId,
             declarationId: info.declarationId,
             runCount: 0,
             type: "autorun",
-            name: autorun.debugName
+            name: autorun2.debugName
           }
         }
       });
     }
   }
-  handleAutorunDisposed(autorun) {
-    const info = this.l(autorun);
+  handleAutorunDisposed(autorun2) {
+    const info = this._getAutorunInfo(autorun2);
     if (!info) {
       return;
     }
-    this.u({
+    this._handleChange({
       instances: { [info.instanceId]: null }
     });
-    this.f.delete(autorun);
-    this.g.delete(info.instanceId);
+    this._instanceInfos.delete(autorun2);
+    this._aliveInstances.delete(info.instanceId);
   }
-  handleAutorunDependencyChanged(autorun, observable, change) {
-    const info = this.l(autorun);
+  handleAutorunDependencyChanged(autorun2, observable, change) {
+    const info = this._getAutorunInfo(autorun2);
     if (!info) {
       return;
     }
     info.changedObservables.add(observable);
   }
-  handleAutorunStarted(autorun) {
+  handleAutorunStarted(autorun2) {
   }
-  handleAutorunFinished(autorun) {
-    const info = this.l(autorun);
+  handleAutorunFinished(autorun2) {
+    const info = this._getAutorunInfo(autorun2);
     if (!info) {
       return;
     }
     info.changedObservables.clear();
     info.updateCount++;
-    this.u({
+    this._handleChange({
       instances: { [info.instanceId]: { runCount: info.updateCount } }
     });
   }
-  handleDerivedDependencyChanged(derived, observable, change) {
-    const info = this.k(derived);
+  handleDerivedDependencyChanged(derived2, observable, change) {
+    const info = this._getObservableInfo(derived2);
     if (info) {
       info.changedObservables.add(observable);
     }
   }
   _handleDerivedRecomputed(observable, changeInfo) {
-    const info = this.k(observable);
+    const info = this._getObservableInfo(observable);
     if (!info) {
       return;
     }
-    const formattedValue = $_d(changeInfo.newValue, 30);
+    const formattedValue = formatValue(changeInfo.newValue, 30);
     info.updateCount++;
     info.changedObservables.clear();
     info.lastValue = formattedValue;
     if (info.listenerCount > 0) {
-      this.u({
+      this._handleChange({
         instances: { [info.instanceId]: { formattedValue, recomputationCount: info.updateCount } }
       });
     }
   }
   handleDerivedCleared(observable) {
-    const info = this.k(observable);
+    const info = this._getObservableInfo(observable);
     if (!info) {
       return;
     }
     info.lastValue = void 0;
     info.changedObservables.clear();
     if (info.listenerCount > 0) {
-      this.u({
+      this._handleChange({
         instances: {
           [info.instanceId]: {
             formattedValue: void 0
@@ -8445,16 +8445,16 @@ var $jf = class _$jf {
       });
     }
   }
-  handleBeginTransaction(transaction) {
-    this.h.add(transaction);
+  handleBeginTransaction(transaction2) {
+    this._activeTransactions.add(transaction2);
   }
-  handleEndTransaction(transaction) {
-    this.h.delete(transaction);
+  handleEndTransaction(transaction2) {
+    this._activeTransactions.delete(transaction2);
   }
 };
 
 // out-build/vs/base/common/observableInternal/logging/debugGetDependencyGraph.js
-function $ae(obs, options) {
+function debugGetObservableGraph(obs, options) {
   const debugNamePostProcessor = options?.debugNamePostProcessor ?? ((str) => str);
   const info = Info.from(obs, debugNamePostProcessor);
   if (!info) {
@@ -8477,7 +8477,7 @@ function formatObservableInfoWithDependencies(info, indentLevel, alreadyListed, 
   }
   alreadyListed.add(info.sourceObj);
   lines.push(`${indent}* ${info.type} ${info.name}:`);
-  lines.push(`${indent}  value: ${$_d(info.value, 50)}`);
+  lines.push(`${indent}  value: ${formatValue(info.value, 50)}`);
   lines.push(`${indent}  state: ${info.state}`);
   if (info.dependencies.length > 0) {
     lines.push(`${indent}  dependencies:`);
@@ -8498,7 +8498,7 @@ function formatObservableInfoWithObservers(info, indentLevel, alreadyListed, opt
   }
   alreadyListed.add(info.sourceObj);
   lines.push(`${indent}* ${info.type} ${info.name}:`);
-  lines.push(`${indent}  value: ${$_d(info.value, 50)}`);
+  lines.push(`${indent}  value: ${formatValue(info.value, 50)}`);
   lines.push(`${indent}  state: ${info.state}`);
   if (info.observers.length > 0) {
     lines.push(`${indent}  observers:`);
@@ -8511,16 +8511,16 @@ function formatObservableInfoWithObservers(info, indentLevel, alreadyListed, opt
 }
 var Info = class _Info {
   static from(obs, debugNamePostProcessor) {
-    if (obs instanceof $6d) {
+    if (obs instanceof AutorunObserver) {
       const state = obs.debugGetState();
       return new _Info(obs, debugNamePostProcessor(obs.debugName), "autorun", void 0, state.stateStr, Array.from(state.dependencies), []);
-    } else if (obs instanceof $He) {
+    } else if (obs instanceof Derived) {
       const state = obs.debugGetState();
       return new _Info(obs, debugNamePostProcessor(obs.debugName), "derived", state.value, state.stateStr, Array.from(state.dependencies), Array.from(obs.debugGetObservers()));
-    } else if (obs instanceof $Te) {
+    } else if (obs instanceof ObservableValue) {
       const state = obs.debugGetState();
       return new _Info(obs, debugNamePostProcessor(obs.debugName), "observableValue", state.value, "upToDate", [], Array.from(obs.debugGetObservers()));
-    } else if (obs instanceof $9d) {
+    } else if (obs instanceof FromEventObservable) {
       const state = obs.debugGetState();
       return new _Info(obs, debugNamePostProcessor(obs.debugName), "fromEvent", state.value, state.hasValue ? "upToDate" : "initial", [], Array.from(obs.debugGetObservers()));
     }
@@ -8541,20 +8541,20 @@ var Info = class _Info {
 };
 
 // out-build/vs/base/common/observableInternal/index.js
-$Ee($ae);
-$Le($0d);
+_setDebugGetObservableGraph(debugGetObservableGraph);
+setLogObservableFn(logObservableToConsole);
 var enableLogging = false;
 if (enableLogging) {
-  $Je(new $$d());
+  addLogger(new ConsoleObservableLogger());
 }
-if ($3 && $3["VSCODE_DEV_DEBUG_OBSERVABLES"]) {
-  $Je($jf.getInstance());
+if (env && env["VSCODE_DEV_DEBUG_OBSERVABLES"]) {
+  addLogger(DevToolsLogger.getInstance());
 }
 
 // out-build/vs/editor/common/core/ranges/offsetRange.js
-var $PD = class _$PD {
+var OffsetRange = class _OffsetRange {
   static fromTo(start, endExclusive) {
-    return new _$PD(start, endExclusive);
+    return new _OffsetRange(start, endExclusive);
   }
   static addRange(range, sortedRanges) {
     let i = 0;
@@ -8570,42 +8570,42 @@ var $PD = class _$PD {
     } else {
       const start = Math.min(range.start, sortedRanges[i].start);
       const end = Math.max(range.endExclusive, sortedRanges[j - 1].endExclusive);
-      sortedRanges.splice(i, j - i, new _$PD(start, end));
+      sortedRanges.splice(i, j - i, new _OffsetRange(start, end));
     }
   }
   static tryCreate(start, endExclusive) {
     if (start > endExclusive) {
       return void 0;
     }
-    return new _$PD(start, endExclusive);
+    return new _OffsetRange(start, endExclusive);
   }
   static ofLength(length) {
-    return new _$PD(0, length);
+    return new _OffsetRange(0, length);
   }
   static ofStartAndLength(start, length) {
-    return new _$PD(start, start + length);
+    return new _OffsetRange(start, start + length);
   }
   static emptyAt(offset) {
-    return new _$PD(offset, offset);
+    return new _OffsetRange(offset, offset);
   }
   constructor(start, endExclusive) {
     this.start = start;
     this.endExclusive = endExclusive;
     if (start > endExclusive) {
-      throw new $Eb(`Invalid range: ${this.toString()}`);
+      throw new BugIndicatingError(`Invalid range: ${this.toString()}`);
     }
   }
   get isEmpty() {
     return this.start === this.endExclusive;
   }
   delta(offset) {
-    return new _$PD(this.start + offset, this.endExclusive + offset);
+    return new _OffsetRange(this.start + offset, this.endExclusive + offset);
   }
   deltaStart(offset) {
-    return new _$PD(this.start + offset, this.endExclusive);
+    return new _OffsetRange(this.start + offset, this.endExclusive);
   }
   deltaEnd(offset) {
-    return new _$PD(this.start, this.endExclusive + offset);
+    return new _OffsetRange(this.start, this.endExclusive + offset);
   }
   get length() {
     return this.endExclusive - this.start;
@@ -8627,7 +8627,7 @@ var $PD = class _$PD {
    * The joined range is the smallest range that contains both ranges.
    */
   join(other) {
-    return new _$PD(Math.min(this.start, other.start), Math.max(this.endExclusive, other.endExclusive));
+    return new _OffsetRange(Math.min(this.start, other.start), Math.max(this.endExclusive, other.endExclusive));
   }
   /**
    * for all numbers n: range1.contains(n) and range2.contains(n) <=> range1.intersect(range2).contains(n)
@@ -8639,7 +8639,7 @@ var $PD = class _$PD {
     const start = Math.max(this.start, other.start);
     const end = Math.min(this.endExclusive, other.endExclusive);
     if (start <= end) {
-      return new _$PD(start, end);
+      return new _OffsetRange(start, end);
     }
     return void 0;
   }
@@ -8676,7 +8676,7 @@ var $PD = class _$PD {
    */
   clip(value) {
     if (this.isEmpty) {
-      throw new $Eb(`Invalid clipping range: ${this.toString()}`);
+      throw new BugIndicatingError(`Invalid clipping range: ${this.toString()}`);
     }
     return Math.max(this.start, Math.min(this.endExclusive - 1, value));
   }
@@ -8688,7 +8688,7 @@ var $PD = class _$PD {
    */
   clipCyclic(value) {
     if (this.isEmpty) {
-      throw new $Eb(`Invalid clipping range: ${this.toString()}`);
+      throw new BugIndicatingError(`Invalid clipping range: ${this.toString()}`);
     }
     if (value < this.start) {
       return this.endExclusive - (this.start - value) % this.length;
@@ -8716,20 +8716,20 @@ var $PD = class _$PD {
   */
   joinRightTouching(range) {
     if (this.endExclusive !== range.start) {
-      throw new $Eb(`Invalid join: ${this.toString()} and ${range.toString()}`);
+      throw new BugIndicatingError(`Invalid join: ${this.toString()} and ${range.toString()}`);
     }
-    return new _$PD(this.start, range.endExclusive);
+    return new _OffsetRange(this.start, range.endExclusive);
   }
   withMargin(marginStart, marginEnd) {
     if (marginEnd === void 0) {
       marginEnd = marginStart;
     }
-    return new _$PD(this.start - marginStart, this.endExclusive + marginEnd);
+    return new _OffsetRange(this.start - marginStart, this.endExclusive + marginEnd);
   }
 };
 
 // out-build/vs/editor/common/core/position.js
-var $GD = class _$GD {
+var Position = class _Position {
   constructor(lineNumber, column) {
     this.lineNumber = lineNumber;
     this.column = column;
@@ -8744,7 +8744,7 @@ var $GD = class _$GD {
     if (newLineNumber === this.lineNumber && newColumn === this.column) {
       return this;
     } else {
-      return new _$GD(newLineNumber, newColumn);
+      return new _Position(newLineNumber, newColumn);
     }
   }
   /**
@@ -8760,7 +8760,7 @@ var $GD = class _$GD {
    * Test if this position equals other position
    */
   equals(other) {
-    return _$GD.equals(this, other);
+    return _Position.equals(this, other);
   }
   /**
    * Test if position `a` equals position `b`
@@ -8776,7 +8776,7 @@ var $GD = class _$GD {
    * If the two positions are equal, the result will be false.
    */
   isBefore(other) {
-    return _$GD.isBefore(this, other);
+    return _Position.isBefore(this, other);
   }
   /**
    * Test if position `a` is before position `b`.
@@ -8796,7 +8796,7 @@ var $GD = class _$GD {
    * If the two positions are equal, the result will be true.
    */
   isBeforeOrEqual(other) {
-    return _$GD.isBeforeOrEqual(this, other);
+    return _Position.isBeforeOrEqual(this, other);
   }
   /**
    * Test if position `a` is before position `b`.
@@ -8828,7 +8828,7 @@ var $GD = class _$GD {
    * Clone this position.
    */
   clone() {
-    return new _$GD(this.lineNumber, this.column);
+    return new _Position(this.lineNumber, this.column);
   }
   /**
    * Convert to a human-readable representation.
@@ -8841,7 +8841,7 @@ var $GD = class _$GD {
    * Create a `Position` from an `IPosition`.
    */
   static lift(pos) {
-    return new _$GD(pos.lineNumber, pos.column);
+    return new _Position(pos.lineNumber, pos.column);
   }
   /**
    * Test if `obj` is an `IPosition`.
@@ -8858,7 +8858,7 @@ var $GD = class _$GD {
 };
 
 // out-build/vs/editor/common/core/range.js
-var $HD = class _$HD {
+var Range = class _Range {
   constructor(startLineNumber, startColumn, endLineNumber, endColumn) {
     if (startLineNumber > endLineNumber || startLineNumber === endLineNumber && startColumn > endColumn) {
       this.startLineNumber = endLineNumber;
@@ -8876,7 +8876,7 @@ var $HD = class _$HD {
    * Test if this range is empty.
    */
   isEmpty() {
-    return _$HD.isEmpty(this);
+    return _Range.isEmpty(this);
   }
   /**
    * Test if `range` is empty.
@@ -8888,7 +8888,7 @@ var $HD = class _$HD {
    * Test if position is in this range. If the position is at the edges, will return true.
    */
   containsPosition(position) {
-    return _$HD.containsPosition(this, position);
+    return _Range.containsPosition(this, position);
   }
   /**
    * Test if `position` is in `range`. If the position is at the edges, will return true.
@@ -8925,7 +8925,7 @@ var $HD = class _$HD {
    * Test if range is in this range. If the range is equal to this range, will return true.
    */
   containsRange(range) {
-    return _$HD.containsRange(this, range);
+    return _Range.containsRange(this, range);
   }
   /**
    * Test if `otherRange` is in `range`. If the ranges are equal, will return true.
@@ -8949,7 +8949,7 @@ var $HD = class _$HD {
    * Test if `range` is strictly in this range. `range` must start after and end before this range for the result to be true.
    */
   strictContainsRange(range) {
-    return _$HD.strictContainsRange(this, range);
+    return _Range.strictContainsRange(this, range);
   }
   /**
    * Test if `otherRange` is strictly in `range` (must start after, and end before). If the ranges are equal, will return false.
@@ -8974,7 +8974,7 @@ var $HD = class _$HD {
    * The smallest position will be used as the start point, and the largest one as the end point.
    */
   plusRange(range) {
-    return _$HD.plusRange(this, range);
+    return _Range.plusRange(this, range);
   }
   /**
    * A reunion of the two ranges.
@@ -9005,13 +9005,13 @@ var $HD = class _$HD {
       endLineNumber = a.endLineNumber;
       endColumn = a.endColumn;
     }
-    return new _$HD(startLineNumber, startColumn, endLineNumber, endColumn);
+    return new _Range(startLineNumber, startColumn, endLineNumber, endColumn);
   }
   /**
    * A intersection of the two ranges.
    */
   intersectRanges(range) {
-    return _$HD.intersectRanges(this, range);
+    return _Range.intersectRanges(this, range);
   }
   /**
    * A intersection of the two ranges.
@@ -9043,13 +9043,13 @@ var $HD = class _$HD {
     if (resultStartLineNumber === resultEndLineNumber && resultStartColumn > resultEndColumn) {
       return null;
     }
-    return new _$HD(resultStartLineNumber, resultStartColumn, resultEndLineNumber, resultEndColumn);
+    return new _Range(resultStartLineNumber, resultStartColumn, resultEndLineNumber, resultEndColumn);
   }
   /**
    * Test if this range equals other.
    */
   equalsRange(other) {
-    return _$HD.equalsRange(this, other);
+    return _Range.equalsRange(this, other);
   }
   /**
    * Test if range `a` equals `b`.
@@ -9064,25 +9064,25 @@ var $HD = class _$HD {
    * Return the end position (which will be after or equal to the start position)
    */
   getEndPosition() {
-    return _$HD.getEndPosition(this);
+    return _Range.getEndPosition(this);
   }
   /**
    * Return the end position (which will be after or equal to the start position)
    */
   static getEndPosition(range) {
-    return new $GD(range.endLineNumber, range.endColumn);
+    return new Position(range.endLineNumber, range.endColumn);
   }
   /**
    * Return the start position (which will be before or equal to the end position)
    */
   getStartPosition() {
-    return _$HD.getStartPosition(this);
+    return _Range.getStartPosition(this);
   }
   /**
    * Return the start position (which will be before or equal to the end position)
    */
   static getStartPosition(range) {
-    return new $GD(range.startLineNumber, range.startColumn);
+    return new Position(range.startLineNumber, range.startColumn);
   }
   /**
    * Transform to a user presentable string representation.
@@ -9094,56 +9094,56 @@ var $HD = class _$HD {
    * Create a new range using this range's start position, and using endLineNumber and endColumn as the end position.
    */
   setEndPosition(endLineNumber, endColumn) {
-    return new _$HD(this.startLineNumber, this.startColumn, endLineNumber, endColumn);
+    return new _Range(this.startLineNumber, this.startColumn, endLineNumber, endColumn);
   }
   /**
    * Create a new range using this range's end position, and using startLineNumber and startColumn as the start position.
    */
   setStartPosition(startLineNumber, startColumn) {
-    return new _$HD(startLineNumber, startColumn, this.endLineNumber, this.endColumn);
+    return new _Range(startLineNumber, startColumn, this.endLineNumber, this.endColumn);
   }
   /**
    * Create a new empty range using this range's start position.
    */
   collapseToStart() {
-    return _$HD.collapseToStart(this);
+    return _Range.collapseToStart(this);
   }
   /**
    * Create a new empty range using this range's start position.
    */
   static collapseToStart(range) {
-    return new _$HD(range.startLineNumber, range.startColumn, range.startLineNumber, range.startColumn);
+    return new _Range(range.startLineNumber, range.startColumn, range.startLineNumber, range.startColumn);
   }
   /**
    * Create a new empty range using this range's end position.
    */
   collapseToEnd() {
-    return _$HD.collapseToEnd(this);
+    return _Range.collapseToEnd(this);
   }
   /**
    * Create a new empty range using this range's end position.
    */
   static collapseToEnd(range) {
-    return new _$HD(range.endLineNumber, range.endColumn, range.endLineNumber, range.endColumn);
+    return new _Range(range.endLineNumber, range.endColumn, range.endLineNumber, range.endColumn);
   }
   /**
    * Moves the range by the given amount of lines.
    */
   delta(lineCount) {
-    return new _$HD(this.startLineNumber + lineCount, this.startColumn, this.endLineNumber + lineCount, this.endColumn);
+    return new _Range(this.startLineNumber + lineCount, this.startColumn, this.endLineNumber + lineCount, this.endColumn);
   }
   isSingleLine() {
     return this.startLineNumber === this.endLineNumber;
   }
   // ---
   static fromPositions(start, end = start) {
-    return new _$HD(start.lineNumber, start.column, end.lineNumber, end.column);
+    return new _Range(start.lineNumber, start.column, end.lineNumber, end.column);
   }
   static lift(range) {
     if (!range) {
       return null;
     }
-    return new _$HD(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn);
+    return new _Range(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn);
   }
   /**
    * Test if `obj` is an `IRange`.
@@ -9244,18 +9244,18 @@ var $HD = class _$HD {
 };
 
 // out-build/vs/editor/common/core/ranges/lineRange.js
-var $RD = class _$RD {
+var LineRange = class _LineRange {
   static ofLength(startLineNumber, length) {
-    return new _$RD(startLineNumber, startLineNumber + length);
+    return new _LineRange(startLineNumber, startLineNumber + length);
   }
   static fromRange(range) {
-    return new _$RD(range.startLineNumber, range.endLineNumber);
+    return new _LineRange(range.startLineNumber, range.endLineNumber);
   }
   static fromRangeInclusive(range) {
-    return new _$RD(range.startLineNumber, range.endLineNumber + 1);
+    return new _LineRange(range.startLineNumber, range.endLineNumber + 1);
   }
   static {
-    this.compareByStart = $xc((l) => l.startLineNumber, $zc);
+    this.compareByStart = compareBy((l) => l.startLineNumber, numberComparator);
   }
   static subtract(a, b) {
     if (!b) {
@@ -9263,15 +9263,15 @@ var $RD = class _$RD {
     }
     if (a.startLineNumber < b.startLineNumber && b.endLineNumberExclusive < a.endLineNumberExclusive) {
       return [
-        new _$RD(a.startLineNumber, b.startLineNumber),
-        new _$RD(b.endLineNumberExclusive, a.endLineNumberExclusive)
+        new _LineRange(a.startLineNumber, b.startLineNumber),
+        new _LineRange(b.endLineNumberExclusive, a.endLineNumberExclusive)
       ];
     } else if (b.startLineNumber <= a.startLineNumber && a.endLineNumberExclusive <= b.endLineNumberExclusive) {
       return [];
     } else if (b.endLineNumberExclusive < a.endLineNumberExclusive) {
-      return [new _$RD(Math.max(b.endLineNumberExclusive, a.startLineNumber), a.endLineNumberExclusive)];
+      return [new _LineRange(Math.max(b.endLineNumberExclusive, a.startLineNumber), a.endLineNumberExclusive)];
     } else {
-      return [new _$RD(a.startLineNumber, Math.min(b.startLineNumber, a.endLineNumberExclusive))];
+      return [new _LineRange(a.startLineNumber, Math.min(b.startLineNumber, a.endLineNumberExclusive))];
     }
   }
   /**
@@ -9281,15 +9281,15 @@ var $RD = class _$RD {
     if (lineRanges.length === 0) {
       return [];
     }
-    let result = new $SD(lineRanges[0].slice());
+    let result = new LineRangeSet(lineRanges[0].slice());
     for (let i = 1; i < lineRanges.length; i++) {
-      result = result.getUnion(new $SD(lineRanges[i].slice()));
+      result = result.getUnion(new LineRangeSet(lineRanges[i].slice()));
     }
     return result.ranges;
   }
   static join(lineRanges) {
     if (lineRanges.length === 0) {
-      throw new $Eb("lineRanges cannot be empty");
+      throw new BugIndicatingError("lineRanges cannot be empty");
     }
     let startLineNumber = lineRanges[0].startLineNumber;
     let endLineNumberExclusive = lineRanges[0].endLineNumberExclusive;
@@ -9297,17 +9297,17 @@ var $RD = class _$RD {
       startLineNumber = Math.min(startLineNumber, lineRanges[i].startLineNumber);
       endLineNumberExclusive = Math.max(endLineNumberExclusive, lineRanges[i].endLineNumberExclusive);
     }
-    return new _$RD(startLineNumber, endLineNumberExclusive);
+    return new _LineRange(startLineNumber, endLineNumberExclusive);
   }
   /**
    * @internal
    */
   static deserialize(lineRange) {
-    return new _$RD(lineRange[0], lineRange[1]);
+    return new _LineRange(lineRange[0], lineRange[1]);
   }
   constructor(startLineNumber, endLineNumberExclusive) {
     if (startLineNumber > endLineNumberExclusive) {
-      throw new $Eb(`startLineNumber ${startLineNumber} cannot be after endLineNumberExclusive ${endLineNumberExclusive}`);
+      throw new BugIndicatingError(`startLineNumber ${startLineNumber} cannot be after endLineNumberExclusive ${endLineNumberExclusive}`);
     }
     this.startLineNumber = startLineNumber;
     this.endLineNumberExclusive = endLineNumberExclusive;
@@ -9331,10 +9331,10 @@ var $RD = class _$RD {
    * Moves this line range by the given offset of line numbers.
    */
   delta(offset) {
-    return new _$RD(this.startLineNumber + offset, this.endLineNumberExclusive + offset);
+    return new _LineRange(this.startLineNumber + offset, this.endLineNumberExclusive + offset);
   }
   deltaLength(offset) {
-    return new _$RD(this.startLineNumber, this.endLineNumberExclusive + offset);
+    return new _LineRange(this.startLineNumber, this.endLineNumberExclusive + offset);
   }
   /**
    * The number of lines this line range spans.
@@ -9346,7 +9346,7 @@ var $RD = class _$RD {
    * Creates a line range that combines this and the given line range.
    */
   join(other) {
-    return new _$RD(Math.min(this.startLineNumber, other.startLineNumber), Math.max(this.endLineNumberExclusive, other.endLineNumberExclusive));
+    return new _LineRange(Math.min(this.startLineNumber, other.startLineNumber), Math.max(this.endLineNumberExclusive, other.endLineNumberExclusive));
   }
   toString() {
     return `[${this.startLineNumber},${this.endLineNumberExclusive})`;
@@ -9359,7 +9359,7 @@ var $RD = class _$RD {
     const startLineNumber = Math.max(this.startLineNumber, other.startLineNumber);
     const endLineNumberExclusive = Math.min(this.endLineNumberExclusive, other.endLineNumberExclusive);
     if (startLineNumber <= endLineNumberExclusive) {
-      return new _$RD(startLineNumber, endLineNumberExclusive);
+      return new _LineRange(startLineNumber, endLineNumberExclusive);
     }
     return void 0;
   }
@@ -9376,13 +9376,13 @@ var $RD = class _$RD {
     if (this.isEmpty) {
       return null;
     }
-    return new $HD(this.startLineNumber, 1, this.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER);
+    return new Range(this.startLineNumber, 1, this.endLineNumberExclusive - 1, Number.MAX_SAFE_INTEGER);
   }
   /**
    * @deprecated Using this function is discouraged because it might lead to bugs: The end position is not guaranteed to be a valid position!
   */
   toExclusiveRange() {
-    return new $HD(this.startLineNumber, 1, this.endLineNumberExclusive, 1);
+    return new Range(this.startLineNumber, 1, this.endLineNumberExclusive, 1);
   }
   mapToLineArray(f) {
     const result = [];
@@ -9407,7 +9407,7 @@ var $RD = class _$RD {
    * @internal
    */
   toOffsetRange() {
-    return new $PD(this.startLineNumber - 1, this.endLineNumberExclusive - 1);
+    return new OffsetRange(this.startLineNumber - 1, this.endLineNumberExclusive - 1);
   }
   distanceToRange(other) {
     if (this.endLineNumberExclusive <= other.startLineNumber) {
@@ -9428,56 +9428,56 @@ var $RD = class _$RD {
     return lineNumber - this.endLineNumberExclusive;
   }
   addMargin(marginTop, marginBottom) {
-    return new _$RD(this.startLineNumber - marginTop, this.endLineNumberExclusive + marginBottom);
+    return new _LineRange(this.startLineNumber - marginTop, this.endLineNumberExclusive + marginBottom);
   }
 };
-var $SD = class _$SD {
-  constructor(c = []) {
-    this.c = c;
+var LineRangeSet = class _LineRangeSet {
+  constructor(_normalizedRanges = []) {
+    this._normalizedRanges = _normalizedRanges;
   }
   get ranges() {
-    return this.c;
+    return this._normalizedRanges;
   }
   addRange(range) {
     if (range.length === 0) {
       return;
     }
-    const joinRangeStartIdx = $Nb(this.c, (r) => r.endLineNumberExclusive >= range.startLineNumber);
-    const joinRangeEndIdxExclusive = $Lb(this.c, (r) => r.startLineNumber <= range.endLineNumberExclusive) + 1;
+    const joinRangeStartIdx = findFirstIdxMonotonousOrArrLen(this._normalizedRanges, (r) => r.endLineNumberExclusive >= range.startLineNumber);
+    const joinRangeEndIdxExclusive = findLastIdxMonotonous(this._normalizedRanges, (r) => r.startLineNumber <= range.endLineNumberExclusive) + 1;
     if (joinRangeStartIdx === joinRangeEndIdxExclusive) {
-      this.c.splice(joinRangeStartIdx, 0, range);
+      this._normalizedRanges.splice(joinRangeStartIdx, 0, range);
     } else if (joinRangeStartIdx === joinRangeEndIdxExclusive - 1) {
-      const joinRange = this.c[joinRangeStartIdx];
-      this.c[joinRangeStartIdx] = joinRange.join(range);
+      const joinRange = this._normalizedRanges[joinRangeStartIdx];
+      this._normalizedRanges[joinRangeStartIdx] = joinRange.join(range);
     } else {
-      const joinRange = this.c[joinRangeStartIdx].join(this.c[joinRangeEndIdxExclusive - 1]).join(range);
-      this.c.splice(joinRangeStartIdx, joinRangeEndIdxExclusive - joinRangeStartIdx, joinRange);
+      const joinRange = this._normalizedRanges[joinRangeStartIdx].join(this._normalizedRanges[joinRangeEndIdxExclusive - 1]).join(range);
+      this._normalizedRanges.splice(joinRangeStartIdx, joinRangeEndIdxExclusive - joinRangeStartIdx, joinRange);
     }
   }
   contains(lineNumber) {
-    const rangeThatStartsBeforeEnd = $Kb(this.c, (r) => r.startLineNumber <= lineNumber);
+    const rangeThatStartsBeforeEnd = findLastMonotonous(this._normalizedRanges, (r) => r.startLineNumber <= lineNumber);
     return !!rangeThatStartsBeforeEnd && rangeThatStartsBeforeEnd.endLineNumberExclusive > lineNumber;
   }
   intersects(range) {
-    const rangeThatStartsBeforeEnd = $Kb(this.c, (r) => r.startLineNumber < range.endLineNumberExclusive);
+    const rangeThatStartsBeforeEnd = findLastMonotonous(this._normalizedRanges, (r) => r.startLineNumber < range.endLineNumberExclusive);
     return !!rangeThatStartsBeforeEnd && rangeThatStartsBeforeEnd.endLineNumberExclusive > range.startLineNumber;
   }
   getUnion(other) {
-    if (this.c.length === 0) {
+    if (this._normalizedRanges.length === 0) {
       return other;
     }
-    if (other.c.length === 0) {
+    if (other._normalizedRanges.length === 0) {
       return this;
     }
     const result = [];
     let i1 = 0;
     let i2 = 0;
     let current = null;
-    while (i1 < this.c.length || i2 < other.c.length) {
+    while (i1 < this._normalizedRanges.length || i2 < other._normalizedRanges.length) {
       let next = null;
-      if (i1 < this.c.length && i2 < other.c.length) {
-        const lineRange1 = this.c[i1];
-        const lineRange2 = other.c[i2];
+      if (i1 < this._normalizedRanges.length && i2 < other._normalizedRanges.length) {
+        const lineRange1 = this._normalizedRanges[i1];
+        const lineRange2 = other._normalizedRanges[i2];
         if (lineRange1.startLineNumber < lineRange2.startLineNumber) {
           next = lineRange1;
           i1++;
@@ -9485,18 +9485,18 @@ var $SD = class _$SD {
           next = lineRange2;
           i2++;
         }
-      } else if (i1 < this.c.length) {
-        next = this.c[i1];
+      } else if (i1 < this._normalizedRanges.length) {
+        next = this._normalizedRanges[i1];
         i1++;
       } else {
-        next = other.c[i2];
+        next = other._normalizedRanges[i2];
         i2++;
       }
       if (current === null) {
         current = next;
       } else {
         if (current.endLineNumberExclusive >= next.startLineNumber) {
-          current = new $RD(current.startLineNumber, Math.max(current.endLineNumberExclusive, next.endLineNumberExclusive));
+          current = new LineRange(current.startLineNumber, Math.max(current.endLineNumberExclusive, next.endLineNumberExclusive));
         } else {
           result.push(current);
           current = next;
@@ -9506,41 +9506,41 @@ var $SD = class _$SD {
     if (current !== null) {
       result.push(current);
     }
-    return new _$SD(result);
+    return new _LineRangeSet(result);
   }
   /**
    * Subtracts all ranges in this set from `range` and returns the result.
    */
   subtractFrom(range) {
-    const joinRangeStartIdx = $Nb(this.c, (r) => r.endLineNumberExclusive >= range.startLineNumber);
-    const joinRangeEndIdxExclusive = $Lb(this.c, (r) => r.startLineNumber <= range.endLineNumberExclusive) + 1;
+    const joinRangeStartIdx = findFirstIdxMonotonousOrArrLen(this._normalizedRanges, (r) => r.endLineNumberExclusive >= range.startLineNumber);
+    const joinRangeEndIdxExclusive = findLastIdxMonotonous(this._normalizedRanges, (r) => r.startLineNumber <= range.endLineNumberExclusive) + 1;
     if (joinRangeStartIdx === joinRangeEndIdxExclusive) {
-      return new _$SD([range]);
+      return new _LineRangeSet([range]);
     }
     const result = [];
     let startLineNumber = range.startLineNumber;
     for (let i = joinRangeStartIdx; i < joinRangeEndIdxExclusive; i++) {
-      const r = this.c[i];
+      const r = this._normalizedRanges[i];
       if (r.startLineNumber > startLineNumber) {
-        result.push(new $RD(startLineNumber, r.startLineNumber));
+        result.push(new LineRange(startLineNumber, r.startLineNumber));
       }
       startLineNumber = r.endLineNumberExclusive;
     }
     if (startLineNumber < range.endLineNumberExclusive) {
-      result.push(new $RD(startLineNumber, range.endLineNumberExclusive));
+      result.push(new LineRange(startLineNumber, range.endLineNumberExclusive));
     }
-    return new _$SD(result);
+    return new _LineRangeSet(result);
   }
   toString() {
-    return this.c.map((r) => r.toString()).join(", ");
+    return this._normalizedRanges.map((r) => r.toString()).join(", ");
   }
   getIntersection(other) {
     const result = [];
     let i1 = 0;
     let i2 = 0;
-    while (i1 < this.c.length && i2 < other.c.length) {
-      const r1 = this.c[i1];
-      const r2 = other.c[i2];
+    while (i1 < this._normalizedRanges.length && i2 < other._normalizedRanges.length) {
+      const r1 = this._normalizedRanges[i1];
+      const r2 = other._normalizedRanges[i2];
       const i = r1.intersect(r2);
       if (i && !i.isEmpty) {
         result.push(i);
@@ -9551,10 +9551,10 @@ var $SD = class _$SD {
         i2++;
       }
     }
-    return new _$SD(result);
+    return new _LineRangeSet(result);
   }
   getWithDelta(value) {
-    return new _$SD(this.c.map((r) => r.delta(value)));
+    return new _LineRangeSet(this._normalizedRanges.map((r) => r.delta(value)));
   }
 };
 
@@ -9568,7 +9568,7 @@ var Constants;
   Constants3[Constants3["MAX_UINT_32"] = 4294967295] = "MAX_UINT_32";
   Constants3[Constants3["UNICODE_SUPPLEMENTARY_PLANE_BEGIN"] = 65536] = "UNICODE_SUPPLEMENTARY_PLANE_BEGIN";
 })(Constants || (Constants = {}));
-function $Mf(v) {
+function toUint32(v) {
   if (v < 0) {
     return 0;
   }
@@ -9579,54 +9579,54 @@ function $Mf(v) {
 }
 
 // out-build/vs/editor/common/model/prefixSumComputer.js
-var $gG = class {
+var PrefixSumComputer = class {
   constructor(values) {
-    this.a = values;
-    this.b = new Uint32Array(values.length);
-    this.c = new Int32Array(1);
-    this.c[0] = -1;
+    this.values = values;
+    this.prefixSum = new Uint32Array(values.length);
+    this.prefixSumValidIndex = new Int32Array(1);
+    this.prefixSumValidIndex[0] = -1;
   }
   getCount() {
-    return this.a.length;
+    return this.values.length;
   }
   insertValues(insertIndex, insertValues) {
-    insertIndex = $Mf(insertIndex);
-    const oldValues = this.a;
-    const oldPrefixSum = this.b;
+    insertIndex = toUint32(insertIndex);
+    const oldValues = this.values;
+    const oldPrefixSum = this.prefixSum;
     const insertValuesLen = insertValues.length;
     if (insertValuesLen === 0) {
       return false;
     }
-    this.a = new Uint32Array(oldValues.length + insertValuesLen);
-    this.a.set(oldValues.subarray(0, insertIndex), 0);
-    this.a.set(oldValues.subarray(insertIndex), insertIndex + insertValuesLen);
-    this.a.set(insertValues, insertIndex);
-    if (insertIndex - 1 < this.c[0]) {
-      this.c[0] = insertIndex - 1;
+    this.values = new Uint32Array(oldValues.length + insertValuesLen);
+    this.values.set(oldValues.subarray(0, insertIndex), 0);
+    this.values.set(oldValues.subarray(insertIndex), insertIndex + insertValuesLen);
+    this.values.set(insertValues, insertIndex);
+    if (insertIndex - 1 < this.prefixSumValidIndex[0]) {
+      this.prefixSumValidIndex[0] = insertIndex - 1;
     }
-    this.b = new Uint32Array(this.a.length);
-    if (this.c[0] >= 0) {
-      this.b.set(oldPrefixSum.subarray(0, this.c[0] + 1));
+    this.prefixSum = new Uint32Array(this.values.length);
+    if (this.prefixSumValidIndex[0] >= 0) {
+      this.prefixSum.set(oldPrefixSum.subarray(0, this.prefixSumValidIndex[0] + 1));
     }
     return true;
   }
   setValue(index, value) {
-    index = $Mf(index);
-    value = $Mf(value);
-    if (this.a[index] === value) {
+    index = toUint32(index);
+    value = toUint32(value);
+    if (this.values[index] === value) {
       return false;
     }
-    this.a[index] = value;
-    if (index - 1 < this.c[0]) {
-      this.c[0] = index - 1;
+    this.values[index] = value;
+    if (index - 1 < this.prefixSumValidIndex[0]) {
+      this.prefixSumValidIndex[0] = index - 1;
     }
     return true;
   }
   removeValues(startIndex, count) {
-    startIndex = $Mf(startIndex);
-    count = $Mf(count);
-    const oldValues = this.a;
-    const oldPrefixSum = this.b;
+    startIndex = toUint32(startIndex);
+    count = toUint32(count);
+    const oldValues = this.values;
+    const oldPrefixSum = this.prefixSum;
     if (startIndex >= oldValues.length) {
       return false;
     }
@@ -9637,23 +9637,23 @@ var $gG = class {
     if (count === 0) {
       return false;
     }
-    this.a = new Uint32Array(oldValues.length - count);
-    this.a.set(oldValues.subarray(0, startIndex), 0);
-    this.a.set(oldValues.subarray(startIndex + count), startIndex);
-    this.b = new Uint32Array(this.a.length);
-    if (startIndex - 1 < this.c[0]) {
-      this.c[0] = startIndex - 1;
+    this.values = new Uint32Array(oldValues.length - count);
+    this.values.set(oldValues.subarray(0, startIndex), 0);
+    this.values.set(oldValues.subarray(startIndex + count), startIndex);
+    this.prefixSum = new Uint32Array(this.values.length);
+    if (startIndex - 1 < this.prefixSumValidIndex[0]) {
+      this.prefixSumValidIndex[0] = startIndex - 1;
     }
-    if (this.c[0] >= 0) {
-      this.b.set(oldPrefixSum.subarray(0, this.c[0] + 1));
+    if (this.prefixSumValidIndex[0] >= 0) {
+      this.prefixSum.set(oldPrefixSum.subarray(0, this.prefixSumValidIndex[0] + 1));
     }
     return true;
   }
   getTotalSum() {
-    if (this.a.length === 0) {
+    if (this.values.length === 0) {
       return 0;
     }
-    return this.d(this.a.length - 1);
+    return this._getPrefixSum(this.values.length - 1);
   }
   /**
    * Returns the sum of the first `index + 1` many items.
@@ -9663,39 +9663,39 @@ var $gG = class {
     if (index < 0) {
       return 0;
     }
-    index = $Mf(index);
-    return this.d(index);
+    index = toUint32(index);
+    return this._getPrefixSum(index);
   }
-  d(index) {
-    if (index <= this.c[0]) {
-      return this.b[index];
+  _getPrefixSum(index) {
+    if (index <= this.prefixSumValidIndex[0]) {
+      return this.prefixSum[index];
     }
-    let startIndex = this.c[0] + 1;
+    let startIndex = this.prefixSumValidIndex[0] + 1;
     if (startIndex === 0) {
-      this.b[0] = this.a[0];
+      this.prefixSum[0] = this.values[0];
       startIndex++;
     }
-    if (index >= this.a.length) {
-      index = this.a.length - 1;
+    if (index >= this.values.length) {
+      index = this.values.length - 1;
     }
     for (let i = startIndex; i <= index; i++) {
-      this.b[i] = this.b[i - 1] + this.a[i];
+      this.prefixSum[i] = this.prefixSum[i - 1] + this.values[i];
     }
-    this.c[0] = Math.max(this.c[0], index);
-    return this.b[index];
+    this.prefixSumValidIndex[0] = Math.max(this.prefixSumValidIndex[0], index);
+    return this.prefixSum[index];
   }
   getIndexOf(sum) {
     sum = Math.floor(sum);
     this.getTotalSum();
     let low = 0;
-    let high = this.a.length - 1;
+    let high = this.values.length - 1;
     let mid = 0;
     let midStop = 0;
     let midStart = 0;
     while (low <= high) {
       mid = low + (high - low) / 2 | 0;
-      midStop = this.b[mid];
-      midStart = midStop - this.a[mid];
+      midStop = this.prefixSum[mid];
+      midStart = midStop - this.values[mid];
       if (sum < midStart) {
         high = mid - 1;
       } else if (sum >= midStop) {
@@ -9704,10 +9704,10 @@ var $gG = class {
         break;
       }
     }
-    return new $iG(mid, sum - midStart);
+    return new PrefixSumIndexOfResult(mid, sum - midStart);
   }
 };
-var $iG = class {
+var PrefixSumIndexOfResult = class {
   constructor(index, remainder) {
     this.index = index;
     this.remainder = remainder;
@@ -9718,92 +9718,92 @@ var $iG = class {
 };
 
 // out-build/vs/editor/common/model/mirrorTextModel.js
-var $jG = class {
+var MirrorTextModel = class {
   constructor(uri, lines, eol, versionId) {
-    this.a = uri;
-    this.b = lines;
-    this.c = eol;
-    this.d = versionId;
-    this.f = null;
-    this.g = null;
+    this._uri = uri;
+    this._lines = lines;
+    this._eol = eol;
+    this._versionId = versionId;
+    this._lineStarts = null;
+    this._cachedTextValue = null;
   }
   dispose() {
-    this.b.length = 0;
+    this._lines.length = 0;
   }
   get version() {
-    return this.d;
+    return this._versionId;
   }
   getText() {
-    if (this.g === null) {
-      this.g = this.b.join(this.c);
+    if (this._cachedTextValue === null) {
+      this._cachedTextValue = this._lines.join(this._eol);
     }
-    return this.g;
+    return this._cachedTextValue;
   }
   onEvents(e) {
-    if (e.eol && e.eol !== this.c) {
-      this.c = e.eol;
-      this.f = null;
+    if (e.eol && e.eol !== this._eol) {
+      this._eol = e.eol;
+      this._lineStarts = null;
     }
     const changes = e.changes;
     for (const change of changes) {
-      this.k(change.range);
-      this.l(new $GD(change.range.startLineNumber, change.range.startColumn), change.text);
+      this._acceptDeleteRange(change.range);
+      this._acceptInsertText(new Position(change.range.startLineNumber, change.range.startColumn), change.text);
     }
-    this.d = e.versionId;
-    this.g = null;
+    this._versionId = e.versionId;
+    this._cachedTextValue = null;
   }
-  h() {
-    if (!this.f) {
-      const eolLength = this.c.length;
-      const linesLength = this.b.length;
+  _ensureLineStarts() {
+    if (!this._lineStarts) {
+      const eolLength = this._eol.length;
+      const linesLength = this._lines.length;
       const lineStartValues = new Uint32Array(linesLength);
       for (let i = 0; i < linesLength; i++) {
-        lineStartValues[i] = this.b[i].length + eolLength;
+        lineStartValues[i] = this._lines[i].length + eolLength;
       }
-      this.f = new $gG(lineStartValues);
+      this._lineStarts = new PrefixSumComputer(lineStartValues);
     }
   }
   /**
    * All changes to a line's text go through this method
    */
-  j(lineIndex, newValue) {
-    this.b[lineIndex] = newValue;
-    if (this.f) {
-      this.f.setValue(lineIndex, this.b[lineIndex].length + this.c.length);
+  _setLineText(lineIndex, newValue) {
+    this._lines[lineIndex] = newValue;
+    if (this._lineStarts) {
+      this._lineStarts.setValue(lineIndex, this._lines[lineIndex].length + this._eol.length);
     }
   }
-  k(range) {
+  _acceptDeleteRange(range) {
     if (range.startLineNumber === range.endLineNumber) {
       if (range.startColumn === range.endColumn) {
         return;
       }
-      this.j(range.startLineNumber - 1, this.b[range.startLineNumber - 1].substring(0, range.startColumn - 1) + this.b[range.startLineNumber - 1].substring(range.endColumn - 1));
+      this._setLineText(range.startLineNumber - 1, this._lines[range.startLineNumber - 1].substring(0, range.startColumn - 1) + this._lines[range.startLineNumber - 1].substring(range.endColumn - 1));
       return;
     }
-    this.j(range.startLineNumber - 1, this.b[range.startLineNumber - 1].substring(0, range.startColumn - 1) + this.b[range.endLineNumber - 1].substring(range.endColumn - 1));
-    this.b.splice(range.startLineNumber, range.endLineNumber - range.startLineNumber);
-    if (this.f) {
-      this.f.removeValues(range.startLineNumber, range.endLineNumber - range.startLineNumber);
+    this._setLineText(range.startLineNumber - 1, this._lines[range.startLineNumber - 1].substring(0, range.startColumn - 1) + this._lines[range.endLineNumber - 1].substring(range.endColumn - 1));
+    this._lines.splice(range.startLineNumber, range.endLineNumber - range.startLineNumber);
+    if (this._lineStarts) {
+      this._lineStarts.removeValues(range.startLineNumber, range.endLineNumber - range.startLineNumber);
     }
   }
-  l(position, insertText) {
+  _acceptInsertText(position, insertText) {
     if (insertText.length === 0) {
       return;
     }
-    const insertLines = $4f(insertText);
+    const insertLines = splitLines(insertText);
     if (insertLines.length === 1) {
-      this.j(position.lineNumber - 1, this.b[position.lineNumber - 1].substring(0, position.column - 1) + insertLines[0] + this.b[position.lineNumber - 1].substring(position.column - 1));
+      this._setLineText(position.lineNumber - 1, this._lines[position.lineNumber - 1].substring(0, position.column - 1) + insertLines[0] + this._lines[position.lineNumber - 1].substring(position.column - 1));
       return;
     }
-    insertLines[insertLines.length - 1] += this.b[position.lineNumber - 1].substring(position.column - 1);
-    this.j(position.lineNumber - 1, this.b[position.lineNumber - 1].substring(0, position.column - 1) + insertLines[0]);
+    insertLines[insertLines.length - 1] += this._lines[position.lineNumber - 1].substring(position.column - 1);
+    this._setLineText(position.lineNumber - 1, this._lines[position.lineNumber - 1].substring(0, position.column - 1) + insertLines[0]);
     const newLengths = new Uint32Array(insertLines.length - 1);
     for (let i = 1; i < insertLines.length; i++) {
-      this.b.splice(position.lineNumber + i - 1, 0, insertLines[i]);
-      newLengths[i - 1] = insertLines[i].length + this.c.length;
+      this._lines.splice(position.lineNumber + i - 1, 0, insertLines[i]);
+      newLengths[i - 1] = insertLines[i].length + this._eol.length;
     }
-    if (this.f) {
-      this.f.insertValues(position.lineNumber, newLengths);
+    if (this._lineStarts) {
+      this._lineStarts.insertValues(position.lineNumber, newLengths);
     }
   }
 };
@@ -9816,7 +9816,7 @@ var StringEOL;
   StringEOL2[StringEOL2["LF"] = 1] = "LF";
   StringEOL2[StringEOL2["CRLF"] = 2] = "CRLF";
 })(StringEOL || (StringEOL = {}));
-function $GE(text) {
+function countEOL(text) {
   let eolCount = 0;
   let firstLineLength = 0;
   let lastLineStart = 0;
@@ -9852,8 +9852,8 @@ function $GE(text) {
 
 // out-build/vs/base/common/codiconsUtil.js
 var _codiconFontCharacters = /* @__PURE__ */ Object.create(null);
-function $1j(id2, fontCharacter) {
-  if ($7c(fontCharacter)) {
+function register(id2, fontCharacter) {
+  if (isString(fontCharacter)) {
     const val = _codiconFontCharacters[fontCharacter];
     if (val === void 0) {
       throw new Error(`${id2} references an unknown codicon: ${fontCharacter}`);
@@ -9865,717 +9865,717 @@ function $1j(id2, fontCharacter) {
 }
 
 // out-build/vs/base/common/codiconsLibrary.js
-var $3j = {
-  add: $1j("add", 6e4),
-  plus: $1j("plus", 6e4),
-  gistNew: $1j("gist-new", 6e4),
-  repoCreate: $1j("repo-create", 6e4),
-  lightbulb: $1j("lightbulb", 60001),
-  lightBulb: $1j("light-bulb", 60001),
-  repo: $1j("repo", 60002),
-  repoDelete: $1j("repo-delete", 60002),
-  gistFork: $1j("gist-fork", 60003),
-  repoForked: $1j("repo-forked", 60003),
-  gitPullRequest: $1j("git-pull-request", 60004),
-  gitPullRequestAbandoned: $1j("git-pull-request-abandoned", 60004),
-  recordKeys: $1j("record-keys", 60005),
-  keyboard: $1j("keyboard", 60005),
-  tag: $1j("tag", 60006),
-  gitPullRequestLabel: $1j("git-pull-request-label", 60006),
-  tagAdd: $1j("tag-add", 60006),
-  tagRemove: $1j("tag-remove", 60006),
-  person: $1j("person", 60007),
-  personFollow: $1j("person-follow", 60007),
-  personOutline: $1j("person-outline", 60007),
-  personFilled: $1j("person-filled", 60007),
-  sourceControl: $1j("source-control", 60008),
-  mirror: $1j("mirror", 60009),
-  mirrorPublic: $1j("mirror-public", 60009),
-  star: $1j("star", 60010),
-  starAdd: $1j("star-add", 60010),
-  starDelete: $1j("star-delete", 60010),
-  starEmpty: $1j("star-empty", 60010),
-  comment: $1j("comment", 60011),
-  commentAdd: $1j("comment-add", 60011),
-  alert: $1j("alert", 60012),
-  warning: $1j("warning", 60012),
-  search: $1j("search", 60013),
-  searchSave: $1j("search-save", 60013),
-  logOut: $1j("log-out", 60014),
-  signOut: $1j("sign-out", 60014),
-  logIn: $1j("log-in", 60015),
-  signIn: $1j("sign-in", 60015),
-  eye: $1j("eye", 60016),
-  eyeUnwatch: $1j("eye-unwatch", 60016),
-  eyeWatch: $1j("eye-watch", 60016),
-  circleFilled: $1j("circle-filled", 60017),
-  primitiveDot: $1j("primitive-dot", 60017),
-  closeDirty: $1j("close-dirty", 60017),
-  debugBreakpoint: $1j("debug-breakpoint", 60017),
-  debugBreakpointDisabled: $1j("debug-breakpoint-disabled", 60017),
-  debugHint: $1j("debug-hint", 60017),
-  terminalDecorationSuccess: $1j("terminal-decoration-success", 60017),
-  primitiveSquare: $1j("primitive-square", 60018),
-  edit: $1j("edit", 60019),
-  pencil: $1j("pencil", 60019),
-  info: $1j("info", 60020),
-  issueOpened: $1j("issue-opened", 60020),
-  gistPrivate: $1j("gist-private", 60021),
-  gitForkPrivate: $1j("git-fork-private", 60021),
-  lock: $1j("lock", 60021),
-  mirrorPrivate: $1j("mirror-private", 60021),
-  close: $1j("close", 60022),
-  removeClose: $1j("remove-close", 60022),
-  x: $1j("x", 60022),
-  repoSync: $1j("repo-sync", 60023),
-  sync: $1j("sync", 60023),
-  clone: $1j("clone", 60024),
-  desktopDownload: $1j("desktop-download", 60024),
-  beaker: $1j("beaker", 60025),
-  microscope: $1j("microscope", 60025),
-  vm: $1j("vm", 60026),
-  deviceDesktop: $1j("device-desktop", 60026),
-  file: $1j("file", 60027),
-  more: $1j("more", 60028),
-  ellipsis: $1j("ellipsis", 60028),
-  kebabHorizontal: $1j("kebab-horizontal", 60028),
-  mailReply: $1j("mail-reply", 60029),
-  reply: $1j("reply", 60029),
-  organization: $1j("organization", 60030),
-  organizationFilled: $1j("organization-filled", 60030),
-  organizationOutline: $1j("organization-outline", 60030),
-  newFile: $1j("new-file", 60031),
-  fileAdd: $1j("file-add", 60031),
-  newFolder: $1j("new-folder", 60032),
-  fileDirectoryCreate: $1j("file-directory-create", 60032),
-  trash: $1j("trash", 60033),
-  trashcan: $1j("trashcan", 60033),
-  history: $1j("history", 60034),
-  clock: $1j("clock", 60034),
-  folder: $1j("folder", 60035),
-  fileDirectory: $1j("file-directory", 60035),
-  symbolFolder: $1j("symbol-folder", 60035),
-  logoGithub: $1j("logo-github", 60036),
-  markGithub: $1j("mark-github", 60036),
-  github: $1j("github", 60036),
-  terminal: $1j("terminal", 60037),
-  console: $1j("console", 60037),
-  repl: $1j("repl", 60037),
-  zap: $1j("zap", 60038),
-  symbolEvent: $1j("symbol-event", 60038),
-  error: $1j("error", 60039),
-  stop: $1j("stop", 60039),
-  variable: $1j("variable", 60040),
-  symbolVariable: $1j("symbol-variable", 60040),
-  array: $1j("array", 60042),
-  symbolArray: $1j("symbol-array", 60042),
-  symbolModule: $1j("symbol-module", 60043),
-  symbolPackage: $1j("symbol-package", 60043),
-  symbolNamespace: $1j("symbol-namespace", 60043),
-  symbolObject: $1j("symbol-object", 60043),
-  symbolMethod: $1j("symbol-method", 60044),
-  symbolFunction: $1j("symbol-function", 60044),
-  symbolConstructor: $1j("symbol-constructor", 60044),
-  symbolBoolean: $1j("symbol-boolean", 60047),
-  symbolNull: $1j("symbol-null", 60047),
-  symbolNumeric: $1j("symbol-numeric", 60048),
-  symbolNumber: $1j("symbol-number", 60048),
-  symbolStructure: $1j("symbol-structure", 60049),
-  symbolStruct: $1j("symbol-struct", 60049),
-  symbolParameter: $1j("symbol-parameter", 60050),
-  symbolTypeParameter: $1j("symbol-type-parameter", 60050),
-  symbolKey: $1j("symbol-key", 60051),
-  symbolText: $1j("symbol-text", 60051),
-  symbolReference: $1j("symbol-reference", 60052),
-  goToFile: $1j("go-to-file", 60052),
-  symbolEnum: $1j("symbol-enum", 60053),
-  symbolValue: $1j("symbol-value", 60053),
-  symbolRuler: $1j("symbol-ruler", 60054),
-  symbolUnit: $1j("symbol-unit", 60054),
-  activateBreakpoints: $1j("activate-breakpoints", 60055),
-  archive: $1j("archive", 60056),
-  arrowBoth: $1j("arrow-both", 60057),
-  arrowDown: $1j("arrow-down", 60058),
-  arrowLeft: $1j("arrow-left", 60059),
-  arrowRight: $1j("arrow-right", 60060),
-  arrowSmallDown: $1j("arrow-small-down", 60061),
-  arrowSmallLeft: $1j("arrow-small-left", 60062),
-  arrowSmallRight: $1j("arrow-small-right", 60063),
-  arrowSmallUp: $1j("arrow-small-up", 60064),
-  arrowUp: $1j("arrow-up", 60065),
-  bell: $1j("bell", 60066),
-  bold: $1j("bold", 60067),
-  book: $1j("book", 60068),
-  bookmark: $1j("bookmark", 60069),
-  debugBreakpointConditionalUnverified: $1j("debug-breakpoint-conditional-unverified", 60070),
-  debugBreakpointConditional: $1j("debug-breakpoint-conditional", 60071),
-  debugBreakpointConditionalDisabled: $1j("debug-breakpoint-conditional-disabled", 60071),
-  debugBreakpointDataUnverified: $1j("debug-breakpoint-data-unverified", 60072),
-  debugBreakpointData: $1j("debug-breakpoint-data", 60073),
-  debugBreakpointDataDisabled: $1j("debug-breakpoint-data-disabled", 60073),
-  debugBreakpointLogUnverified: $1j("debug-breakpoint-log-unverified", 60074),
-  debugBreakpointLog: $1j("debug-breakpoint-log", 60075),
-  debugBreakpointLogDisabled: $1j("debug-breakpoint-log-disabled", 60075),
-  briefcase: $1j("briefcase", 60076),
-  broadcast: $1j("broadcast", 60077),
-  browser: $1j("browser", 60078),
-  bug: $1j("bug", 60079),
-  calendar: $1j("calendar", 60080),
-  caseSensitive: $1j("case-sensitive", 60081),
-  check: $1j("check", 60082),
-  checklist: $1j("checklist", 60083),
-  chevronDown: $1j("chevron-down", 60084),
-  chevronLeft: $1j("chevron-left", 60085),
-  chevronRight: $1j("chevron-right", 60086),
-  chevronUp: $1j("chevron-up", 60087),
-  chromeClose: $1j("chrome-close", 60088),
-  chromeMaximize: $1j("chrome-maximize", 60089),
-  chromeMinimize: $1j("chrome-minimize", 60090),
-  chromeRestore: $1j("chrome-restore", 60091),
-  circleOutline: $1j("circle-outline", 60092),
-  circle: $1j("circle", 60092),
-  debugBreakpointUnverified: $1j("debug-breakpoint-unverified", 60092),
-  terminalDecorationIncomplete: $1j("terminal-decoration-incomplete", 60092),
-  circleSlash: $1j("circle-slash", 60093),
-  circuitBoard: $1j("circuit-board", 60094),
-  clearAll: $1j("clear-all", 60095),
-  clippy: $1j("clippy", 60096),
-  closeAll: $1j("close-all", 60097),
-  cloudDownload: $1j("cloud-download", 60098),
-  cloudUpload: $1j("cloud-upload", 60099),
-  code: $1j("code", 60100),
-  collapseAll: $1j("collapse-all", 60101),
-  colorMode: $1j("color-mode", 60102),
-  commentDiscussion: $1j("comment-discussion", 60103),
-  creditCard: $1j("credit-card", 60105),
-  dash: $1j("dash", 60108),
-  dashboard: $1j("dashboard", 60109),
-  database: $1j("database", 60110),
-  debugContinue: $1j("debug-continue", 60111),
-  debugDisconnect: $1j("debug-disconnect", 60112),
-  debugPause: $1j("debug-pause", 60113),
-  debugRestart: $1j("debug-restart", 60114),
-  debugStart: $1j("debug-start", 60115),
-  debugStepInto: $1j("debug-step-into", 60116),
-  debugStepOut: $1j("debug-step-out", 60117),
-  debugStepOver: $1j("debug-step-over", 60118),
-  debugStop: $1j("debug-stop", 60119),
-  debug: $1j("debug", 60120),
-  deviceCameraVideo: $1j("device-camera-video", 60121),
-  deviceCamera: $1j("device-camera", 60122),
-  deviceMobile: $1j("device-mobile", 60123),
-  diffAdded: $1j("diff-added", 60124),
-  diffIgnored: $1j("diff-ignored", 60125),
-  diffModified: $1j("diff-modified", 60126),
-  diffRemoved: $1j("diff-removed", 60127),
-  diffRenamed: $1j("diff-renamed", 60128),
-  diff: $1j("diff", 60129),
-  diffSidebyside: $1j("diff-sidebyside", 60129),
-  discard: $1j("discard", 60130),
-  editorLayout: $1j("editor-layout", 60131),
-  emptyWindow: $1j("empty-window", 60132),
-  exclude: $1j("exclude", 60133),
-  extensions: $1j("extensions", 60134),
-  eyeClosed: $1j("eye-closed", 60135),
-  fileBinary: $1j("file-binary", 60136),
-  fileCode: $1j("file-code", 60137),
-  fileMedia: $1j("file-media", 60138),
-  filePdf: $1j("file-pdf", 60139),
-  fileSubmodule: $1j("file-submodule", 60140),
-  fileSymlinkDirectory: $1j("file-symlink-directory", 60141),
-  fileSymlinkFile: $1j("file-symlink-file", 60142),
-  fileZip: $1j("file-zip", 60143),
-  files: $1j("files", 60144),
-  filter: $1j("filter", 60145),
-  flame: $1j("flame", 60146),
-  foldDown: $1j("fold-down", 60147),
-  foldUp: $1j("fold-up", 60148),
-  fold: $1j("fold", 60149),
-  folderActive: $1j("folder-active", 60150),
-  folderOpened: $1j("folder-opened", 60151),
-  gear: $1j("gear", 60152),
-  gift: $1j("gift", 60153),
-  gistSecret: $1j("gist-secret", 60154),
-  gist: $1j("gist", 60155),
-  gitCommit: $1j("git-commit", 60156),
-  gitCompare: $1j("git-compare", 60157),
-  compareChanges: $1j("compare-changes", 60157),
-  gitMerge: $1j("git-merge", 60158),
-  githubAction: $1j("github-action", 60159),
-  githubAlt: $1j("github-alt", 60160),
-  globe: $1j("globe", 60161),
-  grabber: $1j("grabber", 60162),
-  graph: $1j("graph", 60163),
-  gripper: $1j("gripper", 60164),
-  heart: $1j("heart", 60165),
-  home: $1j("home", 60166),
-  horizontalRule: $1j("horizontal-rule", 60167),
-  hubot: $1j("hubot", 60168),
-  inbox: $1j("inbox", 60169),
-  issueReopened: $1j("issue-reopened", 60171),
-  issues: $1j("issues", 60172),
-  italic: $1j("italic", 60173),
-  jersey: $1j("jersey", 60174),
-  json: $1j("json", 60175),
-  kebabVertical: $1j("kebab-vertical", 60176),
-  key: $1j("key", 60177),
-  law: $1j("law", 60178),
-  lightbulbAutofix: $1j("lightbulb-autofix", 60179),
-  linkExternal: $1j("link-external", 60180),
-  link: $1j("link", 60181),
-  listOrdered: $1j("list-ordered", 60182),
-  listUnordered: $1j("list-unordered", 60183),
-  liveShare: $1j("live-share", 60184),
-  loading: $1j("loading", 60185),
-  location: $1j("location", 60186),
-  mailRead: $1j("mail-read", 60187),
-  mail: $1j("mail", 60188),
-  markdown: $1j("markdown", 60189),
-  megaphone: $1j("megaphone", 60190),
-  mention: $1j("mention", 60191),
-  milestone: $1j("milestone", 60192),
-  gitPullRequestMilestone: $1j("git-pull-request-milestone", 60192),
-  mortarBoard: $1j("mortar-board", 60193),
-  move: $1j("move", 60194),
-  multipleWindows: $1j("multiple-windows", 60195),
-  mute: $1j("mute", 60196),
-  noNewline: $1j("no-newline", 60197),
-  note: $1j("note", 60198),
-  octoface: $1j("octoface", 60199),
-  openPreview: $1j("open-preview", 60200),
-  package: $1j("package", 60201),
-  paintcan: $1j("paintcan", 60202),
-  pin: $1j("pin", 60203),
-  play: $1j("play", 60204),
-  run: $1j("run", 60204),
-  plug: $1j("plug", 60205),
-  preserveCase: $1j("preserve-case", 60206),
-  preview: $1j("preview", 60207),
-  project: $1j("project", 60208),
-  pulse: $1j("pulse", 60209),
-  question: $1j("question", 60210),
-  quote: $1j("quote", 60211),
-  radioTower: $1j("radio-tower", 60212),
-  reactions: $1j("reactions", 60213),
-  references: $1j("references", 60214),
-  refresh: $1j("refresh", 60215),
-  regex: $1j("regex", 60216),
-  remoteExplorer: $1j("remote-explorer", 60217),
-  remote: $1j("remote", 60218),
-  remove: $1j("remove", 60219),
-  replaceAll: $1j("replace-all", 60220),
-  replace: $1j("replace", 60221),
-  repoClone: $1j("repo-clone", 60222),
-  repoForcePush: $1j("repo-force-push", 60223),
-  repoPull: $1j("repo-pull", 60224),
-  repoPush: $1j("repo-push", 60225),
-  report: $1j("report", 60226),
-  requestChanges: $1j("request-changes", 60227),
-  rocket: $1j("rocket", 60228),
-  rootFolderOpened: $1j("root-folder-opened", 60229),
-  rootFolder: $1j("root-folder", 60230),
-  rss: $1j("rss", 60231),
-  ruby: $1j("ruby", 60232),
-  saveAll: $1j("save-all", 60233),
-  saveAs: $1j("save-as", 60234),
-  save: $1j("save", 60235),
-  screenFull: $1j("screen-full", 60236),
-  screenNormal: $1j("screen-normal", 60237),
-  searchStop: $1j("search-stop", 60238),
-  server: $1j("server", 60240),
-  settingsGear: $1j("settings-gear", 60241),
-  settings: $1j("settings", 60242),
-  shield: $1j("shield", 60243),
-  smiley: $1j("smiley", 60244),
-  sortPrecedence: $1j("sort-precedence", 60245),
-  splitHorizontal: $1j("split-horizontal", 60246),
-  splitVertical: $1j("split-vertical", 60247),
-  squirrel: $1j("squirrel", 60248),
-  starFull: $1j("star-full", 60249),
-  starHalf: $1j("star-half", 60250),
-  symbolClass: $1j("symbol-class", 60251),
-  symbolColor: $1j("symbol-color", 60252),
-  symbolConstant: $1j("symbol-constant", 60253),
-  symbolEnumMember: $1j("symbol-enum-member", 60254),
-  symbolField: $1j("symbol-field", 60255),
-  symbolFile: $1j("symbol-file", 60256),
-  symbolInterface: $1j("symbol-interface", 60257),
-  symbolKeyword: $1j("symbol-keyword", 60258),
-  symbolMisc: $1j("symbol-misc", 60259),
-  symbolOperator: $1j("symbol-operator", 60260),
-  symbolProperty: $1j("symbol-property", 60261),
-  wrench: $1j("wrench", 60261),
-  wrenchSubaction: $1j("wrench-subaction", 60261),
-  symbolSnippet: $1j("symbol-snippet", 60262),
-  tasklist: $1j("tasklist", 60263),
-  telescope: $1j("telescope", 60264),
-  textSize: $1j("text-size", 60265),
-  threeBars: $1j("three-bars", 60266),
-  thumbsdown: $1j("thumbsdown", 60267),
-  thumbsup: $1j("thumbsup", 60268),
-  tools: $1j("tools", 60269),
-  triangleDown: $1j("triangle-down", 60270),
-  triangleLeft: $1j("triangle-left", 60271),
-  triangleRight: $1j("triangle-right", 60272),
-  triangleUp: $1j("triangle-up", 60273),
-  twitter: $1j("twitter", 60274),
-  unfold: $1j("unfold", 60275),
-  unlock: $1j("unlock", 60276),
-  unmute: $1j("unmute", 60277),
-  unverified: $1j("unverified", 60278),
-  verified: $1j("verified", 60279),
-  versions: $1j("versions", 60280),
-  vmActive: $1j("vm-active", 60281),
-  vmOutline: $1j("vm-outline", 60282),
-  vmRunning: $1j("vm-running", 60283),
-  watch: $1j("watch", 60284),
-  whitespace: $1j("whitespace", 60285),
-  wholeWord: $1j("whole-word", 60286),
-  window: $1j("window", 60287),
-  wordWrap: $1j("word-wrap", 60288),
-  zoomIn: $1j("zoom-in", 60289),
-  zoomOut: $1j("zoom-out", 60290),
-  listFilter: $1j("list-filter", 60291),
-  listFlat: $1j("list-flat", 60292),
-  listSelection: $1j("list-selection", 60293),
-  selection: $1j("selection", 60293),
-  listTree: $1j("list-tree", 60294),
-  debugBreakpointFunctionUnverified: $1j("debug-breakpoint-function-unverified", 60295),
-  debugBreakpointFunction: $1j("debug-breakpoint-function", 60296),
-  debugBreakpointFunctionDisabled: $1j("debug-breakpoint-function-disabled", 60296),
-  debugStackframeActive: $1j("debug-stackframe-active", 60297),
-  circleSmallFilled: $1j("circle-small-filled", 60298),
-  debugStackframeDot: $1j("debug-stackframe-dot", 60298),
-  terminalDecorationMark: $1j("terminal-decoration-mark", 60298),
-  debugStackframe: $1j("debug-stackframe", 60299),
-  debugStackframeFocused: $1j("debug-stackframe-focused", 60299),
-  debugBreakpointUnsupported: $1j("debug-breakpoint-unsupported", 60300),
-  symbolString: $1j("symbol-string", 60301),
-  debugReverseContinue: $1j("debug-reverse-continue", 60302),
-  debugStepBack: $1j("debug-step-back", 60303),
-  debugRestartFrame: $1j("debug-restart-frame", 60304),
-  debugAlt: $1j("debug-alt", 60305),
-  callIncoming: $1j("call-incoming", 60306),
-  callOutgoing: $1j("call-outgoing", 60307),
-  menu: $1j("menu", 60308),
-  expandAll: $1j("expand-all", 60309),
-  feedback: $1j("feedback", 60310),
-  gitPullRequestReviewer: $1j("git-pull-request-reviewer", 60310),
-  groupByRefType: $1j("group-by-ref-type", 60311),
-  ungroupByRefType: $1j("ungroup-by-ref-type", 60312),
-  account: $1j("account", 60313),
-  gitPullRequestAssignee: $1j("git-pull-request-assignee", 60313),
-  bellDot: $1j("bell-dot", 60314),
-  debugConsole: $1j("debug-console", 60315),
-  library: $1j("library", 60316),
-  output: $1j("output", 60317),
-  runAll: $1j("run-all", 60318),
-  syncIgnored: $1j("sync-ignored", 60319),
-  pinned: $1j("pinned", 60320),
-  githubInverted: $1j("github-inverted", 60321),
-  serverProcess: $1j("server-process", 60322),
-  serverEnvironment: $1j("server-environment", 60323),
-  pass: $1j("pass", 60324),
-  issueClosed: $1j("issue-closed", 60324),
-  stopCircle: $1j("stop-circle", 60325),
-  playCircle: $1j("play-circle", 60326),
-  record: $1j("record", 60327),
-  debugAltSmall: $1j("debug-alt-small", 60328),
-  vmConnect: $1j("vm-connect", 60329),
-  cloud: $1j("cloud", 60330),
-  merge: $1j("merge", 60331),
-  export: $1j("export", 60332),
-  graphLeft: $1j("graph-left", 60333),
-  magnet: $1j("magnet", 60334),
-  notebook: $1j("notebook", 60335),
-  redo: $1j("redo", 60336),
-  checkAll: $1j("check-all", 60337),
-  pinnedDirty: $1j("pinned-dirty", 60338),
-  passFilled: $1j("pass-filled", 60339),
-  circleLargeFilled: $1j("circle-large-filled", 60340),
-  circleLarge: $1j("circle-large", 60341),
-  circleLargeOutline: $1j("circle-large-outline", 60341),
-  combine: $1j("combine", 60342),
-  gather: $1j("gather", 60342),
-  table: $1j("table", 60343),
-  variableGroup: $1j("variable-group", 60344),
-  typeHierarchy: $1j("type-hierarchy", 60345),
-  typeHierarchySub: $1j("type-hierarchy-sub", 60346),
-  typeHierarchySuper: $1j("type-hierarchy-super", 60347),
-  gitPullRequestCreate: $1j("git-pull-request-create", 60348),
-  runAbove: $1j("run-above", 60349),
-  runBelow: $1j("run-below", 60350),
-  notebookTemplate: $1j("notebook-template", 60351),
-  debugRerun: $1j("debug-rerun", 60352),
-  workspaceTrusted: $1j("workspace-trusted", 60353),
-  workspaceUntrusted: $1j("workspace-untrusted", 60354),
-  workspaceUnknown: $1j("workspace-unknown", 60355),
-  terminalCmd: $1j("terminal-cmd", 60356),
-  terminalDebian: $1j("terminal-debian", 60357),
-  terminalLinux: $1j("terminal-linux", 60358),
-  terminalPowershell: $1j("terminal-powershell", 60359),
-  terminalTmux: $1j("terminal-tmux", 60360),
-  terminalUbuntu: $1j("terminal-ubuntu", 60361),
-  terminalBash: $1j("terminal-bash", 60362),
-  arrowSwap: $1j("arrow-swap", 60363),
-  copy: $1j("copy", 60364),
-  personAdd: $1j("person-add", 60365),
-  filterFilled: $1j("filter-filled", 60366),
-  wand: $1j("wand", 60367),
-  debugLineByLine: $1j("debug-line-by-line", 60368),
-  inspect: $1j("inspect", 60369),
-  layers: $1j("layers", 60370),
-  layersDot: $1j("layers-dot", 60371),
-  layersActive: $1j("layers-active", 60372),
-  compass: $1j("compass", 60373),
-  compassDot: $1j("compass-dot", 60374),
-  compassActive: $1j("compass-active", 60375),
-  azure: $1j("azure", 60376),
-  issueDraft: $1j("issue-draft", 60377),
-  gitPullRequestClosed: $1j("git-pull-request-closed", 60378),
-  gitPullRequestDraft: $1j("git-pull-request-draft", 60379),
-  debugAll: $1j("debug-all", 60380),
-  debugCoverage: $1j("debug-coverage", 60381),
-  runErrors: $1j("run-errors", 60382),
-  folderLibrary: $1j("folder-library", 60383),
-  debugContinueSmall: $1j("debug-continue-small", 60384),
-  beakerStop: $1j("beaker-stop", 60385),
-  graphLine: $1j("graph-line", 60386),
-  graphScatter: $1j("graph-scatter", 60387),
-  pieChart: $1j("pie-chart", 60388),
-  bracket: $1j("bracket", 60175),
-  bracketDot: $1j("bracket-dot", 60389),
-  bracketError: $1j("bracket-error", 60390),
-  lockSmall: $1j("lock-small", 60391),
-  azureDevops: $1j("azure-devops", 60392),
-  verifiedFilled: $1j("verified-filled", 60393),
-  newline: $1j("newline", 60394),
-  layout: $1j("layout", 60395),
-  layoutActivitybarLeft: $1j("layout-activitybar-left", 60396),
-  layoutActivitybarRight: $1j("layout-activitybar-right", 60397),
-  layoutPanelLeft: $1j("layout-panel-left", 60398),
-  layoutPanelCenter: $1j("layout-panel-center", 60399),
-  layoutPanelJustify: $1j("layout-panel-justify", 60400),
-  layoutPanelRight: $1j("layout-panel-right", 60401),
-  layoutPanel: $1j("layout-panel", 60402),
-  layoutSidebarLeft: $1j("layout-sidebar-left", 60403),
-  layoutSidebarRight: $1j("layout-sidebar-right", 60404),
-  layoutStatusbar: $1j("layout-statusbar", 60405),
-  layoutMenubar: $1j("layout-menubar", 60406),
-  layoutCentered: $1j("layout-centered", 60407),
-  target: $1j("target", 60408),
-  indent: $1j("indent", 60409),
-  recordSmall: $1j("record-small", 60410),
-  errorSmall: $1j("error-small", 60411),
-  terminalDecorationError: $1j("terminal-decoration-error", 60411),
-  arrowCircleDown: $1j("arrow-circle-down", 60412),
-  arrowCircleLeft: $1j("arrow-circle-left", 60413),
-  arrowCircleRight: $1j("arrow-circle-right", 60414),
-  arrowCircleUp: $1j("arrow-circle-up", 60415),
-  layoutSidebarRightOff: $1j("layout-sidebar-right-off", 60416),
-  layoutPanelOff: $1j("layout-panel-off", 60417),
-  layoutSidebarLeftOff: $1j("layout-sidebar-left-off", 60418),
-  blank: $1j("blank", 60419),
-  heartFilled: $1j("heart-filled", 60420),
-  map: $1j("map", 60421),
-  mapHorizontal: $1j("map-horizontal", 60421),
-  foldHorizontal: $1j("fold-horizontal", 60421),
-  mapFilled: $1j("map-filled", 60422),
-  mapHorizontalFilled: $1j("map-horizontal-filled", 60422),
-  foldHorizontalFilled: $1j("fold-horizontal-filled", 60422),
-  circleSmall: $1j("circle-small", 60423),
-  bellSlash: $1j("bell-slash", 60424),
-  bellSlashDot: $1j("bell-slash-dot", 60425),
-  commentUnresolved: $1j("comment-unresolved", 60426),
-  gitPullRequestGoToChanges: $1j("git-pull-request-go-to-changes", 60427),
-  gitPullRequestNewChanges: $1j("git-pull-request-new-changes", 60428),
-  searchFuzzy: $1j("search-fuzzy", 60429),
-  commentDraft: $1j("comment-draft", 60430),
-  send: $1j("send", 60431),
-  sparkle: $1j("sparkle", 60432),
-  insert: $1j("insert", 60433),
-  mic: $1j("mic", 60434),
-  thumbsdownFilled: $1j("thumbsdown-filled", 60435),
-  thumbsupFilled: $1j("thumbsup-filled", 60436),
-  coffee: $1j("coffee", 60437),
-  snake: $1j("snake", 60438),
-  game: $1j("game", 60439),
-  vr: $1j("vr", 60440),
-  chip: $1j("chip", 60441),
-  piano: $1j("piano", 60442),
-  music: $1j("music", 60443),
-  micFilled: $1j("mic-filled", 60444),
-  repoFetch: $1j("repo-fetch", 60445),
-  copilot: $1j("copilot", 60446),
-  lightbulbSparkle: $1j("lightbulb-sparkle", 60447),
-  robot: $1j("robot", 60448),
-  sparkleFilled: $1j("sparkle-filled", 60449),
-  diffSingle: $1j("diff-single", 60450),
-  diffMultiple: $1j("diff-multiple", 60451),
-  surroundWith: $1j("surround-with", 60452),
-  share: $1j("share", 60453),
-  gitStash: $1j("git-stash", 60454),
-  gitStashApply: $1j("git-stash-apply", 60455),
-  gitStashPop: $1j("git-stash-pop", 60456),
-  vscode: $1j("vscode", 60457),
-  vscodeInsiders: $1j("vscode-insiders", 60458),
-  codeOss: $1j("code-oss", 60459),
-  runCoverage: $1j("run-coverage", 60460),
-  runAllCoverage: $1j("run-all-coverage", 60461),
-  coverage: $1j("coverage", 60462),
-  githubProject: $1j("github-project", 60463),
-  mapVertical: $1j("map-vertical", 60464),
-  foldVertical: $1j("fold-vertical", 60464),
-  mapVerticalFilled: $1j("map-vertical-filled", 60465),
-  foldVerticalFilled: $1j("fold-vertical-filled", 60465),
-  goToSearch: $1j("go-to-search", 60466),
-  percentage: $1j("percentage", 60467),
-  sortPercentage: $1j("sort-percentage", 60467),
-  attach: $1j("attach", 60468),
-  goToEditingSession: $1j("go-to-editing-session", 60469),
-  editSession: $1j("edit-session", 60470),
-  codeReview: $1j("code-review", 60471),
-  copilotWarning: $1j("copilot-warning", 60472),
-  python: $1j("python", 60473),
-  copilotLarge: $1j("copilot-large", 60474),
-  copilotWarningLarge: $1j("copilot-warning-large", 60475),
-  keyboardTab: $1j("keyboard-tab", 60476),
-  copilotBlocked: $1j("copilot-blocked", 60477),
-  copilotNotConnected: $1j("copilot-not-connected", 60478),
-  flag: $1j("flag", 60479),
-  lightbulbEmpty: $1j("lightbulb-empty", 60480),
-  symbolMethodArrow: $1j("symbol-method-arrow", 60481),
-  copilotUnavailable: $1j("copilot-unavailable", 60482),
-  repoPinned: $1j("repo-pinned", 60483),
-  keyboardTabAbove: $1j("keyboard-tab-above", 60484),
-  keyboardTabBelow: $1j("keyboard-tab-below", 60485),
-  gitPullRequestDone: $1j("git-pull-request-done", 60486),
-  mcp: $1j("mcp", 60487),
-  extensionsLarge: $1j("extensions-large", 60488),
-  layoutPanelDock: $1j("layout-panel-dock", 60489),
-  layoutSidebarLeftDock: $1j("layout-sidebar-left-dock", 60490),
-  layoutSidebarRightDock: $1j("layout-sidebar-right-dock", 60491),
-  copilotInProgress: $1j("copilot-in-progress", 60492),
-  copilotError: $1j("copilot-error", 60493),
-  copilotSuccess: $1j("copilot-success", 60494),
-  chatSparkle: $1j("chat-sparkle", 60495),
-  searchSparkle: $1j("search-sparkle", 60496),
-  editSparkle: $1j("edit-sparkle", 60497),
-  copilotSnooze: $1j("copilot-snooze", 60498),
-  sendToRemoteAgent: $1j("send-to-remote-agent", 60499),
-  commentDiscussionSparkle: $1j("comment-discussion-sparkle", 60500),
-  chatSparkleWarning: $1j("chat-sparkle-warning", 60501),
-  chatSparkleError: $1j("chat-sparkle-error", 60502),
-  collection: $1j("collection", 60503),
-  newCollection: $1j("new-collection", 60504),
-  thinking: $1j("thinking", 60505),
-  build: $1j("build", 60506),
-  commentDiscussionQuote: $1j("comment-discussion-quote", 60507),
-  cursor: $1j("cursor", 60508),
-  eraser: $1j("eraser", 60509),
-  fileText: $1j("file-text", 60510),
-  gitLens: $1j("git-lens", 60511),
-  quotes: $1j("quotes", 60512),
-  rename: $1j("rename", 60513),
-  runWithDeps: $1j("run-with-deps", 60514),
-  debugConnected: $1j("debug-connected", 60515),
-  strikethrough: $1j("strikethrough", 60516),
-  openInProduct: $1j("open-in-product", 60517),
-  indexZero: $1j("index-zero", 60518),
-  agent: $1j("agent", 60519),
-  editCode: $1j("edit-code", 60520),
-  repoSelected: $1j("repo-selected", 60521),
-  skip: $1j("skip", 60522),
-  mergeInto: $1j("merge-into", 60523),
-  gitBranchChanges: $1j("git-branch-changes", 60524),
-  gitBranchStagedChanges: $1j("git-branch-staged-changes", 60525),
-  gitBranchConflicts: $1j("git-branch-conflicts", 60526),
-  gitBranch: $1j("git-branch", 60527),
-  gitBranchCreate: $1j("git-branch-create", 60527),
-  gitBranchDelete: $1j("git-branch-delete", 60527),
-  searchLarge: $1j("search-large", 60528),
-  terminalGitBash: $1j("terminal-git-bash", 60529),
-  windowActive: $1j("window-active", 60530),
-  forward: $1j("forward", 60531),
-  download: $1j("download", 60532)
+var codiconsLibrary = {
+  add: register("add", 6e4),
+  plus: register("plus", 6e4),
+  gistNew: register("gist-new", 6e4),
+  repoCreate: register("repo-create", 6e4),
+  lightbulb: register("lightbulb", 60001),
+  lightBulb: register("light-bulb", 60001),
+  repo: register("repo", 60002),
+  repoDelete: register("repo-delete", 60002),
+  gistFork: register("gist-fork", 60003),
+  repoForked: register("repo-forked", 60003),
+  gitPullRequest: register("git-pull-request", 60004),
+  gitPullRequestAbandoned: register("git-pull-request-abandoned", 60004),
+  recordKeys: register("record-keys", 60005),
+  keyboard: register("keyboard", 60005),
+  tag: register("tag", 60006),
+  gitPullRequestLabel: register("git-pull-request-label", 60006),
+  tagAdd: register("tag-add", 60006),
+  tagRemove: register("tag-remove", 60006),
+  person: register("person", 60007),
+  personFollow: register("person-follow", 60007),
+  personOutline: register("person-outline", 60007),
+  personFilled: register("person-filled", 60007),
+  sourceControl: register("source-control", 60008),
+  mirror: register("mirror", 60009),
+  mirrorPublic: register("mirror-public", 60009),
+  star: register("star", 60010),
+  starAdd: register("star-add", 60010),
+  starDelete: register("star-delete", 60010),
+  starEmpty: register("star-empty", 60010),
+  comment: register("comment", 60011),
+  commentAdd: register("comment-add", 60011),
+  alert: register("alert", 60012),
+  warning: register("warning", 60012),
+  search: register("search", 60013),
+  searchSave: register("search-save", 60013),
+  logOut: register("log-out", 60014),
+  signOut: register("sign-out", 60014),
+  logIn: register("log-in", 60015),
+  signIn: register("sign-in", 60015),
+  eye: register("eye", 60016),
+  eyeUnwatch: register("eye-unwatch", 60016),
+  eyeWatch: register("eye-watch", 60016),
+  circleFilled: register("circle-filled", 60017),
+  primitiveDot: register("primitive-dot", 60017),
+  closeDirty: register("close-dirty", 60017),
+  debugBreakpoint: register("debug-breakpoint", 60017),
+  debugBreakpointDisabled: register("debug-breakpoint-disabled", 60017),
+  debugHint: register("debug-hint", 60017),
+  terminalDecorationSuccess: register("terminal-decoration-success", 60017),
+  primitiveSquare: register("primitive-square", 60018),
+  edit: register("edit", 60019),
+  pencil: register("pencil", 60019),
+  info: register("info", 60020),
+  issueOpened: register("issue-opened", 60020),
+  gistPrivate: register("gist-private", 60021),
+  gitForkPrivate: register("git-fork-private", 60021),
+  lock: register("lock", 60021),
+  mirrorPrivate: register("mirror-private", 60021),
+  close: register("close", 60022),
+  removeClose: register("remove-close", 60022),
+  x: register("x", 60022),
+  repoSync: register("repo-sync", 60023),
+  sync: register("sync", 60023),
+  clone: register("clone", 60024),
+  desktopDownload: register("desktop-download", 60024),
+  beaker: register("beaker", 60025),
+  microscope: register("microscope", 60025),
+  vm: register("vm", 60026),
+  deviceDesktop: register("device-desktop", 60026),
+  file: register("file", 60027),
+  more: register("more", 60028),
+  ellipsis: register("ellipsis", 60028),
+  kebabHorizontal: register("kebab-horizontal", 60028),
+  mailReply: register("mail-reply", 60029),
+  reply: register("reply", 60029),
+  organization: register("organization", 60030),
+  organizationFilled: register("organization-filled", 60030),
+  organizationOutline: register("organization-outline", 60030),
+  newFile: register("new-file", 60031),
+  fileAdd: register("file-add", 60031),
+  newFolder: register("new-folder", 60032),
+  fileDirectoryCreate: register("file-directory-create", 60032),
+  trash: register("trash", 60033),
+  trashcan: register("trashcan", 60033),
+  history: register("history", 60034),
+  clock: register("clock", 60034),
+  folder: register("folder", 60035),
+  fileDirectory: register("file-directory", 60035),
+  symbolFolder: register("symbol-folder", 60035),
+  logoGithub: register("logo-github", 60036),
+  markGithub: register("mark-github", 60036),
+  github: register("github", 60036),
+  terminal: register("terminal", 60037),
+  console: register("console", 60037),
+  repl: register("repl", 60037),
+  zap: register("zap", 60038),
+  symbolEvent: register("symbol-event", 60038),
+  error: register("error", 60039),
+  stop: register("stop", 60039),
+  variable: register("variable", 60040),
+  symbolVariable: register("symbol-variable", 60040),
+  array: register("array", 60042),
+  symbolArray: register("symbol-array", 60042),
+  symbolModule: register("symbol-module", 60043),
+  symbolPackage: register("symbol-package", 60043),
+  symbolNamespace: register("symbol-namespace", 60043),
+  symbolObject: register("symbol-object", 60043),
+  symbolMethod: register("symbol-method", 60044),
+  symbolFunction: register("symbol-function", 60044),
+  symbolConstructor: register("symbol-constructor", 60044),
+  symbolBoolean: register("symbol-boolean", 60047),
+  symbolNull: register("symbol-null", 60047),
+  symbolNumeric: register("symbol-numeric", 60048),
+  symbolNumber: register("symbol-number", 60048),
+  symbolStructure: register("symbol-structure", 60049),
+  symbolStruct: register("symbol-struct", 60049),
+  symbolParameter: register("symbol-parameter", 60050),
+  symbolTypeParameter: register("symbol-type-parameter", 60050),
+  symbolKey: register("symbol-key", 60051),
+  symbolText: register("symbol-text", 60051),
+  symbolReference: register("symbol-reference", 60052),
+  goToFile: register("go-to-file", 60052),
+  symbolEnum: register("symbol-enum", 60053),
+  symbolValue: register("symbol-value", 60053),
+  symbolRuler: register("symbol-ruler", 60054),
+  symbolUnit: register("symbol-unit", 60054),
+  activateBreakpoints: register("activate-breakpoints", 60055),
+  archive: register("archive", 60056),
+  arrowBoth: register("arrow-both", 60057),
+  arrowDown: register("arrow-down", 60058),
+  arrowLeft: register("arrow-left", 60059),
+  arrowRight: register("arrow-right", 60060),
+  arrowSmallDown: register("arrow-small-down", 60061),
+  arrowSmallLeft: register("arrow-small-left", 60062),
+  arrowSmallRight: register("arrow-small-right", 60063),
+  arrowSmallUp: register("arrow-small-up", 60064),
+  arrowUp: register("arrow-up", 60065),
+  bell: register("bell", 60066),
+  bold: register("bold", 60067),
+  book: register("book", 60068),
+  bookmark: register("bookmark", 60069),
+  debugBreakpointConditionalUnverified: register("debug-breakpoint-conditional-unverified", 60070),
+  debugBreakpointConditional: register("debug-breakpoint-conditional", 60071),
+  debugBreakpointConditionalDisabled: register("debug-breakpoint-conditional-disabled", 60071),
+  debugBreakpointDataUnverified: register("debug-breakpoint-data-unverified", 60072),
+  debugBreakpointData: register("debug-breakpoint-data", 60073),
+  debugBreakpointDataDisabled: register("debug-breakpoint-data-disabled", 60073),
+  debugBreakpointLogUnverified: register("debug-breakpoint-log-unverified", 60074),
+  debugBreakpointLog: register("debug-breakpoint-log", 60075),
+  debugBreakpointLogDisabled: register("debug-breakpoint-log-disabled", 60075),
+  briefcase: register("briefcase", 60076),
+  broadcast: register("broadcast", 60077),
+  browser: register("browser", 60078),
+  bug: register("bug", 60079),
+  calendar: register("calendar", 60080),
+  caseSensitive: register("case-sensitive", 60081),
+  check: register("check", 60082),
+  checklist: register("checklist", 60083),
+  chevronDown: register("chevron-down", 60084),
+  chevronLeft: register("chevron-left", 60085),
+  chevronRight: register("chevron-right", 60086),
+  chevronUp: register("chevron-up", 60087),
+  chromeClose: register("chrome-close", 60088),
+  chromeMaximize: register("chrome-maximize", 60089),
+  chromeMinimize: register("chrome-minimize", 60090),
+  chromeRestore: register("chrome-restore", 60091),
+  circleOutline: register("circle-outline", 60092),
+  circle: register("circle", 60092),
+  debugBreakpointUnverified: register("debug-breakpoint-unverified", 60092),
+  terminalDecorationIncomplete: register("terminal-decoration-incomplete", 60092),
+  circleSlash: register("circle-slash", 60093),
+  circuitBoard: register("circuit-board", 60094),
+  clearAll: register("clear-all", 60095),
+  clippy: register("clippy", 60096),
+  closeAll: register("close-all", 60097),
+  cloudDownload: register("cloud-download", 60098),
+  cloudUpload: register("cloud-upload", 60099),
+  code: register("code", 60100),
+  collapseAll: register("collapse-all", 60101),
+  colorMode: register("color-mode", 60102),
+  commentDiscussion: register("comment-discussion", 60103),
+  creditCard: register("credit-card", 60105),
+  dash: register("dash", 60108),
+  dashboard: register("dashboard", 60109),
+  database: register("database", 60110),
+  debugContinue: register("debug-continue", 60111),
+  debugDisconnect: register("debug-disconnect", 60112),
+  debugPause: register("debug-pause", 60113),
+  debugRestart: register("debug-restart", 60114),
+  debugStart: register("debug-start", 60115),
+  debugStepInto: register("debug-step-into", 60116),
+  debugStepOut: register("debug-step-out", 60117),
+  debugStepOver: register("debug-step-over", 60118),
+  debugStop: register("debug-stop", 60119),
+  debug: register("debug", 60120),
+  deviceCameraVideo: register("device-camera-video", 60121),
+  deviceCamera: register("device-camera", 60122),
+  deviceMobile: register("device-mobile", 60123),
+  diffAdded: register("diff-added", 60124),
+  diffIgnored: register("diff-ignored", 60125),
+  diffModified: register("diff-modified", 60126),
+  diffRemoved: register("diff-removed", 60127),
+  diffRenamed: register("diff-renamed", 60128),
+  diff: register("diff", 60129),
+  diffSidebyside: register("diff-sidebyside", 60129),
+  discard: register("discard", 60130),
+  editorLayout: register("editor-layout", 60131),
+  emptyWindow: register("empty-window", 60132),
+  exclude: register("exclude", 60133),
+  extensions: register("extensions", 60134),
+  eyeClosed: register("eye-closed", 60135),
+  fileBinary: register("file-binary", 60136),
+  fileCode: register("file-code", 60137),
+  fileMedia: register("file-media", 60138),
+  filePdf: register("file-pdf", 60139),
+  fileSubmodule: register("file-submodule", 60140),
+  fileSymlinkDirectory: register("file-symlink-directory", 60141),
+  fileSymlinkFile: register("file-symlink-file", 60142),
+  fileZip: register("file-zip", 60143),
+  files: register("files", 60144),
+  filter: register("filter", 60145),
+  flame: register("flame", 60146),
+  foldDown: register("fold-down", 60147),
+  foldUp: register("fold-up", 60148),
+  fold: register("fold", 60149),
+  folderActive: register("folder-active", 60150),
+  folderOpened: register("folder-opened", 60151),
+  gear: register("gear", 60152),
+  gift: register("gift", 60153),
+  gistSecret: register("gist-secret", 60154),
+  gist: register("gist", 60155),
+  gitCommit: register("git-commit", 60156),
+  gitCompare: register("git-compare", 60157),
+  compareChanges: register("compare-changes", 60157),
+  gitMerge: register("git-merge", 60158),
+  githubAction: register("github-action", 60159),
+  githubAlt: register("github-alt", 60160),
+  globe: register("globe", 60161),
+  grabber: register("grabber", 60162),
+  graph: register("graph", 60163),
+  gripper: register("gripper", 60164),
+  heart: register("heart", 60165),
+  home: register("home", 60166),
+  horizontalRule: register("horizontal-rule", 60167),
+  hubot: register("hubot", 60168),
+  inbox: register("inbox", 60169),
+  issueReopened: register("issue-reopened", 60171),
+  issues: register("issues", 60172),
+  italic: register("italic", 60173),
+  jersey: register("jersey", 60174),
+  json: register("json", 60175),
+  kebabVertical: register("kebab-vertical", 60176),
+  key: register("key", 60177),
+  law: register("law", 60178),
+  lightbulbAutofix: register("lightbulb-autofix", 60179),
+  linkExternal: register("link-external", 60180),
+  link: register("link", 60181),
+  listOrdered: register("list-ordered", 60182),
+  listUnordered: register("list-unordered", 60183),
+  liveShare: register("live-share", 60184),
+  loading: register("loading", 60185),
+  location: register("location", 60186),
+  mailRead: register("mail-read", 60187),
+  mail: register("mail", 60188),
+  markdown: register("markdown", 60189),
+  megaphone: register("megaphone", 60190),
+  mention: register("mention", 60191),
+  milestone: register("milestone", 60192),
+  gitPullRequestMilestone: register("git-pull-request-milestone", 60192),
+  mortarBoard: register("mortar-board", 60193),
+  move: register("move", 60194),
+  multipleWindows: register("multiple-windows", 60195),
+  mute: register("mute", 60196),
+  noNewline: register("no-newline", 60197),
+  note: register("note", 60198),
+  octoface: register("octoface", 60199),
+  openPreview: register("open-preview", 60200),
+  package: register("package", 60201),
+  paintcan: register("paintcan", 60202),
+  pin: register("pin", 60203),
+  play: register("play", 60204),
+  run: register("run", 60204),
+  plug: register("plug", 60205),
+  preserveCase: register("preserve-case", 60206),
+  preview: register("preview", 60207),
+  project: register("project", 60208),
+  pulse: register("pulse", 60209),
+  question: register("question", 60210),
+  quote: register("quote", 60211),
+  radioTower: register("radio-tower", 60212),
+  reactions: register("reactions", 60213),
+  references: register("references", 60214),
+  refresh: register("refresh", 60215),
+  regex: register("regex", 60216),
+  remoteExplorer: register("remote-explorer", 60217),
+  remote: register("remote", 60218),
+  remove: register("remove", 60219),
+  replaceAll: register("replace-all", 60220),
+  replace: register("replace", 60221),
+  repoClone: register("repo-clone", 60222),
+  repoForcePush: register("repo-force-push", 60223),
+  repoPull: register("repo-pull", 60224),
+  repoPush: register("repo-push", 60225),
+  report: register("report", 60226),
+  requestChanges: register("request-changes", 60227),
+  rocket: register("rocket", 60228),
+  rootFolderOpened: register("root-folder-opened", 60229),
+  rootFolder: register("root-folder", 60230),
+  rss: register("rss", 60231),
+  ruby: register("ruby", 60232),
+  saveAll: register("save-all", 60233),
+  saveAs: register("save-as", 60234),
+  save: register("save", 60235),
+  screenFull: register("screen-full", 60236),
+  screenNormal: register("screen-normal", 60237),
+  searchStop: register("search-stop", 60238),
+  server: register("server", 60240),
+  settingsGear: register("settings-gear", 60241),
+  settings: register("settings", 60242),
+  shield: register("shield", 60243),
+  smiley: register("smiley", 60244),
+  sortPrecedence: register("sort-precedence", 60245),
+  splitHorizontal: register("split-horizontal", 60246),
+  splitVertical: register("split-vertical", 60247),
+  squirrel: register("squirrel", 60248),
+  starFull: register("star-full", 60249),
+  starHalf: register("star-half", 60250),
+  symbolClass: register("symbol-class", 60251),
+  symbolColor: register("symbol-color", 60252),
+  symbolConstant: register("symbol-constant", 60253),
+  symbolEnumMember: register("symbol-enum-member", 60254),
+  symbolField: register("symbol-field", 60255),
+  symbolFile: register("symbol-file", 60256),
+  symbolInterface: register("symbol-interface", 60257),
+  symbolKeyword: register("symbol-keyword", 60258),
+  symbolMisc: register("symbol-misc", 60259),
+  symbolOperator: register("symbol-operator", 60260),
+  symbolProperty: register("symbol-property", 60261),
+  wrench: register("wrench", 60261),
+  wrenchSubaction: register("wrench-subaction", 60261),
+  symbolSnippet: register("symbol-snippet", 60262),
+  tasklist: register("tasklist", 60263),
+  telescope: register("telescope", 60264),
+  textSize: register("text-size", 60265),
+  threeBars: register("three-bars", 60266),
+  thumbsdown: register("thumbsdown", 60267),
+  thumbsup: register("thumbsup", 60268),
+  tools: register("tools", 60269),
+  triangleDown: register("triangle-down", 60270),
+  triangleLeft: register("triangle-left", 60271),
+  triangleRight: register("triangle-right", 60272),
+  triangleUp: register("triangle-up", 60273),
+  twitter: register("twitter", 60274),
+  unfold: register("unfold", 60275),
+  unlock: register("unlock", 60276),
+  unmute: register("unmute", 60277),
+  unverified: register("unverified", 60278),
+  verified: register("verified", 60279),
+  versions: register("versions", 60280),
+  vmActive: register("vm-active", 60281),
+  vmOutline: register("vm-outline", 60282),
+  vmRunning: register("vm-running", 60283),
+  watch: register("watch", 60284),
+  whitespace: register("whitespace", 60285),
+  wholeWord: register("whole-word", 60286),
+  window: register("window", 60287),
+  wordWrap: register("word-wrap", 60288),
+  zoomIn: register("zoom-in", 60289),
+  zoomOut: register("zoom-out", 60290),
+  listFilter: register("list-filter", 60291),
+  listFlat: register("list-flat", 60292),
+  listSelection: register("list-selection", 60293),
+  selection: register("selection", 60293),
+  listTree: register("list-tree", 60294),
+  debugBreakpointFunctionUnverified: register("debug-breakpoint-function-unverified", 60295),
+  debugBreakpointFunction: register("debug-breakpoint-function", 60296),
+  debugBreakpointFunctionDisabled: register("debug-breakpoint-function-disabled", 60296),
+  debugStackframeActive: register("debug-stackframe-active", 60297),
+  circleSmallFilled: register("circle-small-filled", 60298),
+  debugStackframeDot: register("debug-stackframe-dot", 60298),
+  terminalDecorationMark: register("terminal-decoration-mark", 60298),
+  debugStackframe: register("debug-stackframe", 60299),
+  debugStackframeFocused: register("debug-stackframe-focused", 60299),
+  debugBreakpointUnsupported: register("debug-breakpoint-unsupported", 60300),
+  symbolString: register("symbol-string", 60301),
+  debugReverseContinue: register("debug-reverse-continue", 60302),
+  debugStepBack: register("debug-step-back", 60303),
+  debugRestartFrame: register("debug-restart-frame", 60304),
+  debugAlt: register("debug-alt", 60305),
+  callIncoming: register("call-incoming", 60306),
+  callOutgoing: register("call-outgoing", 60307),
+  menu: register("menu", 60308),
+  expandAll: register("expand-all", 60309),
+  feedback: register("feedback", 60310),
+  gitPullRequestReviewer: register("git-pull-request-reviewer", 60310),
+  groupByRefType: register("group-by-ref-type", 60311),
+  ungroupByRefType: register("ungroup-by-ref-type", 60312),
+  account: register("account", 60313),
+  gitPullRequestAssignee: register("git-pull-request-assignee", 60313),
+  bellDot: register("bell-dot", 60314),
+  debugConsole: register("debug-console", 60315),
+  library: register("library", 60316),
+  output: register("output", 60317),
+  runAll: register("run-all", 60318),
+  syncIgnored: register("sync-ignored", 60319),
+  pinned: register("pinned", 60320),
+  githubInverted: register("github-inverted", 60321),
+  serverProcess: register("server-process", 60322),
+  serverEnvironment: register("server-environment", 60323),
+  pass: register("pass", 60324),
+  issueClosed: register("issue-closed", 60324),
+  stopCircle: register("stop-circle", 60325),
+  playCircle: register("play-circle", 60326),
+  record: register("record", 60327),
+  debugAltSmall: register("debug-alt-small", 60328),
+  vmConnect: register("vm-connect", 60329),
+  cloud: register("cloud", 60330),
+  merge: register("merge", 60331),
+  export: register("export", 60332),
+  graphLeft: register("graph-left", 60333),
+  magnet: register("magnet", 60334),
+  notebook: register("notebook", 60335),
+  redo: register("redo", 60336),
+  checkAll: register("check-all", 60337),
+  pinnedDirty: register("pinned-dirty", 60338),
+  passFilled: register("pass-filled", 60339),
+  circleLargeFilled: register("circle-large-filled", 60340),
+  circleLarge: register("circle-large", 60341),
+  circleLargeOutline: register("circle-large-outline", 60341),
+  combine: register("combine", 60342),
+  gather: register("gather", 60342),
+  table: register("table", 60343),
+  variableGroup: register("variable-group", 60344),
+  typeHierarchy: register("type-hierarchy", 60345),
+  typeHierarchySub: register("type-hierarchy-sub", 60346),
+  typeHierarchySuper: register("type-hierarchy-super", 60347),
+  gitPullRequestCreate: register("git-pull-request-create", 60348),
+  runAbove: register("run-above", 60349),
+  runBelow: register("run-below", 60350),
+  notebookTemplate: register("notebook-template", 60351),
+  debugRerun: register("debug-rerun", 60352),
+  workspaceTrusted: register("workspace-trusted", 60353),
+  workspaceUntrusted: register("workspace-untrusted", 60354),
+  workspaceUnknown: register("workspace-unknown", 60355),
+  terminalCmd: register("terminal-cmd", 60356),
+  terminalDebian: register("terminal-debian", 60357),
+  terminalLinux: register("terminal-linux", 60358),
+  terminalPowershell: register("terminal-powershell", 60359),
+  terminalTmux: register("terminal-tmux", 60360),
+  terminalUbuntu: register("terminal-ubuntu", 60361),
+  terminalBash: register("terminal-bash", 60362),
+  arrowSwap: register("arrow-swap", 60363),
+  copy: register("copy", 60364),
+  personAdd: register("person-add", 60365),
+  filterFilled: register("filter-filled", 60366),
+  wand: register("wand", 60367),
+  debugLineByLine: register("debug-line-by-line", 60368),
+  inspect: register("inspect", 60369),
+  layers: register("layers", 60370),
+  layersDot: register("layers-dot", 60371),
+  layersActive: register("layers-active", 60372),
+  compass: register("compass", 60373),
+  compassDot: register("compass-dot", 60374),
+  compassActive: register("compass-active", 60375),
+  azure: register("azure", 60376),
+  issueDraft: register("issue-draft", 60377),
+  gitPullRequestClosed: register("git-pull-request-closed", 60378),
+  gitPullRequestDraft: register("git-pull-request-draft", 60379),
+  debugAll: register("debug-all", 60380),
+  debugCoverage: register("debug-coverage", 60381),
+  runErrors: register("run-errors", 60382),
+  folderLibrary: register("folder-library", 60383),
+  debugContinueSmall: register("debug-continue-small", 60384),
+  beakerStop: register("beaker-stop", 60385),
+  graphLine: register("graph-line", 60386),
+  graphScatter: register("graph-scatter", 60387),
+  pieChart: register("pie-chart", 60388),
+  bracket: register("bracket", 60175),
+  bracketDot: register("bracket-dot", 60389),
+  bracketError: register("bracket-error", 60390),
+  lockSmall: register("lock-small", 60391),
+  azureDevops: register("azure-devops", 60392),
+  verifiedFilled: register("verified-filled", 60393),
+  newline: register("newline", 60394),
+  layout: register("layout", 60395),
+  layoutActivitybarLeft: register("layout-activitybar-left", 60396),
+  layoutActivitybarRight: register("layout-activitybar-right", 60397),
+  layoutPanelLeft: register("layout-panel-left", 60398),
+  layoutPanelCenter: register("layout-panel-center", 60399),
+  layoutPanelJustify: register("layout-panel-justify", 60400),
+  layoutPanelRight: register("layout-panel-right", 60401),
+  layoutPanel: register("layout-panel", 60402),
+  layoutSidebarLeft: register("layout-sidebar-left", 60403),
+  layoutSidebarRight: register("layout-sidebar-right", 60404),
+  layoutStatusbar: register("layout-statusbar", 60405),
+  layoutMenubar: register("layout-menubar", 60406),
+  layoutCentered: register("layout-centered", 60407),
+  target: register("target", 60408),
+  indent: register("indent", 60409),
+  recordSmall: register("record-small", 60410),
+  errorSmall: register("error-small", 60411),
+  terminalDecorationError: register("terminal-decoration-error", 60411),
+  arrowCircleDown: register("arrow-circle-down", 60412),
+  arrowCircleLeft: register("arrow-circle-left", 60413),
+  arrowCircleRight: register("arrow-circle-right", 60414),
+  arrowCircleUp: register("arrow-circle-up", 60415),
+  layoutSidebarRightOff: register("layout-sidebar-right-off", 60416),
+  layoutPanelOff: register("layout-panel-off", 60417),
+  layoutSidebarLeftOff: register("layout-sidebar-left-off", 60418),
+  blank: register("blank", 60419),
+  heartFilled: register("heart-filled", 60420),
+  map: register("map", 60421),
+  mapHorizontal: register("map-horizontal", 60421),
+  foldHorizontal: register("fold-horizontal", 60421),
+  mapFilled: register("map-filled", 60422),
+  mapHorizontalFilled: register("map-horizontal-filled", 60422),
+  foldHorizontalFilled: register("fold-horizontal-filled", 60422),
+  circleSmall: register("circle-small", 60423),
+  bellSlash: register("bell-slash", 60424),
+  bellSlashDot: register("bell-slash-dot", 60425),
+  commentUnresolved: register("comment-unresolved", 60426),
+  gitPullRequestGoToChanges: register("git-pull-request-go-to-changes", 60427),
+  gitPullRequestNewChanges: register("git-pull-request-new-changes", 60428),
+  searchFuzzy: register("search-fuzzy", 60429),
+  commentDraft: register("comment-draft", 60430),
+  send: register("send", 60431),
+  sparkle: register("sparkle", 60432),
+  insert: register("insert", 60433),
+  mic: register("mic", 60434),
+  thumbsdownFilled: register("thumbsdown-filled", 60435),
+  thumbsupFilled: register("thumbsup-filled", 60436),
+  coffee: register("coffee", 60437),
+  snake: register("snake", 60438),
+  game: register("game", 60439),
+  vr: register("vr", 60440),
+  chip: register("chip", 60441),
+  piano: register("piano", 60442),
+  music: register("music", 60443),
+  micFilled: register("mic-filled", 60444),
+  repoFetch: register("repo-fetch", 60445),
+  copilot: register("copilot", 60446),
+  lightbulbSparkle: register("lightbulb-sparkle", 60447),
+  robot: register("robot", 60448),
+  sparkleFilled: register("sparkle-filled", 60449),
+  diffSingle: register("diff-single", 60450),
+  diffMultiple: register("diff-multiple", 60451),
+  surroundWith: register("surround-with", 60452),
+  share: register("share", 60453),
+  gitStash: register("git-stash", 60454),
+  gitStashApply: register("git-stash-apply", 60455),
+  gitStashPop: register("git-stash-pop", 60456),
+  vscode: register("vscode", 60457),
+  vscodeInsiders: register("vscode-insiders", 60458),
+  codeOss: register("code-oss", 60459),
+  runCoverage: register("run-coverage", 60460),
+  runAllCoverage: register("run-all-coverage", 60461),
+  coverage: register("coverage", 60462),
+  githubProject: register("github-project", 60463),
+  mapVertical: register("map-vertical", 60464),
+  foldVertical: register("fold-vertical", 60464),
+  mapVerticalFilled: register("map-vertical-filled", 60465),
+  foldVerticalFilled: register("fold-vertical-filled", 60465),
+  goToSearch: register("go-to-search", 60466),
+  percentage: register("percentage", 60467),
+  sortPercentage: register("sort-percentage", 60467),
+  attach: register("attach", 60468),
+  goToEditingSession: register("go-to-editing-session", 60469),
+  editSession: register("edit-session", 60470),
+  codeReview: register("code-review", 60471),
+  copilotWarning: register("copilot-warning", 60472),
+  python: register("python", 60473),
+  copilotLarge: register("copilot-large", 60474),
+  copilotWarningLarge: register("copilot-warning-large", 60475),
+  keyboardTab: register("keyboard-tab", 60476),
+  copilotBlocked: register("copilot-blocked", 60477),
+  copilotNotConnected: register("copilot-not-connected", 60478),
+  flag: register("flag", 60479),
+  lightbulbEmpty: register("lightbulb-empty", 60480),
+  symbolMethodArrow: register("symbol-method-arrow", 60481),
+  copilotUnavailable: register("copilot-unavailable", 60482),
+  repoPinned: register("repo-pinned", 60483),
+  keyboardTabAbove: register("keyboard-tab-above", 60484),
+  keyboardTabBelow: register("keyboard-tab-below", 60485),
+  gitPullRequestDone: register("git-pull-request-done", 60486),
+  mcp: register("mcp", 60487),
+  extensionsLarge: register("extensions-large", 60488),
+  layoutPanelDock: register("layout-panel-dock", 60489),
+  layoutSidebarLeftDock: register("layout-sidebar-left-dock", 60490),
+  layoutSidebarRightDock: register("layout-sidebar-right-dock", 60491),
+  copilotInProgress: register("copilot-in-progress", 60492),
+  copilotError: register("copilot-error", 60493),
+  copilotSuccess: register("copilot-success", 60494),
+  chatSparkle: register("chat-sparkle", 60495),
+  searchSparkle: register("search-sparkle", 60496),
+  editSparkle: register("edit-sparkle", 60497),
+  copilotSnooze: register("copilot-snooze", 60498),
+  sendToRemoteAgent: register("send-to-remote-agent", 60499),
+  commentDiscussionSparkle: register("comment-discussion-sparkle", 60500),
+  chatSparkleWarning: register("chat-sparkle-warning", 60501),
+  chatSparkleError: register("chat-sparkle-error", 60502),
+  collection: register("collection", 60503),
+  newCollection: register("new-collection", 60504),
+  thinking: register("thinking", 60505),
+  build: register("build", 60506),
+  commentDiscussionQuote: register("comment-discussion-quote", 60507),
+  cursor: register("cursor", 60508),
+  eraser: register("eraser", 60509),
+  fileText: register("file-text", 60510),
+  gitLens: register("git-lens", 60511),
+  quotes: register("quotes", 60512),
+  rename: register("rename", 60513),
+  runWithDeps: register("run-with-deps", 60514),
+  debugConnected: register("debug-connected", 60515),
+  strikethrough: register("strikethrough", 60516),
+  openInProduct: register("open-in-product", 60517),
+  indexZero: register("index-zero", 60518),
+  agent: register("agent", 60519),
+  editCode: register("edit-code", 60520),
+  repoSelected: register("repo-selected", 60521),
+  skip: register("skip", 60522),
+  mergeInto: register("merge-into", 60523),
+  gitBranchChanges: register("git-branch-changes", 60524),
+  gitBranchStagedChanges: register("git-branch-staged-changes", 60525),
+  gitBranchConflicts: register("git-branch-conflicts", 60526),
+  gitBranch: register("git-branch", 60527),
+  gitBranchCreate: register("git-branch-create", 60527),
+  gitBranchDelete: register("git-branch-delete", 60527),
+  searchLarge: register("search-large", 60528),
+  terminalGitBash: register("terminal-git-bash", 60529),
+  windowActive: register("window-active", 60530),
+  forward: register("forward", 60531),
+  download: register("download", 60532)
 };
 
 // out-build/vs/base/common/codicons.js
-var $5j = {
-  dialogError: $1j("dialog-error", "error"),
-  dialogWarning: $1j("dialog-warning", "warning"),
-  dialogInfo: $1j("dialog-info", "info"),
-  dialogClose: $1j("dialog-close", "close"),
-  treeItemExpanded: $1j("tree-item-expanded", "chevron-down"),
+var codiconsDerived = {
+  dialogError: register("dialog-error", "error"),
+  dialogWarning: register("dialog-warning", "warning"),
+  dialogInfo: register("dialog-info", "info"),
+  dialogClose: register("dialog-close", "close"),
+  treeItemExpanded: register("tree-item-expanded", "chevron-down"),
   // collapsed is done with rotation
-  treeFilterOnTypeOn: $1j("tree-filter-on-type-on", "list-filter"),
-  treeFilterOnTypeOff: $1j("tree-filter-on-type-off", "list-selection"),
-  treeFilterClear: $1j("tree-filter-clear", "close"),
-  treeItemLoading: $1j("tree-item-loading", "loading"),
-  menuSelection: $1j("menu-selection", "check"),
-  menuSubmenu: $1j("menu-submenu", "chevron-right"),
-  menuBarMore: $1j("menubar-more", "more"),
-  scrollbarButtonLeft: $1j("scrollbar-button-left", "triangle-left"),
-  scrollbarButtonRight: $1j("scrollbar-button-right", "triangle-right"),
-  scrollbarButtonUp: $1j("scrollbar-button-up", "triangle-up"),
-  scrollbarButtonDown: $1j("scrollbar-button-down", "triangle-down"),
-  toolBarMore: $1j("toolbar-more", "more"),
-  quickInputBack: $1j("quick-input-back", "arrow-left"),
-  dropDownButton: $1j("drop-down-button", 60084),
-  symbolCustomColor: $1j("symbol-customcolor", 60252),
-  exportIcon: $1j("export", 60332),
-  workspaceUnspecified: $1j("workspace-unspecified", 60355),
-  newLine: $1j("newline", 60394),
-  thumbsDownFilled: $1j("thumbsdown-filled", 60435),
-  thumbsUpFilled: $1j("thumbsup-filled", 60436),
-  gitFetch: $1j("git-fetch", 60445),
-  lightbulbSparkleAutofix: $1j("lightbulb-sparkle-autofix", 60447),
-  debugBreakpointPending: $1j("debug-breakpoint-pending", 60377)
+  treeFilterOnTypeOn: register("tree-filter-on-type-on", "list-filter"),
+  treeFilterOnTypeOff: register("tree-filter-on-type-off", "list-selection"),
+  treeFilterClear: register("tree-filter-clear", "close"),
+  treeItemLoading: register("tree-item-loading", "loading"),
+  menuSelection: register("menu-selection", "check"),
+  menuSubmenu: register("menu-submenu", "chevron-right"),
+  menuBarMore: register("menubar-more", "more"),
+  scrollbarButtonLeft: register("scrollbar-button-left", "triangle-left"),
+  scrollbarButtonRight: register("scrollbar-button-right", "triangle-right"),
+  scrollbarButtonUp: register("scrollbar-button-up", "triangle-up"),
+  scrollbarButtonDown: register("scrollbar-button-down", "triangle-down"),
+  toolBarMore: register("toolbar-more", "more"),
+  quickInputBack: register("quick-input-back", "arrow-left"),
+  dropDownButton: register("drop-down-button", 60084),
+  symbolCustomColor: register("symbol-customcolor", 60252),
+  exportIcon: register("export", 60332),
+  workspaceUnspecified: register("workspace-unspecified", 60355),
+  newLine: register("newline", 60394),
+  thumbsDownFilled: register("thumbsdown-filled", 60435),
+  thumbsUpFilled: register("thumbsup-filled", 60436),
+  gitFetch: register("git-fetch", 60445),
+  lightbulbSparkleAutofix: register("lightbulb-sparkle-autofix", 60447),
+  debugBreakpointPending: register("debug-breakpoint-pending", 60377)
 };
-var $6j = {
-  ...$3j,
-  ...$5j
+var Codicon = {
+  ...codiconsLibrary,
+  ...codiconsDerived
 };
 
 // out-build/vs/editor/common/tokenizationRegistry.js
-var $FE = class {
+var TokenizationRegistry = class {
   constructor() {
-    this.a = /* @__PURE__ */ new Map();
-    this.b = /* @__PURE__ */ new Map();
-    this.c = new $qf();
-    this.onDidChange = this.c.event;
-    this.d = null;
+    this._tokenizationSupports = /* @__PURE__ */ new Map();
+    this._factories = /* @__PURE__ */ new Map();
+    this._onDidChange = new Emitter();
+    this.onDidChange = this._onDidChange.event;
+    this._colorMap = null;
   }
   handleChange(languageIds) {
-    this.c.fire({
+    this._onDidChange.fire({
       changedLanguages: languageIds,
       changedColorMap: false
     });
   }
   register(languageId, support) {
-    this.a.set(languageId, support);
+    this._tokenizationSupports.set(languageId, support);
     this.handleChange([languageId]);
-    return $Dd(() => {
-      if (this.a.get(languageId) !== support) {
+    return toDisposable(() => {
+      if (this._tokenizationSupports.get(languageId) !== support) {
         return;
       }
-      this.a.delete(languageId);
+      this._tokenizationSupports.delete(languageId);
       this.handleChange([languageId]);
     });
   }
   get(languageId) {
-    return this.a.get(languageId) || null;
+    return this._tokenizationSupports.get(languageId) || null;
   }
   registerFactory(languageId, factory) {
-    this.b.get(languageId)?.dispose();
+    this._factories.get(languageId)?.dispose();
     const myData = new TokenizationSupportFactoryData(this, languageId, factory);
-    this.b.set(languageId, myData);
-    return $Dd(() => {
-      const v = this.b.get(languageId);
+    this._factories.set(languageId, myData);
+    return toDisposable(() => {
+      const v = this._factories.get(languageId);
       if (!v || v !== myData) {
         return;
       }
-      this.b.delete(languageId);
+      this._factories.delete(languageId);
       v.dispose();
     });
   }
@@ -10584,7 +10584,7 @@ var $FE = class {
     if (tokenizationSupport) {
       return tokenizationSupport;
     }
-    const factory = this.b.get(languageId);
+    const factory = this._factories.get(languageId);
     if (!factory || factory.isResolved) {
       return null;
     }
@@ -10596,25 +10596,25 @@ var $FE = class {
     if (tokenizationSupport) {
       return true;
     }
-    const factory = this.b.get(languageId);
+    const factory = this._factories.get(languageId);
     if (!factory || factory.isResolved) {
       return true;
     }
     return false;
   }
   setColorMap(colorMap) {
-    this.d = colorMap;
-    this.c.fire({
-      changedLanguages: Array.from(this.a.keys()),
+    this._colorMap = colorMap;
+    this._onDidChange.fire({
+      changedLanguages: Array.from(this._tokenizationSupports.keys()),
       changedColorMap: true
     });
   }
   getColorMap() {
-    return this.d;
+    return this._colorMap;
   }
   getDefaultBackground() {
-    if (this.d && this.d.length > 2) {
-      return this.d[
+    if (this._colorMap && this._colorMap.length > 2) {
+      return this._colorMap[
         2
         /* ColorId.DefaultBackground */
       ];
@@ -10622,40 +10622,40 @@ var $FE = class {
     return null;
   }
 };
-var TokenizationSupportFactoryData = class extends $Fd {
+var TokenizationSupportFactoryData = class extends Disposable {
   get isResolved() {
-    return this.c;
+    return this._isResolved;
   }
-  constructor(f, g, h) {
+  constructor(_registry, _languageId, _factory) {
     super();
-    this.f = f;
-    this.g = g;
-    this.h = h;
-    this.a = false;
-    this.b = null;
-    this.c = false;
+    this._registry = _registry;
+    this._languageId = _languageId;
+    this._factory = _factory;
+    this._isDisposed = false;
+    this._resolvePromise = null;
+    this._isResolved = false;
   }
   dispose() {
-    this.a = true;
+    this._isDisposed = true;
     super.dispose();
   }
   async resolve() {
-    if (!this.b) {
-      this.b = this.j();
+    if (!this._resolvePromise) {
+      this._resolvePromise = this._create();
     }
-    return this.b;
+    return this._resolvePromise;
   }
-  async j() {
-    const value = await this.h.tokenizationSupport;
-    this.c = true;
-    if (value && !this.a) {
-      this.D(this.f.register(this.g, value));
+  async _create() {
+    const value = await this._factory.tokenizationSupport;
+    this._isResolved = true;
+    if (value && !this._isDisposed) {
+      this._register(this._registry.register(this._languageId, value));
     }
   }
 };
 
 // out-build/vs/editor/common/languages.js
-var $1E = class {
+var EncodedTokenizationResult = class {
   constructor(tokens, endState) {
     this.tokens = tokens;
     this.endState = endState;
@@ -10702,41 +10702,41 @@ var CompletionItemKind;
 var CompletionItemKinds;
 (function(CompletionItemKinds2) {
   const byKind = /* @__PURE__ */ new Map();
-  byKind.set(0, $6j.symbolMethod);
-  byKind.set(1, $6j.symbolFunction);
-  byKind.set(2, $6j.symbolConstructor);
-  byKind.set(3, $6j.symbolField);
-  byKind.set(4, $6j.symbolVariable);
-  byKind.set(5, $6j.symbolClass);
-  byKind.set(6, $6j.symbolStruct);
-  byKind.set(7, $6j.symbolInterface);
-  byKind.set(8, $6j.symbolModule);
-  byKind.set(9, $6j.symbolProperty);
-  byKind.set(10, $6j.symbolEvent);
-  byKind.set(11, $6j.symbolOperator);
-  byKind.set(12, $6j.symbolUnit);
-  byKind.set(13, $6j.symbolValue);
-  byKind.set(15, $6j.symbolEnum);
-  byKind.set(14, $6j.symbolConstant);
-  byKind.set(15, $6j.symbolEnum);
-  byKind.set(16, $6j.symbolEnumMember);
-  byKind.set(17, $6j.symbolKeyword);
-  byKind.set(28, $6j.symbolSnippet);
-  byKind.set(18, $6j.symbolText);
-  byKind.set(19, $6j.symbolColor);
-  byKind.set(20, $6j.symbolFile);
-  byKind.set(21, $6j.symbolReference);
-  byKind.set(22, $6j.symbolCustomColor);
-  byKind.set(23, $6j.symbolFolder);
-  byKind.set(24, $6j.symbolTypeParameter);
-  byKind.set(25, $6j.account);
-  byKind.set(26, $6j.issues);
-  byKind.set(27, $6j.tools);
+  byKind.set(0, Codicon.symbolMethod);
+  byKind.set(1, Codicon.symbolFunction);
+  byKind.set(2, Codicon.symbolConstructor);
+  byKind.set(3, Codicon.symbolField);
+  byKind.set(4, Codicon.symbolVariable);
+  byKind.set(5, Codicon.symbolClass);
+  byKind.set(6, Codicon.symbolStruct);
+  byKind.set(7, Codicon.symbolInterface);
+  byKind.set(8, Codicon.symbolModule);
+  byKind.set(9, Codicon.symbolProperty);
+  byKind.set(10, Codicon.symbolEvent);
+  byKind.set(11, Codicon.symbolOperator);
+  byKind.set(12, Codicon.symbolUnit);
+  byKind.set(13, Codicon.symbolValue);
+  byKind.set(15, Codicon.symbolEnum);
+  byKind.set(14, Codicon.symbolConstant);
+  byKind.set(15, Codicon.symbolEnum);
+  byKind.set(16, Codicon.symbolEnumMember);
+  byKind.set(17, Codicon.symbolKeyword);
+  byKind.set(28, Codicon.symbolSnippet);
+  byKind.set(18, Codicon.symbolText);
+  byKind.set(19, Codicon.symbolColor);
+  byKind.set(20, Codicon.symbolFile);
+  byKind.set(21, Codicon.symbolReference);
+  byKind.set(22, Codicon.symbolCustomColor);
+  byKind.set(23, Codicon.symbolFolder);
+  byKind.set(24, Codicon.symbolTypeParameter);
+  byKind.set(25, Codicon.account);
+  byKind.set(26, Codicon.issues);
+  byKind.set(27, Codicon.tools);
   function toIcon(kind) {
     let codicon = byKind.get(kind);
     if (!codicon) {
       console.info("No codicon found for CompletionItemKind " + kind);
-      codicon = $6j.symbolProperty;
+      codicon = Codicon.symbolProperty;
     }
     return codicon;
   }
@@ -11060,7 +11060,7 @@ var SymbolKind;
   SymbolKind2[SymbolKind2["Operator"] = 24] = "Operator";
   SymbolKind2[SymbolKind2["TypeParameter"] = 25] = "TypeParameter";
 })(SymbolKind || (SymbolKind = {}));
-var $7E = {
+var symbolKindNames = {
   [
     17
     /* SymbolKind.Array */
@@ -11173,37 +11173,37 @@ var SymbolTag;
 var SymbolKinds;
 (function(SymbolKinds2) {
   const byKind = /* @__PURE__ */ new Map();
-  byKind.set(0, $6j.symbolFile);
-  byKind.set(1, $6j.symbolModule);
-  byKind.set(2, $6j.symbolNamespace);
-  byKind.set(3, $6j.symbolPackage);
-  byKind.set(4, $6j.symbolClass);
-  byKind.set(5, $6j.symbolMethod);
-  byKind.set(6, $6j.symbolProperty);
-  byKind.set(7, $6j.symbolField);
-  byKind.set(8, $6j.symbolConstructor);
-  byKind.set(9, $6j.symbolEnum);
-  byKind.set(10, $6j.symbolInterface);
-  byKind.set(11, $6j.symbolFunction);
-  byKind.set(12, $6j.symbolVariable);
-  byKind.set(13, $6j.symbolConstant);
-  byKind.set(14, $6j.symbolString);
-  byKind.set(15, $6j.symbolNumber);
-  byKind.set(16, $6j.symbolBoolean);
-  byKind.set(17, $6j.symbolArray);
-  byKind.set(18, $6j.symbolObject);
-  byKind.set(19, $6j.symbolKey);
-  byKind.set(20, $6j.symbolNull);
-  byKind.set(21, $6j.symbolEnumMember);
-  byKind.set(22, $6j.symbolStruct);
-  byKind.set(23, $6j.symbolEvent);
-  byKind.set(24, $6j.symbolOperator);
-  byKind.set(25, $6j.symbolTypeParameter);
+  byKind.set(0, Codicon.symbolFile);
+  byKind.set(1, Codicon.symbolModule);
+  byKind.set(2, Codicon.symbolNamespace);
+  byKind.set(3, Codicon.symbolPackage);
+  byKind.set(4, Codicon.symbolClass);
+  byKind.set(5, Codicon.symbolMethod);
+  byKind.set(6, Codicon.symbolProperty);
+  byKind.set(7, Codicon.symbolField);
+  byKind.set(8, Codicon.symbolConstructor);
+  byKind.set(9, Codicon.symbolEnum);
+  byKind.set(10, Codicon.symbolInterface);
+  byKind.set(11, Codicon.symbolFunction);
+  byKind.set(12, Codicon.symbolVariable);
+  byKind.set(13, Codicon.symbolConstant);
+  byKind.set(14, Codicon.symbolString);
+  byKind.set(15, Codicon.symbolNumber);
+  byKind.set(16, Codicon.symbolBoolean);
+  byKind.set(17, Codicon.symbolArray);
+  byKind.set(18, Codicon.symbolObject);
+  byKind.set(19, Codicon.symbolKey);
+  byKind.set(20, Codicon.symbolNull);
+  byKind.set(21, Codicon.symbolEnumMember);
+  byKind.set(22, Codicon.symbolStruct);
+  byKind.set(23, Codicon.symbolEvent);
+  byKind.set(24, Codicon.symbolOperator);
+  byKind.set(25, Codicon.symbolTypeParameter);
   function toIcon(kind) {
     let icon = byKind.get(kind);
     if (!icon) {
       console.info("No codicon found for SymbolKind " + kind);
-      icon = $6j.symbolProperty;
+      icon = Codicon.symbolProperty;
     }
     return icon;
   }
@@ -11349,34 +11349,34 @@ var SymbolKinds;
   }
   SymbolKinds2.toCompletionKind = toCompletionKind;
 })(SymbolKinds || (SymbolKinds = {}));
-var $0E = class _$0E {
+var FoldingRangeKind = class _FoldingRangeKind {
   static {
-    this.Comment = new _$0E("comment");
+    this.Comment = new _FoldingRangeKind("comment");
   }
   static {
-    this.Imports = new _$0E("imports");
+    this.Imports = new _FoldingRangeKind("imports");
   }
   static {
-    this.Region = new _$0E("region");
+    this.Region = new _FoldingRangeKind("region");
   }
   /**
-   * Returns a {@link $0E} for the given value.
+   * Returns a {@link FoldingRangeKind} for the given value.
    *
    * @param value of the kind.
    */
   static fromValue(value) {
     switch (value) {
       case "comment":
-        return _$0E.Comment;
+        return _FoldingRangeKind.Comment;
       case "imports":
-        return _$0E.Imports;
+        return _FoldingRangeKind.Imports;
       case "region":
-        return _$0E.Region;
+        return _FoldingRangeKind.Region;
     }
-    return new _$0E(value);
+    return new _FoldingRangeKind(value);
   }
   /**
-   * Creates a new {@link $0E}.
+   * Creates a new {@link FoldingRangeKind}.
    *
    * @param value of the kind.
    */
@@ -11433,7 +11433,7 @@ var InlayHintKind;
   InlayHintKind2[InlayHintKind2["Type"] = 1] = "Type";
   InlayHintKind2[InlayHintKind2["Parameter"] = 2] = "Parameter";
 })(InlayHintKind || (InlayHintKind = {}));
-var $_E = new $FE();
+var TokenizationRegistry2 = new TokenizationRegistry();
 var ExternalUriOpenerPriority;
 (function(ExternalUriOpenerPriority2) {
   ExternalUriOpenerPriority2[ExternalUriOpenerPriority2["None"] = 0] = "None";
@@ -11443,7 +11443,7 @@ var ExternalUriOpenerPriority;
 })(ExternalUriOpenerPriority || (ExternalUriOpenerPriority = {}));
 
 // out-build/vs/editor/common/languages/nullTokenize.js
-var $NJ = new class {
+var NullState = new class {
   clone() {
     return this;
   }
@@ -11451,33 +11451,33 @@ var $NJ = new class {
     return this === other;
   }
 }();
-function $PJ(languageId, state) {
+function nullTokenizeEncoded(languageId, state) {
   const tokens = new Uint32Array(2);
   tokens[0] = 0;
   tokens[1] = (languageId << 0 | 0 << 8 | 0 << 11 | 1 << 15 | 2 << 24) >>> 0;
-  return new $1E(tokens, state === null ? $NJ : state);
+  return new EncodedTokenizationResult(tokens, state === null ? NullState : state);
 }
 
 // out-build/vs/editor/common/model/fixedArray.js
-var $QJ = class {
-  constructor(b) {
-    this.b = b;
-    this.a = [];
+var FixedArray = class {
+  constructor(_default) {
+    this._default = _default;
+    this._store = [];
   }
   get(index) {
-    if (index < this.a.length) {
-      return this.a[index];
+    if (index < this._store.length) {
+      return this._store[index];
     }
-    return this.b;
+    return this._default;
   }
   set(index, value) {
-    while (index >= this.a.length) {
-      this.a[this.a.length] = this.b;
+    while (index >= this._store.length) {
+      this._store[this._store.length] = this._default;
     }
-    this.a[index] = value;
+    this._store[index] = value;
   }
   replace(index, oldLength, newLength) {
-    if (index >= this.a.length) {
+    if (index >= this._store.length) {
       return;
     }
     if (oldLength === 0) {
@@ -11487,26 +11487,26 @@ var $QJ = class {
       this.delete(index, oldLength);
       return;
     }
-    const before = this.a.slice(0, index);
-    const after = this.a.slice(index + oldLength);
-    const insertArr = arrayFill(newLength, this.b);
-    this.a = before.concat(insertArr, after);
+    const before = this._store.slice(0, index);
+    const after = this._store.slice(index + oldLength);
+    const insertArr = arrayFill(newLength, this._default);
+    this._store = before.concat(insertArr, after);
   }
   delete(deleteIndex, deleteCount) {
-    if (deleteCount === 0 || deleteIndex >= this.a.length) {
+    if (deleteCount === 0 || deleteIndex >= this._store.length) {
       return;
     }
-    this.a.splice(deleteIndex, deleteCount);
+    this._store.splice(deleteIndex, deleteCount);
   }
   insert(insertIndex, insertCount) {
-    if (insertCount === 0 || insertIndex >= this.a.length) {
+    if (insertCount === 0 || insertIndex >= this._store.length) {
       return;
     }
     const arr = [];
     for (let i = 0; i < insertCount; i++) {
-      arr[i] = this.b;
+      arr[i] = this._default;
     }
-    this.a = $lc(this.a, insertIndex, arr);
+    this._store = arrayInsert(this._store, insertIndex, arr);
   }
 };
 function arrayFill(length, value) {
@@ -11518,11 +11518,11 @@ function arrayFill(length, value) {
 }
 
 // out-build/vs/base/common/buffer.js
-var indexOfTable = new $Kf(() => new Uint8Array(256));
-function $6i(source, offset) {
+var indexOfTable = new Lazy(() => new Uint8Array(256));
+function readUInt32BE(source, offset) {
   return source[offset] * 2 ** 24 + source[offset + 1] * 2 ** 16 + source[offset + 2] * 2 ** 8 + source[offset + 3];
 }
-function $7i(destination, value, offset) {
+function writeUInt32BE(destination, value, offset) {
   destination[offset + 3] = value;
   value = value >>> 8;
   destination[offset + 2] = value;
@@ -11585,7 +11585,7 @@ var MetadataConsts;
   MetadataConsts2[MetadataConsts2["FOREGROUND_OFFSET"] = 15] = "FOREGROUND_OFFSET";
   MetadataConsts2[MetadataConsts2["BACKGROUND_OFFSET"] = 24] = "BACKGROUND_OFFSET";
 })(MetadataConsts || (MetadataConsts = {}));
-var $CE = class {
+var TokenMetadata = class {
   static getLanguageId(metadata) {
     return (metadata & 255) >>> 0;
   }
@@ -11670,13 +11670,13 @@ var $CE = class {
 };
 
 // out-build/vs/editor/common/tokens/lineTokens.js
-var $HE = class _$HE {
+var LineTokens = class _LineTokens {
   static createEmpty(lineContent, decoder) {
-    const defaultMetadata = _$HE.defaultTokenMetadata;
+    const defaultMetadata = _LineTokens.defaultTokenMetadata;
     const tokens = new Uint32Array(2);
     tokens[0] = lineContent.length;
     tokens[1] = defaultMetadata;
-    return new _$HE(tokens, lineContent, decoder);
+    return new _LineTokens(tokens, lineContent, decoder);
   }
   static createFromTextAndMetadata(data, decoder) {
     let offset = 0;
@@ -11687,7 +11687,7 @@ var $HE = class _$HE {
       offset += text.length;
       fullText += text;
     }
-    return new _$HE(new Uint32Array(tokens), fullText, decoder);
+    return new _LineTokens(new Uint32Array(tokens), fullText, decoder);
   }
   static convertToEndOffset(tokens, lineTextLength) {
     const tokenCount = tokens.length >>> 1;
@@ -11723,81 +11723,81 @@ var $HE = class _$HE {
     this._lineTokensBrand = void 0;
     const tokensLength = tokens.length > 1 ? tokens[tokens.length - 2] : 0;
     if (tokensLength !== text.length) {
-      $nb(new Error("Token length and text length do not match!"));
+      onUnexpectedError(new Error("Token length and text length do not match!"));
     }
-    this.a = tokens;
-    this.b = this.a.length >>> 1;
-    this.c = text;
+    this._tokens = tokens;
+    this._tokensCount = this._tokens.length >>> 1;
+    this._text = text;
     this.languageIdCodec = decoder;
   }
   getTextLength() {
-    return this.c.length;
+    return this._text.length;
   }
   equals(other) {
-    if (other instanceof _$HE) {
-      return this.slicedEquals(other, 0, this.b);
+    if (other instanceof _LineTokens) {
+      return this.slicedEquals(other, 0, this._tokensCount);
     }
     return false;
   }
   slicedEquals(other, sliceFromTokenIndex, sliceTokenCount) {
-    if (this.c !== other.c) {
+    if (this._text !== other._text) {
       return false;
     }
-    if (this.b !== other.b) {
+    if (this._tokensCount !== other._tokensCount) {
       return false;
     }
     const from = sliceFromTokenIndex << 1;
     const to = from + (sliceTokenCount << 1);
     for (let i = from; i < to; i++) {
-      if (this.a[i] !== other.a[i]) {
+      if (this._tokens[i] !== other._tokens[i]) {
         return false;
       }
     }
     return true;
   }
   getLineContent() {
-    return this.c;
+    return this._text;
   }
   getCount() {
-    return this.b;
+    return this._tokensCount;
   }
   getStartOffset(tokenIndex) {
     if (tokenIndex > 0) {
-      return this.a[tokenIndex - 1 << 1];
+      return this._tokens[tokenIndex - 1 << 1];
     }
     return 0;
   }
   getMetadata(tokenIndex) {
-    const metadata = this.a[(tokenIndex << 1) + 1];
+    const metadata = this._tokens[(tokenIndex << 1) + 1];
     return metadata;
   }
   getLanguageId(tokenIndex) {
-    const metadata = this.a[(tokenIndex << 1) + 1];
-    const languageId = $CE.getLanguageId(metadata);
+    const metadata = this._tokens[(tokenIndex << 1) + 1];
+    const languageId = TokenMetadata.getLanguageId(metadata);
     return this.languageIdCodec.decodeLanguageId(languageId);
   }
   getStandardTokenType(tokenIndex) {
-    const metadata = this.a[(tokenIndex << 1) + 1];
-    return $CE.getTokenType(metadata);
+    const metadata = this._tokens[(tokenIndex << 1) + 1];
+    return TokenMetadata.getTokenType(metadata);
   }
   getForeground(tokenIndex) {
-    const metadata = this.a[(tokenIndex << 1) + 1];
-    return $CE.getForeground(metadata);
+    const metadata = this._tokens[(tokenIndex << 1) + 1];
+    return TokenMetadata.getForeground(metadata);
   }
   getClassName(tokenIndex) {
-    const metadata = this.a[(tokenIndex << 1) + 1];
-    return $CE.getClassNameFromMetadata(metadata);
+    const metadata = this._tokens[(tokenIndex << 1) + 1];
+    return TokenMetadata.getClassNameFromMetadata(metadata);
   }
   getInlineStyle(tokenIndex, colorMap) {
-    const metadata = this.a[(tokenIndex << 1) + 1];
-    return $CE.getInlineStyleFromMetadata(metadata, colorMap);
+    const metadata = this._tokens[(tokenIndex << 1) + 1];
+    return TokenMetadata.getInlineStyleFromMetadata(metadata, colorMap);
   }
   getPresentation(tokenIndex) {
-    const metadata = this.a[(tokenIndex << 1) + 1];
-    return $CE.getPresentationFromMetadata(metadata);
+    const metadata = this._tokens[(tokenIndex << 1) + 1];
+    return TokenMetadata.getPresentationFromMetadata(metadata);
   }
   getEndOffset(tokenIndex) {
-    return this.a[tokenIndex << 1];
+    return this._tokens[tokenIndex << 1];
   }
   /**
    * Find the token containing offset `offset`.
@@ -11805,7 +11805,7 @@ var $HE = class _$HE {
    * @return The index of the token containing the offset.
    */
   findTokenIndexAtOffset(offset) {
-    return _$HE.findIndexInTokensArray(this.a, offset);
+    return _LineTokens.findIndexInTokensArray(this._tokens, offset);
   }
   inflate() {
     return this;
@@ -11830,18 +11830,18 @@ var $HE = class _$HE {
     const newTokens = new Array();
     let originalEndOffset = 0;
     while (true) {
-      const nextOriginalTokenEndOffset = nextOriginalTokenIdx < this.b ? this.a[nextOriginalTokenIdx << 1] : -1;
+      const nextOriginalTokenEndOffset = nextOriginalTokenIdx < this._tokensCount ? this._tokens[nextOriginalTokenIdx << 1] : -1;
       const nextInsertToken = nextInsertTokenIdx < insertTokens.length ? insertTokens[nextInsertTokenIdx] : null;
       if (nextOriginalTokenEndOffset !== -1 && (nextInsertToken === null || nextOriginalTokenEndOffset <= nextInsertToken.offset)) {
-        text += this.c.substring(originalEndOffset, nextOriginalTokenEndOffset);
-        const metadata = this.a[(nextOriginalTokenIdx << 1) + 1];
+        text += this._text.substring(originalEndOffset, nextOriginalTokenEndOffset);
+        const metadata = this._tokens[(nextOriginalTokenIdx << 1) + 1];
         newTokens.push(text.length, metadata);
         nextOriginalTokenIdx++;
         originalEndOffset = nextOriginalTokenEndOffset;
       } else if (nextInsertToken) {
         if (nextInsertToken.offset > originalEndOffset) {
-          text += this.c.substring(originalEndOffset, nextInsertToken.offset);
-          const metadata = this.a[(nextOriginalTokenIdx << 1) + 1];
+          text += this._text.substring(originalEndOffset, nextInsertToken.offset);
+          const metadata = this._tokens[(nextOriginalTokenIdx << 1) + 1];
           newTokens.push(text.length, metadata);
           originalEndOffset = nextInsertToken.offset;
         }
@@ -11852,14 +11852,14 @@ var $HE = class _$HE {
         break;
       }
     }
-    return new _$HE(new Uint32Array(newTokens), text, this.languageIdCodec);
+    return new _LineTokens(new Uint32Array(newTokens), text, this.languageIdCodec);
   }
   getTokensInRange(range) {
-    const builder = new $LE();
+    const builder = new TokenArrayBuilder();
     const startTokenIndex = this.findTokenIndexAtOffset(range.start);
     const endTokenIndex = this.findTokenIndexAtOffset(range.endExclusive);
     for (let tokenIndex = startTokenIndex; tokenIndex <= endTokenIndex; tokenIndex++) {
-      const tokenRange = new $PD(this.getStartOffset(tokenIndex), this.getEndOffset(tokenIndex));
+      const tokenRange = new OffsetRange(this.getStartOffset(tokenIndex), this.getEndOffset(tokenIndex));
       const length = tokenRange.intersectionLength(range);
       if (length > 0) {
         builder.add(length, this.getMetadata(tokenIndex));
@@ -11870,7 +11870,7 @@ var $HE = class _$HE {
   getTokenText(tokenIndex) {
     const startOffset = this.getStartOffset(tokenIndex);
     const endOffset = this.getEndOffset(tokenIndex);
-    const text = this.c.substring(startOffset, endOffset);
+    const text = this._text.substring(startOffset, endOffset);
     return text;
   }
   forEach(callback) {
@@ -11889,71 +11889,71 @@ var $HE = class _$HE {
 };
 var SliceLineTokens = class _SliceLineTokens {
   constructor(source, startOffset, endOffset, deltaOffset) {
-    this.a = source;
-    this.b = startOffset;
-    this.c = endOffset;
-    this.d = deltaOffset;
-    this.e = source.findTokenIndexAtOffset(startOffset);
+    this._source = source;
+    this._startOffset = startOffset;
+    this._endOffset = endOffset;
+    this._deltaOffset = deltaOffset;
+    this._firstTokenIndex = source.findTokenIndexAtOffset(startOffset);
     this.languageIdCodec = source.languageIdCodec;
-    this.f = 0;
-    for (let i = this.e, len = source.getCount(); i < len; i++) {
+    this._tokensCount = 0;
+    for (let i = this._firstTokenIndex, len = source.getCount(); i < len; i++) {
       const tokenStartOffset = source.getStartOffset(i);
       if (tokenStartOffset >= endOffset) {
         break;
       }
-      this.f++;
+      this._tokensCount++;
     }
   }
   getMetadata(tokenIndex) {
-    return this.a.getMetadata(this.e + tokenIndex);
+    return this._source.getMetadata(this._firstTokenIndex + tokenIndex);
   }
   getLanguageId(tokenIndex) {
-    return this.a.getLanguageId(this.e + tokenIndex);
+    return this._source.getLanguageId(this._firstTokenIndex + tokenIndex);
   }
   getLineContent() {
-    return this.a.getLineContent().substring(this.b, this.c);
+    return this._source.getLineContent().substring(this._startOffset, this._endOffset);
   }
   equals(other) {
     if (other instanceof _SliceLineTokens) {
-      return this.b === other.b && this.c === other.c && this.d === other.d && this.a.slicedEquals(other.a, this.e, this.f);
+      return this._startOffset === other._startOffset && this._endOffset === other._endOffset && this._deltaOffset === other._deltaOffset && this._source.slicedEquals(other._source, this._firstTokenIndex, this._tokensCount);
     }
     return false;
   }
   getCount() {
-    return this.f;
+    return this._tokensCount;
   }
   getStandardTokenType(tokenIndex) {
-    return this.a.getStandardTokenType(this.e + tokenIndex);
+    return this._source.getStandardTokenType(this._firstTokenIndex + tokenIndex);
   }
   getForeground(tokenIndex) {
-    return this.a.getForeground(this.e + tokenIndex);
+    return this._source.getForeground(this._firstTokenIndex + tokenIndex);
   }
   getEndOffset(tokenIndex) {
-    const tokenEndOffset = this.a.getEndOffset(this.e + tokenIndex);
-    return Math.min(this.c, tokenEndOffset) - this.b + this.d;
+    const tokenEndOffset = this._source.getEndOffset(this._firstTokenIndex + tokenIndex);
+    return Math.min(this._endOffset, tokenEndOffset) - this._startOffset + this._deltaOffset;
   }
   getClassName(tokenIndex) {
-    return this.a.getClassName(this.e + tokenIndex);
+    return this._source.getClassName(this._firstTokenIndex + tokenIndex);
   }
   getInlineStyle(tokenIndex, colorMap) {
-    return this.a.getInlineStyle(this.e + tokenIndex, colorMap);
+    return this._source.getInlineStyle(this._firstTokenIndex + tokenIndex, colorMap);
   }
   getPresentation(tokenIndex) {
-    return this.a.getPresentation(this.e + tokenIndex);
+    return this._source.getPresentation(this._firstTokenIndex + tokenIndex);
   }
   findTokenIndexAtOffset(offset) {
-    return this.a.findTokenIndexAtOffset(offset + this.b - this.d) - this.e;
+    return this._source.findTokenIndexAtOffset(offset + this._startOffset - this._deltaOffset) - this._firstTokenIndex;
   }
   getTokenText(tokenIndex) {
-    const adjustedTokenIndex = this.e + tokenIndex;
-    const tokenStartOffset = this.a.getStartOffset(adjustedTokenIndex);
-    const tokenEndOffset = this.a.getEndOffset(adjustedTokenIndex);
-    let text = this.a.getTokenText(adjustedTokenIndex);
-    if (tokenStartOffset < this.b) {
-      text = text.substring(this.b - tokenStartOffset);
+    const adjustedTokenIndex = this._firstTokenIndex + tokenIndex;
+    const tokenStartOffset = this._source.getStartOffset(adjustedTokenIndex);
+    const tokenEndOffset = this._source.getEndOffset(adjustedTokenIndex);
+    let text = this._source.getTokenText(adjustedTokenIndex);
+    if (tokenStartOffset < this._startOffset) {
+      text = text.substring(this._startOffset - tokenStartOffset);
     }
-    if (tokenEndOffset > this.c) {
-      text = text.substring(0, text.length - (tokenEndOffset - this.c));
+    if (tokenEndOffset > this._endOffset) {
+      text = text.substring(0, text.length - (tokenEndOffset - this._endOffset));
     }
     return text;
   }
@@ -11963,27 +11963,27 @@ var SliceLineTokens = class _SliceLineTokens {
     }
   }
 };
-var $JE = class _$JE {
+var TokenArray = class _TokenArray {
   static fromLineTokens(lineTokens) {
     const tokenInfo = [];
     for (let i = 0; i < lineTokens.getCount(); i++) {
-      tokenInfo.push(new $KE(lineTokens.getEndOffset(i) - lineTokens.getStartOffset(i), lineTokens.getMetadata(i)));
+      tokenInfo.push(new TokenInfo(lineTokens.getEndOffset(i) - lineTokens.getStartOffset(i), lineTokens.getMetadata(i)));
     }
-    return _$JE.create(tokenInfo);
+    return _TokenArray.create(tokenInfo);
   }
   static create(tokenInfo) {
-    return new _$JE(tokenInfo);
+    return new _TokenArray(tokenInfo);
   }
-  constructor(a) {
-    this.a = a;
+  constructor(_tokenInfo) {
+    this._tokenInfo = _tokenInfo;
   }
   toLineTokens(lineContent, decoder) {
-    return $HE.createFromTextAndMetadata(this.map((r, t) => ({ text: r.substring(lineContent), metadata: t.metadata })), decoder);
+    return LineTokens.createFromTextAndMetadata(this.map((r, t) => ({ text: r.substring(lineContent), metadata: t.metadata })), decoder);
   }
   forEach(cb) {
     let lengthSum = 0;
-    for (const tokenInfo of this.a) {
-      const range = new $PD(lengthSum, lengthSum + tokenInfo.length);
+    for (const tokenInfo of this._tokenInfo) {
+      const range = new OffsetRange(lengthSum, lengthSum + tokenInfo.length);
       cb(range, tokenInfo);
       lengthSum += tokenInfo.length;
     }
@@ -11991,8 +11991,8 @@ var $JE = class _$JE {
   map(cb) {
     const result = [];
     let lengthSum = 0;
-    for (const tokenInfo of this.a) {
-      const range = new $PD(lengthSum, lengthSum + tokenInfo.length);
+    for (const tokenInfo of this._tokenInfo) {
+      const range = new OffsetRange(lengthSum, lengthSum + tokenInfo.length);
       result.push(cb(range, tokenInfo));
       lengthSum += tokenInfo.length;
     }
@@ -12001,7 +12001,7 @@ var $JE = class _$JE {
   slice(range) {
     const result = [];
     let lengthSum = 0;
-    for (const tokenInfo of this.a) {
+    for (const tokenInfo of this._tokenInfo) {
       const tokenStart = lengthSum;
       const tokenEndEx = tokenStart + tokenInfo.length;
       if (tokenEndEx > range.start) {
@@ -12010,62 +12010,62 @@ var $JE = class _$JE {
         }
         const deltaBefore = Math.max(0, range.start - tokenStart);
         const deltaAfter = Math.max(0, tokenEndEx - range.endExclusive);
-        result.push(new $KE(tokenInfo.length - deltaBefore - deltaAfter, tokenInfo.metadata));
+        result.push(new TokenInfo(tokenInfo.length - deltaBefore - deltaAfter, tokenInfo.metadata));
       }
       lengthSum += tokenInfo.length;
     }
-    return _$JE.create(result);
+    return _TokenArray.create(result);
   }
   append(other) {
-    const result = this.a.concat(other.a);
-    return _$JE.create(result);
+    const result = this._tokenInfo.concat(other._tokenInfo);
+    return _TokenArray.create(result);
   }
 };
-var $KE = class {
+var TokenInfo = class {
   constructor(length, metadata) {
     this.length = length;
     this.metadata = metadata;
   }
 };
-var $LE = class {
+var TokenArrayBuilder = class {
   constructor() {
-    this.a = [];
+    this._tokens = [];
   }
   add(length, metadata) {
-    this.a.push(new $KE(length, metadata));
+    this._tokens.push(new TokenInfo(length, metadata));
   }
   build() {
-    return $JE.create(this.a);
+    return TokenArray.create(this._tokens);
   }
 };
 
 // out-build/vs/editor/common/tokens/contiguousTokensEditing.js
-var $ME = new Uint32Array(0).buffer;
-var $NE = class _$NE {
+var EMPTY_LINE_TOKENS = new Uint32Array(0).buffer;
+var ContiguousTokensEditing = class _ContiguousTokensEditing {
   static deleteBeginning(lineTokens, toChIndex) {
-    if (lineTokens === null || lineTokens === $ME) {
+    if (lineTokens === null || lineTokens === EMPTY_LINE_TOKENS) {
       return lineTokens;
     }
-    return _$NE.delete(lineTokens, 0, toChIndex);
+    return _ContiguousTokensEditing.delete(lineTokens, 0, toChIndex);
   }
   static deleteEnding(lineTokens, fromChIndex) {
-    if (lineTokens === null || lineTokens === $ME) {
+    if (lineTokens === null || lineTokens === EMPTY_LINE_TOKENS) {
       return lineTokens;
     }
-    const tokens = $OE(lineTokens);
+    const tokens = toUint32Array(lineTokens);
     const lineTextLength = tokens[tokens.length - 2];
-    return _$NE.delete(lineTokens, fromChIndex, lineTextLength);
+    return _ContiguousTokensEditing.delete(lineTokens, fromChIndex, lineTextLength);
   }
   static delete(lineTokens, fromChIndex, toChIndex) {
-    if (lineTokens === null || lineTokens === $ME || fromChIndex === toChIndex) {
+    if (lineTokens === null || lineTokens === EMPTY_LINE_TOKENS || fromChIndex === toChIndex) {
       return lineTokens;
     }
-    const tokens = $OE(lineTokens);
+    const tokens = toUint32Array(lineTokens);
     const tokensCount = tokens.length >>> 1;
     if (fromChIndex === 0 && tokens[tokens.length - 2] === toChIndex) {
-      return $ME;
+      return EMPTY_LINE_TOKENS;
     }
-    const fromTokenIndex = $HE.findIndexInTokensArray(tokens, fromChIndex);
+    const fromTokenIndex = LineTokens.findIndexInTokensArray(tokens, fromChIndex);
     const fromTokenStartOffset = fromTokenIndex > 0 ? tokens[fromTokenIndex - 1 << 1] : 0;
     const fromTokenEndOffset = tokens[fromTokenIndex << 1];
     if (toChIndex < fromTokenEndOffset) {
@@ -12102,10 +12102,10 @@ var $NE = class _$NE {
     return tmp.buffer;
   }
   static append(lineTokens, _otherTokens) {
-    if (_otherTokens === $ME) {
+    if (_otherTokens === EMPTY_LINE_TOKENS) {
       return lineTokens;
     }
-    if (lineTokens === $ME) {
+    if (lineTokens === EMPTY_LINE_TOKENS) {
       return _otherTokens;
     }
     if (lineTokens === null) {
@@ -12114,8 +12114,8 @@ var $NE = class _$NE {
     if (_otherTokens === null) {
       return null;
     }
-    const myTokens = $OE(lineTokens);
-    const otherTokens = $OE(_otherTokens);
+    const myTokens = toUint32Array(lineTokens);
+    const otherTokens = toUint32Array(_otherTokens);
     const otherTokensCount = otherTokens.length >>> 1;
     const result = new Uint32Array(myTokens.length + otherTokens.length);
     result.set(myTokens, 0);
@@ -12128,12 +12128,12 @@ var $NE = class _$NE {
     return result.buffer;
   }
   static insert(lineTokens, chIndex, textLength) {
-    if (lineTokens === null || lineTokens === $ME) {
+    if (lineTokens === null || lineTokens === EMPTY_LINE_TOKENS) {
       return lineTokens;
     }
-    const tokens = $OE(lineTokens);
+    const tokens = toUint32Array(lineTokens);
     const tokensCount = tokens.length >>> 1;
-    let fromTokenIndex = $HE.findIndexInTokensArray(tokens, chIndex);
+    let fromTokenIndex = LineTokens.findIndexInTokensArray(tokens, chIndex);
     if (fromTokenIndex > 0) {
       const fromTokenStartOffset = tokens[fromTokenIndex - 1 << 1];
       if (fromTokenStartOffset === chIndex) {
@@ -12146,7 +12146,7 @@ var $NE = class _$NE {
     return lineTokens;
   }
 };
-function $OE(arr) {
+function toUint32Array(arr) {
   if (arr instanceof Uint32Array) {
     return arr;
   } else {
@@ -12155,57 +12155,57 @@ function $OE(arr) {
 }
 
 // out-build/vs/editor/common/tokens/contiguousMultilineTokens.js
-var $PE = class _$PE {
+var ContiguousMultilineTokens = class _ContiguousMultilineTokens {
   static deserialize(buff, offset, result) {
     const view32 = new Uint32Array(buff.buffer);
-    const startLineNumber = $6i(buff, offset);
+    const startLineNumber = readUInt32BE(buff, offset);
     offset += 4;
-    const count = $6i(buff, offset);
+    const count = readUInt32BE(buff, offset);
     offset += 4;
     const tokens = [];
     for (let i = 0; i < count; i++) {
-      const byteCount = $6i(buff, offset);
+      const byteCount = readUInt32BE(buff, offset);
       offset += 4;
       tokens.push(view32.subarray(offset / 4, offset / 4 + byteCount / 4));
       offset += byteCount;
     }
-    result.push(new _$PE(startLineNumber, tokens));
+    result.push(new _ContiguousMultilineTokens(startLineNumber, tokens));
     return offset;
   }
   /**
    * (Inclusive) start line number for these tokens.
    */
   get startLineNumber() {
-    return this.a;
+    return this._startLineNumber;
   }
   /**
    * (Inclusive) end line number for these tokens.
    */
   get endLineNumber() {
-    return this.a + this.b.length - 1;
+    return this._startLineNumber + this._tokens.length - 1;
   }
   constructor(startLineNumber, tokens) {
-    this.a = startLineNumber;
-    this.b = tokens;
+    this._startLineNumber = startLineNumber;
+    this._tokens = tokens;
   }
   getLineRange() {
-    return new $RD(this.a, this.a + this.b.length);
+    return new LineRange(this._startLineNumber, this._startLineNumber + this._tokens.length);
   }
   /**
-   * @see {@link b}
+   * @see {@link _tokens}
    */
   getLineTokens(lineNumber) {
-    return this.b[lineNumber - this.a];
+    return this._tokens[lineNumber - this._startLineNumber];
   }
   appendLineTokens(lineTokens) {
-    this.b.push(lineTokens);
+    this._tokens.push(lineTokens);
   }
   serializeSize() {
     let result = 0;
     result += 4;
     result += 4;
-    for (let i = 0; i < this.b.length; i++) {
-      const lineTokens = this.b[i];
+    for (let i = 0; i < this._tokens.length; i++) {
+      const lineTokens = this._tokens[i];
       if (!(lineTokens instanceof Uint32Array)) {
         throw new Error(`Not supported!`);
       }
@@ -12215,16 +12215,16 @@ var $PE = class _$PE {
     return result;
   }
   serialize(destination, offset) {
-    $7i(destination, this.a, offset);
+    writeUInt32BE(destination, this._startLineNumber, offset);
     offset += 4;
-    $7i(destination, this.b.length, offset);
+    writeUInt32BE(destination, this._tokens.length, offset);
     offset += 4;
-    for (let i = 0; i < this.b.length; i++) {
-      const lineTokens = this.b[i];
+    for (let i = 0; i < this._tokens.length; i++) {
+      const lineTokens = this._tokens[i];
       if (!(lineTokens instanceof Uint32Array)) {
         throw new Error(`Not supported!`);
       }
-      $7i(destination, lineTokens.byteLength, offset);
+      writeUInt32BE(destination, lineTokens.byteLength, offset);
       offset += 4;
       destination.set(new Uint8Array(lineTokens.buffer), offset);
       offset += lineTokens.byteLength;
@@ -12232,71 +12232,71 @@ var $PE = class _$PE {
     return offset;
   }
   applyEdit(range, text) {
-    const [eolCount, firstLineLength] = $GE(text);
-    this.c(range);
-    this.d(new $GD(range.startLineNumber, range.startColumn), eolCount, firstLineLength);
+    const [eolCount, firstLineLength] = countEOL(text);
+    this._acceptDeleteRange(range);
+    this._acceptInsertText(new Position(range.startLineNumber, range.startColumn), eolCount, firstLineLength);
   }
-  c(range) {
+  _acceptDeleteRange(range) {
     if (range.startLineNumber === range.endLineNumber && range.startColumn === range.endColumn) {
       return;
     }
-    const firstLineIndex = range.startLineNumber - this.a;
-    const lastLineIndex = range.endLineNumber - this.a;
+    const firstLineIndex = range.startLineNumber - this._startLineNumber;
+    const lastLineIndex = range.endLineNumber - this._startLineNumber;
     if (lastLineIndex < 0) {
       const deletedLinesCount = lastLineIndex - firstLineIndex;
-      this.a -= deletedLinesCount;
+      this._startLineNumber -= deletedLinesCount;
       return;
     }
-    if (firstLineIndex >= this.b.length) {
+    if (firstLineIndex >= this._tokens.length) {
       return;
     }
-    if (firstLineIndex < 0 && lastLineIndex >= this.b.length) {
-      this.a = 0;
-      this.b = [];
+    if (firstLineIndex < 0 && lastLineIndex >= this._tokens.length) {
+      this._startLineNumber = 0;
+      this._tokens = [];
       return;
     }
     if (firstLineIndex === lastLineIndex) {
-      this.b[firstLineIndex] = $NE.delete(this.b[firstLineIndex], range.startColumn - 1, range.endColumn - 1);
+      this._tokens[firstLineIndex] = ContiguousTokensEditing.delete(this._tokens[firstLineIndex], range.startColumn - 1, range.endColumn - 1);
       return;
     }
     if (firstLineIndex >= 0) {
-      this.b[firstLineIndex] = $NE.deleteEnding(this.b[firstLineIndex], range.startColumn - 1);
-      if (lastLineIndex < this.b.length) {
-        const lastLineTokens = $NE.deleteBeginning(this.b[lastLineIndex], range.endColumn - 1);
-        this.b[firstLineIndex] = $NE.append(this.b[firstLineIndex], lastLineTokens);
-        this.b.splice(firstLineIndex + 1, lastLineIndex - firstLineIndex);
+      this._tokens[firstLineIndex] = ContiguousTokensEditing.deleteEnding(this._tokens[firstLineIndex], range.startColumn - 1);
+      if (lastLineIndex < this._tokens.length) {
+        const lastLineTokens = ContiguousTokensEditing.deleteBeginning(this._tokens[lastLineIndex], range.endColumn - 1);
+        this._tokens[firstLineIndex] = ContiguousTokensEditing.append(this._tokens[firstLineIndex], lastLineTokens);
+        this._tokens.splice(firstLineIndex + 1, lastLineIndex - firstLineIndex);
       } else {
-        this.b[firstLineIndex] = $NE.append(this.b[firstLineIndex], null);
-        this.b = this.b.slice(0, firstLineIndex + 1);
+        this._tokens[firstLineIndex] = ContiguousTokensEditing.append(this._tokens[firstLineIndex], null);
+        this._tokens = this._tokens.slice(0, firstLineIndex + 1);
       }
     } else {
       const deletedBefore = -firstLineIndex;
-      this.a -= deletedBefore;
-      this.b[lastLineIndex] = $NE.deleteBeginning(this.b[lastLineIndex], range.endColumn - 1);
-      this.b = this.b.slice(lastLineIndex);
+      this._startLineNumber -= deletedBefore;
+      this._tokens[lastLineIndex] = ContiguousTokensEditing.deleteBeginning(this._tokens[lastLineIndex], range.endColumn - 1);
+      this._tokens = this._tokens.slice(lastLineIndex);
     }
   }
-  d(position, eolCount, firstLineLength) {
+  _acceptInsertText(position, eolCount, firstLineLength) {
     if (eolCount === 0 && firstLineLength === 0) {
       return;
     }
-    const lineIndex = position.lineNumber - this.a;
+    const lineIndex = position.lineNumber - this._startLineNumber;
     if (lineIndex < 0) {
-      this.a += eolCount;
+      this._startLineNumber += eolCount;
       return;
     }
-    if (lineIndex >= this.b.length) {
+    if (lineIndex >= this._tokens.length) {
       return;
     }
     if (eolCount === 0) {
-      this.b[lineIndex] = $NE.insert(this.b[lineIndex], position.column - 1, firstLineLength);
+      this._tokens[lineIndex] = ContiguousTokensEditing.insert(this._tokens[lineIndex], position.column - 1, firstLineLength);
       return;
     }
-    this.b[lineIndex] = $NE.deleteEnding(this.b[lineIndex], position.column - 1);
-    this.b[lineIndex] = $NE.insert(this.b[lineIndex], position.column - 1, firstLineLength);
-    this.e(position.lineNumber, eolCount);
+    this._tokens[lineIndex] = ContiguousTokensEditing.deleteEnding(this._tokens[lineIndex], position.column - 1);
+    this._tokens[lineIndex] = ContiguousTokensEditing.insert(this._tokens[lineIndex], position.column - 1, firstLineLength);
+    this._insertLines(position.lineNumber, eolCount);
   }
-  e(insertIndex, insertCount) {
+  _insertLines(insertIndex, insertCount) {
     if (insertCount === 0) {
       return;
     }
@@ -12304,58 +12304,58 @@ var $PE = class _$PE {
     for (let i = 0; i < insertCount; i++) {
       lineTokens[i] = null;
     }
-    this.b = $lc(this.b, insertIndex, lineTokens);
+    this._tokens = arrayInsert(this._tokens, insertIndex, lineTokens);
   }
 };
 
 // out-build/vs/editor/common/tokens/contiguousMultilineTokensBuilder.js
-var $RJ = class {
+var ContiguousMultilineTokensBuilder = class {
   static deserialize(buff) {
     let offset = 0;
-    const count = $6i(buff, offset);
+    const count = readUInt32BE(buff, offset);
     offset += 4;
     const result = [];
     for (let i = 0; i < count; i++) {
-      offset = $PE.deserialize(buff, offset, result);
+      offset = ContiguousMultilineTokens.deserialize(buff, offset, result);
     }
     return result;
   }
   constructor() {
-    this.a = [];
+    this._tokens = [];
   }
   add(lineNumber, lineTokens) {
-    if (this.a.length > 0) {
-      const last = this.a[this.a.length - 1];
+    if (this._tokens.length > 0) {
+      const last = this._tokens[this._tokens.length - 1];
       if (last.endLineNumber + 1 === lineNumber) {
         last.appendLineTokens(lineTokens);
         return;
       }
     }
-    this.a.push(new $PE(lineNumber, [lineTokens]));
+    this._tokens.push(new ContiguousMultilineTokens(lineNumber, [lineTokens]));
   }
   finalize() {
-    return this.a;
+    return this._tokens;
   }
   serialize() {
-    const size = this.b();
+    const size = this._serializeSize();
     const result = new Uint8Array(size);
-    this.c(result);
+    this._serialize(result);
     return result;
   }
-  b() {
+  _serializeSize() {
     let result = 0;
     result += 4;
-    for (let i = 0; i < this.a.length; i++) {
-      result += this.a[i].serializeSize();
+    for (let i = 0; i < this._tokens.length; i++) {
+      result += this._tokens[i].serializeSize();
     }
     return result;
   }
-  c(destination) {
+  _serialize(destination) {
     let offset = 0;
-    $7i(destination, this.a.length, offset);
+    writeUInt32BE(destination, this._tokens.length, offset);
     offset += 4;
-    for (let i = 0; i < this.a.length; i++) {
-      offset = this.a[i].serialize(destination, offset);
+    for (let i = 0; i < this._tokens.length; i++) {
+      offset = this._tokens[i].serialize(destination, offset);
     }
   }
 };
@@ -12365,65 +12365,65 @@ var Constants2;
 (function(Constants3) {
   Constants3[Constants3["CHEAP_TOKENIZATION_LENGTH_LIMIT"] = 2048] = "CHEAP_TOKENIZATION_LENGTH_LIMIT";
 })(Constants2 || (Constants2 = {}));
-var $SJ = class {
+var TokenizerWithStateStore = class {
   constructor(lineCount, tokenizationSupport) {
     this.tokenizationSupport = tokenizationSupport;
-    this.a = this.tokenizationSupport.getInitialState();
-    this.store = new $VJ(lineCount);
+    this.initialState = this.tokenizationSupport.getInitialState();
+    this.store = new TrackingTokenizationStateStore(lineCount);
   }
   getStartState(lineNumber) {
-    return this.store.getStartState(lineNumber, this.a);
+    return this.store.getStartState(lineNumber, this.initialState);
   }
   getFirstInvalidLine() {
-    return this.store.getFirstInvalidLine(this.a);
+    return this.store.getFirstInvalidLine(this.initialState);
   }
 };
-var $VJ = class {
-  constructor(d) {
-    this.d = d;
-    this.a = new $WJ();
-    this.b = new $XJ();
-    this.b.addRange(new $PD(1, d + 1));
+var TrackingTokenizationStateStore = class {
+  constructor(lineCount) {
+    this.lineCount = lineCount;
+    this._tokenizationStateStore = new TokenizationStateStore();
+    this._invalidEndStatesLineNumbers = new RangePriorityQueueImpl();
+    this._invalidEndStatesLineNumbers.addRange(new OffsetRange(1, lineCount + 1));
   }
   getEndState(lineNumber) {
-    return this.a.getEndState(lineNumber);
+    return this._tokenizationStateStore.getEndState(lineNumber);
   }
   /**
    * @returns if the end state has changed.
    */
   setEndState(lineNumber, state) {
     if (!state) {
-      throw new $Eb("Cannot set null/undefined state");
+      throw new BugIndicatingError("Cannot set null/undefined state");
     }
-    this.b.delete(lineNumber);
-    const r = this.a.setEndState(lineNumber, state);
-    if (r && lineNumber < this.d) {
-      this.b.addRange(new $PD(lineNumber + 1, lineNumber + 2));
+    this._invalidEndStatesLineNumbers.delete(lineNumber);
+    const r = this._tokenizationStateStore.setEndState(lineNumber, state);
+    if (r && lineNumber < this.lineCount) {
+      this._invalidEndStatesLineNumbers.addRange(new OffsetRange(lineNumber + 1, lineNumber + 2));
     }
     return r;
   }
   acceptChange(range, newLineCount) {
-    this.d += newLineCount - range.length;
-    this.a.acceptChange(range, newLineCount);
-    this.b.addRangeAndResize(new $PD(range.startLineNumber, range.endLineNumberExclusive), newLineCount);
+    this.lineCount += newLineCount - range.length;
+    this._tokenizationStateStore.acceptChange(range, newLineCount);
+    this._invalidEndStatesLineNumbers.addRangeAndResize(new OffsetRange(range.startLineNumber, range.endLineNumberExclusive), newLineCount);
   }
   acceptChanges(changes) {
     for (const c of changes) {
-      const [eolCount] = $GE(c.text);
-      this.acceptChange(new $RD(c.range.startLineNumber, c.range.endLineNumber + 1), eolCount + 1);
+      const [eolCount] = countEOL(c.text);
+      this.acceptChange(new LineRange(c.range.startLineNumber, c.range.endLineNumber + 1), eolCount + 1);
     }
   }
   invalidateEndStateRange(range) {
-    this.b.addRange(new $PD(range.startLineNumber, range.endLineNumberExclusive));
+    this._invalidEndStatesLineNumbers.addRange(new OffsetRange(range.startLineNumber, range.endLineNumberExclusive));
   }
   getFirstInvalidEndStateLineNumber() {
-    return this.b.min;
+    return this._invalidEndStatesLineNumbers.min;
   }
   getFirstInvalidEndStateLineNumberOrMax() {
     return this.getFirstInvalidEndStateLineNumber() || Number.MAX_SAFE_INTEGER;
   }
   allStatesValid() {
-    return this.b.min === null;
+    return this._invalidEndStatesLineNumbers.min === null;
   }
   getStartState(lineNumber, initialState) {
     if (lineNumber === 1) {
@@ -12438,24 +12438,24 @@ var $VJ = class {
     }
     const startState = this.getStartState(lineNumber, initialState);
     if (!startState) {
-      throw new $Eb("Start state must be defined");
+      throw new BugIndicatingError("Start state must be defined");
     }
     return { lineNumber, startState };
   }
 };
-var $WJ = class {
+var TokenizationStateStore = class {
   constructor() {
-    this.a = new $QJ(null);
+    this._lineEndStates = new FixedArray(null);
   }
   getEndState(lineNumber) {
-    return this.a.get(lineNumber);
+    return this._lineEndStates.get(lineNumber);
   }
   setEndState(lineNumber, state) {
-    const oldState = this.a.get(lineNumber);
+    const oldState = this._lineEndStates.get(lineNumber);
     if (oldState && oldState.equals(state)) {
       return false;
     }
-    this.a.set(lineNumber, state);
+    this._lineEndStates.set(lineNumber, state);
     return true;
   }
   acceptChange(range, newLineCount) {
@@ -12464,152 +12464,152 @@ var $WJ = class {
       length--;
       newLineCount--;
     }
-    this.a.replace(range.startLineNumber, length, newLineCount);
+    this._lineEndStates.replace(range.startLineNumber, length, newLineCount);
   }
   acceptChanges(changes) {
     for (const c of changes) {
-      const [eolCount] = $GE(c.text);
-      this.acceptChange(new $RD(c.range.startLineNumber, c.range.endLineNumber + 1), eolCount + 1);
+      const [eolCount] = countEOL(c.text);
+      this.acceptChange(new LineRange(c.range.startLineNumber, c.range.endLineNumber + 1), eolCount + 1);
     }
   }
 };
-var $XJ = class {
+var RangePriorityQueueImpl = class {
   constructor() {
-    this.a = [];
+    this._ranges = [];
   }
   getRanges() {
-    return this.a;
+    return this._ranges;
   }
   get min() {
-    if (this.a.length === 0) {
+    if (this._ranges.length === 0) {
       return null;
     }
-    return this.a[0].start;
+    return this._ranges[0].start;
   }
   removeMin() {
-    if (this.a.length === 0) {
+    if (this._ranges.length === 0) {
       return null;
     }
-    const range = this.a[0];
+    const range = this._ranges[0];
     if (range.start + 1 === range.endExclusive) {
-      this.a.shift();
+      this._ranges.shift();
     } else {
-      this.a[0] = new $PD(range.start + 1, range.endExclusive);
+      this._ranges[0] = new OffsetRange(range.start + 1, range.endExclusive);
     }
     return range.start;
   }
   delete(value) {
-    const idx = this.a.findIndex((r) => r.contains(value));
+    const idx = this._ranges.findIndex((r) => r.contains(value));
     if (idx !== -1) {
-      const range = this.a[idx];
+      const range = this._ranges[idx];
       if (range.start === value) {
         if (range.endExclusive === value + 1) {
-          this.a.splice(idx, 1);
+          this._ranges.splice(idx, 1);
         } else {
-          this.a[idx] = new $PD(value + 1, range.endExclusive);
+          this._ranges[idx] = new OffsetRange(value + 1, range.endExclusive);
         }
       } else {
         if (range.endExclusive === value + 1) {
-          this.a[idx] = new $PD(range.start, value);
+          this._ranges[idx] = new OffsetRange(range.start, value);
         } else {
-          this.a.splice(idx, 1, new $PD(range.start, value), new $PD(value + 1, range.endExclusive));
+          this._ranges.splice(idx, 1, new OffsetRange(range.start, value), new OffsetRange(value + 1, range.endExclusive));
         }
       }
     }
   }
   addRange(range) {
-    $PD.addRange(range, this.a);
+    OffsetRange.addRange(range, this._ranges);
   }
   addRangeAndResize(range, newLength) {
     let idxFirstMightBeIntersecting = 0;
-    while (!(idxFirstMightBeIntersecting >= this.a.length || range.start <= this.a[idxFirstMightBeIntersecting].endExclusive)) {
+    while (!(idxFirstMightBeIntersecting >= this._ranges.length || range.start <= this._ranges[idxFirstMightBeIntersecting].endExclusive)) {
       idxFirstMightBeIntersecting++;
     }
     let idxFirstIsAfter = idxFirstMightBeIntersecting;
-    while (!(idxFirstIsAfter >= this.a.length || range.endExclusive < this.a[idxFirstIsAfter].start)) {
+    while (!(idxFirstIsAfter >= this._ranges.length || range.endExclusive < this._ranges[idxFirstIsAfter].start)) {
       idxFirstIsAfter++;
     }
     const delta = newLength - range.length;
-    for (let i = idxFirstIsAfter; i < this.a.length; i++) {
-      this.a[i] = this.a[i].delta(delta);
+    for (let i = idxFirstIsAfter; i < this._ranges.length; i++) {
+      this._ranges[i] = this._ranges[i].delta(delta);
     }
     if (idxFirstMightBeIntersecting === idxFirstIsAfter) {
-      const newRange = new $PD(range.start, range.start + newLength);
+      const newRange = new OffsetRange(range.start, range.start + newLength);
       if (!newRange.isEmpty) {
-        this.a.splice(idxFirstMightBeIntersecting, 0, newRange);
+        this._ranges.splice(idxFirstMightBeIntersecting, 0, newRange);
       }
     } else {
-      const start = Math.min(range.start, this.a[idxFirstMightBeIntersecting].start);
-      const endEx = Math.max(range.endExclusive, this.a[idxFirstIsAfter - 1].endExclusive);
-      const newRange = new $PD(start, endEx + delta);
+      const start = Math.min(range.start, this._ranges[idxFirstMightBeIntersecting].start);
+      const endEx = Math.max(range.endExclusive, this._ranges[idxFirstIsAfter - 1].endExclusive);
+      const newRange = new OffsetRange(start, endEx + delta);
       if (!newRange.isEmpty) {
-        this.a.splice(idxFirstMightBeIntersecting, idxFirstIsAfter - idxFirstMightBeIntersecting, newRange);
+        this._ranges.splice(idxFirstMightBeIntersecting, idxFirstIsAfter - idxFirstMightBeIntersecting, newRange);
       } else {
-        this.a.splice(idxFirstMightBeIntersecting, idxFirstIsAfter - idxFirstMightBeIntersecting);
+        this._ranges.splice(idxFirstMightBeIntersecting, idxFirstIsAfter - idxFirstMightBeIntersecting);
       }
     }
   }
   toString() {
-    return this.a.map((r) => r.toString()).join(" + ");
+    return this._ranges.map((r) => r.toString()).join(" + ");
   }
 };
 
 // out-build/vs/workbench/services/textMate/browser/tokenizationSupport/textMateTokenizationSupport.js
-var $y$b = class extends $Fd {
+var TextMateTokenizationSupport = class extends Disposable {
   get onDidEncounterLanguage() {
-    return this.b.event;
+    return this._onDidEncounterLanguage.event;
   }
-  constructor(c, f, g, h, j, m, n) {
+  constructor(_grammar, _initialState, _containsEmbeddedLanguages, _createBackgroundTokenizer, _backgroundTokenizerShouldOnlyVerifyTokens, _reportTokenizationTime, _reportSlowTokenization) {
     super();
-    this.c = c;
-    this.f = f;
-    this.g = g;
-    this.h = h;
-    this.j = j;
-    this.m = m;
-    this.n = n;
-    this.a = [];
-    this.b = this.D(new $qf());
+    this._grammar = _grammar;
+    this._initialState = _initialState;
+    this._containsEmbeddedLanguages = _containsEmbeddedLanguages;
+    this._createBackgroundTokenizer = _createBackgroundTokenizer;
+    this._backgroundTokenizerShouldOnlyVerifyTokens = _backgroundTokenizerShouldOnlyVerifyTokens;
+    this._reportTokenizationTime = _reportTokenizationTime;
+    this._reportSlowTokenization = _reportSlowTokenization;
+    this._seenLanguages = [];
+    this._onDidEncounterLanguage = this._register(new Emitter());
   }
   get backgroundTokenizerShouldOnlyVerifyTokens() {
-    return this.j();
+    return this._backgroundTokenizerShouldOnlyVerifyTokens();
   }
   getInitialState() {
-    return this.f;
+    return this._initialState;
   }
   tokenize(line, hasEOL, state) {
     throw new Error("Not supported!");
   }
   createBackgroundTokenizer(textModel, store) {
-    if (this.h) {
-      return this.h(textModel, store);
+    if (this._createBackgroundTokenizer) {
+      return this._createBackgroundTokenizer(textModel, store);
     }
     return void 0;
   }
   tokenizeEncoded(line, hasEOL, state) {
     const isRandomSample = Math.random() * 1e4 < 1;
-    const shouldMeasure = this.n || isRandomSample;
-    const sw = shouldMeasure ? new $kf(true) : void 0;
-    const textMateResult = this.c.tokenizeLine2(line, state, 500);
+    const shouldMeasure = this._reportSlowTokenization || isRandomSample;
+    const sw = shouldMeasure ? new StopWatch(true) : void 0;
+    const textMateResult = this._grammar.tokenizeLine2(line, state, 500);
     if (shouldMeasure) {
       const timeMS = sw.elapsed();
       if (isRandomSample || timeMS > 32) {
-        this.m(timeMS, line.length, isRandomSample);
+        this._reportTokenizationTime(timeMS, line.length, isRandomSample);
       }
     }
     if (textMateResult.stoppedEarly) {
       console.warn(`Time limit reached when tokenizing line: ${line.substring(0, 100)}`);
-      return new $1E(textMateResult.tokens, state);
+      return new EncodedTokenizationResult(textMateResult.tokens, state);
     }
-    if (this.g) {
-      const seenLanguages = this.a;
+    if (this._containsEmbeddedLanguages) {
+      const seenLanguages = this._seenLanguages;
       const tokens = textMateResult.tokens;
       for (let i = 0, len = tokens.length >>> 1; i < len; i++) {
         const metadata = tokens[(i << 1) + 1];
-        const languageId = $CE.getLanguageId(metadata);
+        const languageId = TokenMetadata.getLanguageId(metadata);
         if (!seenLanguages[languageId]) {
           seenLanguages[languageId] = true;
-          this.b.fire(languageId);
+          this._onDidEncounterLanguage.fire(languageId);
         }
       }
     }
@@ -12619,38 +12619,38 @@ var $y$b = class extends $Fd {
     } else {
       endState = textMateResult.ruleStack;
     }
-    return new $1E(textMateResult.tokens, endState);
+    return new EncodedTokenizationResult(textMateResult.tokens, endState);
   }
 };
 
 // out-build/vs/workbench/services/textMate/browser/tokenizationSupport/tokenizationSupportWithLineLimit.js
-var $z$b = class extends $Fd {
+var TokenizationSupportWithLineLimit = class extends Disposable {
   get backgroundTokenizerShouldOnlyVerifyTokens() {
-    return this.b.backgroundTokenizerShouldOnlyVerifyTokens;
+    return this._actual.backgroundTokenizerShouldOnlyVerifyTokens;
   }
-  constructor(a, b, disposable, c) {
+  constructor(_encodedLanguageId, _actual, disposable, _maxTokenizationLineLength) {
     super();
-    this.a = a;
-    this.b = b;
-    this.c = c;
-    this.D($ve(this.c));
-    this.D(disposable);
+    this._encodedLanguageId = _encodedLanguageId;
+    this._actual = _actual;
+    this._maxTokenizationLineLength = _maxTokenizationLineLength;
+    this._register(keepObserved(this._maxTokenizationLineLength));
+    this._register(disposable);
   }
   getInitialState() {
-    return this.b.getInitialState();
+    return this._actual.getInitialState();
   }
   tokenize(line, hasEOL, state) {
     throw new Error("Not supported!");
   }
   tokenizeEncoded(line, hasEOL, state) {
-    if (line.length >= this.c.get()) {
-      return $PJ(this.a, state);
+    if (line.length >= this._maxTokenizationLineLength.get()) {
+      return nullTokenizeEncoded(this._encodedLanguageId, state);
     }
-    return this.b.tokenizeEncoded(line, hasEOL, state);
+    return this._actual.tokenizeEncoded(line, hasEOL, state);
   }
   createBackgroundTokenizer(textModel, store) {
-    if (this.b.createBackgroundTokenizer) {
-      return this.b.createBackgroundTokenizer(textModel, store);
+    if (this._actual.createBackgroundTokenizer) {
+      return this._actual.createBackgroundTokenizer(textModel, store);
     } else {
       return void 0;
     }
@@ -12658,88 +12658,88 @@ var $z$b = class extends $Fd {
 };
 
 // out-build/vs/workbench/services/textMate/browser/backgroundTokenization/worker/textMateWorkerTokenizer.js
-var $D$b = class extends $jG {
-  constructor(uri, lines, eol, versionId, s, t, u, maxTokenizationLineLength) {
+var TextMateWorkerTokenizer = class extends MirrorTextModel {
+  constructor(uri, lines, eol, versionId, _host, _languageId, _encodedLanguageId, maxTokenizationLineLength) {
     super(uri, lines, eol, versionId);
-    this.s = s;
-    this.t = t;
-    this.u = u;
-    this.m = null;
-    this.n = false;
-    this.o = $Se(this, -1);
-    this.q = new $bi(() => this.w(), 10);
-    this.o.set(maxTokenizationLineLength, void 0);
-    this.v();
+    this._host = _host;
+    this._languageId = _languageId;
+    this._encodedLanguageId = _encodedLanguageId;
+    this._tokenizerWithStateStore = null;
+    this._isDisposed = false;
+    this._maxTokenizationLineLength = observableValue(this, -1);
+    this._tokenizeDebouncer = new RunOnceScheduler(() => this._tokenize(), 10);
+    this._maxTokenizationLineLength.set(maxTokenizationLineLength, void 0);
+    this._resetTokenization();
   }
   dispose() {
-    this.n = true;
+    this._isDisposed = true;
     super.dispose();
   }
   onLanguageId(languageId, encodedLanguageId) {
-    this.t = languageId;
-    this.u = encodedLanguageId;
-    this.v();
+    this._languageId = languageId;
+    this._encodedLanguageId = encodedLanguageId;
+    this._resetTokenization();
   }
   onEvents(e) {
     super.onEvents(e);
-    this.m?.store.acceptChanges(e.changes);
-    this.q.schedule();
+    this._tokenizerWithStateStore?.store.acceptChanges(e.changes);
+    this._tokenizeDebouncer.schedule();
   }
   acceptMaxTokenizationLineLength(maxTokenizationLineLength) {
-    this.o.set(maxTokenizationLineLength, void 0);
+    this._maxTokenizationLineLength.set(maxTokenizationLineLength, void 0);
   }
   retokenize(startLineNumber, endLineNumberExclusive) {
-    if (this.m) {
-      this.m.store.invalidateEndStateRange(new $RD(startLineNumber, endLineNumberExclusive));
-      this.q.schedule();
+    if (this._tokenizerWithStateStore) {
+      this._tokenizerWithStateStore.store.invalidateEndStateRange(new LineRange(startLineNumber, endLineNumberExclusive));
+      this._tokenizeDebouncer.schedule();
     }
   }
-  async v() {
-    this.m = null;
-    const languageId = this.t;
-    const encodedLanguageId = this.u;
-    const r = await this.s.getOrCreateGrammar(languageId, encodedLanguageId);
-    if (this.n || languageId !== this.t || encodedLanguageId !== this.u || !r) {
+  async _resetTokenization() {
+    this._tokenizerWithStateStore = null;
+    const languageId = this._languageId;
+    const encodedLanguageId = this._encodedLanguageId;
+    const r = await this._host.getOrCreateGrammar(languageId, encodedLanguageId);
+    if (this._isDisposed || languageId !== this._languageId || encodedLanguageId !== this._encodedLanguageId || !r) {
       return;
     }
     if (r.grammar) {
-      const tokenizationSupport = new $z$b(this.u, new $y$b(r.grammar, r.initialState, false, void 0, () => false, (timeMs, lineLength, isRandomSample) => {
-        this.s.reportTokenizationTime(timeMs, languageId, r.sourceExtensionId, lineLength, isRandomSample);
-      }, false), $Fd.None, this.o);
-      this.m = new $SJ(this.b.length, tokenizationSupport);
+      const tokenizationSupport = new TokenizationSupportWithLineLimit(this._encodedLanguageId, new TextMateTokenizationSupport(r.grammar, r.initialState, false, void 0, () => false, (timeMs, lineLength, isRandomSample) => {
+        this._host.reportTokenizationTime(timeMs, languageId, r.sourceExtensionId, lineLength, isRandomSample);
+      }, false), Disposable.None, this._maxTokenizationLineLength);
+      this._tokenizerWithStateStore = new TokenizerWithStateStore(this._lines.length, tokenizationSupport);
     } else {
-      this.m = null;
+      this._tokenizerWithStateStore = null;
     }
-    this.w();
+    this._tokenize();
   }
-  async w() {
-    if (this.n || !this.m) {
+  async _tokenize() {
+    if (this._isDisposed || !this._tokenizerWithStateStore) {
       return;
     }
-    if (!this.p) {
-      const { diffStateStacksRefEq } = await $PK("vscode-textmate", "release/main.js");
-      this.p = diffStateStacksRefEq;
+    if (!this._diffStateStacksRefEqFn) {
+      const { diffStateStacksRefEq } = await importAMDNodeModule("vscode-textmate", "release/main.js");
+      this._diffStateStacksRefEqFn = diffStateStacksRefEq;
     }
     const startTime = (/* @__PURE__ */ new Date()).getTime();
     while (true) {
       let tokenizedLines = 0;
-      const tokenBuilder = new $RJ();
+      const tokenBuilder = new ContiguousMultilineTokensBuilder();
       const stateDeltaBuilder = new StateDeltaBuilder();
       while (true) {
-        const lineToTokenize = this.m.getFirstInvalidLine();
+        const lineToTokenize = this._tokenizerWithStateStore.getFirstInvalidLine();
         if (lineToTokenize === null || tokenizedLines > 200) {
           break;
         }
         tokenizedLines++;
-        const text = this.b[lineToTokenize.lineNumber - 1];
-        const r = this.m.tokenizationSupport.tokenizeEncoded(text, true, lineToTokenize.startState);
-        if (this.m.store.setEndState(lineToTokenize.lineNumber, r.endState)) {
-          const delta = this.p(lineToTokenize.startState, r.endState);
+        const text = this._lines[lineToTokenize.lineNumber - 1];
+        const r = this._tokenizerWithStateStore.tokenizationSupport.tokenizeEncoded(text, true, lineToTokenize.startState);
+        if (this._tokenizerWithStateStore.store.setEndState(lineToTokenize.lineNumber, r.endState)) {
+          const delta = this._diffStateStacksRefEqFn(lineToTokenize.startState, r.endState);
           stateDeltaBuilder.setState(lineToTokenize.lineNumber, delta);
         } else {
           stateDeltaBuilder.setState(lineToTokenize.lineNumber, null);
         }
-        $HE.convertToEndOffset(r.tokens, text.length);
+        LineTokens.convertToEndOffset(r.tokens, text.length);
         tokenBuilder.add(lineToTokenize.lineNumber, r.tokens);
         const deltaMs2 = (/* @__PURE__ */ new Date()).getTime() - startTime;
         if (deltaMs2 > 20) {
@@ -12750,10 +12750,10 @@ var $D$b = class extends $jG {
         break;
       }
       const stateDeltas = stateDeltaBuilder.getStateDeltas();
-      this.s.setTokensAndStates(this.d, tokenBuilder.serialize(), stateDeltas);
+      this._host.setTokensAndStates(this._versionId, tokenBuilder.serialize(), stateDeltas);
       const deltaMs = (/* @__PURE__ */ new Date()).getTime() - startTime;
       if (deltaMs > 20) {
-        $F(() => this.w());
+        setTimeout0(() => this._tokenize());
         return;
       }
     }
@@ -12761,46 +12761,46 @@ var $D$b = class extends $jG {
 };
 var StateDeltaBuilder = class {
   constructor() {
-    this.a = -1;
-    this.b = [];
+    this._lastStartLineNumber = -1;
+    this._stateDeltas = [];
   }
   setState(lineNumber, stackDiff) {
-    if (lineNumber === this.a + 1) {
-      this.b[this.b.length - 1].stateDeltas.push(stackDiff);
+    if (lineNumber === this._lastStartLineNumber + 1) {
+      this._stateDeltas[this._stateDeltas.length - 1].stateDeltas.push(stackDiff);
     } else {
-      this.b.push({ startLineNumber: lineNumber, stateDeltas: [stackDiff] });
+      this._stateDeltas.push({ startLineNumber: lineNumber, stateDeltas: [stackDiff] });
     }
-    this.a = lineNumber;
+    this._lastStartLineNumber = lineNumber;
   }
   getStateDeltas() {
-    return this.b;
+    return this._stateDeltas;
   }
 };
 
 // out-build/vs/workbench/services/textMate/browser/backgroundTokenization/worker/textMateWorkerHost.js
-var $E$b = class _$E$b {
+var TextMateWorkerHost = class _TextMateWorkerHost {
   static {
     this.CHANNEL_NAME = "textMateWorkerHost";
   }
   static getChannel(workerServer) {
-    return workerServer.getChannel(_$E$b.CHANNEL_NAME);
+    return workerServer.getChannel(_TextMateWorkerHost.CHANNEL_NAME);
   }
   static setChannel(workerClient, obj) {
-    workerClient.setChannel(_$E$b.CHANNEL_NAME, obj);
+    workerClient.setChannel(_TextMateWorkerHost.CHANNEL_NAME, obj);
   }
 };
 
 // out-build/vs/workbench/services/textMate/browser/backgroundTokenization/worker/textMateTokenizationWorker.worker.js
-function $F$b(workerServer) {
-  return new $G$b(workerServer);
+function create(workerServer) {
+  return new TextMateTokenizationWorker(workerServer);
 }
-var $G$b = class {
+var TextMateTokenizationWorker = class {
   constructor(workerServer) {
     this._requestHandlerBrand = void 0;
-    this.b = /* @__PURE__ */ new Map();
-    this.c = [];
-    this.d = Promise.resolve(null);
-    this.a = $E$b.getChannel(workerServer);
+    this._models = /* @__PURE__ */ new Map();
+    this._grammarCache = [];
+    this._grammarFactory = Promise.resolve(null);
+    this._host = TextMateWorkerHost.getChannel(workerServer);
   }
   async $init(_createData) {
     const grammarDefinitions = _createData.grammarDefinitions.map((def) => {
@@ -12816,11 +12816,11 @@ var $G$b = class {
         sourceExtensionId: def.sourceExtensionId
       };
     });
-    this.d = this.f(grammarDefinitions, _createData.onigurumaWASMUri);
+    this._grammarFactory = this._loadTMGrammarFactory(grammarDefinitions, _createData.onigurumaWASMUri);
   }
-  async f(grammarDefinitions, onigurumaWASMUri) {
-    const vscodeTextmate = await $PK("vscode-textmate", "release/main.js");
-    const vscodeOniguruma = await $PK("vscode-oniguruma", "release/main.js");
+  async _loadTMGrammarFactory(grammarDefinitions, onigurumaWASMUri) {
+    const vscodeTextmate = await importAMDNodeModule("vscode-textmate", "release/main.js");
+    const vscodeOniguruma = await importAMDNodeModule("vscode-oniguruma", "release/main.js");
     const response = await fetch(onigurumaWASMUri);
     const bytes = await response.arrayBuffer();
     await vscodeOniguruma.loadWASM(bytes);
@@ -12828,58 +12828,58 @@ var $G$b = class {
       createOnigScanner: (sources) => vscodeOniguruma.createOnigScanner(sources),
       createOnigString: (str) => vscodeOniguruma.createOnigString(str)
     });
-    return new $C$b({
+    return new TMGrammarFactory({
       logTrace: (msg) => {
       },
       logError: (msg, err) => console.error(msg, err),
-      readFile: (resource) => this.a.$readFile(resource)
+      readFile: (resource) => this._host.$readFile(resource)
     }, grammarDefinitions, vscodeTextmate, onigLib);
   }
   // These methods are called by the renderer
   $acceptNewModel(data) {
     const uri = URI.revive(data.uri);
     const that = this;
-    this.b.set(data.controllerId, new $D$b(uri, data.lines, data.EOL, data.versionId, {
+    this._models.set(data.controllerId, new TextMateWorkerTokenizer(uri, data.lines, data.EOL, data.versionId, {
       async getOrCreateGrammar(languageId, encodedLanguageId) {
-        const grammarFactory = await that.d;
+        const grammarFactory = await that._grammarFactory;
         if (!grammarFactory) {
           return Promise.resolve(null);
         }
-        if (!that.c[encodedLanguageId]) {
-          that.c[encodedLanguageId] = grammarFactory.createGrammar(languageId, encodedLanguageId);
+        if (!that._grammarCache[encodedLanguageId]) {
+          that._grammarCache[encodedLanguageId] = grammarFactory.createGrammar(languageId, encodedLanguageId);
         }
-        return that.c[encodedLanguageId];
+        return that._grammarCache[encodedLanguageId];
       },
       setTokensAndStates(versionId, tokens, stateDeltas) {
-        that.a.$setTokensAndStates(data.controllerId, versionId, tokens, stateDeltas);
+        that._host.$setTokensAndStates(data.controllerId, versionId, tokens, stateDeltas);
       },
       reportTokenizationTime(timeMs, languageId, sourceExtensionId, lineLength, isRandomSample) {
-        that.a.$reportTokenizationTime(timeMs, languageId, sourceExtensionId, lineLength, isRandomSample);
+        that._host.$reportTokenizationTime(timeMs, languageId, sourceExtensionId, lineLength, isRandomSample);
       }
     }, data.languageId, data.encodedLanguageId, data.maxTokenizationLineLength));
   }
   $acceptModelChanged(controllerId, e) {
-    this.b.get(controllerId).onEvents(e);
+    this._models.get(controllerId).onEvents(e);
   }
   $retokenize(controllerId, startLineNumber, endLineNumberExclusive) {
-    this.b.get(controllerId).retokenize(startLineNumber, endLineNumberExclusive);
+    this._models.get(controllerId).retokenize(startLineNumber, endLineNumberExclusive);
   }
   $acceptModelLanguageChanged(controllerId, newLanguageId, newEncodedLanguageId) {
-    this.b.get(controllerId).onLanguageId(newLanguageId, newEncodedLanguageId);
+    this._models.get(controllerId).onLanguageId(newLanguageId, newEncodedLanguageId);
   }
   $acceptRemovedModel(controllerId) {
-    const model = this.b.get(controllerId);
+    const model = this._models.get(controllerId);
     if (model) {
       model.dispose();
-      this.b.delete(controllerId);
+      this._models.delete(controllerId);
     }
   }
   async $acceptTheme(theme, colorMap) {
-    const grammarFactory = await this.d;
+    const grammarFactory = await this._grammarFactory;
     grammarFactory?.setTheme(theme, colorMap);
   }
   $acceptMaxTokenizationLineLength(controllerId, value) {
-    this.b.get(controllerId).acceptMaxTokenizationLineLength(value);
+    this._models.get(controllerId).acceptMaxTokenizationLineLength(value);
   }
 };
 
@@ -12940,37 +12940,37 @@ var UnsubscribeEventMessage = class {
 };
 var WebWorkerProtocol = class {
   constructor(handler) {
-    this.a = -1;
-    this.g = handler;
-    this.b = 0;
-    this.c = /* @__PURE__ */ Object.create(null);
-    this.d = /* @__PURE__ */ new Map();
-    this.f = /* @__PURE__ */ new Map();
+    this._workerId = -1;
+    this._handler = handler;
+    this._lastSentReq = 0;
+    this._pendingReplies = /* @__PURE__ */ Object.create(null);
+    this._pendingEmitters = /* @__PURE__ */ new Map();
+    this._pendingEvents = /* @__PURE__ */ new Map();
   }
   setWorkerId(workerId) {
-    this.a = workerId;
+    this._workerId = workerId;
   }
   async sendMessage(channel, method, args) {
-    const req = String(++this.b);
-    return new Promise((resolve, reject) => {
-      this.c[req] = {
-        resolve,
+    const req = String(++this._lastSentReq);
+    return new Promise((resolve2, reject) => {
+      this._pendingReplies[req] = {
+        resolve: resolve2,
         reject
       };
-      this.o(new RequestMessage(this.a, req, channel, method, args));
+      this._send(new RequestMessage(this._workerId, req, channel, method, args));
     });
   }
   listen(channel, eventName, arg) {
     let req = null;
-    const emitter = new $qf({
+    const emitter = new Emitter({
       onWillAddFirstListener: () => {
-        req = String(++this.b);
-        this.d.set(req, emitter);
-        this.o(new SubscribeEventMessage(this.a, req, channel, eventName, arg));
+        req = String(++this._lastSentReq);
+        this._pendingEmitters.set(req, emitter);
+        this._send(new SubscribeEventMessage(this._workerId, req, channel, eventName, arg));
       },
       onDidRemoveLastListener: () => {
-        this.d.delete(req);
-        this.o(new UnsubscribeEventMessage(this.a, req));
+        this._pendingEmitters.delete(req);
+        this._send(new UnsubscribeEventMessage(this._workerId, req));
         req = null;
       }
     });
@@ -12980,10 +12980,10 @@ var WebWorkerProtocol = class {
     if (!message || !message.vsWorker) {
       return;
     }
-    if (this.a !== -1 && message.vsWorker !== this.a) {
+    if (this._workerId !== -1 && message.vsWorker !== this._workerId) {
       return;
     }
-    this.h(message);
+    this._handleMessage(message);
   }
   createProxyToRemoteChannel(channel, sendMessageBarrier) {
     const handler = {
@@ -13007,27 +13007,27 @@ var WebWorkerProtocol = class {
     };
     return new Proxy(/* @__PURE__ */ Object.create(null), handler);
   }
-  h(msg) {
+  _handleMessage(msg) {
     switch (msg.type) {
       case 1:
-        return this.j(msg);
+        return this._handleReplyMessage(msg);
       case 0:
-        return this.k(msg);
+        return this._handleRequestMessage(msg);
       case 2:
-        return this.l(msg);
+        return this._handleSubscribeEventMessage(msg);
       case 3:
-        return this.m(msg);
+        return this._handleEventMessage(msg);
       case 4:
-        return this.n(msg);
+        return this._handleUnsubscribeEventMessage(msg);
     }
   }
-  j(replyMessage) {
-    if (!this.c[replyMessage.seq]) {
+  _handleReplyMessage(replyMessage) {
+    if (!this._pendingReplies[replyMessage.seq]) {
       console.warn("Got reply to unknown seq");
       return;
     }
-    const reply = this.c[replyMessage.seq];
-    delete this.c[replyMessage.seq];
+    const reply = this._pendingReplies[replyMessage.seq];
+    delete this._pendingReplies[replyMessage.seq];
     if (replyMessage.err) {
       let err = replyMessage.err;
       if (replyMessage.err.$isError) {
@@ -13042,41 +13042,41 @@ var WebWorkerProtocol = class {
     }
     reply.resolve(replyMessage.res);
   }
-  k(requestMessage) {
+  _handleRequestMessage(requestMessage) {
     const req = requestMessage.req;
-    const result = this.g.handleMessage(requestMessage.channel, requestMessage.method, requestMessage.args);
+    const result = this._handler.handleMessage(requestMessage.channel, requestMessage.method, requestMessage.args);
     result.then((r) => {
-      this.o(new ReplyMessage(this.a, req, r, void 0));
+      this._send(new ReplyMessage(this._workerId, req, r, void 0));
     }, (e) => {
       if (e.detail instanceof Error) {
-        e.detail = $pb(e.detail);
+        e.detail = transformErrorForSerialization(e.detail);
       }
-      this.o(new ReplyMessage(this.a, req, void 0, $pb(e)));
+      this._send(new ReplyMessage(this._workerId, req, void 0, transformErrorForSerialization(e)));
     });
   }
-  l(msg) {
+  _handleSubscribeEventMessage(msg) {
     const req = msg.req;
-    const disposable = this.g.handleEvent(msg.channel, msg.eventName, msg.arg)((event) => {
-      this.o(new EventMessage(this.a, req, event));
+    const disposable = this._handler.handleEvent(msg.channel, msg.eventName, msg.arg)((event) => {
+      this._send(new EventMessage(this._workerId, req, event));
     });
-    this.f.set(req, disposable);
+    this._pendingEvents.set(req, disposable);
   }
-  m(msg) {
-    if (!this.d.has(msg.req)) {
+  _handleEventMessage(msg) {
+    if (!this._pendingEmitters.has(msg.req)) {
       console.warn("Got event for unknown req");
       return;
     }
-    this.d.get(msg.req).fire(msg.event);
+    this._pendingEmitters.get(msg.req).fire(msg.event);
   }
-  n(msg) {
-    if (!this.f.has(msg.req)) {
+  _handleUnsubscribeEventMessage(msg) {
+    if (!this._pendingEvents.has(msg.req)) {
       console.warn("Got unsubscribe for unknown req");
       return;
     }
-    this.f.get(msg.req).dispose();
-    this.f.delete(msg.req);
+    this._pendingEvents.get(msg.req).dispose();
+    this._pendingEvents.delete(msg.req);
   }
-  o(msg) {
+  _send(msg) {
     const transfer = [];
     if (msg.type === 0) {
       for (let i = 0; i < msg.args.length; i++) {
@@ -13090,36 +13090,36 @@ var WebWorkerProtocol = class {
         transfer.push(msg.res);
       }
     }
-    this.g.sendMessage(msg, transfer);
+    this._handler.sendMessage(msg, transfer);
   }
 };
 function propertyIsEvent(name) {
-  return name[0] === "o" && name[1] === "n" && $fg(name.charCodeAt(2));
+  return name[0] === "o" && name[1] === "n" && isUpperAsciiLetter(name.charCodeAt(2));
 }
 function propertyIsDynamicEvent(name) {
-  return /^onDynamic/.test(name) && $fg(name.charCodeAt(9));
+  return /^onDynamic/.test(name) && isUpperAsciiLetter(name.charCodeAt(9));
 }
-var $1$ = class {
+var WebWorkerServer = class {
   constructor(postMessage, requestHandlerFactory) {
-    this.b = /* @__PURE__ */ new Map();
-    this.c = /* @__PURE__ */ new Map();
-    this.a = new WebWorkerProtocol({
+    this._localChannels = /* @__PURE__ */ new Map();
+    this._remoteChannels = /* @__PURE__ */ new Map();
+    this._protocol = new WebWorkerProtocol({
       sendMessage: (msg, transfer) => {
         postMessage(msg, transfer);
       },
-      handleMessage: (channel, method, args) => this.d(channel, method, args),
-      handleEvent: (channel, eventName, arg) => this.f(channel, eventName, arg)
+      handleMessage: (channel, method, args) => this._handleMessage(channel, method, args),
+      handleEvent: (channel, eventName, arg) => this._handleEvent(channel, eventName, arg)
     });
     this.requestHandler = requestHandlerFactory(this);
   }
   onmessage(msg) {
-    this.a.handleMessage(msg);
+    this._protocol.handleMessage(msg);
   }
-  d(channel, method, args) {
+  _handleMessage(channel, method, args) {
     if (channel === DEFAULT_CHANNEL && method === INITIALIZE) {
-      return this.g(args[0]);
+      return this.initialize(args[0]);
     }
-    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this.b.get(channel);
+    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this._localChannels.get(channel);
     if (!requestHandler) {
       return Promise.reject(new Error(`Missing channel ${channel} on worker thread`));
     }
@@ -13133,8 +13133,8 @@ var $1$ = class {
       return Promise.reject(e);
     }
   }
-  f(channel, eventName, arg) {
-    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this.b.get(channel);
+  _handleEvent(channel, eventName, arg) {
+    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this._localChannels.get(channel);
     if (!requestHandler) {
       throw new Error(`Missing channel ${channel} on worker thread`);
     }
@@ -13159,42 +13159,42 @@ var $1$ = class {
     throw new Error(`Malformed event name ${eventName}`);
   }
   setChannel(channel, handler) {
-    this.b.set(channel, handler);
+    this._localChannels.set(channel, handler);
   }
   getChannel(channel) {
-    if (!this.c.has(channel)) {
-      const inst = this.a.createProxyToRemoteChannel(channel);
-      this.c.set(channel, inst);
+    if (!this._remoteChannels.has(channel)) {
+      const inst = this._protocol.createProxyToRemoteChannel(channel);
+      this._remoteChannels.set(channel, inst);
     }
-    return this.c.get(channel);
+    return this._remoteChannels.get(channel);
   }
-  async g(workerId) {
-    this.a.setWorkerId(workerId);
+  async initialize(workerId) {
+    this._protocol.setWorkerId(workerId);
   }
 };
 
 // out-build/vs/base/common/worker/webWorkerBootstrap.js
 var initialized = false;
-function $2$(factory) {
+function initialize(factory) {
   if (initialized) {
     throw new Error("WebWorker already initialized!");
   }
   initialized = true;
-  const webWorkerServer = new $1$((msg) => globalThis.postMessage(msg), (workerServer) => factory(workerServer));
+  const webWorkerServer = new WebWorkerServer((msg) => globalThis.postMessage(msg), (workerServer) => factory(workerServer));
   globalThis.onmessage = (e) => {
     webWorkerServer.onmessage(e.data);
   };
   return webWorkerServer;
 }
-function $3$(factory) {
+function bootstrapWebWorker(factory) {
   globalThis.onmessage = (_e) => {
     if (!initialized) {
-      $2$(factory);
+      initialize(factory);
     }
   };
 }
 
 // out-build/vs/workbench/services/textMate/browser/backgroundTokenization/worker/textMateTokenizationWorker.workerMain.js
-$3$($F$b);
+bootstrapWebWorker(create);
 
 //# sourceMappingURL=textMateTokenizationWorker.workerMain.js.map

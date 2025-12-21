@@ -377,14 +377,14 @@ export default {
 
 
 // out-build/vs/base/common/errors.js
-var $ib = class {
+var ErrorHandler = class {
   constructor() {
-    this.b = [];
-    this.a = function(e) {
+    this.listeners = [];
+    this.unexpectedErrorHandler = function(e) {
       setTimeout(() => {
         if (e.stack) {
-          if ($Db.isErrorNoTelemetry(e)) {
-            throw new $Db(e.message + "\n\n" + e.stack);
+          if (ErrorNoTelemetry.isErrorNoTelemetry(e)) {
+            throw new ErrorNoTelemetry(e.message + "\n\n" + e.stack);
           }
           throw new Error(e.message + "\n\n" + e.stack);
         }
@@ -393,42 +393,42 @@ var $ib = class {
     };
   }
   addListener(listener) {
-    this.b.push(listener);
+    this.listeners.push(listener);
     return () => {
-      this.d(listener);
+      this._removeListener(listener);
     };
   }
-  c(e) {
-    this.b.forEach((listener) => {
+  emit(e) {
+    this.listeners.forEach((listener) => {
       listener(e);
     });
   }
-  d(listener) {
-    this.b.splice(this.b.indexOf(listener), 1);
+  _removeListener(listener) {
+    this.listeners.splice(this.listeners.indexOf(listener), 1);
   }
   setUnexpectedErrorHandler(newUnexpectedErrorHandler) {
-    this.a = newUnexpectedErrorHandler;
+    this.unexpectedErrorHandler = newUnexpectedErrorHandler;
   }
   getUnexpectedErrorHandler() {
-    return this.a;
+    return this.unexpectedErrorHandler;
   }
   onUnexpectedError(e) {
-    this.a(e);
-    this.c(e);
+    this.unexpectedErrorHandler(e);
+    this.emit(e);
   }
   // For external errors, we don't want the listeners to be called
   onUnexpectedExternalError(e) {
-    this.a(e);
+    this.unexpectedErrorHandler(e);
   }
 };
-var $jb = new $ib();
-function $nb(e) {
-  if (!$sb(e)) {
-    $jb.onUnexpectedError(e);
+var errorHandler = new ErrorHandler();
+function onUnexpectedError(e) {
+  if (!isCancellationError(e)) {
+    errorHandler.onUnexpectedError(e);
   }
   return void 0;
 }
-function $pb(error) {
+function transformErrorForSerialization(error) {
   if (error instanceof Error) {
     const { name, message, cause } = error;
     const stack = error.stacktrace || error.stack;
@@ -437,48 +437,48 @@ function $pb(error) {
       name,
       message,
       stack,
-      noTelemetry: $Db.isErrorNoTelemetry(error),
-      cause: cause ? $pb(cause) : void 0,
+      noTelemetry: ErrorNoTelemetry.isErrorNoTelemetry(error),
+      cause: cause ? transformErrorForSerialization(cause) : void 0,
       code: error.code
     };
   }
   return error;
 }
-var $rb = "Canceled";
-function $sb(error) {
-  if (error instanceof $tb) {
+var canceledName = "Canceled";
+function isCancellationError(error) {
+  if (error instanceof CancellationError) {
     return true;
   }
-  return error instanceof Error && error.name === $rb && error.message === $rb;
+  return error instanceof Error && error.name === canceledName && error.message === canceledName;
 }
-var $tb = class extends Error {
+var CancellationError = class extends Error {
   constructor() {
-    super($rb);
+    super(canceledName);
     this.name = this.message;
   }
 };
-var $ub = class _$ub extends Error {
+var PendingMigrationError = class _PendingMigrationError extends Error {
   static {
-    this.a = "PendingMigrationError";
+    this._name = "PendingMigrationError";
   }
   static is(error) {
-    return error instanceof _$ub || error instanceof Error && error.name === _$ub.a;
+    return error instanceof _PendingMigrationError || error instanceof Error && error.name === _PendingMigrationError._name;
   }
   constructor(message) {
     super(message);
-    this.name = _$ub.a;
+    this.name = _PendingMigrationError._name;
   }
 };
-var $Db = class _$Db extends Error {
+var ErrorNoTelemetry = class _ErrorNoTelemetry extends Error {
   constructor(msg) {
     super(msg);
     this.name = "CodeExpectedError";
   }
   static fromError(err) {
-    if (err instanceof _$Db) {
+    if (err instanceof _ErrorNoTelemetry) {
       return err;
     }
-    const result = new _$Db();
+    const result = new _ErrorNoTelemetry();
     result.message = err.message;
     result.stack = err.stack;
     return result;
@@ -487,16 +487,16 @@ var $Db = class _$Db extends Error {
     return err.name === "CodeExpectedError";
   }
 };
-var $Eb = class _$Eb extends Error {
+var BugIndicatingError = class _BugIndicatingError extends Error {
   constructor(message) {
     super(message || "An unexpected bug occurred.");
-    Object.setPrototypeOf(this, _$Eb.prototype);
+    Object.setPrototypeOf(this, _BugIndicatingError.prototype);
   }
 };
 
 // out-build/vs/base/common/collections.js
 var _a;
-function $a(data, groupFn) {
+function groupBy(data, groupFn) {
   const result = /* @__PURE__ */ Object.create(null);
   for (const element of data) {
     const key = groupFn(element);
@@ -508,34 +508,34 @@ function $a(data, groupFn) {
   }
   return result;
 }
-var $f = class {
+var SetWithKey = class {
   static {
     _a = Symbol.toStringTag;
   }
-  constructor(values, b) {
-    this.b = b;
-    this.a = /* @__PURE__ */ new Map();
+  constructor(values, toKey) {
+    this.toKey = toKey;
+    this._map = /* @__PURE__ */ new Map();
     this[_a] = "SetWithKey";
     for (const value of values) {
       this.add(value);
     }
   }
   get size() {
-    return this.a.size;
+    return this._map.size;
   }
   add(value) {
-    const key = this.b(value);
-    this.a.set(key, value);
+    const key = this.toKey(value);
+    this._map.set(key, value);
     return this;
   }
   delete(value) {
-    return this.a.delete(this.b(value));
+    return this._map.delete(this.toKey(value));
   }
   has(value) {
-    return this.a.has(this.b(value));
+    return this._map.has(this.toKey(value));
   }
   *entries() {
-    for (const entry of this.a.values()) {
+    for (const entry of this._map.values()) {
       yield [entry, entry];
     }
   }
@@ -543,15 +543,15 @@ var $f = class {
     return this.values();
   }
   *values() {
-    for (const entry of this.a.values()) {
+    for (const entry of this._map.values()) {
       yield entry;
     }
   }
   clear() {
-    this.a.clear();
+    this._map.clear();
   }
   forEach(callbackfn, thisArg) {
-    this.a.forEach((entry) => callbackfn.call(thisArg, entry, entry, this));
+    this._map.forEach((entry) => callbackfn.call(thisArg, entry, entry, this));
   }
   [Symbol.iterator]() {
     return this.values();
@@ -559,7 +559,7 @@ var $f = class {
 };
 
 // out-build/vs/base/common/arraysFind.js
-function $Lb(array, predicate, startIdx = 0, endIdxEx = array.length) {
+function findLastIdxMonotonous(array, predicate, startIdx = 0, endIdxEx = array.length) {
   let i = startIdx;
   let j = endIdxEx;
   while (i < j) {
@@ -572,32 +572,32 @@ function $Lb(array, predicate, startIdx = 0, endIdxEx = array.length) {
   }
   return i - 1;
 }
-var $Pb = class _$Pb {
+var MonotonousArray = class _MonotonousArray {
   static {
     this.assertInvariants = false;
   }
-  constructor(e) {
-    this.e = e;
-    this.c = 0;
+  constructor(_array) {
+    this._array = _array;
+    this._findLastMonotonousLastIdx = 0;
   }
   /**
    * The predicate must be monotonous, i.e. `arr.map(predicate)` must be like `[true, ..., true, false, ..., false]`!
    * For subsequent calls, current predicate must be weaker than (or equal to) the previous predicate, i.e. more entries must be `true`.
    */
   findLastMonotonous(predicate) {
-    if (_$Pb.assertInvariants) {
-      if (this.d) {
-        for (const item of this.e) {
-          if (this.d(item) && !predicate(item)) {
+    if (_MonotonousArray.assertInvariants) {
+      if (this._prevFindLastPredicate) {
+        for (const item of this._array) {
+          if (this._prevFindLastPredicate(item) && !predicate(item)) {
             throw new Error("MonotonousArray: current predicate must be weaker than (or equal to) the previous predicate.");
           }
         }
       }
-      this.d = predicate;
+      this._prevFindLastPredicate = predicate;
     }
-    const idx = $Lb(this.e, predicate, this.c);
-    this.c = idx + 1;
-    return idx === -1 ? void 0 : this.e[idx];
+    const idx = findLastIdxMonotonous(this._array, predicate, this._findLastMonotonousLastIdx);
+    this._findLastMonotonousLastIdx = idx + 1;
+    return idx === -1 ? void 0 : this._array[idx];
   }
 };
 
@@ -624,13 +624,13 @@ var CompareResult;
   CompareResult2.lessThan = -1;
   CompareResult2.neitherLessOrGreaterThan = 0;
 })(CompareResult || (CompareResult = {}));
-function $xc(selector, comparator) {
+function compareBy(selector, comparator) {
   return (a, b) => comparator(selector(a), selector(b));
 }
-var $zc = (a, b) => a - b;
-var $Ec = class _$Ec {
+var numberComparator = (a, b) => a - b;
+var CallbackIterable = class _CallbackIterable {
   static {
-    this.empty = new _$Ec((_callback) => {
+    this.empty = new _CallbackIterable((_callback) => {
     });
   }
   constructor(iterate) {
@@ -651,10 +651,10 @@ var $Ec = class _$Ec {
     return result;
   }
   filter(predicate) {
-    return new _$Ec((cb) => this.iterate((item) => predicate(item) ? cb(item) : true));
+    return new _CallbackIterable((cb) => this.iterate((item) => predicate(item) ? cb(item) : true));
   }
   map(mapFn) {
-    return new _$Ec((cb) => this.iterate((item) => cb(mapFn(item))));
+    return new _CallbackIterable((cb) => this.iterate((item) => cb(mapFn(item))));
   }
   some(predicate) {
     let result = false;
@@ -712,111 +712,111 @@ var ResourceMapEntry = class {
 function isEntries(arg) {
   return Array.isArray(arg);
 }
-var $Pc = class _$Pc {
+var ResourceMap = class _ResourceMap {
   static {
-    this.c = (resource) => resource.toString();
+    this.defaultToKey = (resource) => resource.toString();
   }
   constructor(arg, toKey) {
     this[_a2] = "ResourceMap";
-    if (arg instanceof _$Pc) {
-      this.d = new Map(arg.d);
-      this.e = toKey ?? _$Pc.c;
+    if (arg instanceof _ResourceMap) {
+      this.map = new Map(arg.map);
+      this.toKey = toKey ?? _ResourceMap.defaultToKey;
     } else if (isEntries(arg)) {
-      this.d = /* @__PURE__ */ new Map();
-      this.e = toKey ?? _$Pc.c;
+      this.map = /* @__PURE__ */ new Map();
+      this.toKey = toKey ?? _ResourceMap.defaultToKey;
       for (const [resource, value] of arg) {
         this.set(resource, value);
       }
     } else {
-      this.d = /* @__PURE__ */ new Map();
-      this.e = arg ?? _$Pc.c;
+      this.map = /* @__PURE__ */ new Map();
+      this.toKey = arg ?? _ResourceMap.defaultToKey;
     }
   }
   set(resource, value) {
-    this.d.set(this.e(resource), new ResourceMapEntry(resource, value));
+    this.map.set(this.toKey(resource), new ResourceMapEntry(resource, value));
     return this;
   }
   get(resource) {
-    return this.d.get(this.e(resource))?.value;
+    return this.map.get(this.toKey(resource))?.value;
   }
   has(resource) {
-    return this.d.has(this.e(resource));
+    return this.map.has(this.toKey(resource));
   }
   get size() {
-    return this.d.size;
+    return this.map.size;
   }
   clear() {
-    this.d.clear();
+    this.map.clear();
   }
   delete(resource) {
-    return this.d.delete(this.e(resource));
+    return this.map.delete(this.toKey(resource));
   }
   forEach(clb, thisArg) {
     if (typeof thisArg !== "undefined") {
       clb = clb.bind(thisArg);
     }
-    for (const [_, entry] of this.d) {
+    for (const [_, entry] of this.map) {
       clb(entry.value, entry.uri, this);
     }
   }
   *values() {
-    for (const entry of this.d.values()) {
+    for (const entry of this.map.values()) {
       yield entry.value;
     }
   }
   *keys() {
-    for (const entry of this.d.values()) {
+    for (const entry of this.map.values()) {
       yield entry.uri;
     }
   }
   *entries() {
-    for (const entry of this.d.values()) {
+    for (const entry of this.map.values()) {
       yield [entry.uri, entry.value];
     }
   }
   *[(_a2 = Symbol.toStringTag, Symbol.iterator)]() {
-    for (const [, entry] of this.d) {
+    for (const [, entry] of this.map) {
       yield [entry.uri, entry.value];
     }
   }
 };
-var $Qc = class {
+var ResourceSet = class {
   constructor(entriesOrKey, toKey) {
     this[_b] = "ResourceSet";
     if (!entriesOrKey || typeof entriesOrKey === "function") {
-      this.c = new $Pc(entriesOrKey);
+      this._map = new ResourceMap(entriesOrKey);
     } else {
-      this.c = new $Pc(toKey);
+      this._map = new ResourceMap(toKey);
       entriesOrKey.forEach(this.add, this);
     }
   }
   get size() {
-    return this.c.size;
+    return this._map.size;
   }
   add(value) {
-    this.c.set(value, value);
+    this._map.set(value, value);
     return this;
   }
   clear() {
-    this.c.clear();
+    this._map.clear();
   }
   delete(value) {
-    return this.c.delete(value);
+    return this._map.delete(value);
   }
   forEach(callbackfn, thisArg) {
-    this.c.forEach((_value, key) => callbackfn.call(thisArg, key, key, this));
+    this._map.forEach((_value, key) => callbackfn.call(thisArg, key, key, this));
   }
   has(value) {
-    return this.c.has(value);
+    return this._map.has(value);
   }
   entries() {
-    return this.c.entries();
+    return this._map.entries();
   }
   keys() {
-    return this.c.keys();
+    return this._map.keys();
   }
   values() {
-    return this.c.keys();
+    return this._map.keys();
   }
   [(_b = Symbol.toStringTag, Symbol.iterator)]() {
     return this.keys();
@@ -828,72 +828,72 @@ var Touch;
   Touch2[Touch2["AsOld"] = 1] = "AsOld";
   Touch2[Touch2["AsNew"] = 2] = "AsNew";
 })(Touch || (Touch = {}));
-var $Rc = class {
+var LinkedMap = class {
   constructor() {
     this[_c] = "LinkedMap";
-    this.c = /* @__PURE__ */ new Map();
-    this.d = void 0;
-    this.e = void 0;
-    this.f = 0;
-    this.g = 0;
+    this._map = /* @__PURE__ */ new Map();
+    this._head = void 0;
+    this._tail = void 0;
+    this._size = 0;
+    this._state = 0;
   }
   clear() {
-    this.c.clear();
-    this.d = void 0;
-    this.e = void 0;
-    this.f = 0;
-    this.g++;
+    this._map.clear();
+    this._head = void 0;
+    this._tail = void 0;
+    this._size = 0;
+    this._state++;
   }
   isEmpty() {
-    return !this.d && !this.e;
+    return !this._head && !this._tail;
   }
   get size() {
-    return this.f;
+    return this._size;
   }
   get first() {
-    return this.d?.value;
+    return this._head?.value;
   }
   get last() {
-    return this.e?.value;
+    return this._tail?.value;
   }
   has(key) {
-    return this.c.has(key);
+    return this._map.has(key);
   }
   get(key, touch = 0) {
-    const item = this.c.get(key);
+    const item = this._map.get(key);
     if (!item) {
       return void 0;
     }
     if (touch !== 0) {
-      this.n(item, touch);
+      this.touch(item, touch);
     }
     return item.value;
   }
   set(key, value, touch = 0) {
-    let item = this.c.get(key);
+    let item = this._map.get(key);
     if (item) {
       item.value = value;
       if (touch !== 0) {
-        this.n(item, touch);
+        this.touch(item, touch);
       }
     } else {
       item = { key, value, next: void 0, previous: void 0 };
       switch (touch) {
         case 0:
-          this.l(item);
+          this.addItemLast(item);
           break;
         case 1:
-          this.k(item);
+          this.addItemFirst(item);
           break;
         case 2:
-          this.l(item);
+          this.addItemLast(item);
           break;
         default:
-          this.l(item);
+          this.addItemLast(item);
           break;
       }
-      this.c.set(key, item);
-      this.f++;
+      this._map.set(key, item);
+      this._size++;
     }
     return this;
   }
@@ -901,38 +901,38 @@ var $Rc = class {
     return !!this.remove(key);
   }
   remove(key) {
-    const item = this.c.get(key);
+    const item = this._map.get(key);
     if (!item) {
       return void 0;
     }
-    this.c.delete(key);
-    this.m(item);
-    this.f--;
+    this._map.delete(key);
+    this.removeItem(item);
+    this._size--;
     return item.value;
   }
   shift() {
-    if (!this.d && !this.e) {
+    if (!this._head && !this._tail) {
       return void 0;
     }
-    if (!this.d || !this.e) {
+    if (!this._head || !this._tail) {
       throw new Error("Invalid list");
     }
-    const item = this.d;
-    this.c.delete(item.key);
-    this.m(item);
-    this.f--;
+    const item = this._head;
+    this._map.delete(item.key);
+    this.removeItem(item);
+    this._size--;
     return item.value;
   }
   forEach(callbackfn, thisArg) {
-    const state = this.g;
-    let current = this.d;
+    const state = this._state;
+    let current = this._head;
     while (current) {
       if (thisArg) {
         callbackfn.bind(thisArg)(current.value, current.key, this);
       } else {
         callbackfn(current.value, current.key, this);
       }
-      if (this.g !== state) {
+      if (this._state !== state) {
         throw new Error(`LinkedMap got modified during iteration.`);
       }
       current = current.next;
@@ -940,14 +940,14 @@ var $Rc = class {
   }
   keys() {
     const map = this;
-    const state = this.g;
-    let current = this.d;
+    const state = this._state;
+    let current = this._head;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map.g !== state) {
+        if (map._state !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -963,14 +963,14 @@ var $Rc = class {
   }
   values() {
     const map = this;
-    const state = this.g;
-    let current = this.d;
+    const state = this._state;
+    let current = this._head;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map.g !== state) {
+        if (map._state !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -986,14 +986,14 @@ var $Rc = class {
   }
   entries() {
     const map = this;
-    const state = this.g;
-    let current = this.d;
+    const state = this._state;
+    let current = this._head;
     const iterator = {
       [Symbol.iterator]() {
         return iterator;
       },
       next() {
-        if (map.g !== state) {
+        if (map._state !== state) {
           throw new Error(`LinkedMap got modified during iteration.`);
         }
         if (current) {
@@ -1010,7 +1010,7 @@ var $Rc = class {
   [(_c = Symbol.toStringTag, Symbol.iterator)]() {
     return this.entries();
   }
-  h(newSize) {
+  trimOld(newSize) {
     if (newSize >= this.size) {
       return;
     }
@@ -1018,21 +1018,21 @@ var $Rc = class {
       this.clear();
       return;
     }
-    let current = this.d;
+    let current = this._head;
     let currentSize = this.size;
     while (current && currentSize > newSize) {
-      this.c.delete(current.key);
+      this._map.delete(current.key);
       current = current.next;
       currentSize--;
     }
-    this.d = current;
-    this.f = currentSize;
+    this._head = current;
+    this._size = currentSize;
     if (current) {
       current.previous = void 0;
     }
-    this.g++;
+    this._state++;
   }
-  j(newSize) {
+  trimNew(newSize) {
     if (newSize >= this.size) {
       return;
     }
@@ -1040,60 +1040,60 @@ var $Rc = class {
       this.clear();
       return;
     }
-    let current = this.e;
+    let current = this._tail;
     let currentSize = this.size;
     while (current && currentSize > newSize) {
-      this.c.delete(current.key);
+      this._map.delete(current.key);
       current = current.previous;
       currentSize--;
     }
-    this.e = current;
-    this.f = currentSize;
+    this._tail = current;
+    this._size = currentSize;
     if (current) {
       current.next = void 0;
     }
-    this.g++;
+    this._state++;
   }
-  k(item) {
-    if (!this.d && !this.e) {
-      this.e = item;
-    } else if (!this.d) {
+  addItemFirst(item) {
+    if (!this._head && !this._tail) {
+      this._tail = item;
+    } else if (!this._head) {
       throw new Error("Invalid list");
     } else {
-      item.next = this.d;
-      this.d.previous = item;
+      item.next = this._head;
+      this._head.previous = item;
     }
-    this.d = item;
-    this.g++;
+    this._head = item;
+    this._state++;
   }
-  l(item) {
-    if (!this.d && !this.e) {
-      this.d = item;
-    } else if (!this.e) {
+  addItemLast(item) {
+    if (!this._head && !this._tail) {
+      this._head = item;
+    } else if (!this._tail) {
       throw new Error("Invalid list");
     } else {
-      item.previous = this.e;
-      this.e.next = item;
+      item.previous = this._tail;
+      this._tail.next = item;
     }
-    this.e = item;
-    this.g++;
+    this._tail = item;
+    this._state++;
   }
-  m(item) {
-    if (item === this.d && item === this.e) {
-      this.d = void 0;
-      this.e = void 0;
-    } else if (item === this.d) {
+  removeItem(item) {
+    if (item === this._head && item === this._tail) {
+      this._head = void 0;
+      this._tail = void 0;
+    } else if (item === this._head) {
       if (!item.next) {
         throw new Error("Invalid list");
       }
       item.next.previous = void 0;
-      this.d = item.next;
-    } else if (item === this.e) {
+      this._head = item.next;
+    } else if (item === this._tail) {
       if (!item.previous) {
         throw new Error("Invalid list");
       }
       item.previous.next = void 0;
-      this.e = item.previous;
+      this._tail = item.previous;
     } else {
       const next = item.next;
       const previous = item.previous;
@@ -1105,51 +1105,51 @@ var $Rc = class {
     }
     item.next = void 0;
     item.previous = void 0;
-    this.g++;
+    this._state++;
   }
-  n(item, touch) {
-    if (!this.d || !this.e) {
+  touch(item, touch) {
+    if (!this._head || !this._tail) {
       throw new Error("Invalid list");
     }
     if (touch !== 1 && touch !== 2) {
       return;
     }
     if (touch === 1) {
-      if (item === this.d) {
+      if (item === this._head) {
         return;
       }
       const next = item.next;
       const previous = item.previous;
-      if (item === this.e) {
+      if (item === this._tail) {
         previous.next = void 0;
-        this.e = previous;
+        this._tail = previous;
       } else {
         next.previous = previous;
         previous.next = next;
       }
       item.previous = void 0;
-      item.next = this.d;
-      this.d.previous = item;
-      this.d = item;
-      this.g++;
+      item.next = this._head;
+      this._head.previous = item;
+      this._head = item;
+      this._state++;
     } else if (touch === 2) {
-      if (item === this.e) {
+      if (item === this._tail) {
         return;
       }
       const next = item.next;
       const previous = item.previous;
-      if (item === this.d) {
+      if (item === this._head) {
         next.previous = void 0;
-        this.d = next;
+        this._head = next;
       } else {
         next.previous = previous;
         previous.next = next;
       }
       item.next = void 0;
-      item.previous = this.e;
-      this.e.next = item;
-      this.e = item;
-      this.g++;
+      item.previous = this._tail;
+      this._tail.next = item;
+      this._tail = item;
+      this._state++;
     }
   }
   toJSON() {
@@ -1166,25 +1166,25 @@ var $Rc = class {
     }
   }
 };
-var Cache = class extends $Rc {
+var Cache = class extends LinkedMap {
   constructor(limit, ratio = 1) {
     super();
-    this.o = limit;
-    this.p = Math.min(Math.max(0, ratio), 1);
+    this._limit = limit;
+    this._ratio = Math.min(Math.max(0, ratio), 1);
   }
   get limit() {
-    return this.o;
+    return this._limit;
   }
   set limit(limit) {
-    this.o = limit;
-    this.q();
+    this._limit = limit;
+    this.checkTrim();
   }
   get ratio() {
-    return this.p;
+    return this._ratio;
   }
   set ratio(ratio) {
-    this.p = Math.min(Math.max(0, ratio), 1);
-    this.q();
+    this._ratio = Math.min(Math.max(0, ratio), 1);
+    this.checkTrim();
   }
   get(key, touch = 2) {
     return super.get(key, touch);
@@ -1205,56 +1205,56 @@ var Cache = class extends $Rc {
     );
     return this;
   }
-  q() {
-    if (this.size > this.o) {
-      this.r(Math.round(this.o * this.p));
+  checkTrim() {
+    if (this.size > this._limit) {
+      this.trim(Math.round(this._limit * this._ratio));
     }
   }
 };
-var $Sc = class extends Cache {
+var LRUCache = class extends Cache {
   constructor(limit, ratio = 1) {
     super(limit, ratio);
   }
-  r(newSize) {
-    this.h(newSize);
+  trim(newSize) {
+    this.trimOld(newSize);
   }
   set(key, value) {
     super.set(key, value);
-    this.q();
+    this.checkTrim();
     return this;
   }
 };
-var $Wc = class {
+var SetMap = class {
   constructor() {
-    this.c = /* @__PURE__ */ new Map();
+    this.map = /* @__PURE__ */ new Map();
   }
   add(key, value) {
-    let values = this.c.get(key);
+    let values = this.map.get(key);
     if (!values) {
       values = /* @__PURE__ */ new Set();
-      this.c.set(key, values);
+      this.map.set(key, values);
     }
     values.add(value);
   }
   delete(key, value) {
-    const values = this.c.get(key);
+    const values = this.map.get(key);
     if (!values) {
       return;
     }
     values.delete(value);
     if (values.size === 0) {
-      this.c.delete(key);
+      this.map.delete(key);
     }
   }
   forEach(key, fn) {
-    const values = this.c.get(key);
+    const values = this.map.get(key);
     if (!values) {
       return;
     }
     values.forEach(fn);
   }
   get(key) {
-    const values = this.c.get(key);
+    const values = this.map.get(key);
     if (!values) {
       return /* @__PURE__ */ new Set();
     }
@@ -1263,7 +1263,7 @@ var $Wc = class {
 };
 
 // out-build/vs/base/common/types.js
-function $ad(obj) {
+function isIterable(obj) {
   return !!obj && typeof obj[Symbol.iterator] === "function";
 }
 
@@ -1362,7 +1362,7 @@ var Iterable;
   Iterable2.flatMap = flatMap;
   function* concat(...iterables) {
     for (const item of iterables) {
-      if ($ad(item)) {
+      if (isIterable(item)) {
         yield* item;
       } else {
         yield item;
@@ -1442,49 +1442,49 @@ var Iterable;
 // out-build/vs/base/common/lifecycle.js
 var TRACK_DISPOSABLES = false;
 var disposableTracker = null;
-var $ud = class _$ud {
+var DisposableTracker = class _DisposableTracker {
   constructor() {
-    this.b = /* @__PURE__ */ new Map();
+    this.livingDisposables = /* @__PURE__ */ new Map();
   }
   static {
-    this.a = 0;
+    this.idx = 0;
   }
-  c(d) {
-    let val = this.b.get(d);
+  getDisposableData(d) {
+    let val = this.livingDisposables.get(d);
     if (!val) {
-      val = { parent: null, source: null, isSingleton: false, value: d, idx: _$ud.a++ };
-      this.b.set(d, val);
+      val = { parent: null, source: null, isSingleton: false, value: d, idx: _DisposableTracker.idx++ };
+      this.livingDisposables.set(d, val);
     }
     return val;
   }
   trackDisposable(d) {
-    const data = this.c(d);
+    const data = this.getDisposableData(d);
     if (!data.source) {
       data.source = new Error().stack;
     }
   }
   setParent(child, parent) {
-    const data = this.c(child);
+    const data = this.getDisposableData(child);
     data.parent = parent;
   }
   markAsDisposed(x) {
-    this.b.delete(x);
+    this.livingDisposables.delete(x);
   }
   markAsSingleton(disposable) {
-    this.c(disposable).isSingleton = true;
+    this.getDisposableData(disposable).isSingleton = true;
   }
-  f(data, cache) {
+  getRootParent(data, cache) {
     const cacheValue = cache.get(data);
     if (cacheValue) {
       return cacheValue;
     }
-    const result = data.parent ? this.f(this.c(data.parent), cache) : data;
+    const result = data.parent ? this.getRootParent(this.getDisposableData(data.parent), cache) : data;
     cache.set(data, result);
     return result;
   }
   getTrackedDisposables() {
     const rootParentCache = /* @__PURE__ */ new Map();
-    const leaking = [...this.b.entries()].filter(([, v]) => v.source !== null && !this.f(v, rootParentCache).isSingleton).flatMap(([k]) => k);
+    const leaking = [...this.livingDisposables.entries()].filter(([, v]) => v.source !== null && !this.getRootParent(v, rootParentCache).isSingleton).flatMap(([k]) => k);
     return leaking;
   }
   computeLeakingDisposables(maxReported = 10, preComputedLeaks) {
@@ -1493,7 +1493,7 @@ var $ud = class _$ud {
       uncoveredLeakingObjs = preComputedLeaks;
     } else {
       const rootParentCache = /* @__PURE__ */ new Map();
-      const leakingObjects = [...this.b.values()].filter((info) => info.source !== null && !this.f(info, rootParentCache).isSingleton);
+      const leakingObjects = [...this.livingDisposables.values()].filter((info) => info.source !== null && !this.getRootParent(info, rootParentCache).isSingleton);
       if (leakingObjects.length === 0) {
         return;
       }
@@ -1518,14 +1518,14 @@ var $ud = class _$ud {
       removePrefix(lines, ["Error", /^trackDisposable \(.*\)$/, /^DisposableTracker.trackDisposable \(.*\)$/]);
       return lines.reverse();
     }
-    const stackTraceStarts = new $Wc();
+    const stackTraceStarts = new SetMap();
     for (const leaking of uncoveredLeakingObjs) {
       const stackTracePath = getStackTracePath(leaking);
       for (let i2 = 0; i2 <= stackTracePath.length; i2++) {
         stackTraceStarts.add(stackTracePath.slice(0, i2).join("\n"), leaking);
       }
     }
-    uncoveredLeakingObjs.sort($xc((l) => l.idx, $zc));
+    uncoveredLeakingObjs.sort(compareBy((l) => l.idx, numberComparator));
     let message = "";
     let i = 0;
     for (const leaking of uncoveredLeakingObjs.slice(0, maxReported)) {
@@ -1537,7 +1537,7 @@ var $ud = class _$ud {
         const starts = stackTraceStarts.get(stackTracePath.slice(0, i2 + 1).join("\n"));
         line = `(shared with ${starts.size}/${uncoveredLeakingObjs.length} leaks) at ${line}`;
         const prevStarts = stackTraceStarts.get(stackTracePath.slice(0, i2).join("\n"));
-        const continuations = $a([...prevStarts].map((d) => getStackTracePath(d)[i2]), (v) => v);
+        const continuations = groupBy([...prevStarts].map((d) => getStackTracePath(d)[i2]), (v) => v);
         delete continuations[stackTracePath[i2]];
         for (const [cont, set] of Object.entries(continuations)) {
           if (set) {
@@ -1566,12 +1566,12 @@ ${stackTraceFormattedLines.join("\n")}
     return { leaks: uncoveredLeakingObjs, details: message };
   }
 };
-function $vd(tracker) {
+function setDisposableTracker(tracker) {
   disposableTracker = tracker;
 }
 if (TRACK_DISPOSABLES) {
   const __is_disposable_tracked__ = "__is_disposable_tracked__";
-  $vd(new class {
+  setDisposableTracker(new class {
     trackDisposable(x) {
       const stack = new Error("Potentially leaked disposable").stack;
       setTimeout(() => {
@@ -1581,7 +1581,7 @@ if (TRACK_DISPOSABLES) {
       }, 3e3);
     }
     setParent(child, parent) {
-      if (child && child !== $Fd.None) {
+      if (child && child !== Disposable.None) {
         try {
           child[__is_disposable_tracked__] = true;
         } catch {
@@ -1589,7 +1589,7 @@ if (TRACK_DISPOSABLES) {
       }
     }
     markAsDisposed(disposable) {
-      if (disposable && disposable !== $Fd.None) {
+      if (disposable && disposable !== Disposable.None) {
         try {
           disposable[__is_disposable_tracked__] = true;
         } catch {
@@ -1600,11 +1600,11 @@ if (TRACK_DISPOSABLES) {
     }
   }());
 }
-function $wd(x) {
+function trackDisposable(x) {
   disposableTracker?.trackDisposable(x);
   return x;
 }
-function $xd(disposable) {
+function markAsDisposed(disposable) {
   disposableTracker?.markAsDisposed(disposable);
 }
 function setParentOfDisposable(child, parent) {
@@ -1618,7 +1618,7 @@ function setParentOfDisposables(children, parent) {
     disposableTracker.setParent(child, parent);
   }
 }
-function $Ad(arg) {
+function dispose(arg) {
   if (Iterable.is(arg)) {
     const errors = [];
     for (const d of arg) {
@@ -1641,40 +1641,40 @@ function $Ad(arg) {
     return arg;
   }
 }
-function $Cd(...disposables) {
-  const parent = $Dd(() => $Ad(disposables));
+function combinedDisposable(...disposables) {
+  const parent = toDisposable(() => dispose(disposables));
   setParentOfDisposables(disposables, parent);
   return parent;
 }
 var FunctionDisposable = class {
   constructor(fn) {
-    this.a = false;
-    this.b = fn;
-    $wd(this);
+    this._isDisposed = false;
+    this._fn = fn;
+    trackDisposable(this);
   }
   dispose() {
-    if (this.a) {
+    if (this._isDisposed) {
       return;
     }
-    if (!this.b) {
+    if (!this._fn) {
       throw new Error(`Unbound disposable context: Need to use an arrow function to preserve the value of this`);
     }
-    this.a = true;
-    $xd(this);
-    this.b();
+    this._isDisposed = true;
+    markAsDisposed(this);
+    this._fn();
   }
 };
-function $Dd(fn) {
+function toDisposable(fn) {
   return new FunctionDisposable(fn);
 }
-var $Ed = class _$Ed {
+var DisposableStore = class _DisposableStore {
   static {
     this.DISABLE_DISPOSED_WARNING = false;
   }
   constructor() {
-    this.f = /* @__PURE__ */ new Set();
-    this.g = false;
-    $wd(this);
+    this._toDispose = /* @__PURE__ */ new Set();
+    this._isDisposed = false;
+    trackDisposable(this);
   }
   /**
    * Dispose of all registered disposables and mark this object as disposed.
@@ -1682,49 +1682,49 @@ var $Ed = class _$Ed {
    * Any future disposables added to this object will be disposed of on `add`.
    */
   dispose() {
-    if (this.g) {
+    if (this._isDisposed) {
       return;
     }
-    $xd(this);
-    this.g = true;
+    markAsDisposed(this);
+    this._isDisposed = true;
     this.clear();
   }
   /**
    * @return `true` if this object has been disposed of.
    */
   get isDisposed() {
-    return this.g;
+    return this._isDisposed;
   }
   /**
    * Dispose of all registered disposables but do not mark this object as disposed.
    */
   clear() {
-    if (this.f.size === 0) {
+    if (this._toDispose.size === 0) {
       return;
     }
     try {
-      $Ad(this.f);
+      dispose(this._toDispose);
     } finally {
-      this.f.clear();
+      this._toDispose.clear();
     }
   }
   /**
    * Add a new {@link IDisposable disposable} to the collection.
    */
   add(o) {
-    if (!o || o === $Fd.None) {
+    if (!o || o === Disposable.None) {
       return o;
     }
     if (o === this) {
       throw new Error("Cannot register a disposable on itself!");
     }
     setParentOfDisposable(o, this);
-    if (this.g) {
-      if (!_$Ed.DISABLE_DISPOSED_WARNING) {
+    if (this._isDisposed) {
+      if (!_DisposableStore.DISABLE_DISPOSED_WARNING) {
         console.warn(new Error("Trying to add a disposable to a DisposableStore that has already been disposed of. The added object will be leaked!").stack);
       }
     } else {
-      this.f.add(o);
+      this._toDispose.add(o);
     }
     return o;
   }
@@ -1739,7 +1739,7 @@ var $Ed = class _$Ed {
     if (o === this) {
       throw new Error("Cannot dispose a disposable on itself!");
     }
-    this.f.delete(o);
+    this._toDispose.delete(o);
     o.dispose();
   }
   /**
@@ -1749,39 +1749,39 @@ var $Ed = class _$Ed {
     if (!o) {
       return;
     }
-    if (this.f.has(o)) {
-      this.f.delete(o);
+    if (this._toDispose.has(o)) {
+      this._toDispose.delete(o);
       setParentOfDisposable(o, null);
     }
   }
   assertNotDisposed() {
-    if (this.g) {
-      $nb(new $Eb("Object disposed"));
+    if (this._isDisposed) {
+      onUnexpectedError(new BugIndicatingError("Object disposed"));
     }
   }
 };
-var $Fd = class {
+var Disposable = class {
   static {
     this.None = Object.freeze({ dispose() {
     } });
   }
   constructor() {
-    this.B = new $Ed();
-    $wd(this);
-    setParentOfDisposable(this.B, this);
+    this._store = new DisposableStore();
+    trackDisposable(this);
+    setParentOfDisposable(this._store, this);
   }
   dispose() {
-    $xd(this);
-    this.B.dispose();
+    markAsDisposed(this);
+    this._store.dispose();
   }
   /**
    * Adds `o` to the collection of disposables managed by this object.
    */
-  D(o) {
+  _register(o) {
     if (o === this) {
       throw new Error("Cannot register a disposable on itself!");
     }
-    return this.B.add(o);
+    return this._store.add(o);
   }
 };
 
@@ -1799,27 +1799,27 @@ var Node = class _Node {
 
 // out-build/vs/base/common/stopwatch.js
 var performanceNow = globalThis.performance.now.bind(globalThis.performance);
-var $kf = class _$kf {
+var StopWatch = class _StopWatch {
   static create(highResolution) {
-    return new _$kf(highResolution);
+    return new _StopWatch(highResolution);
   }
   constructor(highResolution) {
-    this.c = highResolution === false ? Date.now : performanceNow;
-    this.a = this.c();
-    this.b = -1;
+    this._now = highResolution === false ? Date.now : performanceNow;
+    this._startTime = this._now();
+    this._stopTime = -1;
   }
   stop() {
-    this.b = this.c();
+    this._stopTime = this._now();
   }
   reset() {
-    this.a = this.c();
-    this.b = -1;
+    this._startTime = this._now();
+    this._stopTime = -1;
   }
   elapsed() {
-    if (this.b !== -1) {
-      return this.b - this.a;
+    if (this._stopTime !== -1) {
+      return this._stopTime - this._startTime;
     }
-    return this.c() - this.a;
+    return this._now() - this._startTime;
   }
 };
 
@@ -1828,7 +1828,7 @@ var _enableDisposeWithListenerWarning = false;
 var _enableSnapshotPotentialLeakWarning = false;
 var Event;
 (function(Event2) {
-  Event2.None = () => $Fd.None;
+  Event2.None = () => Disposable.None;
   function _addLeakageTraceLogic(options) {
     if (_enableSnapshotPotentialLeakWarning) {
       const { onDidAddListener: origListenerDidAdd } = options;
@@ -1893,7 +1893,7 @@ var Event;
   Event2.signal = signal;
   function any(...events) {
     return (listener, thisArgs = null, disposables) => {
-      const disposable = $Cd(...events.map((event) => event((e) => listener.call(thisArgs, e))));
+      const disposable = combinedDisposable(...events.map((event) => event((e) => listener.call(thisArgs, e))));
       return addAndReturnDisposable(disposable, disposables);
     };
   }
@@ -1919,7 +1919,7 @@ var Event;
     if (!disposable) {
       _addLeakageTraceLogic(options);
     }
-    const emitter = new $qf(options);
+    const emitter = new Emitter(options);
     disposable?.add(emitter);
     return emitter.event;
   }
@@ -1982,7 +1982,7 @@ var Event;
     if (!disposable) {
       _addLeakageTraceLogic(options);
     }
-    const emitter = new $qf(options);
+    const emitter = new Emitter(options);
     disposable?.add(emitter);
     return emitter.event;
   }
@@ -1997,11 +1997,11 @@ var Event;
     }, delay, void 0, true, void 0, disposable);
   }
   Event2.accumulate = accumulate;
-  function latch(event, equals = (a, b) => a === b, disposable) {
+  function latch(event, equals2 = (a, b) => a === b, disposable) {
     let firstCall = true;
     let cache;
     return filter(event, (value) => {
-      const shouldEmit = firstCall || !equals(value, cache);
+      const shouldEmit = firstCall || !equals2(value, cache);
       firstCall = false;
       cache = value;
       return shouldEmit;
@@ -2031,7 +2031,7 @@ var Event;
       buffer2?.forEach((e) => emitter.fire(e));
       buffer2 = null;
     };
-    const emitter = new $qf({
+    const emitter = new Emitter({
       onWillAddFirstListener() {
         if (!listener) {
           listener = event((e) => emitter.fire(e));
@@ -2078,36 +2078,36 @@ var Event;
   const HaltChainable = Symbol("HaltChainable");
   class ChainableSynthesis {
     constructor() {
-      this.f = [];
+      this.steps = [];
     }
     map(fn) {
-      this.f.push(fn);
+      this.steps.push(fn);
       return this;
     }
     forEach(fn) {
-      this.f.push((v) => {
+      this.steps.push((v) => {
         fn(v);
         return v;
       });
       return this;
     }
     filter(fn) {
-      this.f.push((v) => fn(v) ? v : HaltChainable);
+      this.steps.push((v) => fn(v) ? v : HaltChainable);
       return this;
     }
     reduce(merge, initial) {
       let last = initial;
-      this.f.push((v) => {
+      this.steps.push((v) => {
         last = merge(last, v);
         return last;
       });
       return this;
     }
-    latch(equals = (a, b) => a === b) {
+    latch(equals2 = (a, b) => a === b) {
       let firstCall = true;
       let cache;
-      this.f.push((value) => {
-        const shouldEmit = firstCall || !equals(value, cache);
+      this.steps.push((value) => {
+        const shouldEmit = firstCall || !equals2(value, cache);
         firstCall = false;
         cache = value;
         return shouldEmit ? value : HaltChainable;
@@ -2115,7 +2115,7 @@ var Event;
       return this;
     }
     evaluate(value) {
-      for (const step of this.f) {
+      for (const step of this.steps) {
         value = step(value);
         if (value === HaltChainable) {
           break;
@@ -2128,7 +2128,7 @@ var Event;
     const fn = (...args) => result.fire(map2(...args));
     const onFirstListenerAdd = () => emitter.on(eventName, fn);
     const onLastListenerRemove = () => emitter.removeListener(eventName, fn);
-    const result = new $qf({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
+    const result = new Emitter({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
     return result.event;
   }
   Event2.fromNodeEventEmitter = fromNodeEventEmitter;
@@ -2136,15 +2136,15 @@ var Event;
     const fn = (...args) => result.fire(map2(...args));
     const onFirstListenerAdd = () => emitter.addEventListener(eventName, fn);
     const onLastListenerRemove = () => emitter.removeEventListener(eventName, fn);
-    const result = new $qf({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
+    const result = new Emitter({ onWillAddFirstListener: onFirstListenerAdd, onDidRemoveLastListener: onLastListenerRemove });
     return result.event;
   }
   Event2.fromDOMEventEmitter = fromDOMEventEmitter;
   function toPromise(event, disposables) {
     let cancelRef;
     let listener;
-    const promise = new Promise((resolve) => {
-      listener = once(event)(resolve);
+    const promise = new Promise((resolve2) => {
+      listener = once(event)(resolve2);
       addToDisposables(listener, disposables);
       cancelRef = () => {
         disposeAndRemove(listener, disposables);
@@ -2169,8 +2169,8 @@ var Event;
   class EmitterObserver {
     constructor(_observable, store) {
       this._observable = _observable;
-      this.f = 0;
-      this.g = false;
+      this._counter = 0;
+      this._hasChanged = false;
       const options = {
         onWillAddFirstListener: () => {
           _observable.addObserver(this);
@@ -2183,25 +2183,25 @@ var Event;
       if (!store) {
         _addLeakageTraceLogic(options);
       }
-      this.emitter = new $qf(options);
+      this.emitter = new Emitter(options);
       if (store) {
         store.add(this.emitter);
       }
     }
     beginUpdate(_observable) {
-      this.f++;
+      this._counter++;
     }
     handlePossibleChange(_observable) {
     }
     handleChange(_observable, _change) {
-      this.g = true;
+      this._hasChanged = true;
     }
     endUpdate(_observable) {
-      this.f--;
-      if (this.f === 0) {
+      this._counter--;
+      if (this._counter === 0) {
         this._observable.reportChanges();
-        if (this.g) {
-          this.g = false;
+        if (this._hasChanged) {
+          this._hasChanged = false;
           this.emitter.fire(this._observable.get());
         }
       }
@@ -2249,81 +2249,81 @@ var Event;
   }
   Event2.fromObservableLight = fromObservableLight;
 })(Event || (Event = {}));
-var $mf = class _$mf {
+var EventProfiling = class _EventProfiling {
   static {
     this.all = /* @__PURE__ */ new Set();
   }
   static {
-    this.f = 0;
+    this._idPool = 0;
   }
   constructor(name) {
     this.listenerCount = 0;
     this.invocationCount = 0;
     this.elapsedOverall = 0;
     this.durations = [];
-    this.name = `${name}_${_$mf.f++}`;
-    _$mf.all.add(this);
+    this.name = `${name}_${_EventProfiling._idPool++}`;
+    _EventProfiling.all.add(this);
   }
   start(listenerCount) {
-    this.g = new $kf();
+    this._stopWatch = new StopWatch();
     this.listenerCount = listenerCount;
   }
   stop() {
-    if (this.g) {
-      const elapsed = this.g.elapsed();
+    if (this._stopWatch) {
+      const elapsed = this._stopWatch.elapsed();
       this.durations.push(elapsed);
       this.elapsedOverall += elapsed;
       this.invocationCount += 1;
-      this.g = void 0;
+      this._stopWatch = void 0;
     }
   }
 };
 var _globalLeakWarningThreshold = -1;
 var LeakageMonitor = class _LeakageMonitor {
   static {
-    this.f = 1;
+    this._idPool = 1;
   }
-  constructor(j, threshold, name = (_LeakageMonitor.f++).toString(16).padStart(3, "0")) {
-    this.j = j;
+  constructor(_errorHandler, threshold, name = (_LeakageMonitor._idPool++).toString(16).padStart(3, "0")) {
+    this._errorHandler = _errorHandler;
     this.threshold = threshold;
     this.name = name;
-    this.h = 0;
+    this._warnCountdown = 0;
   }
   dispose() {
-    this.g?.clear();
+    this._stacks?.clear();
   }
   check(stack, listenerCount) {
     const threshold = this.threshold;
     if (threshold <= 0 || listenerCount < threshold) {
       return void 0;
     }
-    if (!this.g) {
-      this.g = /* @__PURE__ */ new Map();
+    if (!this._stacks) {
+      this._stacks = /* @__PURE__ */ new Map();
     }
-    const count = this.g.get(stack.value) || 0;
-    this.g.set(stack.value, count + 1);
-    this.h -= 1;
-    if (this.h <= 0) {
-      this.h = threshold * 0.5;
+    const count = this._stacks.get(stack.value) || 0;
+    this._stacks.set(stack.value, count + 1);
+    this._warnCountdown -= 1;
+    if (this._warnCountdown <= 0) {
+      this._warnCountdown = threshold * 0.5;
       const [topStack, topCount] = this.getMostFrequentStack();
       const message = `[${this.name}] potential listener LEAK detected, having ${listenerCount} listeners already. MOST frequent listener (${topCount}):`;
       console.warn(message);
       console.warn(topStack);
-      const error = new $of(message, topStack);
-      this.j(error);
+      const error = new ListenerLeakError(message, topStack);
+      this._errorHandler(error);
     }
     return () => {
-      const count2 = this.g.get(stack.value) || 0;
-      this.g.set(stack.value, count2 - 1);
+      const count2 = this._stacks.get(stack.value) || 0;
+      this._stacks.set(stack.value, count2 - 1);
     };
   }
   getMostFrequentStack() {
-    if (!this.g) {
+    if (!this._stacks) {
       return void 0;
     }
     let topStack;
     let topCount = 0;
-    for (const [stack, count] of this.g) {
+    for (const [stack, count] of this._stacks) {
       if (!topStack || topCount < count) {
         topStack = [stack, count];
         topCount = count;
@@ -2344,14 +2344,14 @@ var Stacktrace = class _Stacktrace {
     console.warn(this.value.split("\n").slice(2).join("\n"));
   }
 };
-var $of = class extends Error {
+var ListenerLeakError = class extends Error {
   constructor(message, stack) {
     super(message);
     this.name = "ListenerLeakError";
     this.stack = stack;
   }
 };
-var $pf = class extends Error {
+var ListenerRefusalError = class extends Error {
   constructor(message, stack) {
     super(message);
     this.name = "ListenerRefusalError";
@@ -2378,32 +2378,32 @@ var forEachListener = (listeners, fn) => {
     }
   }
 };
-var $qf = class {
+var Emitter = class {
   constructor(options) {
-    this.A = 0;
-    this.g = options;
-    this.j = _globalLeakWarningThreshold > 0 || this.g?.leakWarningThreshold ? new LeakageMonitor(options?.onListenerError ?? $nb, this.g?.leakWarningThreshold ?? _globalLeakWarningThreshold) : void 0;
-    this.m = this.g?._profName ? new $mf(this.g._profName) : void 0;
-    this.z = this.g?.deliveryQueue;
+    this._size = 0;
+    this._options = options;
+    this._leakageMon = _globalLeakWarningThreshold > 0 || this._options?.leakWarningThreshold ? new LeakageMonitor(options?.onListenerError ?? onUnexpectedError, this._options?.leakWarningThreshold ?? _globalLeakWarningThreshold) : void 0;
+    this._perfMon = this._options?._profName ? new EventProfiling(this._options._profName) : void 0;
+    this._deliveryQueue = this._options?.deliveryQueue;
   }
   dispose() {
-    if (!this.q) {
-      this.q = true;
-      if (this.z?.current === this) {
-        this.z.reset();
+    if (!this._disposed) {
+      this._disposed = true;
+      if (this._deliveryQueue?.current === this) {
+        this._deliveryQueue.reset();
       }
-      if (this.w) {
+      if (this._listeners) {
         if (_enableDisposeWithListenerWarning) {
-          const listeners = this.w;
+          const listeners = this._listeners;
           queueMicrotask(() => {
             forEachListener(listeners, (l) => l.stack?.print());
           });
         }
-        this.w = void 0;
-        this.A = 0;
+        this._listeners = void 0;
+        this._size = 0;
       }
-      this.g?.onDidRemoveLastListener?.();
-      this.j?.dispose();
+      this._options?.onDidRemoveLastListener?.();
+      this._leakageMon?.dispose();
     }
   }
   /**
@@ -2411,18 +2411,18 @@ var $qf = class {
    * to events from this Emitter
    */
   get event() {
-    this.u ??= (callback, thisArgs, disposables) => {
-      if (this.j && this.A > this.j.threshold ** 2) {
-        const message = `[${this.j.name}] REFUSES to accept new listeners because it exceeded its threshold by far (${this.A} vs ${this.j.threshold})`;
+    this._event ??= (callback, thisArgs, disposables) => {
+      if (this._leakageMon && this._size > this._leakageMon.threshold ** 2) {
+        const message = `[${this._leakageMon.name}] REFUSES to accept new listeners because it exceeded its threshold by far (${this._size} vs ${this._leakageMon.threshold})`;
         console.warn(message);
-        const tuple = this.j.getMostFrequentStack() ?? ["UNKNOWN stack", -1];
-        const error = new $pf(`${message}. HINT: Stack shows most frequent listener (${tuple[1]}-times)`, tuple[0]);
-        const errorHandler = this.g?.onListenerError || $nb;
-        errorHandler(error);
-        return $Fd.None;
+        const tuple = this._leakageMon.getMostFrequentStack() ?? ["UNKNOWN stack", -1];
+        const error = new ListenerRefusalError(`${message}. HINT: Stack shows most frequent listener (${tuple[1]}-times)`, tuple[0]);
+        const errorHandler2 = this._options?.onListenerError || onUnexpectedError;
+        errorHandler2(error);
+        return Disposable.None;
       }
-      if (this.q) {
-        return $Fd.None;
+      if (this._disposed) {
+        return Disposable.None;
       }
       if (thisArgs) {
         callback = callback.bind(thisArgs);
@@ -2430,91 +2430,91 @@ var $qf = class {
       const contained = new UniqueContainer(callback);
       let removeMonitor;
       let stack;
-      if (this.j && this.A >= Math.ceil(this.j.threshold * 0.2)) {
+      if (this._leakageMon && this._size >= Math.ceil(this._leakageMon.threshold * 0.2)) {
         contained.stack = Stacktrace.create();
-        removeMonitor = this.j.check(contained.stack, this.A + 1);
+        removeMonitor = this._leakageMon.check(contained.stack, this._size + 1);
       }
       if (_enableDisposeWithListenerWarning) {
         contained.stack = stack ?? Stacktrace.create();
       }
-      if (!this.w) {
-        this.g?.onWillAddFirstListener?.(this);
-        this.w = contained;
-        this.g?.onDidAddFirstListener?.(this);
-      } else if (this.w instanceof UniqueContainer) {
-        this.z ??= new EventDeliveryQueuePrivate();
-        this.w = [this.w, contained];
+      if (!this._listeners) {
+        this._options?.onWillAddFirstListener?.(this);
+        this._listeners = contained;
+        this._options?.onDidAddFirstListener?.(this);
+      } else if (this._listeners instanceof UniqueContainer) {
+        this._deliveryQueue ??= new EventDeliveryQueuePrivate();
+        this._listeners = [this._listeners, contained];
       } else {
-        this.w.push(contained);
+        this._listeners.push(contained);
       }
-      this.g?.onDidAddListener?.(this);
-      this.A++;
-      const result = $Dd(() => {
+      this._options?.onDidAddListener?.(this);
+      this._size++;
+      const result = toDisposable(() => {
         removeMonitor?.();
-        this.B(contained);
+        this._removeListener(contained);
       });
       addToDisposables(result, disposables);
       return result;
     };
-    return this.u;
+    return this._event;
   }
-  B(listener) {
-    this.g?.onWillRemoveListener?.(this);
-    if (!this.w) {
+  _removeListener(listener) {
+    this._options?.onWillRemoveListener?.(this);
+    if (!this._listeners) {
       return;
     }
-    if (this.A === 1) {
-      this.w = void 0;
-      this.g?.onDidRemoveLastListener?.(this);
-      this.A = 0;
+    if (this._size === 1) {
+      this._listeners = void 0;
+      this._options?.onDidRemoveLastListener?.(this);
+      this._size = 0;
       return;
     }
-    const listeners = this.w;
+    const listeners = this._listeners;
     const index = listeners.indexOf(listener);
     if (index === -1) {
-      console.log("disposed?", this.q);
-      console.log("size?", this.A);
-      console.log("arr?", JSON.stringify(this.w));
+      console.log("disposed?", this._disposed);
+      console.log("size?", this._size);
+      console.log("arr?", JSON.stringify(this._listeners));
       throw new Error("Attempted to dispose unknown listener");
     }
-    this.A--;
+    this._size--;
     listeners[index] = void 0;
-    const adjustDeliveryQueue = this.z.current === this;
-    if (this.A * compactionThreshold <= listeners.length) {
+    const adjustDeliveryQueue = this._deliveryQueue.current === this;
+    if (this._size * compactionThreshold <= listeners.length) {
       let n = 0;
       for (let i = 0; i < listeners.length; i++) {
         if (listeners[i]) {
           listeners[n++] = listeners[i];
-        } else if (adjustDeliveryQueue && n < this.z.end) {
-          this.z.end--;
-          if (n < this.z.i) {
-            this.z.i--;
+        } else if (adjustDeliveryQueue && n < this._deliveryQueue.end) {
+          this._deliveryQueue.end--;
+          if (n < this._deliveryQueue.i) {
+            this._deliveryQueue.i--;
           }
         }
       }
       listeners.length = n;
     }
   }
-  C(listener, value) {
+  _deliver(listener, value) {
     if (!listener) {
       return;
     }
-    const errorHandler = this.g?.onListenerError || $nb;
-    if (!errorHandler) {
+    const errorHandler2 = this._options?.onListenerError || onUnexpectedError;
+    if (!errorHandler2) {
       listener.value(value);
       return;
     }
     try {
       listener.value(value);
     } catch (e) {
-      errorHandler(e);
+      errorHandler2(e);
     }
   }
   /** Delivers items in the queue. Assumes the queue is ready to go. */
-  D(dq) {
-    const listeners = dq.current.w;
+  _deliverQueue(dq) {
+    const listeners = dq.current._listeners;
     while (dq.i < dq.end) {
-      this.C(listeners[dq.i++], dq.value);
+      this._deliver(listeners[dq.i++], dq.value);
     }
     dq.reset();
   }
@@ -2523,23 +2523,23 @@ var $qf = class {
    * subscribers
    */
   fire(event) {
-    if (this.z?.current) {
-      this.D(this.z);
-      this.m?.stop();
+    if (this._deliveryQueue?.current) {
+      this._deliverQueue(this._deliveryQueue);
+      this._perfMon?.stop();
     }
-    this.m?.start(this.A);
-    if (!this.w) {
-    } else if (this.w instanceof UniqueContainer) {
-      this.C(this.w, event);
+    this._perfMon?.start(this._size);
+    if (!this._listeners) {
+    } else if (this._listeners instanceof UniqueContainer) {
+      this._deliver(this._listeners, event);
     } else {
-      const dq = this.z;
-      dq.enqueue(this, event, this.w.length);
-      this.D(dq);
+      const dq = this._deliveryQueue;
+      dq.enqueue(this, event, this._listeners.length);
+      this._deliverQueue(dq);
     }
-    this.m?.stop();
+    this._perfMon?.stop();
   }
   hasListeners() {
-    return this.A > 0;
+    return this._size > 0;
   }
 };
 var EventDeliveryQueuePrivate = class {
@@ -2560,14 +2560,14 @@ var EventDeliveryQueuePrivate = class {
   }
 };
 function addToDisposables(result, disposables) {
-  if (disposables instanceof $Ed) {
+  if (disposables instanceof DisposableStore) {
     disposables.add(result);
   } else if (Array.isArray(disposables)) {
     disposables.push(result);
   }
 }
 function disposeAndRemove(result, disposables) {
-  if (disposables instanceof $Ed) {
+  if (disposables instanceof DisposableStore) {
     disposables.delete(result);
   } else if (Array.isArray(disposables)) {
     const index = disposables.indexOf(result);
@@ -2579,15 +2579,15 @@ function disposeAndRemove(result, disposables) {
 }
 
 // out-build/vs/nls.messages.js
-function $h() {
+function getNLSLanguage() {
   return globalThis._VSCODE_NLS_LANGUAGE;
 }
 
 // out-build/vs/nls.js
-var isPseudo = $h() === "pseudo" || typeof document !== "undefined" && document.location && typeof document.location.hash === "string" && document.location.hash.indexOf("pseudo=true") >= 0;
+var isPseudo = getNLSLanguage() === "pseudo" || typeof document !== "undefined" && document.location && typeof document.location.hash === "string" && document.location.hash.indexOf("pseudo=true") >= 0;
 
 // out-build/vs/base/common/platform.js
-var $k = "en";
+var LANGUAGE_DEFAULT = "en";
 var _isWindows = false;
 var _isMacintosh = false;
 var _isLinux = false;
@@ -2599,8 +2599,8 @@ var _isIOS = false;
 var _isCI = false;
 var _isMobile = false;
 var _locale = void 0;
-var _language = $k;
-var _platformLocale = $k;
+var _language = LANGUAGE_DEFAULT;
+var _platformLocale = LANGUAGE_DEFAULT;
 var _translationsConfigFile = void 0;
 var _userAgent = void 0;
 var $globalThis = globalThis;
@@ -2619,15 +2619,15 @@ if (typeof nodeProcess === "object") {
   _isLinuxSnap = _isLinux && !!nodeProcess.env["SNAP"] && !!nodeProcess.env["SNAP_REVISION"];
   _isElectron = isElectronProcess;
   _isCI = !!nodeProcess.env["CI"] || !!nodeProcess.env["BUILD_ARTIFACTSTAGINGDIRECTORY"] || !!nodeProcess.env["GITHUB_WORKSPACE"];
-  _locale = $k;
-  _language = $k;
+  _locale = LANGUAGE_DEFAULT;
+  _language = LANGUAGE_DEFAULT;
   const rawNlsConfig = nodeProcess.env["VSCODE_NLS_CONFIG"];
   if (rawNlsConfig) {
     try {
       const nlsConfig = JSON.parse(rawNlsConfig);
       _locale = nlsConfig.userLocale;
       _platformLocale = nlsConfig.osLocale;
-      _language = nlsConfig.resolvedLanguage || $k;
+      _language = nlsConfig.resolvedLanguage || LANGUAGE_DEFAULT;
       _translationsConfigFile = nlsConfig.languagePack?.translationsConfigFile;
     } catch (e) {
     }
@@ -2641,7 +2641,7 @@ if (typeof nodeProcess === "object") {
   _isLinux = _userAgent.indexOf("Linux") >= 0;
   _isMobile = _userAgent?.indexOf("Mobi") >= 0;
   _isWeb = true;
-  _language = $h() || $k;
+  _language = getNLSLanguage() || LANGUAGE_DEFAULT;
   _locale = navigator.language.toLowerCase();
   _platformLocale = _locale;
 } else {
@@ -2662,39 +2662,39 @@ if (_isMacintosh) {
 } else if (_isLinux) {
   _platform = 2;
 }
-var $m = _isWindows;
-var $n = _isMacintosh;
-var $o = _isLinux;
-var $q = _isNative;
-var $s = _isWeb;
-var $t = _isWeb && typeof $globalThis.importScripts === "function";
-var $u = $t ? $globalThis.origin : void 0;
-var $z = _userAgent;
-var $A = _language;
+var isWindows = _isWindows;
+var isMacintosh = _isMacintosh;
+var isLinux = _isLinux;
+var isNative = _isNative;
+var isWeb = _isWeb;
+var isWebWorker = _isWeb && typeof $globalThis.importScripts === "function";
+var webWorkerOrigin = isWebWorker ? $globalThis.origin : void 0;
+var userAgent = _userAgent;
+var language = _language;
 var Language;
 (function(Language2) {
   function value() {
-    return $A;
+    return language;
   }
   Language2.value = value;
   function isDefaultVariant() {
-    if ($A.length === 2) {
-      return $A === "en";
-    } else if ($A.length >= 3) {
-      return $A[0] === "e" && $A[1] === "n" && $A[2] === "-";
+    if (language.length === 2) {
+      return language === "en";
+    } else if (language.length >= 3) {
+      return language[0] === "e" && language[1] === "n" && language[2] === "-";
     } else {
       return false;
     }
   }
   Language2.isDefaultVariant = isDefaultVariant;
   function isDefault() {
-    return $A === "en";
+    return language === "en";
   }
   Language2.isDefault = isDefault;
 })(Language || (Language = {}));
-var $E = typeof $globalThis.postMessage === "function" && !$globalThis.importScripts;
-var $F = (() => {
-  if ($E) {
+var setTimeout0IsFaster = typeof $globalThis.postMessage === "function" && !$globalThis.importScripts;
+var setTimeout0 = (() => {
+  if (setTimeout0IsFaster) {
     const pending = [];
     $globalThis.addEventListener("message", (e) => {
       if (e.data && e.data.vscodeScheduleAsyncWork) {
@@ -2726,11 +2726,11 @@ var OperatingSystem;
   OperatingSystem2[OperatingSystem2["Macintosh"] = 2] = "Macintosh";
   OperatingSystem2[OperatingSystem2["Linux"] = 3] = "Linux";
 })(OperatingSystem || (OperatingSystem = {}));
-var $I = !!($z && $z.indexOf("Chrome") >= 0);
-var $J = !!($z && $z.indexOf("Firefox") >= 0);
-var $K = !!(!$I && ($z && $z.indexOf("Safari") >= 0));
-var $L = !!($z && $z.indexOf("Edg/") >= 0);
-var $M = !!($z && $z.indexOf("Android") >= 0);
+var isChrome = !!(userAgent && userAgent.indexOf("Chrome") >= 0);
+var isFirefox = !!(userAgent && userAgent.indexOf("Firefox") >= 0);
+var isSafari = !!(!isChrome && (userAgent && userAgent.indexOf("Safari") >= 0));
+var isEdge = !!(userAgent && userAgent.indexOf("Edg/") >= 0);
+var isAndroid = !!(userAgent && userAgent.indexOf("Android") >= 0);
 
 // out-build/vs/base/common/cancellation.js
 var shortcutEvent = Object.freeze(function(callback, context) {
@@ -2765,92 +2765,92 @@ var CancellationToken;
 })(CancellationToken || (CancellationToken = {}));
 var MutableToken = class {
   constructor() {
-    this.a = false;
-    this.b = null;
+    this._isCancelled = false;
+    this._emitter = null;
   }
   cancel() {
-    if (!this.a) {
-      this.a = true;
-      if (this.b) {
-        this.b.fire(void 0);
+    if (!this._isCancelled) {
+      this._isCancelled = true;
+      if (this._emitter) {
+        this._emitter.fire(void 0);
         this.dispose();
       }
     }
   }
   get isCancellationRequested() {
-    return this.a;
+    return this._isCancelled;
   }
   get onCancellationRequested() {
-    if (this.a) {
+    if (this._isCancelled) {
       return shortcutEvent;
     }
-    if (!this.b) {
-      this.b = new $qf();
+    if (!this._emitter) {
+      this._emitter = new Emitter();
     }
-    return this.b.event;
+    return this._emitter.event;
   }
   dispose() {
-    if (this.b) {
-      this.b.dispose();
-      this.b = null;
+    if (this._emitter) {
+      this._emitter.dispose();
+      this._emitter = null;
     }
   }
 };
-var $Cf = class {
+var CancellationTokenSource = class {
   constructor(parent) {
-    this.f = void 0;
-    this.g = void 0;
-    this.g = parent && parent.onCancellationRequested(this.cancel, this);
+    this._token = void 0;
+    this._parentListener = void 0;
+    this._parentListener = parent && parent.onCancellationRequested(this.cancel, this);
   }
   get token() {
-    if (!this.f) {
-      this.f = new MutableToken();
+    if (!this._token) {
+      this._token = new MutableToken();
     }
-    return this.f;
+    return this._token;
   }
   cancel() {
-    if (!this.f) {
-      this.f = CancellationToken.Cancelled;
-    } else if (this.f instanceof MutableToken) {
-      this.f.cancel();
+    if (!this._token) {
+      this._token = CancellationToken.Cancelled;
+    } else if (this._token instanceof MutableToken) {
+      this._token.cancel();
     }
   }
   dispose(cancel = false) {
     if (cancel) {
       this.cancel();
     }
-    this.g?.dispose();
-    if (!this.f) {
-      this.f = CancellationToken.None;
-    } else if (this.f instanceof MutableToken) {
-      this.f.dispose();
+    this._parentListener?.dispose();
+    if (!this._token) {
+      this._token = CancellationToken.None;
+    } else if (this._token instanceof MutableToken) {
+      this._token.dispose();
     }
   }
 };
 
 // out-build/vs/base/common/cache.js
-function $Gf(t) {
+function identity(t) {
   return t;
 }
-var $Hf = class {
+var LRUCachedFunction = class {
   constructor(arg1, arg2) {
-    this.a = void 0;
-    this.b = void 0;
+    this.lastCache = void 0;
+    this.lastArgKey = void 0;
     if (typeof arg1 === "function") {
-      this.c = arg1;
-      this.d = $Gf;
+      this._fn = arg1;
+      this._computeKey = identity;
     } else {
-      this.c = arg2;
-      this.d = arg1.getCacheKey;
+      this._fn = arg2;
+      this._computeKey = arg1.getCacheKey;
     }
   }
   get(arg) {
-    const key = this.d(arg);
-    if (this.b !== key) {
-      this.b = key;
-      this.a = this.c(arg);
+    const key = this._computeKey(arg);
+    if (this.lastArgKey !== key) {
+      this.lastArgKey = key;
+      this.lastCache = this._fn(arg);
     }
-    return this.a;
+    return this.lastCache;
   }
 };
 
@@ -2861,16 +2861,16 @@ var LazyValueState;
   LazyValueState2[LazyValueState2["Running"] = 1] = "Running";
   LazyValueState2[LazyValueState2["Completed"] = 2] = "Completed";
 })(LazyValueState || (LazyValueState = {}));
-var $Kf = class {
-  constructor(d) {
-    this.d = d;
-    this.a = LazyValueState.Uninitialized;
+var Lazy = class {
+  constructor(executor) {
+    this.executor = executor;
+    this._state = LazyValueState.Uninitialized;
   }
   /**
    * True if the lazy value has been resolved.
    */
   get hasValue() {
-    return this.a === LazyValueState.Completed;
+    return this._state === LazyValueState.Completed;
   }
   /**
    * Get the wrapped value.
@@ -2879,36 +2879,36 @@ var $Kf = class {
    * resolved once. `getValue` will re-throw exceptions that are hit while resolving the value
    */
   get value() {
-    if (this.a === LazyValueState.Uninitialized) {
-      this.a = LazyValueState.Running;
+    if (this._state === LazyValueState.Uninitialized) {
+      this._state = LazyValueState.Running;
       try {
-        this.b = this.d();
+        this._value = this.executor();
       } catch (err) {
-        this.c = err;
+        this._error = err;
       } finally {
-        this.a = LazyValueState.Completed;
+        this._state = LazyValueState.Completed;
       }
-    } else if (this.a === LazyValueState.Running) {
+    } else if (this._state === LazyValueState.Running) {
       throw new Error("Cannot read the value of a lazy that is being initialized");
     }
-    if (this.c) {
-      throw this.c;
+    if (this._error) {
+      throw this._error;
     }
-    return this.b;
+    return this._value;
   }
   /**
    * Get the wrapped value without forcing evaluation.
    */
   get rawValue() {
-    return this.b;
+    return this._value;
   }
 };
 
 // out-build/vs/base/common/strings.js
-function $Sf(value) {
+function escapeRegExpCharacters(value) {
   return value.replace(/[\\\{\}\*\+\?\|\^\$\.\[\]\(\)]/g, "\\$&");
 }
-function $Xf(haystack, needle) {
+function ltrim(haystack, needle) {
   if (!haystack || !needle) {
     return haystack;
   }
@@ -2926,12 +2926,12 @@ function $Xf(haystack, needle) {
   }
   return haystack.substring(offset);
 }
-function $1f(searchString, isRegex, options = {}) {
+function createRegExp(searchString, isRegex, options = {}) {
   if (!searchString) {
     throw new Error("Cannot create regex from empty string");
   }
   if (!isRegex) {
-    searchString = $Sf(searchString);
+    searchString = escapeRegExpCharacters(searchString);
   }
   if (options.wholeWord) {
     if (!/\B/.test(searchString.charAt(0))) {
@@ -2956,7 +2956,7 @@ function $1f(searchString, isRegex, options = {}) {
   }
   return new RegExp(searchString, modifiers);
 }
-function $_f(a, b) {
+function compare(a, b) {
   if (a < b) {
     return -1;
   } else if (a > b) {
@@ -2965,7 +2965,7 @@ function $_f(a, b) {
     return 0;
   }
 }
-function $ag(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
+function compareSubstring(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   for (; aStart < aEnd && bStart < bEnd; aStart++, bStart++) {
     const codeA = a.charCodeAt(aStart);
     const codeB = b.charCodeAt(bStart);
@@ -2984,7 +2984,7 @@ function $ag(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   }
   return 0;
 }
-function $cg(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
+function compareSubstringIgnoreCase(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   for (; aStart < aEnd && bStart < bEnd; aStart++, bStart++) {
     let codeA = a.charCodeAt(aStart);
     let codeB = b.charCodeAt(bStart);
@@ -2992,12 +2992,12 @@ function $cg(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
       continue;
     }
     if (codeA >= 128 || codeB >= 128) {
-      return $ag(a.toLowerCase(), b.toLowerCase(), aStart, aEnd, bStart, bEnd);
+      return compareSubstring(a.toLowerCase(), b.toLowerCase(), aStart, aEnd, bStart, bEnd);
     }
-    if ($eg(codeA)) {
+    if (isLowerAsciiLetter(codeA)) {
       codeA -= 32;
     }
-    if ($eg(codeB)) {
+    if (isLowerAsciiLetter(codeB)) {
       codeB -= 32;
     }
     const diff = codeA - codeB;
@@ -3015,23 +3015,23 @@ function $cg(a, b, aStart = 0, aEnd = a.length, bStart = 0, bEnd = b.length) {
   }
   return 0;
 }
-function $eg(code) {
+function isLowerAsciiLetter(code) {
   return code >= 97 && code <= 122;
 }
-function $fg(code) {
+function isUpperAsciiLetter(code) {
   return code >= 65 && code <= 90;
 }
-function $gg(a, b) {
-  return a.length === b.length && $cg(a, b) === 0;
+function equalsIgnoreCase(a, b) {
+  return a.length === b.length && compareSubstringIgnoreCase(a, b) === 0;
 }
-function $ig(str, candidate) {
+function startsWithIgnoreCase(str, candidate) {
   const len = candidate.length;
-  return len <= str.length && $cg(str, candidate, 0, len) === 0;
+  return len <= str.length && compareSubstringIgnoreCase(str, candidate, 0, len) === 0;
 }
-function $jg(str, candidate) {
+function endsWithIgnoreCase(str, candidate) {
   const len = str.length;
   const start = len - candidate.length;
-  return start >= 0 && $cg(str, candidate, start, len) === 0;
+  return start >= 0 && compareSubstringIgnoreCase(str, candidate, start, len) === 0;
 }
 var CSI_SEQUENCE = /(?:\x1b\[|\x9b)[=?>!]?[\d;:]*["$#'* ]?[a-zA-Z@^`{}|~]/;
 var OSC_SEQUENCE = /(?:\x1b\]|\x9d).*?(?:\x1b\\|\x07|\x9c)/;
@@ -3041,7 +3041,7 @@ var CONTROL_SEQUENCES = new RegExp("(?:" + [
   OSC_SEQUENCE.source,
   ESC_SEQUENCE.source
 ].join("|") + ")", "g");
-var $Gg = String.fromCharCode(
+var UTF8_BOM_CHARACTER = String.fromCharCode(
   65279
   /* CharCode.UTF8_BOM */
 );
@@ -3065,16 +3065,16 @@ var GraphemeBreakType;
 })(GraphemeBreakType || (GraphemeBreakType = {}));
 var GraphemeBreakTree = class _GraphemeBreakTree {
   static {
-    this.c = null;
+    this._INSTANCE = null;
   }
   static getInstance() {
-    if (!_GraphemeBreakTree.c) {
-      _GraphemeBreakTree.c = new _GraphemeBreakTree();
+    if (!_GraphemeBreakTree._INSTANCE) {
+      _GraphemeBreakTree._INSTANCE = new _GraphemeBreakTree();
     }
-    return _GraphemeBreakTree.c;
+    return _GraphemeBreakTree._INSTANCE;
   }
   constructor() {
-    this.d = getGraphemeBreakRawData();
+    this._data = getGraphemeBreakRawData();
   }
   getGraphemeBreakType(codePoint) {
     if (codePoint < 32) {
@@ -3089,7 +3089,7 @@ var GraphemeBreakTree = class _GraphemeBreakTree {
     if (codePoint < 127) {
       return 0;
     }
-    const data = this.d;
+    const data = this._data;
     const nodeCount = data.length / 3;
     let nodeIndex = 1;
     while (nodeIndex <= nodeCount) {
@@ -3114,14 +3114,14 @@ var CodePoint;
   CodePoint2[CodePoint2["enclosingKeyCap"] = 8419] = "enclosingKeyCap";
   CodePoint2[CodePoint2["space"] = 32] = "space";
 })(CodePoint || (CodePoint = {}));
-var $Rg = class _$Rg {
+var AmbiguousCharacters = class _AmbiguousCharacters {
   static {
-    this.c = new $Kf(() => {
+    this.ambiguousCharacterData = new Lazy(() => {
       return JSON.parse('{"_common":[8232,32,8233,32,5760,32,8192,32,8193,32,8194,32,8195,32,8196,32,8197,32,8198,32,8200,32,8201,32,8202,32,8287,32,8199,32,8239,32,2042,95,65101,95,65102,95,65103,95,8208,45,8209,45,8210,45,65112,45,1748,45,8259,45,727,45,8722,45,10134,45,11450,45,1549,44,1643,44,184,44,42233,44,894,59,2307,58,2691,58,1417,58,1795,58,1796,58,5868,58,65072,58,6147,58,6153,58,8282,58,1475,58,760,58,42889,58,8758,58,720,58,42237,58,451,33,11601,33,660,63,577,63,2429,63,5038,63,42731,63,119149,46,8228,46,1793,46,1794,46,42510,46,68176,46,1632,46,1776,46,42232,46,1373,96,65287,96,8219,96,1523,96,8242,96,1370,96,8175,96,65344,96,900,96,8189,96,8125,96,8127,96,8190,96,697,96,884,96,712,96,714,96,715,96,756,96,699,96,701,96,700,96,702,96,42892,96,1497,96,2036,96,2037,96,5194,96,5836,96,94033,96,94034,96,65339,91,10088,40,10098,40,12308,40,64830,40,65341,93,10089,41,10099,41,12309,41,64831,41,10100,123,119060,123,10101,125,65342,94,8270,42,1645,42,8727,42,66335,42,5941,47,8257,47,8725,47,8260,47,9585,47,10187,47,10744,47,119354,47,12755,47,12339,47,11462,47,20031,47,12035,47,65340,92,65128,92,8726,92,10189,92,10741,92,10745,92,119311,92,119355,92,12756,92,20022,92,12034,92,42872,38,708,94,710,94,5869,43,10133,43,66203,43,8249,60,10094,60,706,60,119350,60,5176,60,5810,60,5120,61,11840,61,12448,61,42239,61,8250,62,10095,62,707,62,119351,62,5171,62,94015,62,8275,126,732,126,8128,126,8764,126,65372,124,65293,45,118002,50,120784,50,120794,50,120804,50,120814,50,120824,50,130034,50,42842,50,423,50,1000,50,42564,50,5311,50,42735,50,119302,51,118003,51,120785,51,120795,51,120805,51,120815,51,120825,51,130035,51,42923,51,540,51,439,51,42858,51,11468,51,1248,51,94011,51,71882,51,118004,52,120786,52,120796,52,120806,52,120816,52,120826,52,130036,52,5070,52,71855,52,118005,53,120787,53,120797,53,120807,53,120817,53,120827,53,130037,53,444,53,71867,53,118006,54,120788,54,120798,54,120808,54,120818,54,120828,54,130038,54,11474,54,5102,54,71893,54,119314,55,118007,55,120789,55,120799,55,120809,55,120819,55,120829,55,130039,55,66770,55,71878,55,2819,56,2538,56,2666,56,125131,56,118008,56,120790,56,120800,56,120810,56,120820,56,120830,56,130040,56,547,56,546,56,66330,56,2663,57,2920,57,2541,57,3437,57,118009,57,120791,57,120801,57,120811,57,120821,57,120831,57,130041,57,42862,57,11466,57,71884,57,71852,57,71894,57,9082,97,65345,97,119834,97,119886,97,119938,97,119990,97,120042,97,120094,97,120146,97,120198,97,120250,97,120302,97,120354,97,120406,97,120458,97,593,97,945,97,120514,97,120572,97,120630,97,120688,97,120746,97,65313,65,117974,65,119808,65,119860,65,119912,65,119964,65,120016,65,120068,65,120120,65,120172,65,120224,65,120276,65,120328,65,120380,65,120432,65,913,65,120488,65,120546,65,120604,65,120662,65,120720,65,5034,65,5573,65,42222,65,94016,65,66208,65,119835,98,119887,98,119939,98,119991,98,120043,98,120095,98,120147,98,120199,98,120251,98,120303,98,120355,98,120407,98,120459,98,388,98,5071,98,5234,98,5551,98,65314,66,8492,66,117975,66,119809,66,119861,66,119913,66,120017,66,120069,66,120121,66,120173,66,120225,66,120277,66,120329,66,120381,66,120433,66,42932,66,914,66,120489,66,120547,66,120605,66,120663,66,120721,66,5108,66,5623,66,42192,66,66178,66,66209,66,66305,66,65347,99,8573,99,119836,99,119888,99,119940,99,119992,99,120044,99,120096,99,120148,99,120200,99,120252,99,120304,99,120356,99,120408,99,120460,99,7428,99,1010,99,11429,99,43951,99,66621,99,128844,67,71913,67,71922,67,65315,67,8557,67,8450,67,8493,67,117976,67,119810,67,119862,67,119914,67,119966,67,120018,67,120174,67,120226,67,120278,67,120330,67,120382,67,120434,67,1017,67,11428,67,5087,67,42202,67,66210,67,66306,67,66581,67,66844,67,8574,100,8518,100,119837,100,119889,100,119941,100,119993,100,120045,100,120097,100,120149,100,120201,100,120253,100,120305,100,120357,100,120409,100,120461,100,1281,100,5095,100,5231,100,42194,100,8558,68,8517,68,117977,68,119811,68,119863,68,119915,68,119967,68,120019,68,120071,68,120123,68,120175,68,120227,68,120279,68,120331,68,120383,68,120435,68,5024,68,5598,68,5610,68,42195,68,8494,101,65349,101,8495,101,8519,101,119838,101,119890,101,119942,101,120046,101,120098,101,120150,101,120202,101,120254,101,120306,101,120358,101,120410,101,120462,101,43826,101,1213,101,8959,69,65317,69,8496,69,117978,69,119812,69,119864,69,119916,69,120020,69,120072,69,120124,69,120176,69,120228,69,120280,69,120332,69,120384,69,120436,69,917,69,120492,69,120550,69,120608,69,120666,69,120724,69,11577,69,5036,69,42224,69,71846,69,71854,69,66182,69,119839,102,119891,102,119943,102,119995,102,120047,102,120099,102,120151,102,120203,102,120255,102,120307,102,120359,102,120411,102,120463,102,43829,102,42905,102,383,102,7837,102,1412,102,119315,70,8497,70,117979,70,119813,70,119865,70,119917,70,120021,70,120073,70,120125,70,120177,70,120229,70,120281,70,120333,70,120385,70,120437,70,42904,70,988,70,120778,70,5556,70,42205,70,71874,70,71842,70,66183,70,66213,70,66853,70,65351,103,8458,103,119840,103,119892,103,119944,103,120048,103,120100,103,120152,103,120204,103,120256,103,120308,103,120360,103,120412,103,120464,103,609,103,7555,103,397,103,1409,103,117980,71,119814,71,119866,71,119918,71,119970,71,120022,71,120074,71,120126,71,120178,71,120230,71,120282,71,120334,71,120386,71,120438,71,1292,71,5056,71,5107,71,42198,71,65352,104,8462,104,119841,104,119945,104,119997,104,120049,104,120101,104,120153,104,120205,104,120257,104,120309,104,120361,104,120413,104,120465,104,1211,104,1392,104,5058,104,65320,72,8459,72,8460,72,8461,72,117981,72,119815,72,119867,72,119919,72,120023,72,120179,72,120231,72,120283,72,120335,72,120387,72,120439,72,919,72,120494,72,120552,72,120610,72,120668,72,120726,72,11406,72,5051,72,5500,72,42215,72,66255,72,731,105,9075,105,65353,105,8560,105,8505,105,8520,105,119842,105,119894,105,119946,105,119998,105,120050,105,120102,105,120154,105,120206,105,120258,105,120310,105,120362,105,120414,105,120466,105,120484,105,618,105,617,105,953,105,8126,105,890,105,120522,105,120580,105,120638,105,120696,105,120754,105,1110,105,42567,105,1231,105,43893,105,5029,105,71875,105,65354,106,8521,106,119843,106,119895,106,119947,106,119999,106,120051,106,120103,106,120155,106,120207,106,120259,106,120311,106,120363,106,120415,106,120467,106,1011,106,1112,106,65322,74,117983,74,119817,74,119869,74,119921,74,119973,74,120025,74,120077,74,120129,74,120181,74,120233,74,120285,74,120337,74,120389,74,120441,74,42930,74,895,74,1032,74,5035,74,5261,74,42201,74,119844,107,119896,107,119948,107,120000,107,120052,107,120104,107,120156,107,120208,107,120260,107,120312,107,120364,107,120416,107,120468,107,8490,75,65323,75,117984,75,119818,75,119870,75,119922,75,119974,75,120026,75,120078,75,120130,75,120182,75,120234,75,120286,75,120338,75,120390,75,120442,75,922,75,120497,75,120555,75,120613,75,120671,75,120729,75,11412,75,5094,75,5845,75,42199,75,66840,75,1472,108,8739,73,9213,73,65512,73,1633,108,1777,73,66336,108,125127,108,118001,108,120783,73,120793,73,120803,73,120813,73,120823,73,130033,73,65321,73,8544,73,8464,73,8465,73,117982,108,119816,73,119868,73,119920,73,120024,73,120128,73,120180,73,120232,73,120284,73,120336,73,120388,73,120440,73,65356,108,8572,73,8467,108,119845,108,119897,108,119949,108,120001,108,120053,108,120105,73,120157,73,120209,73,120261,73,120313,73,120365,73,120417,73,120469,73,448,73,120496,73,120554,73,120612,73,120670,73,120728,73,11410,73,1030,73,1216,73,1493,108,1503,108,1575,108,126464,108,126592,108,65166,108,65165,108,1994,108,11599,73,5825,73,42226,73,93992,73,66186,124,66313,124,119338,76,8556,76,8466,76,117985,76,119819,76,119871,76,119923,76,120027,76,120079,76,120131,76,120183,76,120235,76,120287,76,120339,76,120391,76,120443,76,11472,76,5086,76,5290,76,42209,76,93974,76,71843,76,71858,76,66587,76,66854,76,65325,77,8559,77,8499,77,117986,77,119820,77,119872,77,119924,77,120028,77,120080,77,120132,77,120184,77,120236,77,120288,77,120340,77,120392,77,120444,77,924,77,120499,77,120557,77,120615,77,120673,77,120731,77,1018,77,11416,77,5047,77,5616,77,5846,77,42207,77,66224,77,66321,77,119847,110,119899,110,119951,110,120003,110,120055,110,120107,110,120159,110,120211,110,120263,110,120315,110,120367,110,120419,110,120471,110,1400,110,1404,110,65326,78,8469,78,117987,78,119821,78,119873,78,119925,78,119977,78,120029,78,120081,78,120185,78,120237,78,120289,78,120341,78,120393,78,120445,78,925,78,120500,78,120558,78,120616,78,120674,78,120732,78,11418,78,42208,78,66835,78,3074,111,3202,111,3330,111,3458,111,2406,111,2662,111,2790,111,3046,111,3174,111,3302,111,3430,111,3664,111,3792,111,4160,111,1637,111,1781,111,65359,111,8500,111,119848,111,119900,111,119952,111,120056,111,120108,111,120160,111,120212,111,120264,111,120316,111,120368,111,120420,111,120472,111,7439,111,7441,111,43837,111,959,111,120528,111,120586,111,120644,111,120702,111,120760,111,963,111,120532,111,120590,111,120648,111,120706,111,120764,111,11423,111,4351,111,1413,111,1505,111,1607,111,126500,111,126564,111,126596,111,65259,111,65260,111,65258,111,65257,111,1726,111,64428,111,64429,111,64427,111,64426,111,1729,111,64424,111,64425,111,64423,111,64422,111,1749,111,3360,111,4125,111,66794,111,71880,111,71895,111,66604,111,1984,79,2534,79,2918,79,12295,79,70864,79,71904,79,118000,79,120782,79,120792,79,120802,79,120812,79,120822,79,130032,79,65327,79,117988,79,119822,79,119874,79,119926,79,119978,79,120030,79,120082,79,120134,79,120186,79,120238,79,120290,79,120342,79,120394,79,120446,79,927,79,120502,79,120560,79,120618,79,120676,79,120734,79,11422,79,1365,79,11604,79,4816,79,2848,79,66754,79,42227,79,71861,79,66194,79,66219,79,66564,79,66838,79,9076,112,65360,112,119849,112,119901,112,119953,112,120005,112,120057,112,120109,112,120161,112,120213,112,120265,112,120317,112,120369,112,120421,112,120473,112,961,112,120530,112,120544,112,120588,112,120602,112,120646,112,120660,112,120704,112,120718,112,120762,112,120776,112,11427,112,65328,80,8473,80,117989,80,119823,80,119875,80,119927,80,119979,80,120031,80,120083,80,120187,80,120239,80,120291,80,120343,80,120395,80,120447,80,929,80,120504,80,120562,80,120620,80,120678,80,120736,80,11426,80,5090,80,5229,80,42193,80,66197,80,119850,113,119902,113,119954,113,120006,113,120058,113,120110,113,120162,113,120214,113,120266,113,120318,113,120370,113,120422,113,120474,113,1307,113,1379,113,1382,113,8474,81,117990,81,119824,81,119876,81,119928,81,119980,81,120032,81,120084,81,120188,81,120240,81,120292,81,120344,81,120396,81,120448,81,11605,81,119851,114,119903,114,119955,114,120007,114,120059,114,120111,114,120163,114,120215,114,120267,114,120319,114,120371,114,120423,114,120475,114,43847,114,43848,114,7462,114,11397,114,43905,114,119318,82,8475,82,8476,82,8477,82,117991,82,119825,82,119877,82,119929,82,120033,82,120189,82,120241,82,120293,82,120345,82,120397,82,120449,82,422,82,5025,82,5074,82,66740,82,5511,82,42211,82,94005,82,65363,115,119852,115,119904,115,119956,115,120008,115,120060,115,120112,115,120164,115,120216,115,120268,115,120320,115,120372,115,120424,115,120476,115,42801,115,445,115,1109,115,43946,115,71873,115,66632,115,65331,83,117992,83,119826,83,119878,83,119930,83,119982,83,120034,83,120086,83,120138,83,120190,83,120242,83,120294,83,120346,83,120398,83,120450,83,1029,83,1359,83,5077,83,5082,83,42210,83,94010,83,66198,83,66592,83,119853,116,119905,116,119957,116,120009,116,120061,116,120113,116,120165,116,120217,116,120269,116,120321,116,120373,116,120425,116,120477,116,8868,84,10201,84,128872,84,65332,84,117993,84,119827,84,119879,84,119931,84,119983,84,120035,84,120087,84,120139,84,120191,84,120243,84,120295,84,120347,84,120399,84,120451,84,932,84,120507,84,120565,84,120623,84,120681,84,120739,84,11430,84,5026,84,42196,84,93962,84,71868,84,66199,84,66225,84,66325,84,119854,117,119906,117,119958,117,120010,117,120062,117,120114,117,120166,117,120218,117,120270,117,120322,117,120374,117,120426,117,120478,117,42911,117,7452,117,43854,117,43858,117,651,117,965,117,120534,117,120592,117,120650,117,120708,117,120766,117,1405,117,66806,117,71896,117,8746,85,8899,85,117994,85,119828,85,119880,85,119932,85,119984,85,120036,85,120088,85,120140,85,120192,85,120244,85,120296,85,120348,85,120400,85,120452,85,1357,85,4608,85,66766,85,5196,85,42228,85,94018,85,71864,85,8744,118,8897,118,65366,118,8564,118,119855,118,119907,118,119959,118,120011,118,120063,118,120115,118,120167,118,120219,118,120271,118,120323,118,120375,118,120427,118,120479,118,7456,118,957,118,120526,118,120584,118,120642,118,120700,118,120758,118,1141,118,1496,118,71430,118,43945,118,71872,118,119309,86,1639,86,1783,86,8548,86,117995,86,119829,86,119881,86,119933,86,119985,86,120037,86,120089,86,120141,86,120193,86,120245,86,120297,86,120349,86,120401,86,120453,86,1140,86,11576,86,5081,86,5167,86,42719,86,42214,86,93960,86,71840,86,66845,86,623,119,119856,119,119908,119,119960,119,120012,119,120064,119,120116,119,120168,119,120220,119,120272,119,120324,119,120376,119,120428,119,120480,119,7457,119,1121,119,1309,119,1377,119,71434,119,71438,119,71439,119,43907,119,71910,87,71919,87,117996,87,119830,87,119882,87,119934,87,119986,87,120038,87,120090,87,120142,87,120194,87,120246,87,120298,87,120350,87,120402,87,120454,87,1308,87,5043,87,5076,87,42218,87,5742,120,10539,120,10540,120,10799,120,65368,120,8569,120,119857,120,119909,120,119961,120,120013,120,120065,120,120117,120,120169,120,120221,120,120273,120,120325,120,120377,120,120429,120,120481,120,5441,120,5501,120,5741,88,9587,88,66338,88,71916,88,65336,88,8553,88,117997,88,119831,88,119883,88,119935,88,119987,88,120039,88,120091,88,120143,88,120195,88,120247,88,120299,88,120351,88,120403,88,120455,88,42931,88,935,88,120510,88,120568,88,120626,88,120684,88,120742,88,11436,88,11613,88,5815,88,42219,88,66192,88,66228,88,66327,88,66855,88,611,121,7564,121,65369,121,119858,121,119910,121,119962,121,120014,121,120066,121,120118,121,120170,121,120222,121,120274,121,120326,121,120378,121,120430,121,120482,121,655,121,7935,121,43866,121,947,121,8509,121,120516,121,120574,121,120632,121,120690,121,120748,121,1199,121,4327,121,71900,121,65337,89,117998,89,119832,89,119884,89,119936,89,119988,89,120040,89,120092,89,120144,89,120196,89,120248,89,120300,89,120352,89,120404,89,120456,89,933,89,978,89,120508,89,120566,89,120624,89,120682,89,120740,89,11432,89,1198,89,5033,89,5053,89,42220,89,94019,89,71844,89,66226,89,119859,122,119911,122,119963,122,120015,122,120067,122,120119,122,120171,122,120223,122,120275,122,120327,122,120379,122,120431,122,120483,122,7458,122,43923,122,71876,122,71909,90,66293,90,65338,90,8484,90,8488,90,117999,90,119833,90,119885,90,119937,90,119989,90,120041,90,120197,90,120249,90,120301,90,120353,90,120405,90,120457,90,918,90,120493,90,120551,90,120609,90,120667,90,120725,90,5059,90,42204,90,71849,90,65282,34,65283,35,65284,36,65285,37,65286,38,65290,42,65291,43,65294,46,65295,47,65296,48,65298,50,65299,51,65300,52,65301,53,65302,54,65303,55,65304,56,65305,57,65308,60,65309,61,65310,62,65312,64,65316,68,65318,70,65319,71,65324,76,65329,81,65330,82,65333,85,65334,86,65335,87,65343,95,65346,98,65348,100,65350,102,65355,107,65357,109,65358,110,65361,113,65362,114,65364,116,65365,117,65367,119,65370,122,65371,123,65373,125,119846,109],"_default":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8216,96,8217,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"cs":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"de":[65374,126,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"es":[8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"fr":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"it":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"ja":[8211,45,8218,44,65281,33,8216,96,8245,96,180,96,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65292,44,65297,49,65307,59],"ko":[8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"pl":[65374,126,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"pt-BR":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"qps-ploc":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"ru":[65374,126,8218,44,65306,58,65281,33,8216,96,8245,96,180,96,12494,47,305,105,921,73,1009,112,215,120,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"tr":[160,32,8211,45,65374,126,8218,44,65306,58,65281,33,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65288,40,65289,41,65292,44,65297,49,65307,59,65311,63],"zh-hans":[160,32,65374,126,8218,44,8245,96,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89,65297,49],"zh-hant":[8211,45,65374,126,8218,44,180,96,12494,47,1047,51,1073,54,1072,97,1040,65,1068,98,1042,66,1089,99,1057,67,1077,101,1045,69,1053,72,305,105,1050,75,921,73,1052,77,1086,111,1054,79,1009,112,1088,112,1056,80,1075,114,1058,84,215,120,1093,120,1061,88,1091,121,1059,89]}');
     });
   }
   static {
-    this.d = new $Hf((localesStr) => {
+    this.cache = new LRUCachedFunction((localesStr) => {
       const locales = localesStr.split(",");
       function arrayToMap(arr) {
         const result = /* @__PURE__ */ new Map();
@@ -3149,7 +3149,7 @@ var $Rg = class _$Rg {
         }
         return result;
       }
-      const data = this.c.value;
+      const data = this.ambiguousCharacterData.value;
       let filteredLocales = locales.filter((l) => !l.startsWith("_") && Object.hasOwn(data, l));
       if (filteredLocales.length === 0) {
         filteredLocales = ["_default"];
@@ -3161,23 +3161,23 @@ var $Rg = class _$Rg {
       }
       const commonMap = arrayToMap(data["_common"]);
       const map = mergeMaps(commonMap, languageSpecificMap);
-      return new _$Rg(map);
+      return new _AmbiguousCharacters(map);
     });
   }
   static getInstance(locales) {
-    return _$Rg.d.get(Array.from(locales).join(","));
+    return _AmbiguousCharacters.cache.get(Array.from(locales).join(","));
   }
   static {
-    this.e = new $Kf(() => Object.keys(_$Rg.c.value).filter((k) => !k.startsWith("_")));
+    this._locales = new Lazy(() => Object.keys(_AmbiguousCharacters.ambiguousCharacterData.value).filter((k) => !k.startsWith("_")));
   }
   static getLocales() {
-    return _$Rg.e.value;
+    return _AmbiguousCharacters._locales.value;
   }
-  constructor(f) {
-    this.f = f;
+  constructor(confusableDictionary) {
+    this.confusableDictionary = confusableDictionary;
   }
   isAmbiguous(codePoint) {
-    return this.f.has(codePoint);
+    return this.confusableDictionary.has(codePoint);
   }
   containsAmbiguousCharacter(str) {
     for (let i = 0; i < str.length; i++) {
@@ -3193,39 +3193,39 @@ var $Rg = class _$Rg {
    * or undefined if such code point does note exist.
    */
   getPrimaryConfusable(codePoint) {
-    return this.f.get(codePoint);
+    return this.confusableDictionary.get(codePoint);
   }
   getConfusableCodePoints() {
-    return new Set(this.f.keys());
+    return new Set(this.confusableDictionary.keys());
   }
 };
-var $Sg = class _$Sg {
-  static c() {
+var InvisibleCharacters = class _InvisibleCharacters {
+  static getRawData() {
     return JSON.parse('{"_common":[11,12,13,127,847,1564,4447,4448,6068,6069,6155,6156,6157,6158,7355,7356,8192,8193,8194,8195,8196,8197,8198,8199,8200,8201,8202,8204,8205,8206,8207,8234,8235,8236,8237,8238,8239,8287,8288,8289,8290,8291,8292,8293,8294,8295,8296,8297,8298,8299,8300,8301,8302,8303,10240,12644,65024,65025,65026,65027,65028,65029,65030,65031,65032,65033,65034,65035,65036,65037,65038,65039,65279,65440,65520,65521,65522,65523,65524,65525,65526,65527,65528,65532,78844,119155,119156,119157,119158,119159,119160,119161,119162,917504,917505,917506,917507,917508,917509,917510,917511,917512,917513,917514,917515,917516,917517,917518,917519,917520,917521,917522,917523,917524,917525,917526,917527,917528,917529,917530,917531,917532,917533,917534,917535,917536,917537,917538,917539,917540,917541,917542,917543,917544,917545,917546,917547,917548,917549,917550,917551,917552,917553,917554,917555,917556,917557,917558,917559,917560,917561,917562,917563,917564,917565,917566,917567,917568,917569,917570,917571,917572,917573,917574,917575,917576,917577,917578,917579,917580,917581,917582,917583,917584,917585,917586,917587,917588,917589,917590,917591,917592,917593,917594,917595,917596,917597,917598,917599,917600,917601,917602,917603,917604,917605,917606,917607,917608,917609,917610,917611,917612,917613,917614,917615,917616,917617,917618,917619,917620,917621,917622,917623,917624,917625,917626,917627,917628,917629,917630,917631,917760,917761,917762,917763,917764,917765,917766,917767,917768,917769,917770,917771,917772,917773,917774,917775,917776,917777,917778,917779,917780,917781,917782,917783,917784,917785,917786,917787,917788,917789,917790,917791,917792,917793,917794,917795,917796,917797,917798,917799,917800,917801,917802,917803,917804,917805,917806,917807,917808,917809,917810,917811,917812,917813,917814,917815,917816,917817,917818,917819,917820,917821,917822,917823,917824,917825,917826,917827,917828,917829,917830,917831,917832,917833,917834,917835,917836,917837,917838,917839,917840,917841,917842,917843,917844,917845,917846,917847,917848,917849,917850,917851,917852,917853,917854,917855,917856,917857,917858,917859,917860,917861,917862,917863,917864,917865,917866,917867,917868,917869,917870,917871,917872,917873,917874,917875,917876,917877,917878,917879,917880,917881,917882,917883,917884,917885,917886,917887,917888,917889,917890,917891,917892,917893,917894,917895,917896,917897,917898,917899,917900,917901,917902,917903,917904,917905,917906,917907,917908,917909,917910,917911,917912,917913,917914,917915,917916,917917,917918,917919,917920,917921,917922,917923,917924,917925,917926,917927,917928,917929,917930,917931,917932,917933,917934,917935,917936,917937,917938,917939,917940,917941,917942,917943,917944,917945,917946,917947,917948,917949,917950,917951,917952,917953,917954,917955,917956,917957,917958,917959,917960,917961,917962,917963,917964,917965,917966,917967,917968,917969,917970,917971,917972,917973,917974,917975,917976,917977,917978,917979,917980,917981,917982,917983,917984,917985,917986,917987,917988,917989,917990,917991,917992,917993,917994,917995,917996,917997,917998,917999],"cs":[173,8203,12288],"de":[173,8203,12288],"es":[8203,12288],"fr":[173,8203,12288],"it":[160,173,12288],"ja":[173],"ko":[173,12288],"pl":[173,8203,12288],"pt-BR":[173,8203,12288],"qps-ploc":[160,173,8203,12288],"ru":[173,12288],"tr":[160,173,8203,12288],"zh-hans":[160,173,8203,12288],"zh-hant":[173,12288]}');
   }
   static {
-    this.d = void 0;
+    this._data = void 0;
   }
-  static e() {
-    if (!this.d) {
-      this.d = new Set([...Object.values(_$Sg.c())].flat());
+  static getData() {
+    if (!this._data) {
+      this._data = new Set([...Object.values(_InvisibleCharacters.getRawData())].flat());
     }
-    return this.d;
+    return this._data;
   }
   static isInvisibleCharacter(codePoint) {
-    return _$Sg.e().has(codePoint);
+    return _InvisibleCharacters.getData().has(codePoint);
   }
   static containsInvisibleCharacter(str) {
     for (let i = 0; i < str.length; i++) {
       const codePoint = str.codePointAt(i);
-      if (typeof codePoint === "number" && (_$Sg.isInvisibleCharacter(codePoint) || codePoint === 32)) {
+      if (typeof codePoint === "number" && (_InvisibleCharacters.isInvisibleCharacter(codePoint) || codePoint === 32)) {
         return true;
       }
     }
     return false;
   }
   static get codePoints() {
-    return _$Sg.e();
+    return _InvisibleCharacters.getData();
   }
 };
 
@@ -3286,37 +3286,37 @@ var UnsubscribeEventMessage = class {
 };
 var WebWorkerProtocol = class {
   constructor(handler) {
-    this.a = -1;
-    this.g = handler;
-    this.b = 0;
-    this.c = /* @__PURE__ */ Object.create(null);
-    this.d = /* @__PURE__ */ new Map();
-    this.f = /* @__PURE__ */ new Map();
+    this._workerId = -1;
+    this._handler = handler;
+    this._lastSentReq = 0;
+    this._pendingReplies = /* @__PURE__ */ Object.create(null);
+    this._pendingEmitters = /* @__PURE__ */ new Map();
+    this._pendingEvents = /* @__PURE__ */ new Map();
   }
   setWorkerId(workerId) {
-    this.a = workerId;
+    this._workerId = workerId;
   }
   async sendMessage(channel, method, args) {
-    const req = String(++this.b);
-    return new Promise((resolve, reject) => {
-      this.c[req] = {
-        resolve,
+    const req = String(++this._lastSentReq);
+    return new Promise((resolve2, reject) => {
+      this._pendingReplies[req] = {
+        resolve: resolve2,
         reject
       };
-      this.o(new RequestMessage(this.a, req, channel, method, args));
+      this._send(new RequestMessage(this._workerId, req, channel, method, args));
     });
   }
   listen(channel, eventName, arg) {
     let req = null;
-    const emitter = new $qf({
+    const emitter = new Emitter({
       onWillAddFirstListener: () => {
-        req = String(++this.b);
-        this.d.set(req, emitter);
-        this.o(new SubscribeEventMessage(this.a, req, channel, eventName, arg));
+        req = String(++this._lastSentReq);
+        this._pendingEmitters.set(req, emitter);
+        this._send(new SubscribeEventMessage(this._workerId, req, channel, eventName, arg));
       },
       onDidRemoveLastListener: () => {
-        this.d.delete(req);
-        this.o(new UnsubscribeEventMessage(this.a, req));
+        this._pendingEmitters.delete(req);
+        this._send(new UnsubscribeEventMessage(this._workerId, req));
         req = null;
       }
     });
@@ -3326,10 +3326,10 @@ var WebWorkerProtocol = class {
     if (!message || !message.vsWorker) {
       return;
     }
-    if (this.a !== -1 && message.vsWorker !== this.a) {
+    if (this._workerId !== -1 && message.vsWorker !== this._workerId) {
       return;
     }
-    this.h(message);
+    this._handleMessage(message);
   }
   createProxyToRemoteChannel(channel, sendMessageBarrier) {
     const handler = {
@@ -3353,27 +3353,27 @@ var WebWorkerProtocol = class {
     };
     return new Proxy(/* @__PURE__ */ Object.create(null), handler);
   }
-  h(msg) {
+  _handleMessage(msg) {
     switch (msg.type) {
       case 1:
-        return this.j(msg);
+        return this._handleReplyMessage(msg);
       case 0:
-        return this.k(msg);
+        return this._handleRequestMessage(msg);
       case 2:
-        return this.l(msg);
+        return this._handleSubscribeEventMessage(msg);
       case 3:
-        return this.m(msg);
+        return this._handleEventMessage(msg);
       case 4:
-        return this.n(msg);
+        return this._handleUnsubscribeEventMessage(msg);
     }
   }
-  j(replyMessage) {
-    if (!this.c[replyMessage.seq]) {
+  _handleReplyMessage(replyMessage) {
+    if (!this._pendingReplies[replyMessage.seq]) {
       console.warn("Got reply to unknown seq");
       return;
     }
-    const reply = this.c[replyMessage.seq];
-    delete this.c[replyMessage.seq];
+    const reply = this._pendingReplies[replyMessage.seq];
+    delete this._pendingReplies[replyMessage.seq];
     if (replyMessage.err) {
       let err = replyMessage.err;
       if (replyMessage.err.$isError) {
@@ -3388,41 +3388,41 @@ var WebWorkerProtocol = class {
     }
     reply.resolve(replyMessage.res);
   }
-  k(requestMessage) {
+  _handleRequestMessage(requestMessage) {
     const req = requestMessage.req;
-    const result = this.g.handleMessage(requestMessage.channel, requestMessage.method, requestMessage.args);
+    const result = this._handler.handleMessage(requestMessage.channel, requestMessage.method, requestMessage.args);
     result.then((r) => {
-      this.o(new ReplyMessage(this.a, req, r, void 0));
+      this._send(new ReplyMessage(this._workerId, req, r, void 0));
     }, (e) => {
       if (e.detail instanceof Error) {
-        e.detail = $pb(e.detail);
+        e.detail = transformErrorForSerialization(e.detail);
       }
-      this.o(new ReplyMessage(this.a, req, void 0, $pb(e)));
+      this._send(new ReplyMessage(this._workerId, req, void 0, transformErrorForSerialization(e)));
     });
   }
-  l(msg) {
+  _handleSubscribeEventMessage(msg) {
     const req = msg.req;
-    const disposable = this.g.handleEvent(msg.channel, msg.eventName, msg.arg)((event) => {
-      this.o(new EventMessage(this.a, req, event));
+    const disposable = this._handler.handleEvent(msg.channel, msg.eventName, msg.arg)((event) => {
+      this._send(new EventMessage(this._workerId, req, event));
     });
-    this.f.set(req, disposable);
+    this._pendingEvents.set(req, disposable);
   }
-  m(msg) {
-    if (!this.d.has(msg.req)) {
+  _handleEventMessage(msg) {
+    if (!this._pendingEmitters.has(msg.req)) {
       console.warn("Got event for unknown req");
       return;
     }
-    this.d.get(msg.req).fire(msg.event);
+    this._pendingEmitters.get(msg.req).fire(msg.event);
   }
-  n(msg) {
-    if (!this.f.has(msg.req)) {
+  _handleUnsubscribeEventMessage(msg) {
+    if (!this._pendingEvents.has(msg.req)) {
       console.warn("Got unsubscribe for unknown req");
       return;
     }
-    this.f.get(msg.req).dispose();
-    this.f.delete(msg.req);
+    this._pendingEvents.get(msg.req).dispose();
+    this._pendingEvents.delete(msg.req);
   }
-  o(msg) {
+  _send(msg) {
     const transfer = [];
     if (msg.type === 0) {
       for (let i = 0; i < msg.args.length; i++) {
@@ -3436,36 +3436,36 @@ var WebWorkerProtocol = class {
         transfer.push(msg.res);
       }
     }
-    this.g.sendMessage(msg, transfer);
+    this._handler.sendMessage(msg, transfer);
   }
 };
 function propertyIsEvent(name) {
-  return name[0] === "o" && name[1] === "n" && $fg(name.charCodeAt(2));
+  return name[0] === "o" && name[1] === "n" && isUpperAsciiLetter(name.charCodeAt(2));
 }
 function propertyIsDynamicEvent(name) {
-  return /^onDynamic/.test(name) && $fg(name.charCodeAt(9));
+  return /^onDynamic/.test(name) && isUpperAsciiLetter(name.charCodeAt(9));
 }
-var $1$ = class {
+var WebWorkerServer = class {
   constructor(postMessage, requestHandlerFactory) {
-    this.b = /* @__PURE__ */ new Map();
-    this.c = /* @__PURE__ */ new Map();
-    this.a = new WebWorkerProtocol({
+    this._localChannels = /* @__PURE__ */ new Map();
+    this._remoteChannels = /* @__PURE__ */ new Map();
+    this._protocol = new WebWorkerProtocol({
       sendMessage: (msg, transfer) => {
         postMessage(msg, transfer);
       },
-      handleMessage: (channel, method, args) => this.d(channel, method, args),
-      handleEvent: (channel, eventName, arg) => this.f(channel, eventName, arg)
+      handleMessage: (channel, method, args) => this._handleMessage(channel, method, args),
+      handleEvent: (channel, eventName, arg) => this._handleEvent(channel, eventName, arg)
     });
     this.requestHandler = requestHandlerFactory(this);
   }
   onmessage(msg) {
-    this.a.handleMessage(msg);
+    this._protocol.handleMessage(msg);
   }
-  d(channel, method, args) {
+  _handleMessage(channel, method, args) {
     if (channel === DEFAULT_CHANNEL && method === INITIALIZE) {
-      return this.g(args[0]);
+      return this.initialize(args[0]);
     }
-    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this.b.get(channel);
+    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this._localChannels.get(channel);
     if (!requestHandler) {
       return Promise.reject(new Error(`Missing channel ${channel} on worker thread`));
     }
@@ -3479,8 +3479,8 @@ var $1$ = class {
       return Promise.reject(e);
     }
   }
-  f(channel, eventName, arg) {
-    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this.b.get(channel);
+  _handleEvent(channel, eventName, arg) {
+    const requestHandler = channel === DEFAULT_CHANNEL ? this.requestHandler : this._localChannels.get(channel);
     if (!requestHandler) {
       throw new Error(`Missing channel ${channel} on worker thread`);
     }
@@ -3505,37 +3505,37 @@ var $1$ = class {
     throw new Error(`Malformed event name ${eventName}`);
   }
   setChannel(channel, handler) {
-    this.b.set(channel, handler);
+    this._localChannels.set(channel, handler);
   }
   getChannel(channel) {
-    if (!this.c.has(channel)) {
-      const inst = this.a.createProxyToRemoteChannel(channel);
-      this.c.set(channel, inst);
+    if (!this._remoteChannels.has(channel)) {
+      const inst = this._protocol.createProxyToRemoteChannel(channel);
+      this._remoteChannels.set(channel, inst);
     }
-    return this.c.get(channel);
+    return this._remoteChannels.get(channel);
   }
-  async g(workerId) {
-    this.a.setWorkerId(workerId);
+  async initialize(workerId) {
+    this._protocol.setWorkerId(workerId);
   }
 };
 
 // out-build/vs/base/common/worker/webWorkerBootstrap.js
 var initialized = false;
-function $2$(factory) {
+function initialize(factory) {
   if (initialized) {
     throw new Error("WebWorker already initialized!");
   }
   initialized = true;
-  const webWorkerServer = new $1$((msg) => globalThis.postMessage(msg), (workerServer) => factory(workerServer));
+  const webWorkerServer = new WebWorkerServer((msg) => globalThis.postMessage(msg), (workerServer) => factory(workerServer));
   globalThis.onmessage = (e) => {
     webWorkerServer.onmessage(e.data);
   };
   return webWorkerServer;
 }
-function $3$(factory) {
+function bootstrapWebWorker(factory) {
   globalThis.onmessage = (_e) => {
     if (!initialized) {
-      $2$(factory);
+      initialize(factory);
     }
   };
 }
@@ -3578,7 +3578,7 @@ if (typeof vscodeGlobal !== "undefined" && typeof vscodeGlobal.process !== "unde
   safeProcess = {
     // Supported
     get platform() {
-      return $m ? "win32" : $n ? "darwin" : "linux";
+      return isWindows ? "win32" : isMacintosh ? "darwin" : "linux";
     },
     get arch() {
       return void 0;
@@ -3592,10 +3592,10 @@ if (typeof vscodeGlobal !== "undefined" && typeof vscodeGlobal.process !== "unde
     }
   };
 }
-var $2 = safeProcess.cwd;
-var $3 = safeProcess.env;
-var $4 = safeProcess.platform;
-var $5 = safeProcess.arch;
+var cwd = safeProcess.cwd;
+var env = safeProcess.env;
+var platform = safeProcess.platform;
+var arch = safeProcess.arch;
 
 // out-build/vs/base/common/path.js
 var CHAR_UPPERCASE_A = 65;
@@ -3633,7 +3633,7 @@ function validateString(value, name) {
     throw new ErrorInvalidArgType(name, "string", value);
   }
 }
-var platformIsWin32 = $4 === "win32";
+var platformIsWin32 = platform === "win32";
 function isPathSeparator(code) {
   return code === CHAR_FORWARD_SLASH || code === CHAR_BACKWARD_SLASH;
 }
@@ -3643,7 +3643,7 @@ function isPosixPathSeparator(code) {
 function isWindowsDeviceRoot(code) {
   return code >= CHAR_UPPERCASE_A && code <= CHAR_UPPERCASE_Z || code >= CHAR_LOWERCASE_A && code <= CHAR_LOWERCASE_Z;
 }
-function normalizeString(path, allowAboveRoot, separator, isPathSeparator2) {
+function normalizeString(path, allowAboveRoot, separator, isPathSeparator3) {
   let res = "";
   let lastSegmentLength = 0;
   let lastSlash = -1;
@@ -3652,12 +3652,12 @@ function normalizeString(path, allowAboveRoot, separator, isPathSeparator2) {
   for (let i = 0; i <= path.length; ++i) {
     if (i < path.length) {
       code = path.charCodeAt(i);
-    } else if (isPathSeparator2(code)) {
+    } else if (isPathSeparator3(code)) {
       break;
     } else {
       code = CHAR_FORWARD_SLASH;
     }
-    if (isPathSeparator2(code)) {
+    if (isPathSeparator3(code)) {
       if (lastSlash === i - 1 || dots === 1) {
       } else if (dots === 2) {
         if (res.length < 2 || lastSegmentLength !== 2 || res.charCodeAt(res.length - 1) !== CHAR_DOT || res.charCodeAt(res.length - 2) !== CHAR_DOT) {
@@ -3715,7 +3715,7 @@ function _format(sep2, pathObject) {
   }
   return dir === pathObject.root ? `${dir}${base}` : `${dir}${sep2}${base}`;
 }
-var $6 = {
+var win32 = {
   // path.resolve([from ...], to)
   resolve(...pathSegments) {
     let resolvedDevice = "";
@@ -3730,9 +3730,9 @@ var $6 = {
           continue;
         }
       } else if (resolvedDevice.length === 0) {
-        path = $2();
+        path = cwd();
       } else {
-        path = $3[`=${resolvedDevice}`] || $2();
+        path = env[`=${resolvedDevice}`] || cwd();
         if (path === void 0 || path.slice(0, 2).toLowerCase() !== resolvedDevice.toLowerCase() && path.charCodeAt(2) === CHAR_BACKWARD_SLASH) {
           path = `${resolvedDevice}\\`;
         }
@@ -3740,15 +3740,15 @@ var $6 = {
       const len = path.length;
       let rootEnd = 0;
       let device = "";
-      let isAbsolute = false;
+      let isAbsolute2 = false;
       const code = path.charCodeAt(0);
       if (len === 1) {
         if (isPathSeparator(code)) {
           rootEnd = 1;
-          isAbsolute = true;
+          isAbsolute2 = true;
         }
       } else if (isPathSeparator(code)) {
-        isAbsolute = true;
+        isAbsolute2 = true;
         if (isPathSeparator(path.charCodeAt(1))) {
           let j = 2;
           let last = j;
@@ -3779,7 +3779,7 @@ var $6 = {
         device = path.slice(0, 2);
         rootEnd = 2;
         if (len > 2 && isPathSeparator(path.charCodeAt(2))) {
-          isAbsolute = true;
+          isAbsolute2 = true;
           rootEnd = 3;
         }
       }
@@ -3798,8 +3798,8 @@ var $6 = {
         }
       } else {
         resolvedTail = `${path.slice(rootEnd)}\\${resolvedTail}`;
-        resolvedAbsolute = isAbsolute;
-        if (isAbsolute && resolvedDevice.length > 0) {
+        resolvedAbsolute = isAbsolute2;
+        if (isAbsolute2 && resolvedDevice.length > 0) {
           break;
         }
       }
@@ -3815,13 +3815,13 @@ var $6 = {
     }
     let rootEnd = 0;
     let device;
-    let isAbsolute = false;
+    let isAbsolute2 = false;
     const code = path.charCodeAt(0);
     if (len === 1) {
       return isPosixPathSeparator(code) ? "\\" : path;
     }
     if (isPathSeparator(code)) {
-      isAbsolute = true;
+      isAbsolute2 = true;
       if (isPathSeparator(path.charCodeAt(1))) {
         let j = 2;
         let last = j;
@@ -3855,18 +3855,18 @@ var $6 = {
       device = path.slice(0, 2);
       rootEnd = 2;
       if (len > 2 && isPathSeparator(path.charCodeAt(2))) {
-        isAbsolute = true;
+        isAbsolute2 = true;
         rootEnd = 3;
       }
     }
-    let tail = rootEnd < len ? normalizeString(path.slice(rootEnd), !isAbsolute, "\\", isPathSeparator) : "";
-    if (tail.length === 0 && !isAbsolute) {
+    let tail = rootEnd < len ? normalizeString(path.slice(rootEnd), !isAbsolute2, "\\", isPathSeparator) : "";
+    if (tail.length === 0 && !isAbsolute2) {
       tail = ".";
     }
     if (tail.length > 0 && isPathSeparator(path.charCodeAt(len - 1))) {
       tail += "\\";
     }
-    if (!isAbsolute && device === void 0 && path.includes(":")) {
+    if (!isAbsolute2 && device === void 0 && path.includes(":")) {
       if (tail.length >= 2 && isWindowsDeviceRoot(tail.charCodeAt(0)) && tail.charCodeAt(1) === CHAR_COLON) {
         return `.\\${tail}`;
       }
@@ -3878,9 +3878,9 @@ var $6 = {
       } while ((index = path.indexOf(":", index + 1)) !== -1);
     }
     if (device === void 0) {
-      return isAbsolute ? `\\${tail}` : tail;
+      return isAbsolute2 ? `\\${tail}` : tail;
     }
-    return isAbsolute ? `${device}\\${tail}` : `${device}${tail}`;
+    return isAbsolute2 ? `${device}\\${tail}` : `${device}${tail}`;
   },
   isAbsolute(path) {
     validateString(path, "path");
@@ -3936,7 +3936,7 @@ var $6 = {
         joined = `\\${joined.slice(slashCount)}`;
       }
     }
-    return $6.normalize(joined);
+    return win32.normalize(joined);
   },
   // It will solve the relative path from `from` to `to`, for instance:
   //  from = 'C:\\orandea\\test\\aaa'
@@ -3948,8 +3948,8 @@ var $6 = {
     if (from === to) {
       return "";
     }
-    const fromOrig = $6.resolve(from);
-    const toOrig = $6.resolve(to);
+    const fromOrig = win32.resolve(from);
+    const toOrig = win32.resolve(to);
     if (fromOrig === toOrig) {
       return "";
     }
@@ -4061,7 +4061,7 @@ var $6 = {
     if (typeof path !== "string" || path.length === 0) {
       return path;
     }
-    const resolvedPath = $6.resolve(path);
+    const resolvedPath = win32.resolve(path);
     if (resolvedPath.length <= 2) {
       return path;
     }
@@ -4363,13 +4363,13 @@ var posixCwd = (() => {
   if (platformIsWin32) {
     const regexp = /\\/g;
     return () => {
-      const cwd = $2().replace(regexp, "/");
-      return cwd.slice(cwd.indexOf("/"));
+      const cwd2 = cwd().replace(regexp, "/");
+      return cwd2.slice(cwd2.indexOf("/"));
     };
   }
-  return () => $2();
+  return () => cwd();
 })();
-var $7 = {
+var posix = {
   // path.resolve([from ...], to)
   resolve(...pathSegments) {
     let resolvedPath = "";
@@ -4384,9 +4384,9 @@ var $7 = {
       resolvedAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     }
     if (!resolvedAbsolute) {
-      const cwd = posixCwd();
-      resolvedPath = `${cwd}/${resolvedPath}`;
-      resolvedAbsolute = cwd.charCodeAt(0) === CHAR_FORWARD_SLASH;
+      const cwd2 = posixCwd();
+      resolvedPath = `${cwd2}/${resolvedPath}`;
+      resolvedAbsolute = cwd2.charCodeAt(0) === CHAR_FORWARD_SLASH;
     }
     resolvedPath = normalizeString(resolvedPath, !resolvedAbsolute, "/", isPosixPathSeparator);
     if (resolvedAbsolute) {
@@ -4399,11 +4399,11 @@ var $7 = {
     if (path.length === 0) {
       return ".";
     }
-    const isAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+    const isAbsolute2 = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     const trailingSeparator = path.charCodeAt(path.length - 1) === CHAR_FORWARD_SLASH;
-    path = normalizeString(path, !isAbsolute, "/", isPosixPathSeparator);
+    path = normalizeString(path, !isAbsolute2, "/", isPosixPathSeparator);
     if (path.length === 0) {
-      if (isAbsolute) {
+      if (isAbsolute2) {
         return "/";
       }
       return trailingSeparator ? "./" : ".";
@@ -4411,7 +4411,7 @@ var $7 = {
     if (trailingSeparator) {
       path += "/";
     }
-    return isAbsolute ? `/${path}` : path;
+    return isAbsolute2 ? `/${path}` : path;
   },
   isAbsolute(path) {
     validateString(path, "path");
@@ -4432,7 +4432,7 @@ var $7 = {
     if (path.length === 0) {
       return ".";
     }
-    return $7.normalize(path.join("/"));
+    return posix.normalize(path.join("/"));
   },
   relative(from, to) {
     validateString(from, "from");
@@ -4440,8 +4440,8 @@ var $7 = {
     if (from === to) {
       return "";
     }
-    from = $7.resolve(from);
-    to = $7.resolve(to);
+    from = posix.resolve(from);
+    to = posix.resolve(to);
     if (from === to) {
       return "";
     }
@@ -4620,9 +4620,9 @@ var $7 = {
     if (path.length === 0) {
       return ret;
     }
-    const isAbsolute = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
+    const isAbsolute2 = path.charCodeAt(0) === CHAR_FORWARD_SLASH;
     let start;
-    if (isAbsolute) {
+    if (isAbsolute2) {
       ret.root = "/";
       start = 1;
     } else {
@@ -4658,7 +4658,7 @@ var $7 = {
       }
     }
     if (end !== -1) {
-      const start2 = startPart === 0 && isAbsolute ? 1 : startPart;
+      const start2 = startPart === 0 && isAbsolute2 ? 1 : startPart;
       if (startDot === -1 || // We saw a non-dot character immediately before the dot
       preDotState === 0 || // The (right-most) trimmed path component is exactly '..'
       preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
@@ -4671,7 +4671,7 @@ var $7 = {
     }
     if (startPart > 0) {
       ret.dir = path.slice(0, startPart - 1);
-    } else if (isAbsolute) {
+    } else if (isAbsolute2) {
       ret.dir = "/";
     }
     return ret;
@@ -4681,58 +4681,58 @@ var $7 = {
   win32: null,
   posix: null
 };
-$7.win32 = $6.win32 = $6;
-$7.posix = $6.posix = $7;
-var $8 = platformIsWin32 ? $6.normalize : $7.normalize;
-var $9 = platformIsWin32 ? $6.isAbsolute : $7.isAbsolute;
-var $0 = platformIsWin32 ? $6.join : $7.join;
-var $$ = platformIsWin32 ? $6.resolve : $7.resolve;
-var $_ = platformIsWin32 ? $6.relative : $7.relative;
-var $ab = platformIsWin32 ? $6.dirname : $7.dirname;
-var $bb = platformIsWin32 ? $6.basename : $7.basename;
-var $cb = platformIsWin32 ? $6.extname : $7.extname;
-var $db = platformIsWin32 ? $6.format : $7.format;
-var $eb = platformIsWin32 ? $6.parse : $7.parse;
-var $fb = platformIsWin32 ? $6.toNamespacedPath : $7.toNamespacedPath;
-var sep = platformIsWin32 ? $6.sep : $7.sep;
-var $hb = platformIsWin32 ? $6.delimiter : $7.delimiter;
+posix.win32 = win32.win32 = win32;
+posix.posix = win32.posix = posix;
+var normalize = platformIsWin32 ? win32.normalize : posix.normalize;
+var isAbsolute = platformIsWin32 ? win32.isAbsolute : posix.isAbsolute;
+var join = platformIsWin32 ? win32.join : posix.join;
+var resolve = platformIsWin32 ? win32.resolve : posix.resolve;
+var relative = platformIsWin32 ? win32.relative : posix.relative;
+var dirname = platformIsWin32 ? win32.dirname : posix.dirname;
+var basename = platformIsWin32 ? win32.basename : posix.basename;
+var extname = platformIsWin32 ? win32.extname : posix.extname;
+var format = platformIsWin32 ? win32.format : posix.format;
+var parse = platformIsWin32 ? win32.parse : posix.parse;
+var toNamespacedPath = platformIsWin32 ? win32.toNamespacedPath : posix.toNamespacedPath;
+var sep = platformIsWin32 ? win32.sep : posix.sep;
+var delimiter = platformIsWin32 ? win32.delimiter : posix.delimiter;
 
 // out-build/vs/base/common/extpath.js
-function $Vg(code) {
+function isPathSeparator2(code) {
   return code === 47 || code === 92;
 }
-function $Wg(osPath) {
-  return osPath.replace(/[\\/]/g, $7.sep);
+function toSlashes(osPath) {
+  return osPath.replace(/[\\/]/g, posix.sep);
 }
-function $Xg(osPath) {
+function toPosixPath(osPath) {
   if (osPath.indexOf("/") === -1) {
-    osPath = $Wg(osPath);
+    osPath = toSlashes(osPath);
   }
   if (/^[a-zA-Z]:(\/|$)/.test(osPath)) {
     osPath = "/" + osPath;
   }
   return osPath;
 }
-function $Yg(path, sep2 = $7.sep) {
+function getRoot(path, sep2 = posix.sep) {
   if (!path) {
     return "";
   }
   const len = path.length;
   const firstLetter = path.charCodeAt(0);
-  if ($Vg(firstLetter)) {
-    if ($Vg(path.charCodeAt(1))) {
-      if (!$Vg(path.charCodeAt(2))) {
+  if (isPathSeparator2(firstLetter)) {
+    if (isPathSeparator2(path.charCodeAt(1))) {
+      if (!isPathSeparator2(path.charCodeAt(2))) {
         let pos2 = 3;
         const start = pos2;
         for (; pos2 < len; pos2++) {
-          if ($Vg(path.charCodeAt(pos2))) {
+          if (isPathSeparator2(path.charCodeAt(pos2))) {
             break;
           }
         }
-        if (start !== pos2 && !$Vg(path.charCodeAt(pos2 + 1))) {
+        if (start !== pos2 && !isPathSeparator2(path.charCodeAt(pos2 + 1))) {
           pos2 += 1;
           for (; pos2 < len; pos2++) {
-            if ($Vg(path.charCodeAt(pos2))) {
+            if (isPathSeparator2(path.charCodeAt(pos2))) {
               return path.slice(0, pos2 + 1).replace(/[\\/]/g, sep2);
             }
           }
@@ -4740,9 +4740,9 @@ function $Yg(path, sep2 = $7.sep) {
       }
     }
     return sep2;
-  } else if ($4g(firstLetter)) {
+  } else if (isWindowsDriveLetter(firstLetter)) {
     if (path.charCodeAt(1) === 58) {
-      if ($Vg(path.charCodeAt(2))) {
+      if (isPathSeparator2(path.charCodeAt(2))) {
         return path.slice(0, 2) + sep2;
       } else {
         return path.slice(0, 2);
@@ -4753,14 +4753,14 @@ function $Yg(path, sep2 = $7.sep) {
   if (pos !== -1) {
     pos += 3;
     for (; pos < len; pos++) {
-      if ($Vg(path.charCodeAt(pos))) {
+      if (isPathSeparator2(path.charCodeAt(pos))) {
         return path.slice(0, pos + 1);
       }
     }
   }
   return "";
 }
-function $3g(base, parentCandidate, ignoreCase, separator = sep) {
+function isEqualOrParent(base, parentCandidate, ignoreCase, separator = sep) {
   if (base === parentCandidate) {
     return true;
   }
@@ -4771,7 +4771,7 @@ function $3g(base, parentCandidate, ignoreCase, separator = sep) {
     return false;
   }
   if (ignoreCase) {
-    const beginsWith = $ig(base, parentCandidate);
+    const beginsWith = startsWithIgnoreCase(base, parentCandidate);
     if (!beginsWith) {
       return false;
     }
@@ -4789,7 +4789,7 @@ function $3g(base, parentCandidate, ignoreCase, separator = sep) {
   }
   return base.indexOf(parentCandidate) === 0;
 }
-function $4g(char0) {
+function isWindowsDriveLetter(char0) {
   return char0 >= 65 && char0 <= 90 || char0 >= 97 && char0 <= 122;
 }
 
@@ -4894,7 +4894,7 @@ var URI = class _URI {
    * with URIs that represent files on disk (`file` scheme).
    */
   get fsPath() {
-    return $Lc(this, false);
+    return uriToFsPath(this, false);
   }
   // ---- modify to new -------------------------
   with(change) {
@@ -4940,11 +4940,11 @@ var URI = class _URI {
    * @param value A string which represents an URI (see `URI#toString`).
    */
   static parse(value, _strict = false) {
-    const match = _regexp.exec(value);
-    if (!match) {
+    const match2 = _regexp.exec(value);
+    if (!match2) {
       return new Uri(_empty, _empty, _empty, _empty, _empty);
     }
-    return new Uri(match[2] || _empty, percentDecode(match[4] || _empty), percentDecode(match[5] || _empty), percentDecode(match[7] || _empty), percentDecode(match[9] || _empty), _strict);
+    return new Uri(match2[2] || _empty, percentDecode(match2[4] || _empty), percentDecode(match2[5] || _empty), percentDecode(match2[7] || _empty), percentDecode(match2[9] || _empty), _strict);
   }
   /**
    * Creates a new URI from a file system path, e.g. `c:\my\files`,
@@ -4969,7 +4969,7 @@ var URI = class _URI {
    */
   static file(path) {
     let authority = _empty;
-    if ($m) {
+    if (isWindows) {
       path = path.replace(/\\/g, _slash);
     }
     if (path[0] === _slash && path[1] === _slash) {
@@ -5007,10 +5007,10 @@ var URI = class _URI {
       throw new Error(`[UriError]: cannot call joinPath on URI without path`);
     }
     let newPath;
-    if ($m && uri.scheme === "file") {
-      newPath = _URI.file($6.join($Lc(uri, true), ...pathFragment)).path;
+    if (isWindows && uri.scheme === "file") {
+      newPath = _URI.file(win32.join(uriToFsPath(uri, true), ...pathFragment)).path;
     } else {
-      newPath = $7.join(uri.path, ...pathFragment);
+      newPath = posix.join(uri.path, ...pathFragment);
     }
     return uri.with({ path: newPath });
   }
@@ -5048,7 +5048,7 @@ var URI = class _URI {
     return `URI(${this.toString()})`;
   }
 };
-var _pathSepMarker = $m ? 1 : void 0;
+var _pathSepMarker = isWindows ? 1 : void 0;
 var Uri = class extends URI {
   constructor() {
     super(...arguments);
@@ -5057,7 +5057,7 @@ var Uri = class extends URI {
   }
   get fsPath() {
     if (!this._fsPath) {
-      this._fsPath = $Lc(this, false);
+      this._fsPath = uriToFsPath(this, false);
     }
     return this._fsPath;
   }
@@ -5232,7 +5232,7 @@ function encodeURIComponentMinimal(path) {
   }
   return res !== void 0 ? res : path;
 }
-function $Lc(uri, keepDriveLetterCasing) {
+function uriToFsPath(uri, keepDriveLetterCasing) {
   let value;
   if (uri.authority && uri.path.length > 1 && uri.scheme === "file") {
     value = `//${uri.authority}${uri.path}`;
@@ -5245,7 +5245,7 @@ function $Lc(uri, keepDriveLetterCasing) {
   } else {
     value = uri.path;
   }
-  if ($m) {
+  if (isWindows) {
     value = value.replace(/\//g, "\\");
   }
   return value;
@@ -5326,7 +5326,7 @@ function percentDecode(str) {
   if (!str.match(_rEncodedAsHex)) {
     return str;
   }
-  return str.replace(_rEncodedAsHex, (match) => decodeURIComponentGraceful(match));
+  return str.replace(_rEncodedAsHex, (match2) => decodeURIComponentGraceful(match2));
 }
 
 // out-build/vs/base/common/network.js
@@ -5379,77 +5379,77 @@ var Schemas;
   Schemas2.chatEditingModel = "chat-editing-text-model";
   Schemas2.copilotPr = "copilot-pr";
 })(Schemas || (Schemas = {}));
-var $dh = "tkn";
+var connectionTokenQueryName = "tkn";
 var RemoteAuthoritiesImpl = class {
   constructor() {
-    this.a = /* @__PURE__ */ Object.create(null);
-    this.b = /* @__PURE__ */ Object.create(null);
-    this.c = /* @__PURE__ */ Object.create(null);
-    this.d = "http";
-    this.e = null;
-    this.f = "/";
+    this._hosts = /* @__PURE__ */ Object.create(null);
+    this._ports = /* @__PURE__ */ Object.create(null);
+    this._connectionTokens = /* @__PURE__ */ Object.create(null);
+    this._preferredWebSchema = "http";
+    this._delegate = null;
+    this._serverRootPath = "/";
   }
   setPreferredWebSchema(schema) {
-    this.d = schema;
+    this._preferredWebSchema = schema;
   }
   setDelegate(delegate) {
-    this.e = delegate;
+    this._delegate = delegate;
   }
   setServerRootPath(product, serverBasePath) {
-    this.f = $7.join(serverBasePath ?? "/", $fh(product));
+    this._serverRootPath = posix.join(serverBasePath ?? "/", getServerProductSegment(product));
   }
   getServerRootPath() {
-    return this.f;
+    return this._serverRootPath;
   }
-  get g() {
-    return $7.join(this.f, Schemas.vscodeRemoteResource);
+  get _remoteResourcesPath() {
+    return posix.join(this._serverRootPath, Schemas.vscodeRemoteResource);
   }
   set(authority, host, port) {
-    this.a[authority] = host;
-    this.b[authority] = port;
+    this._hosts[authority] = host;
+    this._ports[authority] = port;
   }
   setConnectionToken(authority, connectionToken) {
-    this.c[authority] = connectionToken;
+    this._connectionTokens[authority] = connectionToken;
   }
   getPreferredWebSchema() {
-    return this.d;
+    return this._preferredWebSchema;
   }
   rewrite(uri) {
-    if (this.e) {
+    if (this._delegate) {
       try {
-        return this.e(uri);
+        return this._delegate(uri);
       } catch (err) {
-        $nb(err);
+        onUnexpectedError(err);
         return uri;
       }
     }
     const authority = uri.authority;
-    let host = this.a[authority];
+    let host = this._hosts[authority];
     if (host && host.indexOf(":") !== -1 && host.indexOf("[") === -1) {
       host = `[${host}]`;
     }
-    const port = this.b[authority];
-    const connectionToken = this.c[authority];
+    const port = this._ports[authority];
+    const connectionToken = this._connectionTokens[authority];
     let query = `path=${encodeURIComponent(uri.path)}`;
     if (typeof connectionToken === "string") {
-      query += `&${$dh}=${encodeURIComponent(connectionToken)}`;
+      query += `&${connectionTokenQueryName}=${encodeURIComponent(connectionToken)}`;
     }
     return URI.from({
-      scheme: $s ? this.d : Schemas.vscodeRemoteResource,
+      scheme: isWeb ? this._preferredWebSchema : Schemas.vscodeRemoteResource,
       authority: `${host}:${port}`,
-      path: this.g,
+      path: this._remoteResourcesPath,
       query
     });
   }
 };
-var $eh = new RemoteAuthoritiesImpl();
-function $fh(product) {
+var RemoteAuthorities = new RemoteAuthoritiesImpl();
+function getServerProductSegment(product) {
   return `${product.quality ?? "oss"}-${product.commit ?? "dev"}`;
 }
-var $kh = "vscode-app";
+var VSCODE_AUTHORITY = "vscode-app";
 var FileAccessImpl = class _FileAccessImpl {
   static {
-    this.a = $kh;
+    this.FALLBACK_AUTHORITY = VSCODE_AUTHORITY;
   }
   /**
    * Returns a URI to use in contexts where the browser is responsible
@@ -5458,7 +5458,7 @@ var FileAccessImpl = class _FileAccessImpl {
    * **Note:** use `dom.ts#asCSSUrl` whenever the URL is to be used in CSS context.
    */
   asBrowserUri(resourcePath) {
-    const uri = this.b(resourcePath);
+    const uri = this.toUri(resourcePath);
     return this.uriToBrowserUri(uri);
   }
   /**
@@ -5469,13 +5469,13 @@ var FileAccessImpl = class _FileAccessImpl {
    */
   uriToBrowserUri(uri) {
     if (uri.scheme === Schemas.vscodeRemote) {
-      return $eh.rewrite(uri);
+      return RemoteAuthorities.rewrite(uri);
     }
     if (
       // ...only ever for `file` resources
       uri.scheme === Schemas.file && // ...and we run in native environments
-      ($q || // ...or web worker extensions on desktop
-      $u === `${Schemas.vscodeFileResource}://${_FileAccessImpl.a}`)
+      (isNative || // ...or web worker extensions on desktop
+      webWorkerOrigin === `${Schemas.vscodeFileResource}://${_FileAccessImpl.FALLBACK_AUTHORITY}`)
     ) {
       return uri.with({
         scheme: Schemas.vscodeFileResource,
@@ -5483,7 +5483,7 @@ var FileAccessImpl = class _FileAccessImpl {
         // as origin for network and loading matters in chromium.
         // If the URI is not coming with an authority already, we
         // add our own
-        authority: uri.authority || _FileAccessImpl.a,
+        authority: uri.authority || _FileAccessImpl.FALLBACK_AUTHORITY,
         query: null,
         fragment: null
       });
@@ -5495,7 +5495,7 @@ var FileAccessImpl = class _FileAccessImpl {
    * is responsible for loading.
    */
   asFileUri(resourcePath) {
-    const uri = this.b(resourcePath);
+    const uri = this.toUri(resourcePath);
     return this.uriToFileUri(uri);
   }
   /**
@@ -5509,14 +5509,14 @@ var FileAccessImpl = class _FileAccessImpl {
         // Only preserve the `authority` if it is different from
         // our fallback authority. This ensures we properly preserve
         // Windows UNC paths that come with their own authority.
-        authority: uri.authority !== _FileAccessImpl.a ? uri.authority : null,
+        authority: uri.authority !== _FileAccessImpl.FALLBACK_AUTHORITY ? uri.authority : null,
         query: null,
         fragment: null
       });
     }
     return uri;
   }
-  b(uriOrModule) {
+  toUri(uriOrModule) {
     if (URI.isUri(uriOrModule)) {
       return uriOrModule;
     }
@@ -5525,17 +5525,17 @@ var FileAccessImpl = class _FileAccessImpl {
       if (/^\w[\w\d+.-]*:\/\//.test(rootUriOrPath)) {
         return URI.joinPath(URI.parse(rootUriOrPath, true), uriOrModule);
       }
-      const modulePath = $0(rootUriOrPath, uriOrModule);
+      const modulePath = join(rootUriOrPath, uriOrModule);
       return URI.file(modulePath);
     }
     throw new Error("Cannot determine URI for module id!");
   }
 };
-var $lh = new FileAccessImpl();
-var $mh = Object.freeze({
+var FileAccess = new FileAccessImpl();
+var CacheControlheaders = Object.freeze({
   "Cache-Control": "no-cache, no-store"
 });
-var $nh = Object.freeze({
+var DocumentPolicyheaders = Object.freeze({
   "Document-Policy": "include-js-call-stacks-in-crash-reports"
 });
 var COI;
@@ -5578,18 +5578,18 @@ var COI;
 })(COI || (COI = {}));
 
 // out-build/vs/base/common/resources.js
-function $oh(uri) {
-  return $Lc(uri, true);
+function originalFSPath(uri) {
+  return uriToFsPath(uri, true);
 }
-var $ph = class {
-  constructor(a) {
-    this.a = a;
+var ExtUri = class {
+  constructor(_ignorePathCasing) {
+    this._ignorePathCasing = _ignorePathCasing;
   }
   compare(uri1, uri2, ignoreFragment = false) {
     if (uri1 === uri2) {
       return 0;
     }
-    return $_f(this.getComparisonKey(uri1, ignoreFragment), this.getComparisonKey(uri2, ignoreFragment));
+    return compare(this.getComparisonKey(uri1, ignoreFragment), this.getComparisonKey(uri2, ignoreFragment));
   }
   isEqual(uri1, uri2, ignoreFragment = false) {
     if (uri1 === uri2) {
@@ -5602,20 +5602,20 @@ var $ph = class {
   }
   getComparisonKey(uri, ignoreFragment = false) {
     return uri.with({
-      path: this.a(uri) ? uri.path.toLowerCase() : void 0,
+      path: this._ignorePathCasing(uri) ? uri.path.toLowerCase() : void 0,
       fragment: ignoreFragment ? null : void 0
     }).toString();
   }
   ignorePathCasing(uri) {
-    return this.a(uri);
+    return this._ignorePathCasing(uri);
   }
   isEqualOrParent(base, parentCandidate, ignoreFragment = false) {
     if (base.scheme === parentCandidate.scheme) {
       if (base.scheme === Schemas.file) {
-        return $3g($oh(base), $oh(parentCandidate), this.a(base)) && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
+        return isEqualOrParent(originalFSPath(base), originalFSPath(parentCandidate), this._ignorePathCasing(base)) && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
       }
-      if ($Fh(base.authority, parentCandidate.authority)) {
-        return $3g(base.path, parentCandidate.path, this.a(base), "/") && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
+      if (isEqualAuthority(base.authority, parentCandidate.authority)) {
+        return isEqualOrParent(base.path, parentCandidate.path, this._ignorePathCasing(base), "/") && base.query === parentCandidate.query && (ignoreFragment || base.fragment === parentCandidate.fragment);
       }
     }
     return false;
@@ -5625,30 +5625,30 @@ var $ph = class {
     return URI.joinPath(resource, ...pathFragment);
   }
   basenameOrAuthority(resource) {
-    return $xh(resource) || resource.authority;
+    return basename2(resource) || resource.authority;
   }
   basename(resource) {
-    return $7.basename(resource.path);
+    return posix.basename(resource.path);
   }
   extname(resource) {
-    return $7.extname(resource.path);
+    return posix.extname(resource.path);
   }
   dirname(resource) {
     if (resource.path.length === 0) {
       return resource;
     }
-    let dirname;
+    let dirname3;
     if (resource.scheme === Schemas.file) {
-      dirname = URI.file($ab($oh(resource))).path;
+      dirname3 = URI.file(dirname(originalFSPath(resource))).path;
     } else {
-      dirname = $7.dirname(resource.path);
-      if (resource.authority && dirname.length && dirname.charCodeAt(0) !== 47) {
+      dirname3 = posix.dirname(resource.path);
+      if (resource.authority && dirname3.length && dirname3.charCodeAt(0) !== 47) {
         console.error(`dirname("${resource.toString})) resulted in a relative path`);
-        dirname = "/";
+        dirname3 = "/";
       }
     }
     return resource.with({
-      path: dirname
+      path: dirname3
     });
   }
   normalizePath(resource) {
@@ -5657,25 +5657,25 @@ var $ph = class {
     }
     let normalizedPath;
     if (resource.scheme === Schemas.file) {
-      normalizedPath = URI.file($8($oh(resource))).path;
+      normalizedPath = URI.file(normalize(originalFSPath(resource))).path;
     } else {
-      normalizedPath = $7.normalize(resource.path);
+      normalizedPath = posix.normalize(resource.path);
     }
     return resource.with({
       path: normalizedPath
     });
   }
   relativePath(from, to) {
-    if (from.scheme !== to.scheme || !$Fh(from.authority, to.authority)) {
+    if (from.scheme !== to.scheme || !isEqualAuthority(from.authority, to.authority)) {
       return void 0;
     }
     if (from.scheme === Schemas.file) {
-      const relativePath = $_($oh(from), $oh(to));
-      return $m ? $Wg(relativePath) : relativePath;
+      const relativePath2 = relative(originalFSPath(from), originalFSPath(to));
+      return isWindows ? toSlashes(relativePath2) : relativePath2;
     }
     let fromPath = from.path || "/";
     const toPath = to.path || "/";
-    if (this.a(from)) {
+    if (this._ignorePathCasing(from)) {
       let i = 0;
       for (const len = Math.min(fromPath.length, toPath.length); i < len; i++) {
         if (fromPath.charCodeAt(i) !== toPath.charCodeAt(i)) {
@@ -5686,19 +5686,19 @@ var $ph = class {
       }
       fromPath = toPath.substr(0, i) + fromPath.substr(i);
     }
-    return $7.relative(fromPath, toPath);
+    return posix.relative(fromPath, toPath);
   }
   resolvePath(base, path) {
     if (base.scheme === Schemas.file) {
-      const newURI = URI.file($$($oh(base), path));
+      const newURI = URI.file(resolve(originalFSPath(base), path));
       return base.with({
         authority: newURI.authority,
         path: newURI.path
       });
     }
-    path = $Xg(path);
+    path = toPosixPath(path);
     return base.with({
-      path: $7.resolve(base.path, path)
+      path: posix.resolve(base.path, path)
     });
   }
   // --- misc
@@ -5706,19 +5706,19 @@ var $ph = class {
     return !!resource.path && resource.path[0] === "/";
   }
   isEqualAuthority(a1, a2) {
-    return a1 === a2 || a1 !== void 0 && a2 !== void 0 && $gg(a1, a2);
+    return a1 === a2 || a1 !== void 0 && a2 !== void 0 && equalsIgnoreCase(a1, a2);
   }
   hasTrailingPathSeparator(resource, sep2 = sep) {
     if (resource.scheme === Schemas.file) {
-      const fsp = $oh(resource);
-      return fsp.length > $Yg(fsp).length && fsp[fsp.length - 1] === sep2;
+      const fsp = originalFSPath(resource);
+      return fsp.length > getRoot(fsp).length && fsp[fsp.length - 1] === sep2;
     } else {
       const p = resource.path;
       return p.length > 1 && p.charCodeAt(p.length - 1) === 47 && !/^[a-zA-Z]:(\/$|\\$)/.test(resource.fsPath);
     }
   }
   removeTrailingPathSeparator(resource, sep2 = sep) {
-    if ($Gh(resource, sep2)) {
+    if (hasTrailingPathSeparator(resource, sep2)) {
       return resource.with({ path: resource.path.substr(0, resource.path.length - 1) });
     }
     return resource;
@@ -5726,40 +5726,40 @@ var $ph = class {
   addTrailingPathSeparator(resource, sep2 = sep) {
     let isRootSep = false;
     if (resource.scheme === Schemas.file) {
-      const fsp = $oh(resource);
-      isRootSep = fsp !== void 0 && fsp.length === $Yg(fsp).length && fsp[fsp.length - 1] === sep2;
+      const fsp = originalFSPath(resource);
+      isRootSep = fsp !== void 0 && fsp.length === getRoot(fsp).length && fsp[fsp.length - 1] === sep2;
     } else {
       sep2 = "/";
       const p = resource.path;
       isRootSep = p.length === 1 && p.charCodeAt(p.length - 1) === 47;
     }
-    if (!isRootSep && !$Gh(resource, sep2)) {
+    if (!isRootSep && !hasTrailingPathSeparator(resource, sep2)) {
       return resource.with({ path: resource.path + "/" });
     }
     return resource;
   }
 };
-var $qh = new $ph(() => false);
-var $rh = new $ph((uri) => {
-  return uri.scheme === Schemas.file ? !$o : true;
+var extUri = new ExtUri(() => false);
+var extUriBiasedIgnorePathCase = new ExtUri((uri) => {
+  return uri.scheme === Schemas.file ? !isLinux : true;
 });
-var $sh = new $ph((_) => true);
-var $th = $qh.isEqual.bind($qh);
-var $uh = $qh.isEqualOrParent.bind($qh);
-var $vh = $qh.getComparisonKey.bind($qh);
-var $wh = $qh.basenameOrAuthority.bind($qh);
-var $xh = $qh.basename.bind($qh);
-var $yh = $qh.extname.bind($qh);
-var $zh = $qh.dirname.bind($qh);
-var $Ah = $qh.joinPath.bind($qh);
-var $Bh = $qh.normalizePath.bind($qh);
-var $Ch = $qh.relativePath.bind($qh);
-var $Dh = $qh.resolvePath.bind($qh);
-var $Eh = $qh.isAbsolutePath.bind($qh);
-var $Fh = $qh.isEqualAuthority.bind($qh);
-var $Gh = $qh.hasTrailingPathSeparator.bind($qh);
-var $Hh = $qh.removeTrailingPathSeparator.bind($qh);
-var $Ih = $qh.addTrailingPathSeparator.bind($qh);
+var extUriIgnorePathCase = new ExtUri((_) => true);
+var isEqual = extUri.isEqual.bind(extUri);
+var isEqualOrParent2 = extUri.isEqualOrParent.bind(extUri);
+var getComparisonKey = extUri.getComparisonKey.bind(extUri);
+var basenameOrAuthority = extUri.basenameOrAuthority.bind(extUri);
+var basename2 = extUri.basename.bind(extUri);
+var extname2 = extUri.extname.bind(extUri);
+var dirname2 = extUri.dirname.bind(extUri);
+var joinPath = extUri.joinPath.bind(extUri);
+var normalizePath = extUri.normalizePath.bind(extUri);
+var relativePath = extUri.relativePath.bind(extUri);
+var resolvePath = extUri.resolvePath.bind(extUri);
+var isAbsolutePath = extUri.isAbsolutePath.bind(extUri);
+var isEqualAuthority = extUri.isEqualAuthority.bind(extUri);
+var hasTrailingPathSeparator = extUri.hasTrailingPathSeparator.bind(extUri);
+var removeTrailingPathSeparator = extUri.removeTrailingPathSeparator.bind(extUri);
+var addTrailingPathSeparator = extUri.addTrailingPathSeparator.bind(extUri);
 var DataUri;
 (function(DataUri2) {
   DataUri2.META_DATA_LABEL = "label";
@@ -5785,19 +5785,19 @@ var DataUri;
 })(DataUri || (DataUri = {}));
 
 // out-build/vs/base/common/symbols.js
-var $lf = Symbol("MicrotaskDelay");
+var MicrotaskDelay = Symbol("MicrotaskDelay");
 
 // out-build/vs/base/common/async.js
-function $Lh(obj) {
+function isThenable(obj) {
   return !!obj && typeof obj.then === "function";
 }
-var $fi;
-var $gi;
+var runWhenGlobalIdle;
+var _runWhenIdle;
 (function() {
   const safeGlobal = globalThis;
   if (typeof safeGlobal.requestIdleCallback !== "function" || typeof safeGlobal.cancelIdleCallback !== "function") {
-    $gi = (_targetWindow, runner, timeout) => {
-      $F(() => {
+    _runWhenIdle = (_targetWindow, runner, timeout) => {
+      setTimeout0(() => {
         if (disposed) {
           return;
         }
@@ -5821,7 +5821,7 @@ var $gi;
       };
     };
   } else {
-    $gi = (targetWindow, runner, timeout) => {
+    _runWhenIdle = (targetWindow, runner, timeout) => {
       const handle = targetWindow.requestIdleCallback(runner, typeof timeout === "number" ? { timeout } : void 0);
       let disposed = false;
       return {
@@ -5835,62 +5835,62 @@ var $gi;
       };
     };
   }
-  $fi = (runner, timeout) => $gi(globalThis, runner, timeout);
+  runWhenGlobalIdle = (runner, timeout) => _runWhenIdle(globalThis, runner, timeout);
 })();
 var DeferredOutcome;
 (function(DeferredOutcome2) {
   DeferredOutcome2[DeferredOutcome2["Resolved"] = 0] = "Resolved";
   DeferredOutcome2[DeferredOutcome2["Rejected"] = 1] = "Rejected";
 })(DeferredOutcome || (DeferredOutcome = {}));
-var $mi = class _$mi {
+var DeferredPromise = class _DeferredPromise {
   static fromPromise(promise) {
-    const deferred = new _$mi();
+    const deferred = new _DeferredPromise();
     deferred.settleWith(promise);
     return deferred;
   }
   get isRejected() {
-    return this.d?.outcome === 1;
+    return this.outcome?.outcome === 1;
   }
   get isResolved() {
-    return this.d?.outcome === 0;
+    return this.outcome?.outcome === 0;
   }
   get isSettled() {
-    return !!this.d;
+    return !!this.outcome;
   }
   get value() {
-    return this.d?.outcome === 0 ? this.d?.value : void 0;
+    return this.outcome?.outcome === 0 ? this.outcome?.value : void 0;
   }
   constructor() {
     this.p = new Promise((c, e) => {
-      this.a = c;
-      this.b = e;
+      this.completeCallback = c;
+      this.errorCallback = e;
     });
   }
   complete(value) {
     if (this.isSettled) {
       return Promise.resolve();
     }
-    return new Promise((resolve) => {
-      this.a(value);
-      this.d = { outcome: 0, value };
-      resolve();
+    return new Promise((resolve2) => {
+      this.completeCallback(value);
+      this.outcome = { outcome: 0, value };
+      resolve2();
     });
   }
   error(err) {
     if (this.isSettled) {
       return Promise.resolve();
     }
-    return new Promise((resolve) => {
-      this.b(err);
-      this.d = { outcome: 1, value: err };
-      resolve();
+    return new Promise((resolve2) => {
+      this.errorCallback(err);
+      this.outcome = { outcome: 1, value: err };
+      resolve2();
     });
   }
   settleWith(promise) {
     return promise.then((value) => this.complete(value), (error) => this.error(error));
   }
   cancel() {
-    return this.error(new $tb());
+    return this.error(new CancellationError());
   }
 };
 var Promises;
@@ -5910,9 +5910,9 @@ var Promises;
   }
   Promises2.settled = settled;
   function withAsyncBody(bodyFn) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise(async (resolve2, reject) => {
       try {
-        await bodyFn(resolve, reject);
+        await bodyFn(resolve2, reject);
       } catch (error) {
         reject(error);
       }
@@ -5926,24 +5926,24 @@ var AsyncIterableSourceState;
   AsyncIterableSourceState2[AsyncIterableSourceState2["DoneOK"] = 1] = "DoneOK";
   AsyncIterableSourceState2[AsyncIterableSourceState2["DoneError"] = 2] = "DoneError";
 })(AsyncIterableSourceState || (AsyncIterableSourceState = {}));
-var $pi = class _$pi {
+var AsyncIterableObject = class _AsyncIterableObject {
   static fromArray(items) {
-    return new _$pi((writer) => {
+    return new _AsyncIterableObject((writer) => {
       writer.emitMany(items);
     });
   }
   static fromPromise(promise) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       emitter.emitMany(await promise);
     });
   }
   static fromPromisesResolveOrder(promises) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       await Promise.all(promises.map(async (p) => emitter.emitOne(await p)));
     });
   }
   static merge(iterables) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       await Promise.all(iterables.map(async (iterable) => {
         for await (const item of iterable) {
           emitter.emitOne(item);
@@ -5952,25 +5952,25 @@ var $pi = class _$pi {
     });
   }
   static {
-    this.EMPTY = _$pi.fromArray([]);
+    this.EMPTY = _AsyncIterableObject.fromArray([]);
   }
   constructor(executor, onReturn) {
-    this.a = 0;
-    this.b = [];
-    this.d = null;
-    this.f = onReturn;
-    this.g = new $qf();
+    this._state = 0;
+    this._results = [];
+    this._error = null;
+    this._onReturn = onReturn;
+    this._onStateChanged = new Emitter();
     queueMicrotask(async () => {
       const writer = {
-        emitOne: (item) => this.h(item),
-        emitMany: (items) => this.j(items),
-        reject: (error) => this.l(error)
+        emitOne: (item) => this.emitOne(item),
+        emitMany: (items) => this.emitMany(items),
+        reject: (error) => this.reject(error)
       };
       try {
         await Promise.resolve(executor(writer));
-        this.k();
+        this.resolve();
       } catch (err) {
-        this.l(err);
+        this.reject(err);
       } finally {
         writer.emitOne = void 0;
         writer.emitMany = void 0;
@@ -5983,36 +5983,36 @@ var $pi = class _$pi {
     return {
       next: async () => {
         do {
-          if (this.a === 2) {
-            throw this.d;
+          if (this._state === 2) {
+            throw this._error;
           }
-          if (i < this.b.length) {
-            return { done: false, value: this.b[i++] };
+          if (i < this._results.length) {
+            return { done: false, value: this._results[i++] };
           }
-          if (this.a === 1) {
+          if (this._state === 1) {
             return { done: true, value: void 0 };
           }
-          await Event.toPromise(this.g.event);
+          await Event.toPromise(this._onStateChanged.event);
         } while (true);
       },
       return: async () => {
-        this.f?.();
+        this._onReturn?.();
         return { done: true, value: void 0 };
       }
     };
   }
   static map(iterable, mapFn) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       for await (const item of iterable) {
         emitter.emitOne(mapFn(item));
       }
     });
   }
   map(mapFn) {
-    return _$pi.map(this, mapFn);
+    return _AsyncIterableObject.map(this, mapFn);
   }
   static filter(iterable, filterFn) {
-    return new _$pi(async (emitter) => {
+    return new _AsyncIterableObject(async (emitter) => {
       for await (const item of iterable) {
         if (filterFn(item)) {
           emitter.emitOne(item);
@@ -6021,13 +6021,13 @@ var $pi = class _$pi {
     });
   }
   filter(filterFn) {
-    return _$pi.filter(this, filterFn);
+    return _AsyncIterableObject.filter(this, filterFn);
   }
   static coalesce(iterable) {
-    return _$pi.filter(iterable, (item) => !!item);
+    return _AsyncIterableObject.filter(iterable, (item) => !!item);
   }
   coalesce() {
-    return _$pi.coalesce(this);
+    return _AsyncIterableObject.coalesce(this);
   }
   static async toPromise(iterable) {
     const result = [];
@@ -6037,31 +6037,31 @@ var $pi = class _$pi {
     return result;
   }
   toPromise() {
-    return _$pi.toPromise(this);
+    return _AsyncIterableObject.toPromise(this);
   }
   /**
    * The value will be appended at the end.
    *
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  h(value) {
-    if (this.a !== 0) {
+  emitOne(value) {
+    if (this._state !== 0) {
       return;
     }
-    this.b.push(value);
-    this.g.fire();
+    this._results.push(value);
+    this._onStateChanged.fire();
   }
   /**
    * The values will be appended at the end.
    *
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  j(values) {
-    if (this.a !== 0) {
+  emitMany(values) {
+    if (this._state !== 0) {
       return;
     }
-    this.b = this.b.concat(values);
-    this.g.fire();
+    this._results = this._results.concat(values);
+    this._onStateChanged.fire();
   }
   /**
    * Calling `resolve()` will mark the result array as complete.
@@ -6069,12 +6069,12 @@ var $pi = class _$pi {
    * **NOTE** `resolve()` must be called, otherwise all consumers of this iterable will hang indefinitely, similar to a non-resolved promise.
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  k() {
-    if (this.a !== 0) {
+  resolve() {
+    if (this._state !== 0) {
       return;
     }
-    this.a = 1;
-    this.g.fire();
+    this._state = 1;
+    this._onStateChanged.fire();
   }
   /**
    * Writing an error will permanently invalidate this iterable.
@@ -6082,46 +6082,46 @@ var $pi = class _$pi {
    *
    * **NOTE** If `resolve()` or `reject()` have already been called, this method has no effect.
    */
-  l(error) {
-    if (this.a !== 0) {
+  reject(error) {
+    if (this._state !== 0) {
       return;
     }
-    this.a = 2;
-    this.d = error;
-    this.g.fire();
+    this._state = 2;
+    this._error = error;
+    this._onStateChanged.fire();
   }
 };
 var ProducerConsumer = class {
   constructor() {
-    this.a = [];
-    this.b = [];
+    this._unsatisfiedConsumers = [];
+    this._unconsumedValues = [];
   }
   get hasFinalValue() {
-    return !!this.d;
+    return !!this._finalValue;
   }
   produce(value) {
-    this.f();
-    if (this.a.length > 0) {
-      const deferred = this.a.shift();
-      this.g(deferred, value);
+    this._ensureNoFinalValue();
+    if (this._unsatisfiedConsumers.length > 0) {
+      const deferred = this._unsatisfiedConsumers.shift();
+      this._resolveOrRejectDeferred(deferred, value);
     } else {
-      this.b.push(value);
+      this._unconsumedValues.push(value);
     }
   }
   produceFinal(value) {
-    this.f();
-    this.d = value;
-    for (const deferred of this.a) {
-      this.g(deferred, value);
+    this._ensureNoFinalValue();
+    this._finalValue = value;
+    for (const deferred of this._unsatisfiedConsumers) {
+      this._resolveOrRejectDeferred(deferred, value);
     }
-    this.a.length = 0;
+    this._unsatisfiedConsumers.length = 0;
   }
-  f() {
-    if (this.d) {
-      throw new $Eb("ProducerConsumer: cannot produce after final value has been set");
+  _ensureNoFinalValue() {
+    if (this._finalValue) {
+      throw new BugIndicatingError("ProducerConsumer: cannot produce after final value has been set");
     }
   }
-  g(deferred, value) {
+  _resolveOrRejectDeferred(deferred, value) {
     if (value.ok) {
       deferred.complete(value.value);
     } else {
@@ -6129,72 +6129,72 @@ var ProducerConsumer = class {
     }
   }
   consume() {
-    if (this.b.length > 0 || this.d) {
-      const value = this.b.length > 0 ? this.b.shift() : this.d;
+    if (this._unconsumedValues.length > 0 || this._finalValue) {
+      const value = this._unconsumedValues.length > 0 ? this._unconsumedValues.shift() : this._finalValue;
       if (value.ok) {
         return Promise.resolve(value.value);
       } else {
         return Promise.reject(value.error);
       }
     } else {
-      const deferred = new $mi();
-      this.a.push(deferred);
+      const deferred = new DeferredPromise();
+      this._unsatisfiedConsumers.push(deferred);
       return deferred.p;
     }
   }
 };
-var $ti = class _$ti {
-  constructor(executor, b) {
-    this.b = b;
-    this.a = new ProducerConsumer();
-    this.g = {
-      next: () => this.a.consume(),
+var AsyncIterableProducer = class _AsyncIterableProducer {
+  constructor(executor, _onReturn) {
+    this._onReturn = _onReturn;
+    this._producerConsumer = new ProducerConsumer();
+    this._iterator = {
+      next: () => this._producerConsumer.consume(),
       return: () => {
-        this.b?.();
+        this._onReturn?.();
         return Promise.resolve({ done: true, value: void 0 });
       },
       throw: async (e) => {
-        this.f(e);
+        this._finishError(e);
         return { done: true, value: void 0 };
       }
     };
     queueMicrotask(async () => {
       const p = executor({
-        emitOne: (value) => this.a.produce({ ok: true, value: { done: false, value } }),
+        emitOne: (value) => this._producerConsumer.produce({ ok: true, value: { done: false, value } }),
         emitMany: (values) => {
           for (const value of values) {
-            this.a.produce({ ok: true, value: { done: false, value } });
+            this._producerConsumer.produce({ ok: true, value: { done: false, value } });
           }
         },
-        reject: (error) => this.f(error)
+        reject: (error) => this._finishError(error)
       });
-      if (!this.a.hasFinalValue) {
+      if (!this._producerConsumer.hasFinalValue) {
         try {
           await p;
-          this.d();
+          this._finishOk();
         } catch (error) {
-          this.f(error);
+          this._finishError(error);
         }
       }
     });
   }
   static fromArray(items) {
-    return new _$ti((writer) => {
+    return new _AsyncIterableProducer((writer) => {
       writer.emitMany(items);
     });
   }
   static fromPromise(promise) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       emitter.emitMany(await promise);
     });
   }
   static fromPromisesResolveOrder(promises) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       await Promise.all(promises.map(async (p) => emitter.emitOne(await p)));
     });
   }
   static merge(iterables) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       await Promise.all(iterables.map(async (iterable) => {
         for await (const item of iterable) {
           emitter.emitOne(item);
@@ -6203,10 +6203,10 @@ var $ti = class _$ti {
     });
   }
   static {
-    this.EMPTY = _$ti.fromArray([]);
+    this.EMPTY = _AsyncIterableProducer.fromArray([]);
   }
   static map(iterable, mapFn) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       for await (const item of iterable) {
         emitter.emitOne(mapFn(item));
       }
@@ -6215,7 +6215,7 @@ var $ti = class _$ti {
   static tee(iterable) {
     let emitter1;
     let emitter2;
-    const defer = new $mi();
+    const defer = new DeferredPromise();
     const start = async () => {
       if (!emitter1 || !emitter2) {
         return;
@@ -6232,12 +6232,12 @@ var $ti = class _$ti {
         defer.complete();
       }
     };
-    const p1 = new _$ti(async (emitter) => {
+    const p1 = new _AsyncIterableProducer(async (emitter) => {
       emitter1 = emitter;
       start();
       return defer.p;
     });
-    const p2 = new _$ti(async (emitter) => {
+    const p2 = new _AsyncIterableProducer(async (emitter) => {
       emitter2 = emitter;
       start();
       return defer.p;
@@ -6245,16 +6245,16 @@ var $ti = class _$ti {
     return [p1, p2];
   }
   map(mapFn) {
-    return _$ti.map(this, mapFn);
+    return _AsyncIterableProducer.map(this, mapFn);
   }
   static coalesce(iterable) {
-    return _$ti.filter(iterable, (item) => !!item);
+    return _AsyncIterableProducer.filter(iterable, (item) => !!item);
   }
   coalesce() {
-    return _$ti.coalesce(this);
+    return _AsyncIterableProducer.coalesce(this);
   }
   static filter(iterable, filterFn) {
-    return new _$ti(async (emitter) => {
+    return new _AsyncIterableProducer(async (emitter) => {
       for await (const item of iterable) {
         if (filterFn(item)) {
           emitter.emitOne(item);
@@ -6263,27 +6263,27 @@ var $ti = class _$ti {
     });
   }
   filter(filterFn) {
-    return _$ti.filter(this, filterFn);
+    return _AsyncIterableProducer.filter(this, filterFn);
   }
-  d() {
-    if (!this.a.hasFinalValue) {
-      this.a.produceFinal({ ok: true, value: { done: true, value: void 0 } });
+  _finishOk() {
+    if (!this._producerConsumer.hasFinalValue) {
+      this._producerConsumer.produceFinal({ ok: true, value: { done: true, value: void 0 } });
     }
   }
-  f(error) {
-    if (!this.a.hasFinalValue) {
-      this.a.produceFinal({ ok: false, error });
+  _finishError(error) {
+    if (!this._producerConsumer.hasFinalValue) {
+      this._producerConsumer.produceFinal({ ok: false, error });
     }
   }
   [Symbol.asyncIterator]() {
-    return this.g;
+    return this._iterator;
   }
 };
-var $vi = Symbol("AsyncReaderEndOfStream");
+var AsyncReaderEndOfStream = Symbol("AsyncReaderEndOfStream");
 
 // out-build/vs/base/common/glob.js
-var $nj = "**";
-var $oj = "/";
+var GLOBSTAR = "**";
+var GLOB_SPLIT = "/";
 var PATH_REGEX = "[/\\\\]";
 var NO_PATH_REGEX = "[^/\\\\]";
 var ALL_FORWARD_SLASHES = /\//g;
@@ -6298,7 +6298,7 @@ function starsToRegExp(starCount, isLastPattern) {
       return `(?:${PATH_REGEX}|${NO_PATH_REGEX}+${PATH_REGEX}${isLastPattern ? `|${PATH_REGEX}${NO_PATH_REGEX}+` : ""})*?`;
   }
 }
-function $pj(pattern, splitChar) {
+function splitGlobAware(pattern, splitChar) {
   if (!pattern) {
     return [];
   }
@@ -6340,13 +6340,13 @@ function parseRegExp(pattern) {
     return "";
   }
   let regEx = "";
-  const segments = $pj(pattern, $oj);
-  if (segments.every((segment) => segment === $nj)) {
+  const segments = splitGlobAware(pattern, GLOB_SPLIT);
+  if (segments.every((segment) => segment === GLOBSTAR)) {
     regEx = ".*";
   } else {
     let previousSegmentWasGlobStar = false;
     segments.forEach((segment, index) => {
-      if (segment === $nj) {
+      if (segment === GLOBSTAR) {
         if (previousSegmentWasGlobStar) {
           return;
         }
@@ -6367,10 +6367,10 @@ function parseRegExp(pattern) {
               res = char;
             } else if ((char === "^" || char === "!") && !bracketVal) {
               res = "^";
-            } else if (char === $oj) {
+            } else if (char === GLOB_SPLIT) {
               res = "";
             } else {
-              res = $Sf(char);
+              res = escapeRegExpCharacters(char);
             }
             bracketVal += res;
             continue;
@@ -6383,7 +6383,7 @@ function parseRegExp(pattern) {
               inBrackets = true;
               continue;
             case "}": {
-              const choices = $pj(braceVal, ",");
+              const choices = splitGlobAware(braceVal, ",");
               const braceRegExp = `(?:${choices.map((choice) => parseRegExp(choice)).join("|")})`;
               regEx += braceRegExp;
               inBraces = false;
@@ -6403,16 +6403,16 @@ function parseRegExp(pattern) {
               regEx += starsToRegExp(1);
               continue;
             default:
-              regEx += $Sf(char);
+              regEx += escapeRegExpCharacters(char);
           }
         }
         if (index < segments.length - 1 && // more segments to come after this
-        (segments[index + 1] !== $nj || // next segment is not **, or...
+        (segments[index + 1] !== GLOBSTAR || // next segment is not **, or...
         index + 2 < segments.length)) {
           regEx += PATH_REGEX;
         }
       }
-      previousSegmentWasGlobStar = segment === $nj;
+      previousSegmentWasGlobStar = segment === GLOBSTAR;
     });
   }
   return regEx;
@@ -6423,7 +6423,7 @@ var T3 = /^{\*\*\/\*?[\w\.-]+\/?(,\*\*\/\*?[\w\.-]+\/?)*}$/;
 var T3_2 = /^{\*\*\/\*?[\w\.-]+(\/(\*\*)?)?(,\*\*\/\*?[\w\.-]+(\/(\*\*)?)?)*}$/;
 var T4 = /^\*\*((\/[\w\.-]+)+)\/?$/;
 var T5 = /^([\w\.-]+(\/[\w\.-]+)*)\/?$/;
-var CACHE = new $Sc(1e4);
+var CACHE = new LRUCache(1e4);
 var FALSE = function() {
   return false;
 };
@@ -6444,28 +6444,28 @@ function parsePattern(arg1, options) {
   const ignoreCase = options.ignoreCase ?? false;
   const internalOptions = {
     ...options,
-    equals: ignoreCase ? $gg : (a, b) => a === b,
-    endsWith: ignoreCase ? $jg : (str, candidate) => str.endsWith(candidate),
+    equals: ignoreCase ? equalsIgnoreCase : (a, b) => a === b,
+    endsWith: ignoreCase ? endsWithIgnoreCase : (str, candidate) => str.endsWith(candidate),
     // TODO: the '!isLinux' part below is to keep current behavior unchanged, but it should probably be removed
     // in favor of passing correct options from the caller.
-    isEqualOrParent: (base, candidate) => $3g(base, candidate, !$o || ignoreCase)
+    isEqualOrParent: (base, candidate) => isEqualOrParent(base, candidate, !isLinux || ignoreCase)
   };
   const patternKey = `${ignoreCase ? pattern.toLowerCase() : pattern}_${!!options.trimForExclusions}_${ignoreCase}`;
   let parsedPattern = CACHE.get(patternKey);
   if (parsedPattern) {
     return wrapRelativePattern(parsedPattern, arg1, internalOptions);
   }
-  let match;
+  let match2;
   if (T1.test(pattern)) {
     parsedPattern = trivia1(pattern.substring(4), pattern, internalOptions);
-  } else if (match = T2.exec(trimForExclusions(pattern, internalOptions))) {
-    parsedPattern = trivia2(match[1], pattern, internalOptions);
+  } else if (match2 = T2.exec(trimForExclusions(pattern, internalOptions))) {
+    parsedPattern = trivia2(match2[1], pattern, internalOptions);
   } else if ((options.trimForExclusions ? T3_2 : T3).test(pattern)) {
     parsedPattern = trivia3(pattern, internalOptions);
-  } else if (match = T4.exec(trimForExclusions(pattern, internalOptions))) {
-    parsedPattern = trivia4and5(match[1].substring(1), pattern, true, internalOptions);
-  } else if (match = T5.exec(trimForExclusions(pattern, internalOptions))) {
-    parsedPattern = trivia4and5(match[1], pattern, false, internalOptions);
+  } else if (match2 = T4.exec(trimForExclusions(pattern, internalOptions))) {
+    parsedPattern = trivia4and5(match2[1].substring(1), pattern, true, internalOptions);
+  } else if (match2 = T5.exec(trimForExclusions(pattern, internalOptions))) {
+    parsedPattern = trivia4and5(match2[1], pattern, false, internalOptions);
   } else {
     parsedPattern = toRegExp(pattern, internalOptions);
   }
@@ -6476,11 +6476,11 @@ function wrapRelativePattern(parsedPattern, arg2, options) {
   if (typeof arg2 === "string") {
     return parsedPattern;
   }
-  const wrappedPattern = function(path, basename) {
+  const wrappedPattern = function(path, basename3) {
     if (!options.isEqualOrParent(path, arg2.base)) {
       return null;
     }
-    return parsedPattern($Xf(path.substring(arg2.base.length), sep), basename);
+    return parsedPattern(ltrim(path.substring(arg2.base.length), sep), basename3);
   };
   wrappedPattern.allBasenames = parsedPattern.allBasenames;
   wrappedPattern.allPaths = parsedPattern.allPaths;
@@ -6492,19 +6492,19 @@ function trimForExclusions(pattern, options) {
   return options.trimForExclusions && pattern.endsWith("/**") ? pattern.substring(0, pattern.length - 2) : pattern;
 }
 function trivia1(base, pattern, options) {
-  return function(path, basename) {
+  return function(path, basename3) {
     return typeof path === "string" && options.endsWith(path, base) ? pattern : null;
   };
 }
 function trivia2(base, pattern, options) {
   const slashBase = `/${base}`;
   const backslashBase = `\\${base}`;
-  const parsedPattern = function(path, basename) {
+  const parsedPattern = function(path, basename3) {
     if (typeof path !== "string") {
       return null;
     }
-    if (basename) {
-      return options.equals(basename, base) ? pattern : null;
+    if (basename3) {
+      return options.equals(basename3, base) ? pattern : null;
     }
     return options.equals(path, base) || options.endsWith(path, slashBase) || options.endsWith(path, backslashBase) ? pattern : null;
   };
@@ -6523,9 +6523,9 @@ function trivia3(pattern, options) {
   if (patternsLength === 1) {
     return parsedPatterns[0];
   }
-  const parsedPattern = function(path, basename) {
+  const parsedPattern = function(path, basename3) {
     for (let i = 0, n = parsedPatterns.length; i < n; i++) {
-      if (parsedPatterns[i](path, basename)) {
+      if (parsedPatterns[i](path, basename3)) {
         return pattern;
       }
     }
@@ -6542,17 +6542,17 @@ function trivia3(pattern, options) {
   return parsedPattern;
 }
 function trivia4and5(targetPath, pattern, matchPathEnds, options) {
-  const usingPosixSep = sep === $7.sep;
+  const usingPosixSep = sep === posix.sep;
   const nativePath = usingPosixSep ? targetPath : targetPath.replace(ALL_FORWARD_SLASHES, sep);
   const nativePathEnd = sep + nativePath;
-  const targetPathEnd = $7.sep + targetPath;
+  const targetPathEnd = posix.sep + targetPath;
   let parsedPattern;
   if (matchPathEnds) {
-    parsedPattern = function(path, basename) {
+    parsedPattern = function(path, basename3) {
       return typeof path === "string" && (options.equals(path, nativePath) || options.endsWith(path, nativePathEnd) || !usingPosixSep && (options.equals(path, targetPath) || options.endsWith(path, targetPathEnd))) ? pattern : null;
     };
   } else {
-    parsedPattern = function(path, basename) {
+    parsedPattern = function(path, basename3) {
       return typeof path === "string" && (options.equals(path, nativePath) || !usingPosixSep && options.equals(path, targetPath)) ? pattern : null;
     };
   }
@@ -6570,23 +6570,23 @@ function toRegExp(pattern, options) {
     return NULL;
   }
 }
-function $rj(arg1, path, options) {
+function match(arg1, path, options) {
   if (!arg1 || typeof path !== "string") {
     return false;
   }
-  return $sj(arg1, options)(path);
+  return parse2(arg1, options)(path);
 }
-function $sj(arg1, options = {}) {
+function parse2(arg1, options = {}) {
   if (!arg1) {
     return FALSE;
   }
-  if (typeof arg1 === "string" || $tj(arg1)) {
+  if (typeof arg1 === "string" || isRelativePattern(arg1)) {
     const parsedPattern = parsePattern(arg1, options);
     if (parsedPattern === NULL) {
       return FALSE;
     }
-    const resultPattern = function(path, basename) {
-      return !!parsedPattern(path, basename);
+    const resultPattern = function(path, basename3) {
+      return !!parsedPattern(path, basename3);
     };
     if (parsedPattern.allBasenames) {
       resultPattern.allBasenames = parsedPattern.allBasenames;
@@ -6598,7 +6598,7 @@ function $sj(arg1, options = {}) {
   }
   return parsedExpression(arg1, options);
 }
-function $tj(obj) {
+function isRelativePattern(obj) {
   const rp = obj;
   if (!rp) {
     return false;
@@ -6615,14 +6615,14 @@ function parsedExpression(expression, options) {
     if (patternsLength === 1) {
       return parsedPatterns[0];
     }
-    const resultExpression2 = function(path, basename) {
+    const resultExpression2 = function(path, basename3) {
       let resultPromises = void 0;
       for (let i = 0, n = parsedPatterns.length; i < n; i++) {
-        const result = parsedPatterns[i](path, basename);
+        const result = parsedPatterns[i](path, basename3);
         if (typeof result === "string") {
           return result;
         }
-        if ($Lh(result)) {
+        if (isThenable(result)) {
           if (!resultPromises) {
             resultPromises = [];
           }
@@ -6659,17 +6659,17 @@ function parsedExpression(expression, options) {
       const parsedPattern = parsedPatterns[i];
       if (parsedPattern.requiresSiblings && hasSibling) {
         if (!base) {
-          base = $bb(path);
+          base = basename(path);
         }
         if (!name) {
-          name = base.substring(0, base.length - $cb(path).length);
+          name = base.substring(0, base.length - extname(path).length);
         }
       }
       const result = parsedPattern(path, base, name, hasSibling);
       if (typeof result === "string") {
         return result;
       }
-      if ($Lh(result)) {
+      if (isThenable(result)) {
         if (!resultPromises) {
           resultPromises = [];
         }
@@ -6713,13 +6713,13 @@ function parseExpressionPattern(pattern, value, options) {
   if (value) {
     const when = value.when;
     if (typeof when === "string") {
-      const result = (path, basename, name, hasSibling) => {
-        if (!hasSibling || !parsedPattern(path, basename)) {
+      const result = (path, basename3, name, hasSibling) => {
+        if (!hasSibling || !parsedPattern(path, basename3)) {
           return null;
         }
         const clausePattern = when.replace("$(basename)", () => name);
         const matched = hasSibling(clausePattern);
-        return $Lh(matched) ? matched.then((match) => match ? pattern : null) : matched ? pattern : null;
+        return isThenable(matched) ? matched.then((match2) => match2 ? pattern : null) : matched ? pattern : null;
       };
       result.requiresSiblings = true;
       return result;
@@ -6748,11 +6748,11 @@ function aggregateBasenameMatches(parsedPatterns, result) {
       return patterns2 ? all.concat(patterns2) : all;
     }, []);
   }
-  const aggregate = function(path, basename) {
+  const aggregate = function(path, basename3) {
     if (typeof path !== "string") {
       return null;
     }
-    if (!basename) {
+    if (!basename3) {
       let i;
       for (i = path.length; i > 0; i--) {
         const ch = path.charCodeAt(i - 1);
@@ -6760,9 +6760,9 @@ function aggregateBasenameMatches(parsedPatterns, result) {
           break;
         }
       }
-      basename = path.substring(i);
+      basename3 = path.substring(i);
     }
-    const index = basenames.indexOf(basename);
+    const index = basenames.indexOf(basename3);
     return index !== -1 ? patterns[index] : null;
   };
   aggregate.basenames = basenames;
@@ -6774,20 +6774,20 @@ function aggregateBasenameMatches(parsedPatterns, result) {
 }
 
 // out-build/vs/workbench/services/search/common/localFileSearchWorkerTypes.js
-var $sHc = class _$sHc {
+var LocalFileSearchWorkerHost = class _LocalFileSearchWorkerHost {
   static {
     this.CHANNEL_NAME = "localFileSearchWorkerHost";
   }
   static getChannel(workerServer) {
-    return workerServer.getChannel(_$sHc.CHANNEL_NAME);
+    return workerServer.getChannel(_LocalFileSearchWorkerHost.CHANNEL_NAME);
   }
   static setChannel(workerClient, obj) {
-    workerClient.setChannel(_$sHc.CHANNEL_NAME, obj);
+    workerClient.setChannel(_LocalFileSearchWorkerHost.CHANNEL_NAME, obj);
   }
 };
 
 // out-build/vs/editor/common/core/position.js
-var $GD = class _$GD {
+var Position = class _Position {
   constructor(lineNumber, column) {
     this.lineNumber = lineNumber;
     this.column = column;
@@ -6802,7 +6802,7 @@ var $GD = class _$GD {
     if (newLineNumber === this.lineNumber && newColumn === this.column) {
       return this;
     } else {
-      return new _$GD(newLineNumber, newColumn);
+      return new _Position(newLineNumber, newColumn);
     }
   }
   /**
@@ -6818,7 +6818,7 @@ var $GD = class _$GD {
    * Test if this position equals other position
    */
   equals(other) {
-    return _$GD.equals(this, other);
+    return _Position.equals(this, other);
   }
   /**
    * Test if position `a` equals position `b`
@@ -6834,7 +6834,7 @@ var $GD = class _$GD {
    * If the two positions are equal, the result will be false.
    */
   isBefore(other) {
-    return _$GD.isBefore(this, other);
+    return _Position.isBefore(this, other);
   }
   /**
    * Test if position `a` is before position `b`.
@@ -6854,7 +6854,7 @@ var $GD = class _$GD {
    * If the two positions are equal, the result will be true.
    */
   isBeforeOrEqual(other) {
-    return _$GD.isBeforeOrEqual(this, other);
+    return _Position.isBeforeOrEqual(this, other);
   }
   /**
    * Test if position `a` is before position `b`.
@@ -6886,7 +6886,7 @@ var $GD = class _$GD {
    * Clone this position.
    */
   clone() {
-    return new _$GD(this.lineNumber, this.column);
+    return new _Position(this.lineNumber, this.column);
   }
   /**
    * Convert to a human-readable representation.
@@ -6899,7 +6899,7 @@ var $GD = class _$GD {
    * Create a `Position` from an `IPosition`.
    */
   static lift(pos) {
-    return new _$GD(pos.lineNumber, pos.column);
+    return new _Position(pos.lineNumber, pos.column);
   }
   /**
    * Test if `obj` is an `IPosition`.
@@ -6916,7 +6916,7 @@ var $GD = class _$GD {
 };
 
 // out-build/vs/editor/common/core/range.js
-var $HD = class _$HD {
+var Range = class _Range {
   constructor(startLineNumber, startColumn, endLineNumber, endColumn) {
     if (startLineNumber > endLineNumber || startLineNumber === endLineNumber && startColumn > endColumn) {
       this.startLineNumber = endLineNumber;
@@ -6934,7 +6934,7 @@ var $HD = class _$HD {
    * Test if this range is empty.
    */
   isEmpty() {
-    return _$HD.isEmpty(this);
+    return _Range.isEmpty(this);
   }
   /**
    * Test if `range` is empty.
@@ -6946,7 +6946,7 @@ var $HD = class _$HD {
    * Test if position is in this range. If the position is at the edges, will return true.
    */
   containsPosition(position) {
-    return _$HD.containsPosition(this, position);
+    return _Range.containsPosition(this, position);
   }
   /**
    * Test if `position` is in `range`. If the position is at the edges, will return true.
@@ -6983,7 +6983,7 @@ var $HD = class _$HD {
    * Test if range is in this range. If the range is equal to this range, will return true.
    */
   containsRange(range) {
-    return _$HD.containsRange(this, range);
+    return _Range.containsRange(this, range);
   }
   /**
    * Test if `otherRange` is in `range`. If the ranges are equal, will return true.
@@ -7007,7 +7007,7 @@ var $HD = class _$HD {
    * Test if `range` is strictly in this range. `range` must start after and end before this range for the result to be true.
    */
   strictContainsRange(range) {
-    return _$HD.strictContainsRange(this, range);
+    return _Range.strictContainsRange(this, range);
   }
   /**
    * Test if `otherRange` is strictly in `range` (must start after, and end before). If the ranges are equal, will return false.
@@ -7032,7 +7032,7 @@ var $HD = class _$HD {
    * The smallest position will be used as the start point, and the largest one as the end point.
    */
   plusRange(range) {
-    return _$HD.plusRange(this, range);
+    return _Range.plusRange(this, range);
   }
   /**
    * A reunion of the two ranges.
@@ -7063,13 +7063,13 @@ var $HD = class _$HD {
       endLineNumber = a.endLineNumber;
       endColumn = a.endColumn;
     }
-    return new _$HD(startLineNumber, startColumn, endLineNumber, endColumn);
+    return new _Range(startLineNumber, startColumn, endLineNumber, endColumn);
   }
   /**
    * A intersection of the two ranges.
    */
   intersectRanges(range) {
-    return _$HD.intersectRanges(this, range);
+    return _Range.intersectRanges(this, range);
   }
   /**
    * A intersection of the two ranges.
@@ -7101,13 +7101,13 @@ var $HD = class _$HD {
     if (resultStartLineNumber === resultEndLineNumber && resultStartColumn > resultEndColumn) {
       return null;
     }
-    return new _$HD(resultStartLineNumber, resultStartColumn, resultEndLineNumber, resultEndColumn);
+    return new _Range(resultStartLineNumber, resultStartColumn, resultEndLineNumber, resultEndColumn);
   }
   /**
    * Test if this range equals other.
    */
   equalsRange(other) {
-    return _$HD.equalsRange(this, other);
+    return _Range.equalsRange(this, other);
   }
   /**
    * Test if range `a` equals `b`.
@@ -7122,25 +7122,25 @@ var $HD = class _$HD {
    * Return the end position (which will be after or equal to the start position)
    */
   getEndPosition() {
-    return _$HD.getEndPosition(this);
+    return _Range.getEndPosition(this);
   }
   /**
    * Return the end position (which will be after or equal to the start position)
    */
   static getEndPosition(range) {
-    return new $GD(range.endLineNumber, range.endColumn);
+    return new Position(range.endLineNumber, range.endColumn);
   }
   /**
    * Return the start position (which will be before or equal to the end position)
    */
   getStartPosition() {
-    return _$HD.getStartPosition(this);
+    return _Range.getStartPosition(this);
   }
   /**
    * Return the start position (which will be before or equal to the end position)
    */
   static getStartPosition(range) {
-    return new $GD(range.startLineNumber, range.startColumn);
+    return new Position(range.startLineNumber, range.startColumn);
   }
   /**
    * Transform to a user presentable string representation.
@@ -7152,56 +7152,56 @@ var $HD = class _$HD {
    * Create a new range using this range's start position, and using endLineNumber and endColumn as the end position.
    */
   setEndPosition(endLineNumber, endColumn) {
-    return new _$HD(this.startLineNumber, this.startColumn, endLineNumber, endColumn);
+    return new _Range(this.startLineNumber, this.startColumn, endLineNumber, endColumn);
   }
   /**
    * Create a new range using this range's end position, and using startLineNumber and startColumn as the start position.
    */
   setStartPosition(startLineNumber, startColumn) {
-    return new _$HD(startLineNumber, startColumn, this.endLineNumber, this.endColumn);
+    return new _Range(startLineNumber, startColumn, this.endLineNumber, this.endColumn);
   }
   /**
    * Create a new empty range using this range's start position.
    */
   collapseToStart() {
-    return _$HD.collapseToStart(this);
+    return _Range.collapseToStart(this);
   }
   /**
    * Create a new empty range using this range's start position.
    */
   static collapseToStart(range) {
-    return new _$HD(range.startLineNumber, range.startColumn, range.startLineNumber, range.startColumn);
+    return new _Range(range.startLineNumber, range.startColumn, range.startLineNumber, range.startColumn);
   }
   /**
    * Create a new empty range using this range's end position.
    */
   collapseToEnd() {
-    return _$HD.collapseToEnd(this);
+    return _Range.collapseToEnd(this);
   }
   /**
    * Create a new empty range using this range's end position.
    */
   static collapseToEnd(range) {
-    return new _$HD(range.endLineNumber, range.endColumn, range.endLineNumber, range.endColumn);
+    return new _Range(range.endLineNumber, range.endColumn, range.endLineNumber, range.endColumn);
   }
   /**
    * Moves the range by the given amount of lines.
    */
   delta(lineCount) {
-    return new _$HD(this.startLineNumber + lineCount, this.startColumn, this.endLineNumber + lineCount, this.endColumn);
+    return new _Range(this.startLineNumber + lineCount, this.startColumn, this.endLineNumber + lineCount, this.endColumn);
   }
   isSingleLine() {
     return this.startLineNumber === this.endLineNumber;
   }
   // ---
   static fromPositions(start, end = start) {
-    return new _$HD(start.lineNumber, start.column, end.lineNumber, end.column);
+    return new _Range(start.lineNumber, start.column, end.lineNumber, end.column);
   }
   static lift(range) {
     if (!range) {
       return null;
     }
-    return new _$HD(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn);
+    return new _Range(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn);
   }
   /**
    * Test if `obj` is an `IRange`.
@@ -7302,7 +7302,7 @@ var $HD = class _$HD {
 };
 
 // out-build/vs/workbench/services/search/common/getFileResults.js
-var $xYc = (bytes, pattern, options) => {
+var getFileResults = (bytes, pattern, options) => {
   let text;
   if (bytes[0] === 255 && bytes[1] === 254) {
     text = new TextDecoder("utf-16le").decode(bytes);
@@ -7366,16 +7366,16 @@ var $xYc = (bytes, pattern, options) => {
 `;
         resultLines.add(matchLine);
       }
-      const fileRange = new $HD(startLine, matchStartIndex - lineRanges[startLine].start, endLine, matchStartIndex + matchedText.length - lineRanges[endLine].start);
-      const previewRange = new $HD(0, matchStartIndex - lineRanges[startLine].start - offset, endLine - startLine, matchStartIndex + matchedText.length - lineRanges[endLine].start - (endLine === startLine ? offset : 0));
-      const match = {
+      const fileRange = new Range(startLine, matchStartIndex - lineRanges[startLine].start, endLine, matchStartIndex + matchedText.length - lineRanges[endLine].start);
+      const previewRange = new Range(0, matchStartIndex - lineRanges[startLine].start - offset, endLine - startLine, matchStartIndex + matchedText.length - lineRanges[endLine].start - (endLine === startLine ? offset : 0));
+      const match2 = {
         rangeLocations: [{
           source: fileRange,
           preview: previewRange
         }],
         previewText
       };
-      results.push(match);
+      results.push(match2);
       if (options.surroundingContext) {
         for (let contextLine = endLine + 1; contextLine <= Math.min(endLine + options.surroundingContext, lineRanges.length - 1); contextLine++) {
           contextLinesNeeded.add(contextLine);
@@ -7395,25 +7395,25 @@ var $xYc = (bytes, pattern, options) => {
 };
 
 // out-build/vs/workbench/services/search/common/ignoreFile.js
-var $6Rb = class {
-  constructor(contents, b, c, d = false) {
-    this.b = b;
-    this.c = c;
-    this.d = d;
-    if (b[b.length - 1] === "\\") {
+var IgnoreFile = class {
+  constructor(contents, location, parent, ignoreCase = false) {
+    this.location = location;
+    this.parent = parent;
+    this.ignoreCase = ignoreCase;
+    if (location[location.length - 1] === "\\") {
       throw Error("Unexpected path format, do not use trailing backslashes");
     }
-    if (b[b.length - 1] !== "/") {
-      b += "/";
+    if (location[location.length - 1] !== "/") {
+      location += "/";
     }
-    this.a = this.f(contents, this.b, this.c);
+    this.isPathIgnored = this.parseIgnoreFile(contents, this.location, this.parent);
   }
   /**
    * Updates the contents of the ignore file. Preserving the location and parent
    * @param contents The new contents of the gitignore file
    */
   updateContents(contents) {
-    this.a = this.f(contents, this.b, this.c);
+    this.isPathIgnored = this.parseIgnoreFile(contents, this.location, this.parent);
   }
   /**
    * Returns true if a path in a traversable directory has not been ignored.
@@ -7427,7 +7427,7 @@ var $6Rb = class {
     if (path[0] !== "/" || path[path.length - 1] === "/") {
       throw Error("Unexpected path format, expected to begin with slash and end without. got:" + path);
     }
-    const ignored = this.a(path, isDir);
+    const ignored = this.isPathIgnored(path, isDir);
     return !ignored;
   }
   /**
@@ -7452,27 +7452,27 @@ var $6Rb = class {
     }
     return ignored;
   }
-  e(lines, dirPath, trimForExclusions2) {
-    const includeLines = lines.map((line) => this.g(line, dirPath));
+  gitignoreLinesToExpression(lines, dirPath, trimForExclusions2) {
+    const includeLines = lines.map((line) => this.gitignoreLineToGlob(line, dirPath));
     const includeExpression = /* @__PURE__ */ Object.create(null);
     for (const line of includeLines) {
       includeExpression[line] = true;
     }
-    return $sj(includeExpression, { trimForExclusions: trimForExclusions2, ignoreCase: this.d });
+    return parse2(includeExpression, { trimForExclusions: trimForExclusions2, ignoreCase: this.ignoreCase });
   }
-  f(ignoreContents, dirPath, parent) {
+  parseIgnoreFile(ignoreContents, dirPath, parent) {
     const contentLines = ignoreContents.split("\n").map((line) => line.trim()).filter((line) => line && line[0] !== "#");
     const fileLines = contentLines.filter((line) => !line.endsWith("/"));
     const fileIgnoreLines = fileLines.filter((line) => !line.includes("!"));
-    const isFileIgnored = this.e(fileIgnoreLines, dirPath, true);
+    const isFileIgnored = this.gitignoreLinesToExpression(fileIgnoreLines, dirPath, true);
     const fileIncludeLines = fileLines.filter((line) => line.includes("!")).map((line) => line.replace(/!/g, ""));
-    const isFileIncluded = this.e(fileIncludeLines, dirPath, false);
+    const isFileIncluded = this.gitignoreLinesToExpression(fileIncludeLines, dirPath, false);
     const dirIgnoreLines = contentLines.filter((line) => !line.includes("!"));
-    const isDirIgnored = this.e(dirIgnoreLines, dirPath, true);
+    const isDirIgnored = this.gitignoreLinesToExpression(dirIgnoreLines, dirPath, true);
     const dirIncludeLines = contentLines.filter((line) => line.includes("!")).map((line) => line.replace(/!/g, ""));
-    const isDirIncluded = this.e(dirIncludeLines, dirPath, false);
+    const isDirIncluded = this.gitignoreLinesToExpression(dirIncludeLines, dirPath, false);
     const isPathIgnored = (path, isDir) => {
-      if (!(this.d ? $ig(path, dirPath) : path.startsWith(dirPath))) {
+      if (!(this.ignoreCase ? startsWithIgnoreCase(path, dirPath) : path.startsWith(dirPath))) {
         return false;
       }
       if (isDir && isDirIgnored(path) && !isDirIncluded(path)) {
@@ -7482,13 +7482,13 @@ var $6Rb = class {
         return true;
       }
       if (parent) {
-        return parent.a(path, isDir);
+        return parent.isPathIgnored(path, isDir);
       }
       return false;
     };
     return isPathIgnored;
   }
-  g(line, dirPath) {
+  gitignoreLineToGlob(line, dirPath) {
     const firstSep = line.indexOf("/");
     if (firstSep === -1 || firstSep === line.length - 1) {
       line = "**/" + line;
@@ -7510,19 +7510,19 @@ var $6Rb = class {
 
 // out-build/vs/base/common/buffer.js
 var hasBuffer = typeof Buffer !== "undefined";
-var indexOfTable = new $Kf(() => new Uint8Array(256));
+var indexOfTable = new Lazy(() => new Uint8Array(256));
 var textEncoder;
 var textDecoder;
-var $2i = class _$2i {
+var VSBuffer = class _VSBuffer {
   /**
    * When running in a nodejs context, the backing store for the returned `VSBuffer` instance
    * might use a nodejs Buffer allocated from node's Buffer pool, which is not transferrable.
    */
   static alloc(byteLength) {
     if (hasBuffer) {
-      return new _$2i(Buffer.allocUnsafe(byteLength));
+      return new _VSBuffer(Buffer.allocUnsafe(byteLength));
     } else {
-      return new _$2i(new Uint8Array(byteLength));
+      return new _VSBuffer(new Uint8Array(byteLength));
     }
   }
   /**
@@ -7534,7 +7534,7 @@ var $2i = class _$2i {
     if (hasBuffer && !Buffer.isBuffer(actual)) {
       actual = Buffer.from(actual.buffer, actual.byteOffset, actual.byteLength);
     }
-    return new _$2i(actual);
+    return new _VSBuffer(actual);
   }
   /**
    * When running in a nodejs context, the backing store for the returned `VSBuffer` instance
@@ -7543,12 +7543,12 @@ var $2i = class _$2i {
   static fromString(source, options) {
     const dontUseNodeBuffer = options?.dontUseNodeBuffer || false;
     if (!dontUseNodeBuffer && hasBuffer) {
-      return new _$2i(Buffer.from(source));
+      return new _VSBuffer(Buffer.from(source));
     } else {
       if (!textEncoder) {
         textEncoder = new TextEncoder();
       }
-      return new _$2i(textEncoder.encode(source));
+      return new _VSBuffer(textEncoder.encode(source));
     }
   }
   /**
@@ -7556,7 +7556,7 @@ var $2i = class _$2i {
    * might use a nodejs Buffer allocated from node's Buffer pool, which is not transferrable.
    */
   static fromByteArray(source) {
-    const result = _$2i.alloc(source.length);
+    const result = _VSBuffer.alloc(source.length);
     for (let i = 0, len = source.length; i < len; i++) {
       result.buffer[i] = source[i];
     }
@@ -7573,7 +7573,7 @@ var $2i = class _$2i {
         totalLength += buffers[i].byteLength;
       }
     }
-    const ret = _$2i.alloc(totalLength);
+    const ret = _VSBuffer.alloc(totalLength);
     let offset = 0;
     for (let i = 0, len = buffers.length; i < len; i++) {
       const element = buffers[i];
@@ -7594,7 +7594,7 @@ var $2i = class _$2i {
    * might use a nodejs Buffer allocated from node's Buffer pool, which is not transferrable.
    */
   clone() {
-    const result = _$2i.alloc(this.byteLength);
+    const result = _VSBuffer.alloc(this.byteLength);
     result.set(this);
     return result;
   }
@@ -7609,10 +7609,10 @@ var $2i = class _$2i {
     }
   }
   slice(start, end) {
-    return new _$2i(this.buffer.subarray(start, end));
+    return new _VSBuffer(this.buffer.subarray(start, end));
   }
   set(array, offset) {
-    if (array instanceof _$2i) {
+    if (array instanceof _VSBuffer) {
       this.buffer.set(array.buffer, offset);
     } else if (array instanceof Uint8Array) {
       this.buffer.set(array, offset);
@@ -7625,25 +7625,25 @@ var $2i = class _$2i {
     }
   }
   readUInt32BE(offset) {
-    return $6i(this.buffer, offset);
+    return readUInt32BE(this.buffer, offset);
   }
   writeUInt32BE(value, offset) {
-    $7i(this.buffer, value, offset);
+    writeUInt32BE(this.buffer, value, offset);
   }
   readUInt32LE(offset) {
-    return $8i(this.buffer, offset);
+    return readUInt32LE(this.buffer, offset);
   }
   writeUInt32LE(value, offset) {
-    $9i(this.buffer, value, offset);
+    writeUInt32LE(this.buffer, value, offset);
   }
   readUInt8(offset) {
-    return $0i(this.buffer, offset);
+    return readUInt8(this.buffer, offset);
   }
   writeUInt8(value, offset) {
-    $$i(this.buffer, value, offset);
+    writeUInt8(this.buffer, value, offset);
   }
   indexOf(subarray, offset = 0) {
-    return $3i(this.buffer, subarray instanceof _$2i ? subarray.buffer : subarray, offset);
+    return binaryIndexOf(this.buffer, subarray instanceof _VSBuffer ? subarray.buffer : subarray, offset);
   }
   equals(other) {
     if (this === other) {
@@ -7655,7 +7655,7 @@ var $2i = class _$2i {
     return this.buffer.every((value, index) => value === other.buffer[index]);
   }
 };
-function $3i(haystack, needle, offset = 0) {
+function binaryIndexOf(haystack, needle, offset = 0) {
   const needleLen = needle.byteLength;
   const haystackLen = haystack.byteLength;
   if (needleLen === 0) {
@@ -7690,10 +7690,10 @@ function $3i(haystack, needle, offset = 0) {
   }
   return result;
 }
-function $6i(source, offset) {
+function readUInt32BE(source, offset) {
   return source[offset] * 2 ** 24 + source[offset + 1] * 2 ** 16 + source[offset + 2] * 2 ** 8 + source[offset + 3];
 }
-function $7i(destination, value, offset) {
+function writeUInt32BE(destination, value, offset) {
   destination[offset + 3] = value;
   value = value >>> 8;
   destination[offset + 2] = value;
@@ -7702,10 +7702,10 @@ function $7i(destination, value, offset) {
   value = value >>> 8;
   destination[offset] = value;
 }
-function $8i(source, offset) {
+function readUInt32LE(source, offset) {
   return source[offset + 0] << 0 >>> 0 | source[offset + 1] << 8 >>> 0 | source[offset + 2] << 16 >>> 0 | source[offset + 3] << 24 >>> 0;
 }
-function $9i(destination, value, offset) {
+function writeUInt32LE(destination, value, offset) {
   destination[offset + 0] = value & 255;
   value = value >>> 8;
   destination[offset + 1] = value & 255;
@@ -7714,15 +7714,15 @@ function $9i(destination, value, offset) {
   value = value >>> 8;
   destination[offset + 3] = value & 255;
 }
-function $0i(source, offset) {
+function readUInt8(source, offset) {
   return source[offset];
 }
-function $$i(destination, value, offset) {
+function writeUInt8(destination, value, offset) {
   destination[offset] = value;
 }
 
 // out-build/vs/base/common/marshalling.js
-function $Vm(obj, depth = 0) {
+function revive(obj, depth = 0) {
   if (!obj || depth > 200) {
     return obj;
   }
@@ -7738,17 +7738,17 @@ function $Vm(obj, depth = 0) {
       case 17:
         return new Date(obj.source);
     }
-    if (obj instanceof $2i || obj instanceof Uint8Array) {
+    if (obj instanceof VSBuffer || obj instanceof Uint8Array) {
       return obj;
     }
     if (Array.isArray(obj)) {
       for (let i = 0; i < obj.length; ++i) {
-        obj[i] = $Vm(obj[i], depth + 1);
+        obj[i] = revive(obj[i], depth + 1);
       }
     } else {
       for (const key in obj) {
         if (Object.hasOwnProperty.call(obj, key)) {
-          obj[key] = $Vm(obj[key], depth + 1);
+          obj[key] = revive(obj[key], depth + 1);
         }
       }
     }
@@ -7773,33 +7773,33 @@ var time = async (name, task) => {
   console.info(name, itr, "took", end - start);
   return r;
 };
-function $yYc(workerServer) {
-  return new $zYc(workerServer);
+function create(workerServer) {
+  return new LocalFileSearchWorker(workerServer);
 }
-var $zYc = class {
+var LocalFileSearchWorker = class {
   constructor(workerServer) {
     this._requestHandlerBrand = void 0;
     this.cancellationTokens = /* @__PURE__ */ new Map();
-    this.d = $sHc.getChannel(workerServer);
+    this.host = LocalFileSearchWorkerHost.getChannel(workerServer);
   }
   $cancelQuery(queryId) {
     this.cancellationTokens.get(queryId)?.cancel();
   }
-  g(queryId) {
-    const source = new $Cf();
+  registerCancellationToken(queryId) {
+    const source = new CancellationTokenSource();
     this.cancellationTokens.set(queryId, source);
     return source;
   }
   async $listDirectory(handle, query, folderQuery, ignorePathCasing, queryId) {
     const revivedFolderQuery = reviveFolderQuery(folderQuery);
-    const extUri = new $ph(() => ignorePathCasing);
-    const token = this.g(queryId);
+    const extUri2 = new ExtUri(() => ignorePathCasing);
+    const token = this.registerCancellationToken(queryId);
     const entries = [];
     let limitHit = false;
     let count = 0;
     const max = query.maxResults || 512;
     const filePatternMatcher = query.filePattern ? (name) => query.filePattern.split("").every((c) => name.includes(c)) : (name) => true;
-    await time("listDirectory", () => this.h(handle, reviveQueryProps(query), revivedFolderQuery, extUri, (file) => {
+    await time("listDirectory", () => this.walkFolderQuery(handle, reviveQueryProps(query), revivedFolderQuery, extUri2, (file) => {
       if (!filePatternMatcher(file.name)) {
         return;
       }
@@ -7817,9 +7817,9 @@ var $zYc = class {
   }
   async $searchDirectory(handle, query, folderQuery, ignorePathCasing, queryId) {
     const revivedQuery = reviveFolderQuery(folderQuery);
-    const extUri = new $ph(() => ignorePathCasing);
+    const extUri2 = new ExtUri(() => ignorePathCasing);
     return time("searchInFiles", async () => {
-      const token = this.g(queryId);
+      const token = this.registerCancellationToken(queryId);
       const results = [];
       const pattern = createSearchRegExp(query.contentPattern);
       const onGoingProcesses = [];
@@ -7836,7 +7836,7 @@ var $zYc = class {
           return;
         }
         const bytes = new Uint8Array(contents);
-        const fileResults = $xYc(bytes, pattern, {
+        const fileResults = getFileResults(bytes, pattern, {
           surroundingContext: query.surroundingContext ?? 0,
           previewOptions: query.previewOptions,
           remainingResultQuota: query.maxResults ? query.maxResults - resultCount : 1e4
@@ -7846,15 +7846,15 @@ var $zYc = class {
           if (query.maxResults && resultCount > query.maxResults) {
             token.cancel();
           }
-          const match = {
+          const match2 = {
             resource: URI.joinPath(revivedQuery.folder, file.path),
             results: fileResults
           };
-          this.d.$sendTextSearchMatch(match, queryId);
-          results.push(match);
+          this.host.$sendTextSearchMatch(match2, queryId);
+          results.push(match2);
         }
       };
-      await time("walkFolderToResolve", () => this.h(handle, reviveQueryProps(query), revivedQuery, extUri, async (file) => onGoingProcesses.push(processFile(file)), token.token));
+      await time("walkFolderToResolve", () => this.walkFolderQuery(handle, reviveQueryProps(query), revivedQuery, extUri2, async (file) => onGoingProcesses.push(processFile(file)), token.token));
       await time("resolveOngoingProcesses", () => Promise.all(onGoingProcesses));
       if (PERF) {
         console.log("Searched in", fileCount, "files");
@@ -7865,16 +7865,16 @@ var $zYc = class {
       };
     });
   }
-  async h(handle, queryProps, folderQuery, extUri, onFile, token) {
-    const folderExcludes = folderQuery.excludePattern?.map((excludePattern) => $sj(excludePattern.pattern ?? {}, { trimForExclusions: true }));
-    const evalFolderExcludes = (path, basename, hasSibling) => {
+  async walkFolderQuery(handle, queryProps, folderQuery, extUri2, onFile, token) {
+    const folderExcludes = folderQuery.excludePattern?.map((excludePattern) => parse2(excludePattern.pattern ?? {}, { trimForExclusions: true }));
+    const evalFolderExcludes = (path, basename3, hasSibling) => {
       return folderExcludes?.some((folderExclude) => {
-        return folderExclude(path, basename, hasSibling);
+        return folderExclude(path, basename3, hasSibling);
       });
     };
-    const isFolderExcluded = (path, basename, hasSibling) => {
+    const isFolderExcluded = (path, basename3, hasSibling) => {
       path = path.slice(1);
-      if (evalFolderExcludes(path, basename, hasSibling)) {
+      if (evalFolderExcludes(path, basename3, hasSibling)) {
         return true;
       }
       if (pathExcludedInQuery(queryProps, path)) {
@@ -7882,12 +7882,12 @@ var $zYc = class {
       }
       return false;
     };
-    const isFileIncluded = (path, basename, hasSibling) => {
+    const isFileIncluded = (path, basename3, hasSibling) => {
       path = path.slice(1);
-      if (evalFolderExcludes(path, basename, hasSibling)) {
+      if (evalFolderExcludes(path, basename3, hasSibling)) {
         return false;
       }
-      if (!pathIncludedInQuery(queryProps, path, extUri)) {
+      if (!pathIncludedInQuery(queryProps, path, extUri2)) {
         return false;
       }
       return true;
@@ -7918,7 +7918,7 @@ var $zYc = class {
             return;
           }
           const ignoreContents = new TextDecoder("utf8").decode(new Uint8Array(await (await file.getFile()).arrayBuffer()));
-          ignoreFile = new $6Rb(ignoreContents, prior, ignoreFile);
+          ignoreFile = new IgnoreFile(ignoreContents, prior, ignoreFile);
         }));
       }
       const entries = Promises.withAsyncBody(async (c) => {
@@ -7930,18 +7930,18 @@ var $zYc = class {
           entries2.push(entry);
           sibilings.add(entry[0]);
         }
-        for (const [basename, handle2] of entries2) {
+        for (const [basename3, handle2] of entries2) {
           if (token.isCancellationRequested) {
             break;
           }
-          const path = prior + basename;
+          const path = prior + basename3;
           if (ignoreFile && !ignoreFile.isPathIncludedInTraversal(path, handle2.kind === "directory")) {
             continue;
           }
           const hasSibling = (query) => sibilings.has(query);
-          if (isFileSystemDirectoryHandle(handle2) && !isFolderExcluded(path, basename, hasSibling)) {
+          if (isFileSystemDirectoryHandle(handle2) && !isFolderExcluded(path, basename3, hasSibling)) {
             dirs.push(processDirectory(handle2, path + "/", ignoreFile));
-          } else if (isFileSystemFileHandle(handle2) && isFileIncluded(path, basename, hasSibling)) {
+          } else if (isFileSystemFileHandle(handle2) && isFileIncluded(path, basename3, hasSibling)) {
             files.push(processFile(handle2, path));
           }
         }
@@ -7970,7 +7970,7 @@ var $zYc = class {
   }
 };
 function createSearchRegExp(options) {
-  return $1f(options.pattern, !!options.isRegExp, {
+  return createRegExp(options.pattern, !!options.isRegExp, {
     wholeWord: options.isWordMatch,
     global: true,
     matchCase: options.isCaseSensitive,
@@ -7979,8 +7979,8 @@ function createSearchRegExp(options) {
   });
 }
 function reviveFolderQuery(folderQuery) {
-  return $Vm({
-    ...$Vm(folderQuery),
+  return revive({
+    ...revive(folderQuery),
     excludePattern: folderQuery.excludePattern?.map((ep) => ({ folder: URI.revive(ep.folder), pattern: ep.pattern })),
     folder: URI.revive(folderQuery.folder)
   });
@@ -7993,26 +7993,26 @@ function reviveQueryProps(queryProps) {
   };
 }
 function pathExcludedInQuery(queryProps, fsPath) {
-  if (queryProps.excludePattern && $rj(queryProps.excludePattern, fsPath)) {
+  if (queryProps.excludePattern && match(queryProps.excludePattern, fsPath)) {
     return true;
   }
   return false;
 }
-function pathIncludedInQuery(queryProps, path, extUri) {
-  if (queryProps.excludePattern && $rj(queryProps.excludePattern, path)) {
+function pathIncludedInQuery(queryProps, path, extUri2) {
+  if (queryProps.excludePattern && match(queryProps.excludePattern, path)) {
     return false;
   }
   if (queryProps.includePattern || queryProps.usingSearchPaths) {
-    if (queryProps.includePattern && $rj(queryProps.includePattern, path)) {
+    if (queryProps.includePattern && match(queryProps.includePattern, path)) {
       return true;
     }
     if (queryProps.usingSearchPaths) {
       return !!queryProps.folderQueries && queryProps.folderQueries.some((fq) => {
         const searchPath = fq.folder;
         const uri = URI.file(path);
-        if (extUri.isEqualOrParent(uri, searchPath)) {
-          const relPath = $_(searchPath.path, uri.path);
-          return !fq.includePattern || !!$rj(fq.includePattern, relPath);
+        if (extUri2.isEqualOrParent(uri, searchPath)) {
+          const relPath = relative(searchPath.path, uri.path);
+          return !fq.includePattern || !!match(fq.includePattern, relPath);
         } else {
           return false;
         }
@@ -8024,6 +8024,6 @@ function pathIncludedInQuery(queryProps, path, extUri) {
 }
 
 // out-build/vs/workbench/services/search/worker/localFileSearchMain.js
-$3$($yYc);
+bootstrapWebWorker(create);
 
 //# sourceMappingURL=localFileSearchMain.js.map
