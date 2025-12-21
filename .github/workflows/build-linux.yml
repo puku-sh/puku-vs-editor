@@ -75,18 +75,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-x64-node-modules-
 
-      # 🚀 Cache VS Code build output (saves 30-60 minutes)
-      - name: Cache VS Code Build
-        uses: actions/cache@v4
-        with:
-          path: |
-            src/vscode/out
-            src/vscode/out-build
-            src/vscode/.build/extensions
-            src/vscode/.build/builtInExtensions
-          key: ${{ runner.os }}-x64-vscode-build-${{ hashFiles('src/vscode/src/**/*.ts', 'src/vscode/build/**/*.ts', 'src/vscode/product.json') }}
-          restore-keys: |
-            ${{ runner.os }}-x64-vscode-build-
+     
 
 
        
