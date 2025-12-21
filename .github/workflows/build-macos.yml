@@ -89,11 +89,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-arm64-electron-
 
-      - name: Install dependencies
+      - name: Setup Node.js for Extension
+        uses: actions/setup-node@v4
+        with:
+          node-version: '23.5.0'
+          cache: 'npm'
+          cache-dependency-path: src/chat/package-lock.json
+
+      - name: Install extension dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: |
           set -e
-          echo "=== Installing Extension Dependencies ==="
+          echo "=== Installing Extension Dependencies (Node 23.5.0) ==="
           cd src/chat
 
           # Clear npm cache and use legacy peer deps to avoid conflicts
@@ -113,8 +120,28 @@ jobs:
             npm cache clean --force
           done
 
-          echo "=== Installing VS Code Dependencies ==="
-          cd ../vscode
+          echo "✅ Extension dependencies installed successfully"
+        env:
+          npm_config_arch: ${{ env.NPM_ARCH }}
+          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm_config_loglevel: warn
+          GYP_DEFINES: "kerberos_use_rtld=false"
+
+      - name: Setup Node.js for VS Code
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'src/vscode/.nvmrc'
+          cache: 'npm'
+          cache-dependency-path: src/vscode/package-lock.json
+
+      - name: Install VS Code dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: |
+          set -e
+          echo "=== Installing VS Code Dependencies (Node 22.20.0) ==="
+          cd src/vscode
 
           # Clear npm cache
           npm cache clean --force
@@ -123,7 +150,7 @@ jobs:
             echo "VS Code npm install attempt $i/5..."
             timeout 600 npm ci --legacy-peer-deps --no-audit --no-fund && break
             if [ $i -eq 5 ]; then
-              echo "VS Code npm install failed after 5 attempts" >&2
+              echo "❌ VS Code npm install failed after 5 attempts" >&2
               echo "Last install log:"
               npm ci --legacy-peer-deps --no-audit --no-fund --verbose || true
               exit 1
@@ -132,6 +159,8 @@ jobs:
             sleep 5
             npm cache clean --force
           done
+
+          echo "✅ VS Code dependencies installed successfully"
         env:
           npm_config_arch: ${{ env.NPM_ARCH }}
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
@@ -245,15 +274,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: 'src/vscode/.nvmrc'
-          cache: 'npm'
-          cache-dependency-path: |
-            src/chat/package-lock.json
-            src/vscode/package-lock.json
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -320,6 +340,7 @@ jobs:
             npm cache clean --force
           done
 
+          echo "✅ Extension dependencies installed successfully"
           echo "=== Installing VS Code Dependencies ==="
           cd ../vscode
 
@@ -330,7 +351,7 @@ jobs:
             echo "VS Code npm install attempt $i/5..."
             timeout 600 npm ci --legacy-peer-deps --no-audit --no-fund && break
             if [ $i -eq 5 ]; then
-              echo "VS Code npm install failed after 5 attempts" >&2
+              echo "❌ VS Code npm install failed after 5 attempts" >&2
               echo "Last install log:"
               npm ci --legacy-peer-deps --no-audit --no-fund --verbose || true
               exit 1
@@ -339,6 +360,8 @@ jobs:
             sleep 5
             npm cache clean --force
           done
+
+          echo "✅ VS Code dependencies installed successfully"
         env:
           npm_config_arch: ${{ env.NPM_ARCH }}
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
