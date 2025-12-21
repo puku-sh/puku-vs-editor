@@ -79,53 +79,139 @@ jobs:
         run: |
           Write-Host "=== Installing Extension Dependencies ==="
           cd src/chat
+
+          # Clear npm cache and use legacy peer deps to avoid conflicts
+          npm cache clean --force
+
           $retries = 5
           $success = $false
           for ($i = 1; $i -le $retries; $i++) {
             try {
-              npm ci
+              Write-Host "Extension npm install attempt $i/$retries..."
+              timeout 300 npm ci --legacy-peer-deps --no-audit --no-fund
               $success = $true
               break
             } catch {
               if ($i -eq $retries) {
                 Write-Error "Extension npm install failed after $retries attempts"
+                Write-Host "Last install log:"
+                npm ci --legacy-peer-deps --no-audit --no-fund --verbose
                 exit 1
               }
               Write-Host "Npm install failed, retry $i..."
-              Start-Sleep -Seconds 2
+              Start-Sleep -Seconds 5
+              npm cache clean --force
             }
           }
 
           Write-Host "=== Installing VS Code Dependencies ==="
           cd ../vscode
+
+          # Clear npm cache
+          npm cache clean --force
+
           $success = $false
           for ($i = 1; $i -le $retries; $i++) {
             try {
-              npm ci
+              Write-Host "VS Code npm install attempt $i/$retries..."
+              timeout 600 npm ci --legacy-peer-deps --no-audit --no-fund
               $success = $true
               break
             } catch {
               if ($i -eq $retries) {
                 Write-Error "VS Code npm install failed after $retries attempts"
+                Write-Host "Last install log:"
+                npm ci --legacy-peer-deps --no-audit --no-fund --verbose
                 exit 1
               }
               Write-Host "Npm install failed, retry $i..."
-              Start-Sleep -Seconds 2
+              Start-Sleep -Seconds 5
+              npm cache clean --force
             }
           }
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm_config_loglevel: warn
+
+      # 🔧 Install missing VS Code build dependencies
+      - name: Install missing build dependencies
+        shell: powershell
+        run: |
+          cd src/vscode
+          Write-Host "🔧 Installing missing VS Code build dependencies..."
+
+          # Install critical build dependencies that might be missing from package.json or cache
+          $deps = @(
+            "ternary-stream",
+            "gulp-merge-json",
+            "event-stream",
+            "jsonc-parser",
+            "@vscode/markdown-it-katex",
+            "@vscode/extension-telemetry",
+            "@vscode/emmet-helper",
+            "@vscode/codicons",
+            "@vscode/sync-api-client",
+            "@vscode/sync-api-common",
+            "@vscode/sync-api-service",
+            "@vscode/ts-package-manager",
+            "@vscode/l10n",
+            "gulp-sourcemaps",
+            "gulp-filter",
+            "gulp-uglify",
+            "gulp-rename",
+            "gulp-json-editor",
+            "gulp-bom",
+            "gulp-gunzip",
+            "gulp-untar",
+            "gulp-replace",
+            "gulp-concat",
+            "gulp-util",
+            "gulp-flatten",
+            "gulp-order",
+            "gulp-insert",
+            "gulp-buffer",
+            "gulp-sort",
+            "gulp-plumber",
+            "gulp-svgmin",
+            "gulp-gzip",
+            "gulp-vinyl-zip",
+            "gulp-flatmap",
+            "webpack-stream",
+            "@vscode/gulp-electron",
+            "vscode-gulp-watch",
+            "through2",
+            "vinyl",
+            "vinyl-fs",
+            "esbuild",
+            "@esbuild-plugins/node-modules-polyfill",
+            "rimraf",
+            "minimist",
+            "ansi-colors",
+            "fancy-log",
+            "pump",
+            "gulp-azure-storage"
+          )
+
+          foreach ($dep in $deps) {
+            try {
+              npm install --no-save $dep 2>$null
+              Write-Host "✓ Installed $dep"
+            } catch {
+              Write-Host "⚠ $dep may already exist or failed to install"
+            }
+          }
 
       # 🚀 Build with optimizations
       - name: Build using Makefile
         shell: bash
-        run: make build
+        run: make install
         env:
           VSCODE_ARCH: x64
           UV_THREADPOOL_SIZE: 128
           VSCODE_USE_ESBUILD: 1
+          NODE_OPTIONS: --max-old-space-size=16384
 
       - name: Package Windows builds
         shell: powershell
@@ -211,38 +297,54 @@ jobs:
         run: |
           Write-Host "=== Installing Extension Dependencies ==="
           cd src/chat
+
+          # Clear npm cache and use legacy peer deps to avoid conflicts
+          npm cache clean --force
+
           $retries = 5
           $success = $false
           for ($i = 1; $i -le $retries; $i++) {
             try {
-              npm ci
+              Write-Host "Extension npm install attempt $i/$retries..."
+              timeout 300 npm ci --legacy-peer-deps --no-audit --no-fund
               $success = $true
               break
             } catch {
               if ($i -eq $retries) {
                 Write-Error "Extension npm install failed after $retries attempts"
+                Write-Host "Last install log:"
+                npm ci --legacy-peer-deps --no-audit --no-fund --verbose
                 exit 1
               }
               Write-Host "Npm install failed, retry $i..."
-              Start-Sleep -Seconds 2
+              Start-Sleep -Seconds 5
+              npm cache clean --force
             }
           }
 
           Write-Host "=== Installing VS Code Dependencies ==="
           cd ../vscode
+
+          # Clear npm cache
+          npm cache clean --force
+
           $success = $false
           for ($i = 1; $i -le $retries; $i++) {
             try {
-              npm ci --arch=arm64
+              Write-Host "VS Code npm install attempt $i/$retries..."
+              timeout 600 npm ci --legacy-peer-deps --no-audit --no-fund --arch=arm64
               $success = $true
               break
             } catch {
               if ($i -eq $retries) {
                 Write-Error "VS Code npm install failed after $retries attempts"
+                Write-Host "Last install log:"
+                npm ci --legacy-peer-deps --no-audit --no-fund --arch=arm64 --verbose
                 exit 1
               }
               Write-Host "Npm install failed, retry $i..."
-              Start-Sleep -Seconds 2
+              Start-Sleep -Seconds 5
+              npm cache clean --force
             }
           }
         env:
@@ -250,15 +352,85 @@ jobs:
           ELECTRON_SKIP_BINARY_DOWNLOAD: 1
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm_config_loglevel: warn
+
+      # 🔧 Install missing VS Code build dependencies
+      - name: Install missing build dependencies
+        shell: powershell
+        run: |
+          cd src/vscode
+          Write-Host "🔧 Installing missing VS Code build dependencies..."
+
+          # Install critical build dependencies that might be missing from package.json or cache
+          $deps = @(
+            "ternary-stream",
+            "gulp-merge-json",
+            "event-stream",
+            "jsonc-parser",
+            "@vscode/markdown-it-katex",
+            "@vscode/extension-telemetry",
+            "@vscode/emmet-helper",
+            "@vscode/codicons",
+            "@vscode/sync-api-client",
+            "@vscode/sync-api-common",
+            "@vscode/sync-api-service",
+            "@vscode/ts-package-manager",
+            "@vscode/l10n",
+            "gulp-sourcemaps",
+            "gulp-filter",
+            "gulp-uglify",
+            "gulp-rename",
+            "gulp-json-editor",
+            "gulp-bom",
+            "gulp-gunzip",
+            "gulp-untar",
+            "gulp-replace",
+            "gulp-concat",
+            "gulp-util",
+            "gulp-flatten",
+            "gulp-order",
+            "gulp-insert",
+            "gulp-buffer",
+            "gulp-sort",
+            "gulp-plumber",
+            "gulp-svgmin",
+            "gulp-gzip",
+            "gulp-vinyl-zip",
+            "gulp-flatmap",
+            "webpack-stream",
+            "@vscode/gulp-electron",
+            "vscode-gulp-watch",
+            "through2",
+            "vinyl",
+            "vinyl-fs",
+            "esbuild",
+            "@esbuild-plugins/node-modules-polyfill",
+            "rimraf",
+            "minimist",
+            "ansi-colors",
+            "fancy-log",
+            "pump",
+            "gulp-azure-storage"
+          )
+
+          foreach ($dep in $deps) {
+            try {
+              npm install --no-save $dep --arch=arm64 2>$null
+              Write-Host "✓ Installed $dep"
+            } catch {
+              Write-Host "⚠ $dep may already exist or failed to install"
+            }
+          }
 
       # 🚀 Build with optimizations
       - name: Build using Makefile
         shell: bash
-        run: make build
+        run: make install
         env:
           VSCODE_ARCH: arm64
           UV_THREADPOOL_SIZE: 128
           VSCODE_USE_ESBUILD: 1
+          NODE_OPTIONS: --max-old-space-size=16384
 
       - name: Package Windows builds
         shell: powershell
