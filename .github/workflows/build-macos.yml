@@ -141,38 +141,7 @@ jobs:
           cache: 'npm'
           cache-dependency-path: src/vscode/package-lock.json
 
-      - name: Install VS Code dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
-        run: |
-          set -e
-          echo "=== Installing VS Code Dependencies (Node 22.20.0) ==="
-          cd src/vscode
-
-          # Clear npm cache
-          npm cache clean --force
-
-          for i in {1..5}; do
-            echo "VS Code npm install attempt $i/5..."
-            timeout 600 npm ci --legacy-peer-deps --no-audit --no-fund && break
-            if [ $i -eq 5 ]; then
-              echo "❌ VS Code npm install failed after 5 attempts" >&2
-              echo "Last install log:"
-              npm ci --legacy-peer-deps --no-audit --no-fund --verbose || true
-              exit 1
-            fi
-            echo "Npm install failed, retry $i..."
-            sleep 5
-            npm cache clean --force
-          done
-
-          echo "✅ VS Code dependencies installed successfully"
-        env:
-          npm_config_arch: ${{ env.NPM_ARCH }}
-          ELECTRON_SKIP_BINARY_DOWNLOAD: 1
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          npm_config_loglevel: warn
-          GYP_DEFINES: "kerberos_use_rtld=false"
+      
 
       # 🔧 Install missing VS Code build dependencies
       - name: Install missing build dependencies
