@@ -137,6 +137,64 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_loglevel: warn
 
+      # 🔧 Install missing VS Code build dependencies
+      - name: Install missing build dependencies
+        run: |
+          cd src/vscode
+          echo "🔧 Installing missing VS Code build dependencies..."
+
+          # Install critical build dependencies that might be missing from package.json or cache
+          npm install --no-save \
+            ternary-stream \
+            gulp-merge-json \
+            event-stream \
+            jsonc-parser \
+            @vscode/markdown-it-katex \
+            @vscode/extension-telemetry \
+            @vscode/emmet-helper \
+            @vscode/codicons \
+            @vscode/sync-api-client \
+            @vscode/sync-api-common \
+            @vscode/sync-api-service \
+            @vscode/ts-package-manager \
+            @vscode/l10n \
+            gulp-sourcemaps \
+            gulp-filter \
+            gulp-uglify \
+            gulp-rename \
+            gulp-json-editor \
+            gulp-bom \
+            gulp-gunzip \
+            gulp-untar \
+            gulp-replace \
+            gulp-concat \
+            gulp-util \
+            gulp-flatten \
+            gulp-order \
+            gulp-insert \
+            gulp-buffer \
+            gulp-sort \
+            gulp-plumber \
+            gulp-svgmin \
+            gulp-gzip \
+            gulp-vinyl-zip \
+            gulp-flatmap \
+            webpack-stream \
+            @vscode/gulp-electron \
+            vscode-gulp-watch \
+            through2 \
+            vinyl \
+            vinyl-fs \
+            esbuild \
+            @esbuild-plugins/node-modules-polyfill \
+            rimraf \
+            minimist \
+            ansi-colors \
+            fancy-log \
+            pump \
+            gulp-azure-storage \
+            2>/dev/null || echo "Some dependencies may already exist"
+
       # 🚀 Build with optimizations
       - name: Build using Makefile
         run: make build
@@ -344,6 +402,64 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           npm_config_loglevel: warn
+
+      # 🔧 Install missing VS Code build dependencies (ARM64)
+      - name: Install missing build dependencies
+        run: |
+          cd src/vscode
+          echo "🔧 Installing missing VS Code build dependencies for ARM64..."
+
+          # Install critical build dependencies that might be missing from package.json or cache
+          npm install --no-save \
+            ternary-stream \
+            gulp-merge-json \
+            event-stream \
+            jsonc-parser \
+            @vscode/markdown-it-katex \
+            @vscode/extension-telemetry \
+            @vscode/emmet-helper \
+            @vscode/codicons \
+            @vscode/sync-api-client \
+            @vscode/sync-api-common \
+            @vscode/sync-api-service \
+            @vscode/ts-package-manager \
+            @vscode/l10n \
+            gulp-sourcemaps \
+            gulp-filter \
+            gulp-uglify \
+            gulp-rename \
+            gulp-json-editor \
+            gulp-bom \
+            gulp-gunzip \
+            gulp-untar \
+            gulp-replace \
+            gulp-concat \
+            gulp-util \
+            gulp-flatten \
+            gulp-order \
+            gulp-insert \
+            gulp-buffer \
+            gulp-sort \
+            gulp-plumber \
+            gulp-svgmin \
+            gulp-gzip \
+            gulp-vinyl-zip \
+            gulp-flatmap \
+            webpack-stream \
+            @vscode/gulp-electron \
+            vscode-gulp-watch \
+            through2 \
+            vinyl \
+            vinyl-fs \
+            esbuild \
+            @esbuild-plugins/node-modules-polyfill \
+            rimraf \
+            minimist \
+            ansi-colors \
+            fancy-log \
+            pump \
+            gulp-azure-storage \
+            2>/dev/null || echo "Some dependencies may already exist"
 
       # 🚀 Build with optimizations
       - name: Build using Makefile
