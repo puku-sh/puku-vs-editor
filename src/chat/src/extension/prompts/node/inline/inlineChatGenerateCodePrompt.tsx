@@ -23,19 +23,24 @@ import { HistoryWithInstructions } from '../panel/conversationHistory';
 import { CustomInstructions } from '../panel/customInstructions';
 import { ProjectLabels } from '../panel/projectLabels';
 import { LanguageServerContextPrompt } from './languageServerContextPrompt';
+import { PukuSemanticContext } from './pukuSemanticContext';
 import { SummarizedDocumentSplit } from './promptingSummarizedDocument';
+import { IPukuIndexingService } from '../../../pukuIndexing/node/pukuIndexingService';
 
 export interface InlineChatGenerateCodePromptProps extends GenericInlinePromptProps {
 }
 
 export class InlineChatGenerateCodePrompt extends PromptElement<InlineChatGenerateCodePromptProps> {
 
+	private semanticResults: Array<{ file: string; chunk: string; score: number; }> = [];
+
 	constructor(
 		props: InlineChatGenerateCodePromptProps,
 		@IIgnoreService private readonly _ignoreService: IIgnoreService,
 		@IParserService private readonly _parserService: IParserService,
 		@IExperimentationService private readonly _experimentationService: IExperimentationService,
-		@IConfigurationService private readonly _configurationService: IConfigurationService
+		@IConfigurationService private readonly _configurationService: IConfigurationService,
+		@IPukuIndexingService private readonly _indexingService: IPukuIndexingService,
 	) {
 		super(props);
 	}
@@ -63,6 +68,22 @@ export class InlineChatGenerateCodePrompt extends PromptElement<InlineChatGenera
 		const useProjectLabels = this._configurationService.getExperimentBasedConfig(ConfigKey.AdvancedExperimentalExperiments.ProjectLabelsInline, this._experimentationService);
 
 		const data = await SummarizedDocumentData.create(this._parserService, document, context.fileIndentInfo, context.wholeRange, SelectionSplitKind.OriginalEnd);
+
+		// Puku semantic search enhancement
+		if (this._indexingService.isAvailable()) {
+			try {
+				const selectedText = document.getText(context.selection);
+				const searchQuery = `${query}\n\n${selectedText}`;
+				const results = await this._indexingService.search(searchQuery, 3, languageId);
+				this.semanticResults = results.map(r => ({
+					file: r.file,
+					chunk: r.content,
+					score: r.score
+				}));
+			} catch (error) {
+				this.semanticResults = [];
+			}
+		}
 
 		const replyInterpreterFn = (splitDoc: SummarizedDocumentSplit) => splitDoc.createReplyInterpreter(
 			LeadingMarkdownStreaming.Mute,
@@ -94,6 +115,7 @@ export class InlineChatGenerateCodePrompt extends PromptElement<InlineChatGenera
 				<UserMessage priority={725}>
 					<CustomInstructions languageId={languageId} chatVariables={chatVariables} />
 					<LanguageServerContextPrompt priority={700} document={document} position={context.selection.start} requestId={this.props.promptContext.requestId} source={KnownSources.chat} />
+					<PukuSemanticContext results={this.semanticResults} languageId={languageId} />
 				</UserMessage>
 				<ChatToolReferences priority={750} promptContext={this.props.promptContext} flexGrow={1} embeddedInsideUserMessage={false} />
 				<ChatVariables priority={750} chatVariables={chatVariables} embeddedInsideUserMessage={false} />

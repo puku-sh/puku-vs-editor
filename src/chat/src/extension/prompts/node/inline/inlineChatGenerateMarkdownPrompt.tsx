@@ -20,17 +20,22 @@ import { ChatToolReferences, ChatVariables, UserQuery } from '../panel/chatVaria
 import { HistoryWithInstructions } from '../panel/conversationHistory';
 import { CustomInstructions } from '../panel/customInstructions';
 import { SafePromptElement } from '../panel/safeElements';
+import { PukuSemanticContext } from './pukuSemanticContext';
 import { SummarizedDocumentSplit } from './promptingSummarizedDocument';
+import { IPukuIndexingService } from '../../../pukuIndexing/node/pukuIndexingService';
 
 export interface InlineChatGenerateMarkdownPromptProps extends GenericInlinePromptProps {
 }
 
 export class InlineChatGenerateMarkdownPrompt extends PromptElement<InlineChatGenerateMarkdownPromptProps> {
 
+	private semanticResults: Array<{ file: string; chunk: string; score: number; }> = [];
+
 	constructor(
 		props: InlineChatGenerateMarkdownPromptProps,
 		@IIgnoreService private readonly _ignoreService: IIgnoreService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
+		@IPukuIndexingService private readonly _indexingService: IPukuIndexingService,
 	) {
 		super(props);
 	}
@@ -63,6 +68,22 @@ export class InlineChatGenerateMarkdownPrompt extends PromptElement<InlineChatGe
 			SelectionSplitKind.OriginalEnd
 		);
 
+		// Puku semantic search enhancement
+		if (this._indexingService.isAvailable()) {
+			try {
+				const selectedText = document.getText(context.selection);
+				const searchQuery = `${query}\n\n${selectedText}`;
+				const results = await this._indexingService.search(searchQuery, 3, languageId);
+				this.semanticResults = results.map(r => ({
+					file: r.file,
+					chunk: r.content,
+					score: r.score
+				}));
+			} catch (error) {
+				this.semanticResults = [];
+			}
+		}
+
 		const replyInterpreterFn = (splitDoc: SummarizedDocumentSplit) => splitDoc.createReplyInterpreter(
 			LeadingMarkdownStreaming.Mute,
 			EarlyStopping.None,
@@ -92,6 +113,7 @@ export class InlineChatGenerateMarkdownPrompt extends PromptElement<InlineChatGe
 				</HistoryWithInstructions>
 				<UserMessage priority={725}>
 					<CustomInstructions languageId={languageId} chatVariables={chatVariables} />
+					<PukuSemanticContext results={this.semanticResults} languageId={languageId} />
 				</UserMessage>
 				<ChatToolReferences priority={750} promptContext={this.props.promptContext} flexGrow={1} embeddedInsideUserMessage={false} />
 				<ChatVariables priority={750} chatVariables={chatVariables} embeddedInsideUserMessage={false} />

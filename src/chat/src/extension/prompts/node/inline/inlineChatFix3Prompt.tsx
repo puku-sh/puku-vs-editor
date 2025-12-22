@@ -41,10 +41,14 @@ import { CodeBlock } from '../panel/safeElements';
 import { Diagnostics } from './diagnosticsContext';
 import { InlineChatWorkspaceSearch } from './inlineChatWorkspaceSearch';
 import { LanguageServerContextPrompt } from './languageServerContextPrompt';
+import { PukuSemanticContext } from './pukuSemanticContext';
 import { ProjectedDocument } from './summarizedDocument/summarizeDocument';
 import { summarizeDocumentSync } from './summarizedDocument/summarizeDocumentHelpers';
+import { IPukuIndexingService } from '../../../pukuIndexing/node/pukuIndexingService';
 
 export class InlineFix3Prompt extends PromptElement<InlineFixProps> {
+
+	private semanticResults: Array<{ file: string; chunk: string; score: number; }> = [];
 
 	constructor(props: InlineFixProps,
 		@IIgnoreService private readonly ignoreService: IIgnoreService,
@@ -53,6 +57,7 @@ export class InlineFix3Prompt extends PromptElement<InlineFixProps> {
 		@ILanguageDiagnosticsService private readonly languageDiagnosticsService: ILanguageDiagnosticsService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
+		@IPukuIndexingService private readonly indexingService: IPukuIndexingService,
 	) {
 		super(props);
 	}
@@ -86,6 +91,22 @@ export class InlineFix3Prompt extends PromptElement<InlineFixProps> {
 		const selectedLinesContent = document.getText(new Range(selection.start.line, 0, selection.end.line + 1, 0)).trimEnd();
 
 		const diagnostics = findDiagnosticForSelectionAndPrompt(this.languageDiagnosticsService, document.uri, selection, query);
+
+		// Puku semantic search enhancement
+		if (this.indexingService.isAvailable()) {
+			try {
+				const searchQuery = `${query}\n\n${selectedLinesContent}`;
+				const results = await this.indexingService.search(searchQuery, 3, language.languageId);
+				this.semanticResults = results.map(r => ({
+					file: r.file,
+					chunk: r.content,
+					score: r.score
+				}));
+			} catch (error) {
+				// Silently fail - semantic search is enhancement, not critical
+				this.semanticResults = [];
+			}
+		}
 
 		const enableCodeMapper = this.configurationService.getConfig(ConfigKey.Internal.InlineChatUseCodeMapper);
 
@@ -155,6 +176,7 @@ export class InlineFix3Prompt extends PromptElement<InlineFixProps> {
 					</CompositeElement >
 					<Diagnostics /*priority={500}*/ documentContext={this.props.documentContext} diagnostics={diagnostics} />
 					<InlineChatWorkspaceSearch /*priority={200}*/ diagnostics={diagnostics} documentContext={this.props.documentContext} useWorkspaceChunksFromDiagnostics={useWorkspaceChunksFromDiagnostics} useWorkspaceChunksFromSelection={useWorkspaceChunksFromSelection} />
+					<PukuSemanticContext results={this.semanticResults} languageId={language.languageId} />
 					<ChatToolReferences promptContext={this.props.promptContext} />
 
 					<Tag name='userPrompt'>
