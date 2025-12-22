@@ -2,6 +2,8 @@
 
 **Last Updated:** December 22, 2024
 **Status:** Phase 1 Complete ✅
+**Issue:** [#140](https://github.com/puku-sh/puku-vs-editor/issues/140)
+**Branch:** `feat/inline-chat`
 
 ---
 
