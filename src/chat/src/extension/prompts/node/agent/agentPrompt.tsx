@@ -48,6 +48,8 @@ import './allAgentPrompts';
 import { AlternateGPTPrompt, DefaultAgentPrompt } from './defaultAgentInstructions';
 import { PromptRegistry } from './promptRegistry';
 import { SummarizedConversationHistory } from './summarizedConversationHistory';
+import { PukuSemanticContext } from '../base/pukuSemanticContext';
+import { IPukuIndexingService } from '../../../pukuIndexing/node/pukuIndexingService';
 
 export interface AgentPromptProps extends GenericBasePromptElementProps {
 	readonly endpoint: IChatEndpoint;
@@ -303,10 +305,15 @@ export function getUserMessagePropsFromAgentProps(agentProps: AgentPromptProps):
  * Uses frozen content if available, for prompt caching and to avoid being updated by any agent action below this point in the conversation.
  */
 export class AgentUserMessage extends PromptElement<AgentUserMessageProps> {
+
+	private semanticResults: Array<{ file: string; chunk: string; score: number; }> = [];
+
 	constructor(
 		props: AgentUserMessageProps,
 		@IPromptVariablesService private readonly promptVariablesService: IPromptVariablesService,
 		@ILogService private readonly logService: ILogService,
+		@IPukuIndexingService private readonly indexingService: IPukuIndexingService,
+		@ITabsAndEditorsService private readonly tabsAndEditorsService: ITabsAndEditorsService,
 	) {
 		super(props);
 	}
@@ -319,6 +326,40 @@ export class AgentUserMessage extends PromptElement<AgentUserMessageProps> {
 
 		if (this.props.isHistorical) {
 			this.logService.trace('Re-rendering historical user message');
+		}
+
+		// Puku semantic search enhancement (only for non-historical messages)
+		if (!this.props.isHistorical && this.indexingService.isAvailable()) {
+			try {
+				const activeEditor = this.tabsAndEditorsService.activeTextEditor;
+				const languageId = activeEditor?.document.languageId;
+				const selectedText = activeEditor?.selection && !activeEditor.selection.isEmpty
+					? activeEditor.document.getText(activeEditor.selection)
+					: '';
+
+				const searchQuery = `${this.props.request}\n\n${selectedText}`;
+				console.log(`[AgentUserMessage] Starting semantic search - query length: ${searchQuery.length}`);
+
+				const results = await this.indexingService.search(searchQuery, 3, languageId);
+				console.log(`[AgentUserMessage] Semantic search returned ${results.length} results`);
+
+				this.semanticResults = results.map(r => ({
+					file: r.file,
+					chunk: r.content,
+					score: r.score
+				}));
+
+				if (this.semanticResults.length > 0) {
+					console.log(`[AgentUserMessage] Semantic results:`, this.semanticResults.map(r => ({
+						file: r.file,
+						score: r.score,
+						chunkLength: r.chunk.length
+					})));
+				}
+			} catch (error) {
+				console.error(`[AgentUserMessage] Semantic search failed:`, error);
+				this.semanticResults = [];
+			}
 		}
 
 		const shouldIncludePreamble = await isVSCModelA(this.props.endpoint);
@@ -356,6 +397,7 @@ export class AgentUserMessage extends PromptElement<AgentUserMessageProps> {
 					</Tag>
 					<CurrentEditorContext endpoint={this.props.endpoint} />
 					<RepoContext />
+					<PukuSemanticContext results={this.semanticResults} languageId={this.tabsAndEditorsService.activeTextEditor?.document.languageId} />
 					<Tag name='reminderInstructions'>
 						{/* Critical reminders that are effective when repeated right next to the user message */}
 						<KeepGoingReminder modelFamily={this.props.endpoint.family} />

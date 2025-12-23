@@ -15,7 +15,7 @@ import { SafetyRules } from '../base/safetyRules';
 import { Tag } from '../base/tag';
 import { ChatVariables, UserQuery } from '../panel/chatVariables';
 import { WorkingSet } from '../panel/editCodePrompt';
-import { PukuSemanticContext } from './pukuSemanticContext';
+import { PukuSemanticContext } from '../base/pukuSemanticContext';
 import { IPukuIndexingService } from '../../../pukuIndexing/node/pukuIndexingService';
 
 
