@@ -329,7 +329,13 @@ function networkRequest(
 		request.signal = abort.signal;
 	}
 	if (typeof endpoint.urlOrRequestMetadata === 'string') {
-		const requestPromise = fetcher.fetch(endpoint.urlOrRequestMetadata, request).catch(reason => {
+		console.log(`[networkRequest] Making request to ${endpoint.urlOrRequestMetadata}`);
+		const requestPromise = fetcher.fetch(endpoint.urlOrRequestMetadata, request).then(response => {
+			console.log(`[networkRequest] Response status: ${response.status}`);
+			console.log(`[networkRequest] Response ok: ${response.ok}`);
+			return response;
+		}).catch(reason => {
+			console.error(`[networkRequest] Request failed:`, reason);
 			if (canRetryOnceNetworkError(reason)) {
 				// disconnect and retry the request once if the connection was reset
 				telemetryService.sendGHTelemetryEvent('networking.disconnectAll');

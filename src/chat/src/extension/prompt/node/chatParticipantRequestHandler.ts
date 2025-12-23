@@ -210,9 +210,17 @@ export class ChatParticipantRequestHandler {
 			// this is done here because all intents must honor ignored files
 			this.request = await this.sanitizeVariables();
 
+			console.log(`[ChatParticipantRequestHandler] chatAgentArgs.intentId: ${this.chatAgentArgs.intentId}`);
+			console.log(`[ChatParticipantRequestHandler] location: ${this.location}`);
+
 			const command = this.chatAgentArgs.intentId ?
 				this._commandService.getCommand(this.chatAgentArgs.intentId, this.location) :
 				undefined;
+
+			console.log(`[ChatParticipantRequestHandler] command resolved: ${command ? 'YES' : 'NO'}`);
+			if (command) {
+				console.log(`[ChatParticipantRequestHandler] command.intent.id: ${command.intent?.id ?? 'NONE'}`);
+			}
 
 			let result = this.checkCommandUsage(command);
 
@@ -223,10 +231,15 @@ export class ChatParticipantRequestHandler {
 				const history = this.conversation.turns.slice(0, -1);
 				const intent = await this.selectIntent(command, history);
 
+				console.log(`[ChatParticipantRequestHandler] Intent selected: ${intent.id}`);
+				console.log(`[ChatParticipantRequestHandler] Intent has handleRequest: ${typeof intent.handleRequest === 'function'}`);
+
 				let chatResult: Promise<ChatResult>;
 				if (typeof intent.handleRequest === 'function') {
+					console.log(`[ChatParticipantRequestHandler] Calling intent.handleRequest()...`);
 					chatResult = intent.handleRequest(this.conversation, this.request, this.stream, this.token, this.documentContext, this.chatAgentArgs.agentName, this.location, this.chatTelemetry, this.onPaused);
 				} else {
+					console.log(`[ChatParticipantRequestHandler] Creating DefaultIntentRequestHandler...`);
 					const intentHandler = this._instantiationService.createInstance(DefaultIntentRequestHandler, intent, this.conversation, this.request, this.stream, this.token, this.documentContext, this.location, this.chatTelemetry, undefined, this.onPaused);
 					chatResult = intentHandler.getResult();
 				}
@@ -242,7 +255,9 @@ export class ChatParticipantRequestHandler {
 					);
 				}
 
+				console.log(`[ChatParticipantRequestHandler] Waiting for chatResult...`);
 				result = await chatResult;
+				console.log(`[ChatParticipantRequestHandler] chatResult completed!`);
 				const endpoint = await this._endpointProvider.getChatEndpoint(this.request);
 				result.details = this._authService.copilotToken?.isNoAuthUser ?
 					`${endpoint.name}` :

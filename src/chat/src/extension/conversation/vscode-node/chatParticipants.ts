@@ -250,16 +250,22 @@ Learn more about [GitHub Copilot](https://docs.github.com/copilot/using-github-c
 
 	private getChatParticipantHandler(id: string, name: string, defaultIntentIdOrGetter: IntentOrGetter, onRequestPaused: Event<vscode.ChatParticipantPauseStateEvent>): vscode.ChatExtendedRequestHandler {
 		return async (request, context, stream, token): Promise<vscode.ChatResult> => {
+			console.log(`[ChatParticipant] ============ Handler called for ${name} (${id}) ============`);
+			console.log(`[ChatParticipant] Request prompt: ${request.prompt}`);
+			console.log(`[ChatParticipant] Request command: ${request.command ?? 'none'}`);
+			console.log(`[ChatParticipant] Request model: ${request.model?.vendor}/${request.model?.id ?? 'unknown'}`);
 
 			// If we need privacy confirmation, i.e with 3rd party models. We will return a confirmation response and return early
 			const privacyConfirmation = await this.requestPolicyConfirmation(request, stream);
 			if (typeof privacyConfirmation === 'boolean') {
+				console.log(`[ChatParticipant] Privacy confirmation required, returning early`);
 				return {};
 			}
 			request = privacyConfirmation;
 			// If we need to switch to the base model, this function will handle it
 			// Otherwise it just returns the same request passed into it
 			request = await this.switchToBaseModel(request, stream);
+			console.log(`[ChatParticipant] After model switch - model: ${request.model?.vendor}/${request.model?.id ?? 'unknown'}`);
 			// The user is starting an interaction with the chat
 			this.interactionService.startInteraction();
 
@@ -273,12 +279,19 @@ Learn more about [GitHub Copilot](https://docs.github.com/copilot/using-github-c
 				commandsForAgent[request.command] :
 				defaultIntentId;
 
+			console.log(`[ChatParticipant] Intent determined: ${intentId}`);
+
 			const onPause = Event.chain(onRequestPaused, $ => $.filter(e => e.request === request).map(e => e.isPaused));
 			const handler = this.instantiationService.createInstance(ChatParticipantRequestHandler, context.history, request, stream, token, { agentName: name, agentId: id, intentId }, onPause);
 
+			console.log(`[ChatParticipant] ChatParticipantRequestHandler created, calling getResult()...`);
 			try {
-				return await handler.getResult();
+				const result = await handler.getResult();
+				console.log(`[ChatParticipant] ============ Handler completed successfully for ${name} ============`);
+				return result;
 			} catch (error) {
+				console.error(`[ChatParticipant] ============ Handler FAILED for ${name} ============`);
+				console.error(`[ChatParticipant] Error:`, error);
 				// Puku Editor: Suppress PukuLoginRequired error - sign-in flow will be triggered automatically
 				if (error instanceof Error && error.name === 'PukuLoginRequired') {
 					// Return empty result, sign-in flow will handle authentication

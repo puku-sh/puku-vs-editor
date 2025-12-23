@@ -119,6 +119,11 @@ export class ProductionEndpointProvider implements IEndpointProvider {
 			const model = 'model' in requestOrFamilyOrModel ? requestOrFamilyOrModel.model : requestOrFamilyOrModel;
 			if (model && model.vendor === 'copilot' && model.id === AutoChatEndpoint.pseudoModelId) {
 				return this._autoModeService.resolveAutoModeEndpoint(requestOrFamilyOrModel as ChatRequest, Array.from(this._chatEndpoints.values()));
+			} else if (model && model.vendor === 'pukuai') {
+				// Puku AI models - use PukuChatEndpoint
+				console.log(`[EndpointProvider] Using Puku AI endpoint for model ${model.id}`);
+				this._logService.info(`EndpointProvider: Using Puku AI endpoint for model ${model.id}`);
+				endpoint = this._instantiationService.createInstance(PukuChatEndpoint);
 			} else if (model && model.vendor === 'copilot') {
 				// Puku Editor: Check if this is a BYOK/Ollama model by checking if Ollama endpoint is configured
 				const ollamaEndpoint = this._configService.getConfig(ConfigKey.OllamaEndpoint);

@@ -130,30 +130,25 @@ export class LanguageModelAccess extends Disposable implements IExtensionContrib
 			}
 		}
 
-		this._logService.info(`[LanguageModelAccess] _provideLanguageModelChatInfo called, isOllamaConfigured: ${isOllamaConfigured}, isPukuAIConfigured: ${isPukuAIConfigured}, pukuAIEndpoint: ${pukuAIEndpoint}, has session: ${!!session}`);
-		console.log(`[LanguageModelAccess] _provideLanguageModelChatInfo called, isOllamaConfigured: ${isOllamaConfigured}, isPukuAIConfigured: ${isPukuAIConfigured}, pukuAIEndpoint: ${pukuAIEndpoint}, has session: ${!!session}`);
+		console.log(`[LM Provider] provideLanguageModelChatInfo called for 'copilot' vendor`);
+		console.log(`[LM Provider] Configuration: isOllamaConfigured=${isOllamaConfigured}, isPukuAIConfigured=${isPukuAIConfigured}, pukuAIEndpoint=${pukuAIEndpoint}, hasGitHubSession=${!!session}`);
+		this._logService.info(`[LM Provider] provideLanguageModelChatInfo: ollama=${isOllamaConfigured}, pukuAI=${isPukuAIConfigured}, endpoint=${pukuAIEndpoint}, session=${!!session}`);
 
 		// If Ollama endpoint is configured and we have no GitHub session, return empty
 		// (BYOKContrib will have registered Ollama provider as "copilot" vendor instead)
 		if (isOllamaConfigured && !session) {
-			this._logService.info(`[LanguageModelAccess] Ollama endpoint configured with no GitHub auth, returning empty (Ollama provider registered as copilot vendor)`);
-			console.log(`[LanguageModelAccess] Ollama endpoint configured with no GitHub auth, returning empty (Ollama provider registered as copilot vendor)`);
+			console.log(`[LM Provider] Ollama endpoint configured without GitHub auth → returning empty (BYOK will handle as 'copilot' vendor)`);
+			this._logService.info(`[LM Provider] Ollama endpoint configured without GitHub auth, deferring to BYOK provider`);
 			this._currentModels = [];
 			return [];
 		}
 
-		// If Puku AI endpoint is set (even if default) and we have no GitHub session, return empty
-		// (PukuAIContribution will have registered its own provider instead)
-		if ((isPukuAIConfigured || pukuAIEndpoint) && !session) {
-			this._logService.info(`[LanguageModelAccess] Puku AI endpoint set (${pukuAIEndpoint}) with no GitHub auth, returning empty (Puku AI provider registered)`);
-			console.log(`[LanguageModelAccess] Puku AI endpoint set (${pukuAIEndpoint}) with no GitHub auth, returning empty (Puku AI provider registered)`);
-			this._currentModels = [];
-			return [];
-		}
-
-		if (!session) {
-			this._logService.warn(`[LanguageModelAccess] No session and no Puku AI/Ollama endpoint, returning empty models`);
-			console.log(`[LanguageModelAccess] No session and no Puku AI/Ollama endpoint, returning empty models`);
+		// If Puku AI endpoint is set, we'll continue to provide models using Puku auth
+		// The _endpointProvider will use IPukuAuthService to get the token
+		// Only return empty if we truly have no way to authenticate
+		if (!session && !pukuAIEndpoint && !isPukuAIConfigured) {
+			console.log(`[LM Provider] ❌ No authentication available: no GitHub session AND no Puku AI endpoint → returning empty models`);
+			this._logService.warn(`[LM Provider] No authentication available, returning empty models`);
 			this._currentModels = [];
 			return [];
 		}
@@ -567,8 +562,22 @@ export class CopilotLanguageModelWrapper extends Disposable {
 	}
 
 	async provideLanguageModelResponse(endpoint: IChatEndpoint, messages: Array<vscode.LanguageModelChatMessage | vscode.LanguageModelChatMessage2>, options: vscode.ProvideLanguageModelChatResponseOptions, extensionId: string, progress: vscode.Progress<LMResponsePart>, token: vscode.CancellationToken): Promise<void> {
+		console.log(`[LMWrapper] ============ provideLanguageModelResponse START ============`);
+		console.log(`[LMWrapper] Endpoint model: ${endpoint.model}`);
+		console.log(`[LMWrapper] Extension ID: ${extensionId}`);
+		console.log(`[LMWrapper] Messages count: ${messages.length}`);
+		console.log(`[LMWrapper] Tools count: ${options.tools?.length ?? 0}`);
+
 		let thinkingActive = false;
+		let chunkCount = 0;
 		const finishCallback: FinishedCallback = async (_text, index, delta): Promise<undefined> => {
+			chunkCount++;
+			if (chunkCount === 1) {
+				console.log(`[LMWrapper] First chunk received!`);
+			}
+			if (chunkCount % 10 === 0) {
+				console.log(`[LMWrapper] Received ${chunkCount} chunks so far...`);
+			}
 			if (delta.thinking) {
 				// Show thinking progress for unencrypted thinking deltas
 				if (!isEncryptedThinkingDelta(delta.thinking)) {
@@ -581,6 +590,9 @@ export class CopilotLanguageModelWrapper extends Disposable {
 				thinkingActive = false;
 			}
 			if (delta.text) {
+				if (chunkCount <= 3) {
+					console.log(`[LMWrapper] Reporting text chunk: "${delta.text.substring(0, 50)}..."`);
+				}
 				progress.report(new vscode.LanguageModelTextPart(delta.text));
 			}
 			if (delta.copilotToolCalls) {
@@ -604,7 +616,14 @@ export class CopilotLanguageModelWrapper extends Disposable {
 
 			return undefined;
 		};
-		return this._provideLanguageModelResponse(endpoint, messages, options, extensionId, finishCallback, token);
+		try {
+			await this._provideLanguageModelResponse(endpoint, messages, options, extensionId, finishCallback, token);
+			console.log(`[LMWrapper] ============ provideLanguageModelResponse END (total chunks: ${chunkCount}) ============`);
+		} catch (error) {
+			console.error(`[LMWrapper] ============ provideLanguageModelResponse FAILED ============`);
+			console.error(`[LMWrapper] Error:`, error);
+			throw error;
+		}
 	}
 
 	async provideTokenCount(endpoint: IEndpoint, message: string | vscode.LanguageModelChatMessage | vscode.LanguageModelChatMessage2): Promise<number> {

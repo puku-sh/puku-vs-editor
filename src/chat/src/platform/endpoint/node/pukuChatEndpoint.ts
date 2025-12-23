@@ -17,10 +17,12 @@ import { ICAPIClientService } from '../common/capiClient';
 import { IDomainService } from '../common/domainService';
 import { IChatModelInformation } from '../common/endpointProvider';
 import { ChatEndpoint } from './chatEndpoint';
+import { IPukuAuthService } from '../../../extension/pukuIndexing/common/pukuAuth';
 
 export class PukuChatEndpoint extends ChatEndpoint {
 
 	_serviceBrand: undefined;
+	private _pukuToken: string | undefined;
 
 	constructor(
 		@IDomainService domainService: IDomainService,
@@ -33,9 +35,11 @@ export class PukuChatEndpoint extends ChatEndpoint {
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IExperimentationService experimentService: IExperimentationService,
-		@ILogService logService: ILogService
+		@ILogService logService: ILogService,
+		@IPukuAuthService private readonly _pukuAuthService: IPukuAuthService
 	) {
-		const modelId = configurationService.getConfig(ConfigKey.PukuAIModel) || 'GLM-4.6';
+		const modelId = configurationService.getConfig(ConfigKey.PukuAIModel) || 'puku-ai';
+		console.log(`[PukuChatEndpoint] Using model ID: ${modelId}`);
 		const modelInfo: IChatModelInformation = {
 			id: modelId,
 			name: 'Puku AI',
@@ -76,22 +80,49 @@ export class PukuChatEndpoint extends ChatEndpoint {
 			experimentService,
 			logService
 		);
+
+		// Fetch Puku auth token asynchronously
+		this._initializeAuth();
+	}
+
+	private async _initializeAuth(): Promise<void> {
+		try {
+			const pukuAuth = await this._pukuAuthService.getToken();
+			this._pukuToken = pukuAuth?.token;
+			console.log(`[PukuChatEndpoint] Auth initialized - token: ${this._pukuToken ? 'EXISTS (length: ' + this._pukuToken.length + ')' : 'NONE'}`);
+		} catch (error) {
+			console.error(`[PukuChatEndpoint] Failed to get auth token:`, error);
+		}
 	}
 
 	public override getExtraHeaders(): Record<string, string> {
-		return {};
+		const headers: Record<string, string> = {
+			"Content-Type": "application/json"
+		};
+
+		if (this._pukuToken) {
+			console.log(`[PukuChatEndpoint] Adding Authorization header`);
+			headers['Authorization'] = `Bearer ${this._pukuToken}`;
+		} else {
+			console.log(`[PukuChatEndpoint] No auth token available - request may fail`);
+		}
+
+		return headers;
 	}
 
 	override get urlOrRequestMetadata() {
 		const baseEndpoint = this._configurationService.getConfig(ConfigKey.PukuAIEndpoint);
 		// Ensure the full chat completions URL is returned
 		// Handle both '/v1' and '/v1/chat/completions' as base endpoints
+		let url;
 		if (baseEndpoint.endsWith('/v1/chat/completions')) {
-			return baseEndpoint;
+			url = baseEndpoint;
 		} else if (baseEndpoint.endsWith('/v1')) {
-			return `${baseEndpoint}/chat/completions`;
+			url = `${baseEndpoint}/chat/completions`;
 		} else {
-			return `${baseEndpoint}/v1/chat/completions`;
+			url = `${baseEndpoint}/v1/chat/completions`;
 		}
+		console.log(`[PukuChatEndpoint] Using URL: ${url}`);
+		return url;
 	}
 }

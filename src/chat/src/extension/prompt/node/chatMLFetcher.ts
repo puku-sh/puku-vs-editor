@@ -456,6 +456,7 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 		// Extend baseTelemetryData with modelCallId for output messages
 		const extendedBaseTelemetryData = baseTelemetryData.extendedBy({ modelCallId });
 
+		console.log(`[ChatMLFetcher] Calling processResponseFromChatEndpoint with nChoices: ${nChoices ?? 1}`);
 		const chatCompletions = await chatEndpointInfo.processResponseFromChatEndpoint(
 			this._telemetryService,
 			this._logService,
@@ -465,6 +466,7 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 			extendedBaseTelemetryData,
 			cancellationToken
 		);
+		console.log(`[ChatMLFetcher] processResponseFromChatEndpoint returned, iterating completions...`);
 
 		// CAPI will return us a Copilot Edits Session Header which is our token to using the speculative decoding endpoint
 		// We should store this in the auth service for easy use later
@@ -841,7 +843,11 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 
 		const completions: ChatCompletion[] = [];
 
+		console.log(`[processSuccessfulResponse] Starting iteration over chatCompletions...`);
+		let completionCount = 0;
 		for await (const chatCompletion of response.chatCompletions) {
+			completionCount++;
+			console.log(`[processSuccessfulResponse] Received completion ${completionCount}: finishReason=${chatCompletion.finishReason}, message length=${getTextPart(chatCompletion.message.content).length}`);
 			Telemetry.sendSuccessTelemetry(
 				this._telemetryService,
 				{
@@ -863,9 +869,12 @@ export class ChatMLFetcherImpl extends AbstractChatMLFetcher {
 				completions.push(chatCompletion);
 			}
 		}
+		console.log(`[processSuccessfulResponse] Finished iteration. Total completions: ${completionCount}, kept: ${completions.length}`);
 		const successFinishReasons = new Set([FinishedCompletionReason.Stop, FinishedCompletionReason.ClientTrimmed, FinishedCompletionReason.FunctionCall, FinishedCompletionReason.ToolCalls]);
 		const successfulCompletions = completions.filter(c => successFinishReasons.has(c.finishReason));
+		console.log(`[processSuccessfulResponse] Successful completions (with valid finish reason): ${successfulCompletions.length}`);
 		if (successfulCompletions.length >= 1) {
+			console.log(`[processSuccessfulResponse] Returning SUCCESS with ${successfulCompletions.length} completions`);
 			return {
 				type: ChatFetchResponseType.Success,
 				resolvedModel: successfulCompletions[0].model,
