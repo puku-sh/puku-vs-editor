@@ -207,7 +207,9 @@ export class DiagnosticsCompletionProcessor extends Disposable {
 
 		this._register(autorun(reader => {
 			const activeDocument = this._workspace.lastActiveDocument.read(reader);
-			if (!activeDocument) { return; }
+			if (!activeDocument) {
+				return;
+			}
 
 			const activeEditor = this._tabsAndEditorsService.activeTextEditor;
 			if (!activeEditor || !isEditorFromEditorGrid(activeEditor) || !isEqual(activeDocument.id.toUri(), activeEditor.document.uri)) {
@@ -261,10 +263,14 @@ export class DiagnosticsCompletionProcessor extends Disposable {
 
 	private async _updateState(): Promise<void> {
 		const activeTextEditor = this._tabsAndEditorsService.activeTextEditor;
-		if (!activeTextEditor) { return; }
+		if (!activeTextEditor) {
+			return;
+		}
 
 		const workspaceDocument = this._workspace.getDocumentByTextDocument(activeTextEditor.document);
-		if (!workspaceDocument) { return; }
+		if (!workspaceDocument) {
+			return;
+		}
 
 		const range = new vscode.Range(activeTextEditor.selection.active, activeTextEditor.selection.active);
 		const selection = workspaceDocument.toRange(activeTextEditor.document, range);
@@ -528,15 +534,22 @@ export class DiagnosticsCompletionProcessor extends Disposable {
 
 	private _filterDiagnosticsByRecentEditNearby(diagnostics: Diagnostic[], document: IVSCodeObservableDocument): Diagnostic[] {
 		const recentEdits = this._workspaceDocumentEditHistory.getRecentEdits(document.id)?.edits;
+
+		// If no recent edits, return all diagnostics (nothing to filter)
 		if (!recentEdits) {
-			return [];
+			return diagnostics;
 		}
 
-		return diagnostics.filter(diagnostic => {
-			const newRanges = recentEdits.getNewRanges();
+		// Filter: Keep diagnostics that DO intersect with recent edit ranges
+		// (These are diagnostics where the user just made an edit, so we want to show fixes for them)
+		const newRanges = recentEdits.getNewRanges();
+		const filtered = diagnostics.filter(diagnostic => {
 			const potentialIntersection = findFirstMonotonous(newRanges, (r) => r.endExclusive >= diagnostic.range.start);
-			return potentialIntersection?.intersectsOrTouches(diagnostic.range);
+			const intersects = !!potentialIntersection?.intersectsOrTouches(diagnostic.range);
+			return intersects;
 		});
+
+		return filtered;
 	}
 }
 

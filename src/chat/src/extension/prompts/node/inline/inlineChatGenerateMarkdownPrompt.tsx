@@ -53,7 +53,7 @@ export class InlineChatGenerateMarkdownPrompt extends PromptElement<InlineChatGe
 			throw illegalArgument('InlineChatGenerateMarkdownPrompt should only be used with markdown documents!');
 		}
 
-		const isIgnored = await this._ignoreService.isCopilotIgnored(context.document.uri);
+		const isIgnored = await this._ignoreService.isPukuIgnored(context.document.uri);
 		if (isIgnored) {
 			return <ignoredFiles value={[this.props.documentContext.document.uri]} />;
 		}
@@ -145,7 +145,7 @@ export class MarkdownBlock extends SafePromptElement<MarkdownBlockProps> {
 	public static FenceSequence = `-+-+-+-+-+`;
 
 	async render(state: void) {
-		const isIgnored = this.props.uri ? await this._ignoreService.isCopilotIgnored(this.props.uri) : false;
+		const isIgnored = this.props.uri ? await this._ignoreService.isPukuIgnored(this.props.uri) : false;
 		if (isIgnored) {
 			return this._handleFoulPrompt();
 		}

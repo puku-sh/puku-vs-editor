@@ -42,7 +42,7 @@ export class InlineChatNotebookGeneratePrompt extends PromptElement<InlineChatEd
 
 	override async prepare(sizing: PromptSizing): Promise<InlineChatNotebookBasePromptState> {
 		const { documentContext: context } = this.props;
-		const isIgnored = await this.ignoreService.isCopilotIgnored(context.document.uri);
+		const isIgnored = await this.ignoreService.isPukuIgnored(context.document.uri);
 		const wholeRange = context.document.validateRange(context.wholeRange);
 		const summarizedDocument = await createPromptingSummarizedDocument(
 			this.parserService,

@@ -62,7 +62,7 @@ export class Test2Impl extends PromptElement<Props> {
 			candidateFile = await finder.findFileForTestFile(documentContext.document, CancellationToken.None);
 		}
 
-		if (candidateFile === undefined || await this.ignoreService.isCopilotIgnored(candidateFile)) {
+		if (candidateFile === undefined || await this.ignoreService.isPukuIgnored(candidateFile)) {
 			return undefined;
 		}
 

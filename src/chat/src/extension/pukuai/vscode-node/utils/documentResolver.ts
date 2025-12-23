@@ -69,12 +69,7 @@ export class DocumentResolver {
 			}
 		}
 
-		// Check if same document
-		if (targetUri.toString() === currentDocumentUri.toString()) {
-			return undefined; // Same document
-		}
-
-		// Resolve document from workspace
+		// Resolve document from workspace (works for both same and different documents)
 		const document = this.resolveFromUri(targetUri);
 		if (!document) {
 			console.warn(`[DocumentResolver] Target document not found: ${targetUri.toString()}`);
@@ -89,6 +84,8 @@ export class DocumentResolver {
 			new vscode.Position(line, col)
 		);
 
+		// Return resolved document even if same as current
+		// This allows same-document redirects (e.g., import to line 0)
 		return { uri: targetUri, document, range };
 	}
 

@@ -64,7 +64,7 @@ export class InlineFix3Prompt extends PromptElement<InlineFixProps> {
 
 	async render(state: void, sizing: PromptSizing) {
 		const { document, wholeRange, fileIndentInfo, selection, language } = this.props.documentContext;
-		const isIgnored = await this.ignoreService.isCopilotIgnored(document.uri);
+		const isIgnored = await this.ignoreService.isPukuIgnored(document.uri);
 		if (isIgnored) {
 			return <ignoredFiles value={[document.uri]} />;
 		}

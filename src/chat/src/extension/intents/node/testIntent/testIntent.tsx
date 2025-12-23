@@ -88,7 +88,7 @@ export class TestsIntent implements IIntent {
 			throw new Error('To generate tests, open a file and select code to test.');
 		}
 
-		if (await this.ignoreService.isCopilotIgnored(documentContext.document.uri)) {
+		if (await this.ignoreService.isPukuIgnored(documentContext.document.uri)) {
 			throw new Error('Copilot is disabled for this file.');
 		}
 

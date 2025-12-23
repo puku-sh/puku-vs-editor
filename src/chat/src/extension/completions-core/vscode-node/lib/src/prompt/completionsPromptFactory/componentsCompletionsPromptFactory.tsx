@@ -351,7 +351,7 @@ abstract class BaseComponentsCompletionsPromptFactory implements IPromptFactory 
 		if (cancellationToken?.isCancellationRequested) {
 			return _promptCancelled;
 		}
-		if (await this.ignoreService.isCopilotIgnored(URI.parse(textDocument.uri))) {
+		if (await this.ignoreService.isPukuIgnored(URI.parse(textDocument.uri))) {
 			return _copilotContentExclusion;
 		}
 

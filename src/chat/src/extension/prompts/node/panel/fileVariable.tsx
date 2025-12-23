@@ -56,7 +56,7 @@ export class FileVariable extends PromptElement<FileVariableProps, unknown> {
 	override async render(_state: unknown, sizing: PromptSizing) {
 		const uri = 'uri' in this.props.variableValue ? this.props.variableValue.uri : this.props.variableValue;
 
-		if (await this.ignoreService.isCopilotIgnored(uri)) {
+		if (await this.ignoreService.isPukuIgnored(uri)) {
 			return <ignoredFiles value={[uri]} />;
 		}
 

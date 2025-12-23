@@ -66,7 +66,7 @@ export class InlineFixNotebookPrompt extends PromptElement<InlineFixProps, Inlin
 
 	override async prepare(sizing: PromptSizing): Promise<InlineChatNotebookFixPromptState> {
 		const { documentContext: context } = this.props;
-		const isIgnored = await this._ignoreService.isCopilotIgnored(context.document.uri);
+		const isIgnored = await this._ignoreService.isPukuIgnored(context.document.uri);
 
 		return {
 			isIgnored,

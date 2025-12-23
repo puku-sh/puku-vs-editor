@@ -47,7 +47,7 @@ export class InlineChatEditMarkdownPrompt extends PromptElement<InlineChatEditMa
 			throw illegalArgument('InlineChatEditMarkdownPrompt should only be used with markdown documents!');
 		}
 
-		const isIgnored = await this._ignoreService.isCopilotIgnored(context.document.uri);
+		const isIgnored = await this._ignoreService.isPukuIgnored(context.document.uri);
 		if (isIgnored) {
 			return <ignoredFiles value={[this.props.documentContext.document.uri]} />;
 		}

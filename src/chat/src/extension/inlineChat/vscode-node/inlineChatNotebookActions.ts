@@ -91,7 +91,7 @@ export class NotebookExectionStatusBarItemProvider implements vscode.NotebookCel
 					tooltip: title,
 					command: {
 						title: title,
-						command: 'vscode.editorChat.start',
+						command: 'inlineChat.start',
 						arguments: [
 							{
 								autoSend: true,

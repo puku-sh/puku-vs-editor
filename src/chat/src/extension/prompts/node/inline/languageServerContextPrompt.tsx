@@ -102,12 +102,12 @@ export class LanguageServerContextPrompt extends PromptElement<LanguageServerCon
 				if (item.value.length === 0) {
 					continue;
 				}
-				if (await this.ignoreService.isCopilotIgnored(item.uri)) {
+				if (await this.ignoreService.isPukuIgnored(item.uri)) {
 					continue;
 				}
 				if (item.additionalUris !== undefined && item.additionalUris.length > 0) {
 					for (const uri of item.additionalUris) {
-						if (await this.ignoreService.isCopilotIgnored(uri)) {
+						if (await this.ignoreService.isPukuIgnored(uri)) {
 							continue outer;
 						}
 					}

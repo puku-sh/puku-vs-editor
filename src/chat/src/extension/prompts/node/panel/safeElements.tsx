@@ -88,7 +88,7 @@ export class CodeBlock extends SafePromptElement<CodeBlockProps> {
 	}
 
 	async render() {
-		const isIgnored = this.props.uri ? await this._ignoreService.isCopilotIgnored(this.props.uri) : false;
+		const isIgnored = this.props.uri ? await this._ignoreService.isPukuIgnored(this.props.uri) : false;
 		if (isIgnored) {
 			return this._handleFoulPrompt();
 		}
@@ -161,7 +161,7 @@ export class Uri extends SafePromptElement<UriProps> {
 	}
 
 	async render() {
-		const isIgnored = await this._ignoreService.isCopilotIgnored(this.props.value);
+		const isIgnored = await this._ignoreService.isPukuIgnored(this.props.value);
 		if (isIgnored) {
 			return this._handleFoulPrompt();
 		}

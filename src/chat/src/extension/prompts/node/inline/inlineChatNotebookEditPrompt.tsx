@@ -165,7 +165,7 @@ export class InlineChatNotebookEditPrompt extends PromptElement<InlineChatEditCo
 		const activeDocumentContext = currentDocumentContext;
 		const notebook = findNotebook(currentDocumentContext.document.uri, this.workspaceService.notebookDocuments);
 
-		const isIgnored = await this.ignoreService.isCopilotIgnored(activeDocumentContext.document.uri);
+		const isIgnored = await this.ignoreService.isPukuIgnored(activeDocumentContext.document.uri);
 		const wholeRange = activeDocumentContext.document.validateRange(activeDocumentContext.wholeRange);
 
 		const summarizedDocument = await createPromptingSummarizedDocument(

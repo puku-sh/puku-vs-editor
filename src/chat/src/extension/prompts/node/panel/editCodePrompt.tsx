@@ -388,7 +388,7 @@ class TextDocumentWorkingSetEntry extends PromptElement<TextDocumentWorkingSetEn
 	async render(state: void, sizing: PromptSizing) {
 		const { document, range: selection, state: workingSetEntryState } = this.props.entry;
 
-		const isIgnored = await this._ignoreService.isCopilotIgnored(document.uri);
+		const isIgnored = await this._ignoreService.isPukuIgnored(document.uri);
 		if (isIgnored) {
 			return <ignoredFiles value={[document.uri]} />;
 		}
@@ -449,7 +449,7 @@ class NotebookWorkingSetEntry extends PromptElement<NotebookWorkingSetEntryPromp
 	async render(state: void, sizing: PromptSizing) {
 		const { document, range: selection, state: workingSetEntryState } = this.props.entry;
 
-		const isIgnored = await this._ignoreService.isCopilotIgnored(document.uri);
+		const isIgnored = await this._ignoreService.isPukuIgnored(document.uri);
 		if (isIgnored) {
 			return <ignoredFiles value={[document.uri]} />;
 		}
@@ -518,7 +518,7 @@ class FileSelection extends PromptElement<CurrentFileSelectionPromptProps> {
 			return undefined;
 		}
 
-		const isIgnored = await this._ignoreService.isCopilotIgnored(document.uri);
+		const isIgnored = await this._ignoreService.isPukuIgnored(document.uri);
 		if (isIgnored) {
 			return <ignoredFiles value={[document.uri]} />;
 		}

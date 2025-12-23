@@ -95,7 +95,7 @@ export class SymbolAtCursor extends PromptElement<SymbolAtCursorProps, SymbolAtC
 	}
 
 	static async getDefinitionAtRange(ignoreService: IIgnoreService, parserService: IParserService, document: TextDocumentSnapshot, range: Range, preferDefinitions: boolean) {
-		const fileIsIgnored = await ignoreService.isCopilotIgnored(document.uri);
+		const fileIsIgnored = await ignoreService.isPukuIgnored(document.uri);
 		if (fileIsIgnored) {
 			return undefined;
 		}
@@ -118,7 +118,7 @@ export class SymbolAtCursor extends PromptElement<SymbolAtCursorProps, SymbolAtC
 	}
 
 	static async getSelectedScope(ignoreService: IIgnoreService, configurationService: IConfigurationService, tabsAndEditorsService: ITabsAndEditorsService, scopeSelector: IScopeSelector, parserService: IParserService, props: Omit<SymbolAtCursorProps, 'priority'>): Promise<SelectedScope> {
-		if (!props.document || await ignoreService.isCopilotIgnored(props.document.uri)) {
+		if (!props.document || await ignoreService.isPukuIgnored(props.document.uri)) {
 			return undefined;
 		}
 

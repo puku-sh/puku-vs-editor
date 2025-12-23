@@ -153,7 +153,7 @@ export class SummarizedDocumentWithSelection extends PromptElement<SummarizedDoc
 	override async render(_state: void, sizing: PromptSizing) {
 
 		const { createReplyInterpreter, documentData } = this.props;
-		const isIgnored = await this.ignoreService.isCopilotIgnored(documentData.document.uri);
+		const isIgnored = await this.ignoreService.isPukuIgnored(documentData.document.uri);
 
 		if (isIgnored) {
 			return <ignoredFiles value={[documentData.document.uri]} />;

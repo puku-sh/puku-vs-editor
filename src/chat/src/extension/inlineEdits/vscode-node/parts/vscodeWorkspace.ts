@@ -307,7 +307,8 @@ export class VSCodeWorkspace extends ObservableWorkspace implements IDisposable 
 	}
 
 	private _createTextDocumentDiagnosticData(document: VSCodeObservableTextDocument) {
-		return languages.getDiagnostics(document.textDocument.uri).map(d => this._createDiagnosticData(d, document)).filter(isDefined);
+		const vscDiagnostics = languages.getDiagnostics(document.textDocument.uri);
+		return vscDiagnostics.map(d => this._createDiagnosticData(d, document)).filter(isDefined);
 	}
 
 	private _createDiagnosticData(diagnostic: Diagnostic, doc: VSCodeObservableTextDocument): DiagnosticData | undefined {
@@ -355,7 +356,8 @@ export class VSCodeWorkspace extends ObservableWorkspace implements IDisposable 
 		if (!internalDoc) {
 			return undefined;
 		}
-		return internalDoc.obsDoc.get();
+		const obsDoc = internalDoc.obsDoc.get();
+		return obsDoc;
 	}
 
 	public getWorkspaceRoot(documentId: DocumentId): URI | undefined {

@@ -68,7 +68,7 @@ class FindTestFilesTool extends Disposable implements ICopilotTool<IFindTestFile
 			if (!uri) {
 				throw new Error(`Invalid input path ${filePath}`);
 			}
-			if (await this.ignoreService.isCopilotIgnored(uri)) {
+			if (await this.ignoreService.isPukuIgnored(uri)) {
 				return;
 			}
 			const document = await this.workspaceService.openTextDocumentAndSnapshot(uri);
@@ -83,7 +83,7 @@ class FindTestFilesTool extends Disposable implements ICopilotTool<IFindTestFile
 
 			if (isTestFile(document)) {
 				const srcFileUri = await this._testFileFinder.findFileForTestFile(document, token);
-				if (srcFileUri && !await this.ignoreService.isCopilotIgnored(srcFileUri)) {
+				if (srcFileUri && !await this.ignoreService.isPukuIgnored(srcFileUri)) {
 					const srcFileDocument = await this.workspaceService.openTextDocumentAndSnapshot(srcFileUri);
 					srcFiles.push({ srcFile: srcFileUri, testFile: document.uri, document: srcFileDocument });
 				}
@@ -100,7 +100,7 @@ class FindTestFilesTool extends Disposable implements ICopilotTool<IFindTestFile
 
 		if (testFiles.length === 0 && lookForAnyTestFile) {
 			const testFileUri = await this._testFileFinder.findAnyTestFileForSourceFile(lookForAnyTestFile, token);
-			if (testFileUri && !await this.ignoreService.isCopilotIgnored(testFileUri)) {
+			if (testFileUri && !await this.ignoreService.isPukuIgnored(testFileUri)) {
 				const testFileDocument = await this.workspaceService.openTextDocumentAndSnapshot(testFileUri);
 				anyTestFiles.push({ srcFile: lookForAnyTestFile.uri, testFile: testFileUri, document: testFileDocument });
 			}

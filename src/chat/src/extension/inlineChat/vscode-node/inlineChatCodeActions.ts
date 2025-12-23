@@ -115,7 +115,7 @@ export class QuickFixesProvider implements vscode.CodeActionProvider {
 		fixAction.diagnostics = severeDiagnostics;
 		fixAction.command = {
 			title: fixAction.title,
-			command: 'vscode.editorChat.start',
+			command: 'inlineChat.start',
 			arguments: [
 				{
 					autoSend: true,
@@ -267,7 +267,7 @@ export class RefactorsProvider implements vscode.CodeActionProvider {
 
 		codeAction.command = {
 			title: codeAction.title,
-			command: 'vscode.editorChat.start',
+			command: 'inlineChat.start',
 			arguments: [
 				{
 					position: range.start,
@@ -331,7 +331,7 @@ export class RefactorsProvider implements vscode.CodeActionProvider {
 
 		codeAction.command = {
 			title,
-			command: 'vscode.editorChat.start',
+			command: 'inlineChat.start',
 			arguments: [
 				{
 					autoSend: true,

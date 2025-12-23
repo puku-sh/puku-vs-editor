@@ -44,7 +44,7 @@ export class DefinitionAroundCursor extends PromptElement<Props, State> {
 	}
 
 	override async prepare(sizing: PromptSizing, progress?: vscode.Progress<vscode.ChatResponseProgressPart | vscode.ChatResponseReferencePart> | undefined, token?: vscode.CancellationToken | undefined): Promise<State> {
-		if (await this._ignoreService.isCopilotIgnored(this.props.documentContext.document.uri)) {
+		if (await this._ignoreService.isPukuIgnored(this.props.documentContext.document.uri)) {
 			return { k: 'ignored' };
 		}
 		const nodeToDocument = this.props.nodeToDocument ?? await determineNodeToDocument(this._parserService, this._telemetryService, this.props.documentContext);

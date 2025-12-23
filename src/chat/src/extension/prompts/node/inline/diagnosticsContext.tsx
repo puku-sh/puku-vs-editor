@@ -42,7 +42,7 @@ export class Diagnostics extends PromptElement<DiagnosticsProps> {
 
 	async render(state: void, sizing: PromptSizing) {
 		const { diagnostics, documentContext } = this.props;
-		const isIgnored = await this.ignoreService.isCopilotIgnored(documentContext.document.uri);
+		const isIgnored = await this.ignoreService.isPukuIgnored(documentContext.document.uri);
 		if (isIgnored) {
 			return <ignoredFiles value={[documentContext.document.uri]} />;
 		}
@@ -165,7 +165,7 @@ export class DiagnosticRelatedInfo extends PromptElement<DiagnosticRelatedInfoPr
 			for (const relatedInformation of diagnostic.relatedInformation) {
 				try {
 					const location = relatedInformation.location;
-					if (await this.ignoreService.isCopilotIgnored(location.uri)) {
+					if (await this.ignoreService.isPukuIgnored(location.uri)) {
 						ignoredFiles.push(location.uri);
 						continue;
 					}

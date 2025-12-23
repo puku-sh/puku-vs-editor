@@ -203,6 +203,9 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 	private _documentResolver: DocumentResolver;
 	private _displayLocationFactory: DisplayLocationFactory;
 	private _navigationCommandFactory: NavigationCommandFactory;
+	// Track active displayLocation navigation completions for post-navigation cycling
+	// Key: "${fileUri}:${targetLine}", Value: completion item
+	private _activeDisplayLocationCompletions = new Map<string, vscode.InlineCompletionItem>();
 
 	constructor(
 		@IFetcherService private readonly _fetcherService: IFetcherService,
@@ -785,10 +788,11 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		}
 
 		console.log(`[FetchCompletion] 📤 Calling API: ${url} (language=${languageId})`);
-		console.log(`[FetchCompletion] 📝 Request body:`, JSON.stringify({
+		console.log(`[FetchCompletion] 📝 Request body (FULL PROMPT):`, JSON.stringify({
 			...requestBody,
-			prompt: (requestBody.prompt.substring(Math.max(0, requestBody.prompt.length - 150)) + '...'),
-			suffix: (requestBody.suffix?.substring(0, 150) || '') + '...',
+			prompt: `${requestBody.prompt.substring(0, 100)}...(${requestBody.prompt.length} chars total)...${requestBody.prompt.substring(Math.max(0, requestBody.prompt.length - 100))}`,
+			suffix: `${requestBody.suffix?.substring(0, 100)}...(${requestBody.suffix?.length || 0} chars total)`,
+			currentFileContent: currentFileContent ? `${currentFileContent.substring(0, 100)}...(${currentFileContent.length} chars)` : 'none',
 			openFiles: requestBody.openFiles.map((f: any) => ({
 				filepath: f.filepath,
 				contentLength: f.content?.length || 0
@@ -847,14 +851,22 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 
 			// Filter import statements (Copilot's approach - importFiltering.ts)
 			// Models often hallucinate wrong imports - let IDE handle this
+			// EXCEPT: Allow import-only completions when they have displayLocation metadata (Issue #137)
+			// These are intentional import redirections to line 0
+			const hasDisplayLocationMetadata = metadata && metadata.displayType === 'label';
 			const filteredText = ImportFilteringAspect.filterCompletion(trimmed, languageId);
 			if (!filteredText || filteredText.trim().length === 0) {
-				console.log(`[FetchCompletion] ⚠️ Choice ${i + 1} contains only imports, filtering out`);
-				continue;
+				if (!hasDisplayLocationMetadata) {
+					console.log(`[FetchCompletion] ⚠️ Choice ${i + 1} contains only imports, filtering out`);
+					continue;
+				}
+				// Allow import-only completion because it has displayLocation metadata
+				console.log(`[FetchCompletion] ✅ Choice ${i + 1} is import-only BUT has displayLocation metadata, allowing`);
 			}
 
 			// Use filtered text (with imports removed) for further processing
-			const completionText = filteredText.trim();
+			// BUT: If this is a displayLocation import, use the original text (don't filter)
+			const completionText = hasDisplayLocationMetadata ? trimmed : (filteredText || trimmed).trim();
 
 			// Check for internal repetition
 			const completionLines = completionText.split('\n');
@@ -948,11 +960,16 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			const targetDocument = resolvedDocument?.document ?? vscode.workspace.textDocuments.find(d => d.uri.toString() === documentUri.toString())!;
 			const targetRange = resolvedDocument?.range ?? range;
 
+			// Determine edit type for context-aware labeling
+			const editType = this.mapMetadataEditType(metadata?.editType);
+
 			// Create label-based display location (Copilot pattern)
 			// Reference: inlineCompletionProvider.ts:326-330
 			const displayLocation = this._displayLocationFactory.createLabel(
+				editType,
 				targetDocument,
 				targetRange,
+				document,
 				position,
 				completion
 			);
@@ -965,8 +982,11 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			);
 
 			// Return completion item with label display (Copilot pattern)
-			// Reference: inlineCompletionProvider.ts:290-299
-			const item = new vscode.InlineCompletionItem(completion, range);
+			// Reference: inlineCompletionProvider.ts:341-348
+			// CRITICAL: For displayLocation label edits, InlineCompletionItem.range must be TARGET
+			// displayLocation.range is current position (where label shows)
+			// InlineCompletionItem.range is target position (where code will be inserted)
+			const item = new vscode.InlineCompletionItem(completion, targetRange);
 			item.displayLocation = displayLocation;
 			item.isInlineEdit = true; // Same as Copilot: isInlineEdit = !isInlineCompletion
 			item.command = command;
@@ -974,6 +994,13 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 			this._logService.info(
 				`[PukuFimProvider] Created ${resolvedDocument ? 'multi-document' : 'label'} completion: ${targetDocument.uri.fsPath}:${targetRange.start.line + 1}`
 			);
+
+			// Track displayLocation completion for post-navigation cycling (Issue #displayLocation-cycling)
+			// When Tab is pressed, VS Code navigates to target and re-queries completions
+			// We need to return this same completion instead of cached results
+			const trackingKey = `${targetDocument.uri.toString()}:${targetRange.start.line}`;
+			this._activeDisplayLocationCompletions.set(trackingKey, item);
+			console.log(`[PukuFimProvider] 📍 Tracking displayLocation completion: ${trackingKey}`);
 
 			return item;
 		}
@@ -1046,6 +1073,43 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		if (currentGhostText) {
 			currentGhostText.clear();
 			console.log(`[PukuFimProvider] 🗑️ Cleared ghost text for ${fileUri}`);
+		}
+	}
+
+	/**
+	 * Get tracked displayLocation completion for post-navigation cycling (Issue #displayLocation-cycling)
+	 * Returns the original completion item if it exists, and clears it from tracking
+	 */
+	public getTrackedDisplayLocationCompletion(fileUri: string, line: number): vscode.InlineCompletionItem | undefined {
+		const trackingKey = `${fileUri}:${line}`;
+		const item = this._activeDisplayLocationCompletions.get(trackingKey);
+		if (item) {
+			console.log(`[PukuFimProvider] ✅ Found tracked displayLocation completion: ${trackingKey}`);
+			// Clear after retrieval (one-time use)
+			this._activeDisplayLocationCompletions.delete(trackingKey);
+			return item;
+		}
+		return undefined;
+	}
+
+	/**
+	 * Map backend metadata editType to frontend EditType enum
+	 */
+	private mapMetadataEditType(editType: string | undefined): import('../utils/displayLocationFactory').EditType {
+		const { EditType } = require('../utils/displayLocationFactory');
+
+		switch (editType) {
+			case 'import':
+				return EditType.Import;
+			case 'include':
+				return EditType.Include;
+			case 'newFile':
+				return EditType.NewFile;
+			case 'distantEdit':
+				return EditType.DistantEdit;
+			case 'generic':
+			default:
+				return EditType.Generic;
 		}
 	}
 }

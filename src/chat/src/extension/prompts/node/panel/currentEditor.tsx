@@ -55,7 +55,7 @@ export class CurrentEditor extends PromptElement<CurrentEditorPromptProps> {
 		const ranges = editor.visibleRanges;
 		const document = editor.document;
 
-		const isIgnored = await this._ignoreService.isCopilotIgnored(document.uri);
+		const isIgnored = await this._ignoreService.isPukuIgnored(document.uri);
 		if (isIgnored) {
 			return <ignoredFiles value={[document.uri]} />;
 		}
@@ -99,7 +99,7 @@ export class CurrentEditor extends PromptElement<CurrentEditorPromptProps> {
 		}
 		const format = this._alternativeNotebookContentService.getFormat(this._promptEndpoint);
 		const document = NotebookDocumentSnapshot.create(notebook, format);
-		const isIgnored = await this._ignoreService.isCopilotIgnored(document.uri);
+		const isIgnored = await this._ignoreService.isPukuIgnored(document.uri);
 		if (isIgnored) {
 			return <ignoredFiles value={[document.uri]} />;
 		}
@@ -143,7 +143,7 @@ export class CurrentEditor extends PromptElement<CurrentEditorPromptProps> {
 		const notebookRanges = editor.visibleRanges;
 		const format = this._alternativeNotebookContentService.getFormat(this._promptEndpoint);
 		const document = NotebookDocumentSnapshot.create(editor.notebook, format);
-		const isIgnored = await this._ignoreService.isCopilotIgnored(document.uri);
+		const isIgnored = await this._ignoreService.isPukuIgnored(document.uri);
 		if (isIgnored) {
 			return <ignoredFiles value={[document.uri]} />;
 		}

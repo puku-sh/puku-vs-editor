@@ -52,7 +52,7 @@ export class CodeMapperPatchRewritePrompt extends PromptElement<CodeMapperPrompt
 
 		const document = this.props.request.existingDocument;
 
-		const isIgnored = await this.ignoreService.isCopilotIgnored(document.uri);
+		const isIgnored = await this.ignoreService.isPukuIgnored(document.uri);
 		if (isIgnored) {
 			return <ignoredFiles value={[document.uri]} />;
 		}
@@ -181,7 +181,7 @@ export class CodeMapperFullRewritePrompt extends PromptElement<CodeMapperPromptP
 		if (isNewDocument(this.props.request)) {
 			const validDocumentContext = [];
 			for (const context of this.props.request.workingSet) {
-				const isIgnored = await this.ignoreService.isCopilotIgnored(context.uri);
+				const isIgnored = await this.ignoreService.isPukuIgnored(context.uri);
 				if (!isIgnored) {
 					validDocumentContext.push(context);
 				}
@@ -232,7 +232,7 @@ export class CodeMapperFullRewritePrompt extends PromptElement<CodeMapperPromptP
 		}
 
 		const document = this.props.request.existingDocument;
-		const isIgnored = await this.ignoreService.isCopilotIgnored(document.uri);
+		const isIgnored = await this.ignoreService.isPukuIgnored(document.uri);
 		if (isIgnored) {
 			return <ignoredFiles value={[document.uri]} />;
 		}

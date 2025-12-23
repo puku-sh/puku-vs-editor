@@ -64,7 +64,6 @@ export class PukuSummaryJobManager {
 			jobIds.push(result.lastInsertRowid as number);
 		}
 
-		console.log(`[SummaryJobManager] Created ${jobIds.length} jobs for fileId=${fileId} (${totalChunks} chunks, ${chunksPerJob} per job)`);
 		return jobIds;
 	}
 
@@ -156,8 +155,6 @@ export class PukuSummaryJobManager {
 			SET status = ?, summaries = ?, error = ?, completedAt = ?
 			WHERE id = ?
 		`).run(status, summariesJson, error ?? null, status === 'completed' || status === 'failed' ? now : null, jobId);
-
-		console.log(`[SummaryJobManager] Job ${jobId} status: ${status}`);
 	}
 
 	/**
@@ -190,8 +187,7 @@ export class PukuSummaryJobManager {
 	 * Clean up completed jobs for a file
 	 */
 	cleanupJobs(fileId: number): void {
-		const result = this._db.prepare('DELETE FROM SummaryJobs WHERE fileId = ?').run(fileId);
-		console.log(`[SummaryJobManager] Cleaned up ${result.changes} jobs for fileId=${fileId}`);
+		this._db.prepare('DELETE FROM SummaryJobs WHERE fileId = ?').run(fileId);
 	}
 
 	/**

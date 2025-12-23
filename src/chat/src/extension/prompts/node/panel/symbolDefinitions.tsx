@@ -79,7 +79,7 @@ export class SymbolDefinitions extends PromptElement<Props, State> {
 			return emptyState;
 		}
 
-		if (await this.ignoreService.isCopilotIgnored(activeDocument.uri)) {
+		if (await this.ignoreService.isPukuIgnored(activeDocument.uri)) {
 			return { ...emptyState, isIgnored: true };
 		}
 

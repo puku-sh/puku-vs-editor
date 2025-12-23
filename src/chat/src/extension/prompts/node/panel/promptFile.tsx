@@ -43,7 +43,7 @@ export class PromptFile extends PromptElement<PromptFileProps, void> {
 			return undefined;
 		}
 
-		if (await this.ignoreService.isCopilotIgnored(uri)) {
+		if (await this.ignoreService.isPukuIgnored(uri)) {
 			return <ignoredFiles value={[uri]} />;
 		}
 

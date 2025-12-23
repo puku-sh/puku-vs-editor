@@ -61,7 +61,7 @@ export class ReferencesAtPosition extends PromptElement<Props> {
 	}
 
 	async render(state: void, sizing: PromptSizing) {
-		if (await this.ignoreService.isCopilotIgnored(this.props.document.uri)) {
+		if (await this.ignoreService.isPukuIgnored(this.props.document.uri)) {
 			return <ignoredFiles value={[this.props.document.uri]} />;
 		}
 
@@ -125,7 +125,7 @@ export class ReferencesAtPosition extends PromptElement<Props> {
 		const nonIgnoredDefs = [];
 		const nonIgnoredRefs = [];
 		for (const ref of foundRefs) {
-			if (await this.ignoreService.isCopilotIgnored(ref.uri)) {
+			if (await this.ignoreService.isPukuIgnored(ref.uri)) {
 				continue;
 			}
 

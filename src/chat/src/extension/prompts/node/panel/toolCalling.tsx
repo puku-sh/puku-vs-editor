@@ -434,7 +434,7 @@ class McpLinkedResourceToolResult extends PromptElement<{ resourceUri: URI; mime
 	}
 
 	async render() {
-		if (await this.ignoreService.isCopilotIgnored(this.props.resourceUri)) {
+		if (await this.ignoreService.isPukuIgnored(this.props.resourceUri)) {
 			return null;
 		}
 

@@ -73,7 +73,7 @@ export class CurrentChange extends PromptElement<CurrentChangeProps, CurrentChan
 	override async prepare(sizing: PromptSizing): Promise<CurrentChangeState> {
 		const allowed = [];
 		for (const input of this.props.input) {
-			if (!await this.ignoreService.isCopilotIgnored(input.document.uri)) {
+			if (!await this.ignoreService.isPukuIgnored(input.document.uri)) {
 				allowed.push(input);
 			}
 		}

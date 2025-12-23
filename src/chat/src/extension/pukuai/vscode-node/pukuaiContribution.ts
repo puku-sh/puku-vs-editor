@@ -22,6 +22,7 @@ import { VSCodeWorkspace } from '../../inlineEdits/vscode-node/parts/vscodeWorks
 import { NesHistoryContextProvider } from '../../../platform/inlineEdits/common/workspaceEditTracker/nesHistoryContextProvider';
 import { NesXtabHistoryTracker } from '../../../platform/inlineEdits/common/workspaceEditTracker/nesXtabHistoryTracker';
 import { ObservableGit } from '../../../platform/inlineEdits/common/observableGit';
+import { DiagnosticsProviderAdapter } from './adapters/diagnosticsProviderAdapter';
 
 export class PukuAIContribution extends Disposable implements IExtensionContribution {
 	public readonly id: string = 'pukuai-contribution';
@@ -93,14 +94,15 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 			// Register as 'pukuai' vendor - our own vendor identity
 			const vendorName = 'pukuai';
 
-			console.log(`Puku AI: Registering as '${vendorName}' vendor`);
-			this._logService.info(`Puku AI: Registering as '${vendorName}' vendor`);
+			console.log(`[LM Provider Registration] Registering '${vendorName}' vendor with VS Code Language Model API`);
+			this._logService.info(`[LM Provider Registration] Registering '${vendorName}' vendor with VS Code Language Model API`);
 
 			this._register(lm.registerLanguageModelChatProvider(vendorName, provider));
 
 			this._providerRegistered = true;
-			console.log('Puku AI: Provider registered successfully');
-			this._logService.info('Puku AI: Provider registered successfully');
+			console.log(`[LM Provider Registration] ✅ '${vendorName}' vendor registered successfully`);
+			console.log(`[LM Provider Registration] Available vendors: pukuai (registered), copilot (via GitHub Copilot extension if installed)`);
+			this._logService.info(`[LM Provider Registration] ✅ '${vendorName}' vendor registered successfully`);
 
 			// Also register inline completion provider
 			this._registerInlineCompletionProvider(endpoint);
@@ -133,10 +135,17 @@ export class PukuAIContribution extends Disposable implements IExtensionContribu
 
 		// Create diagnostics next edit provider (racing provider #2)
 		// Issue #131: Use instant language server diagnostics (<10ms) instead of API-based (~1000ms)
-		const diagnosticsNextEditProvider = this._instantiationService.createInstance(
+		const copilotDiagnosticsProvider = this._instantiationService.createInstance(
 			DiagnosticsNextEditProvider,
 			workspace,
 			observableGit
+		);
+
+		// Wrap Copilot's diagnostics provider with adapter to convert to Puku's format
+		// The adapter extracts displayLocation metadata from DiagnosticCompletionItem
+		const diagnosticsNextEditProvider = this._instantiationService.createInstance(
+			DiagnosticsProviderAdapter,
+			copilotDiagnosticsProvider
 		);
 
 		// Create NES/Xtab provider (racing provider #3 - refactoring suggestions)

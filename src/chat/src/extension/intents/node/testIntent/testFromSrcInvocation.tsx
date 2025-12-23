@@ -262,7 +262,7 @@ export class TestFromSourceInvocation implements IIntentInvocation {
 			testExampleFile = anyTestFile;
 		}
 
-		if (testExampleFile === undefined || (await this.ignoreService.isCopilotIgnored(testExampleFile))) {
+		if (testExampleFile === undefined || (await this.ignoreService.isPukuIgnored(testExampleFile))) {
 			return null;
 		}
 

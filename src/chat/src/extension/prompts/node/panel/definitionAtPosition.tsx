@@ -75,7 +75,7 @@ export class DefinitionAtPosition extends PromptElement<Props, State> {
 	}
 
 	override async prepare(): Promise<State> {
-		if (await this._ignoreService.isCopilotIgnored(this.props.document.uri)) {
+		if (await this._ignoreService.isPukuIgnored(this.props.document.uri)) {
 			return { k: 'ignored' };
 		}
 
@@ -169,7 +169,7 @@ export class DefinitionAtPosition extends PromptElement<Props, State> {
 			await Promise.all(
 				foundDefs.map(async def => {
 					const uri = isLocationLink(def) ? def.targetUri : document.uri;
-					return await this._ignoreService.isCopilotIgnored(uri) ? undefined : def;
+					return await this._ignoreService.isPukuIgnored(uri) ? undefined : def;
 				})
 			)
 		);

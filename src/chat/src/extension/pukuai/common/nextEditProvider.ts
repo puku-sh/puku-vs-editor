@@ -100,7 +100,11 @@ export interface PukuDiagnosticsResult {
 	fix: {
 		range: vscode.Range;
 		newText: string;
-		label: string; // e.g., "TAB to add import"
+		label: string; // e.g., "TAB to add import" or "import useState from 'react'"
+		displayLocation?: { // displayLocation metadata for Tab-to-jump (Issue #displayLocation-import)
+			range: vscode.Range;
+			label: string;
+		};
 	};
 	requestId: number;
 }

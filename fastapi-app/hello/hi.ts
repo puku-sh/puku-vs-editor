@@ -1,15 +1,16 @@
-function add(a: number,b:number){
-    return a+b
-}
-
-function subtract(a,b){
-    return a-b
-}
-function multiply(a,b){
-    return a*b
-}
-function divide(a,b){
-    return a/b
-}
-
+const App = () => {
+  const [count, setCount] = useState(0);
+  
+  return React.createElement(
+    "div",
+    null,
+    React.createElement("h1", null, "Hello, World!"),
+    React.createElement("p", null, `Count: ${count}`),
+    React.createElement(
+      "button",
+      { onClick: () => setCount(count + 1) },
+      "Increment"
+    )
+  );
+};
 

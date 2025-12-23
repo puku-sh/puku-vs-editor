@@ -179,7 +179,7 @@ export class StartDebuggingPrompt extends PromptElement<StartDebuggingPromptProp
 
 			const [exists, ignored] = await Promise.all([
 				fileExists(file),
-				this.ignoreService.isCopilotIgnored(file),
+				this.ignoreService.isPukuIgnored(file),
 			]);
 			if (exists && !ignored) {
 				fileResults.add(file);

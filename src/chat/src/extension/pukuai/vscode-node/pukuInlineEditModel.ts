@@ -136,25 +136,40 @@ export class PukuInlineEditModel extends Disposable {
 			// undefined = provider hasn't completed yet
 			// null = provider completed but returned nothing
 			const fimSettled = fimResult !== undefined;
-			const diagnosticsSettled = diagnosticsResult !== undefined;
 			const nesSettled = nesResult !== undefined;
 
 			const fimHasResult = fimResult !== null && fimResult !== undefined && fimResult.completion && (Array.isArray(fimResult.completion) ? fimResult.completion.length > 0 : true);
-			const diagnosticsHasResult = diagnosticsResult !== null && diagnosticsResult !== undefined;
 			const nesHasResult = nesResult !== null && nesResult !== undefined && nesResult.completion && (Array.isArray(nesResult.completion) ? nesResult.completion.length > 0 : true);
 
-			// Wait for all if:
-			// 1. FIM hasn't settled yet (still fetching from API), OR
-			// 2. All settled but none has results (give providers more time)
-			const shouldWaitForAll = !fimSettled || (!fimHasResult && !diagnosticsHasResult && !nesHasResult);
+			// Copilot pattern (inlineCompletionProvider.ts:195-201):
+			// Give diagnostics MORE TIME (1s total) if FIM and NES have no results
+			// This ensures diagnostics can complete when FIM/NES are empty or slow
+			const shouldGiveMoreTimeToDiagnostics = !fimHasResult && !nesHasResult && this.diagnosticsProvider;
 
-			if (shouldWaitForAll) {
-				const reason = !fimSettled
-					? 'FIM still fetching'
-					: 'all returned null, giving providers 1s more';
+			if (shouldGiveMoreTimeToDiagnostics) {
+				this.logService.info('[PukuInlineEditModel] ⏳ No FIM/NES results, giving diagnostics 1s more time (Copilot pattern)');
+				console.log('[PukuInlineEditModel] ⏳ No FIM/NES results, giving diagnostics 1s more time (Copilot pattern)');
 
-				this.logService.info(`[PukuInlineEditModel] Waiting for all promises: ${reason}`);
-// 				console.log(`[PukuInlineEditModel] ⏳ Waiting for all promises: ${reason}`);
+				// Set timeout to cancel after 1 second (Copilot: line 199)
+				this.timeout(1000).then(() => {
+					diagnosticsCts.cancel();
+					nesCts.cancel();
+					// Don't cancel FIM - let it complete and cache
+				});
+
+				// Wait for diagnostics to finish (Copilot: line 200)
+				[, diagnosticsResult] = await all;
+
+				console.log('[PukuInlineEditModel] 📊 Diagnostics result after extended wait:', {
+					diagnosticsResult: diagnosticsResult ? 'has result' : 'null/undefined'
+				});
+			}
+
+			// Also wait if FIM is still fetching from API (not settled)
+			// This ensures we don't return too early when all providers are slow
+			if (!fimSettled) {
+				this.logService.info('[PukuInlineEditModel] ⏳ FIM still fetching, waiting for all promises...');
+				console.log('[PukuInlineEditModel] ⏳ FIM still fetching, waiting for all promises...');
 
 				// Set timeout to cancel after 1 second
 				this.timeout(1000).then(() => {

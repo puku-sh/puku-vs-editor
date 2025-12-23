@@ -519,7 +519,7 @@ class IntentDetectionPrompt extends PromptElement<IntentDetectionPromptProps> {
 		let currentFileContext: string | undefined;
 		let fileExcerptCodeBlock: CodeBlock | undefined;
 		try {
-			if (documentContext !== undefined && !(await this._ignoreService.isCopilotIgnored(documentContext.document.uri))) {
+			if (documentContext !== undefined && !(await this._ignoreService.isPukuIgnored(documentContext.document.uri))) {
 
 				const { document, selection } = documentContext;
 

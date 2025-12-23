@@ -142,7 +142,7 @@ export function registerInlineChatCommands(accessor: ServicesAccessor): IDisposa
 		const totalComments = reviewService.getReviewComments().length;
 		const message = comment.body instanceof vscode.MarkdownString ? comment.body.value : comment.body;
 		reviewService.removeReviewComments([comment]);
-		await vscode.commands.executeCommand('vscode.editorChat.start', {
+		await vscode.commands.executeCommand('inlineChat.start', {
 			initialRange: commentThread.range,
 			message: `/fix ${message}`,
 			autoSend: true,
@@ -240,10 +240,10 @@ ${message}`,
 		instaService.invokeFunction(fetchSuggestion, newThread);
 	};
 	const doGenerate = () => {
-		return vscode.commands.executeCommand('vscode.editorChat.start', { message: '/generate ' });
+		return vscode.commands.executeCommand('inlineChat.start', { message: '/generate ' });
 	};
 	const doGenerateDocs = () => {
-		return vscode.commands.executeCommand('vscode.editorChat.start', { message: `/${InlineDocIntent.ID} `, autoSend: true, initialRange: vscode.window.activeTextEditor?.selection });
+		return vscode.commands.executeCommand('inlineChat.start', { message: `/${InlineDocIntent.ID} `, autoSend: true, initialRange: vscode.window.activeTextEditor?.selection });
 	};
 	const doGenerateTests = (arg?: unknown) => {
 		// @ulugbekna: `puku.chat.generateTests` is invoked from editor context menu, which means
@@ -266,7 +266,7 @@ ${message}`,
 		const diagnostics = vscode.languages.getDiagnostics(activeDocument.document.uri).filter(diagnostic => {
 			return !!activeSelection.intersection(diagnostic.range);
 		}).map(d => d.message).join(', ');
-		return vscode.commands.executeCommand('vscode.editorChat.start', { message: `/${Intent.Fix} ${diagnostics}`, autoSend: true, initialRange: vscode.window.activeTextEditor?.selection });
+		return vscode.commands.executeCommand('inlineChat.start', { message: `/${Intent.Fix} ${diagnostics}`, autoSend: true, initialRange: vscode.window.activeTextEditor?.selection });
 	};
 
 	const doGenerateAltText = async (arg: unknown) => {
@@ -275,7 +275,7 @@ ${message}`,
 			const fullQuery = arg.type === 'generate' ? baseQuery : `Refine the existing alt text for clarity and usefulness for screen readers. ${baseQuery}`;
 
 			const uri = arg.isUrl ? URI.parse(arg.resolvedImagePath) : URI.file(arg.resolvedImagePath);
-			return vscode.commands.executeCommand('vscode.editorChat.start', { message: fullQuery, attachments: [uri], autoSend: true, initialRange: vscode.window.activeTextEditor?.selection });
+			return vscode.commands.executeCommand('inlineChat.start', { message: fullQuery, attachments: [uri], autoSend: true, initialRange: vscode.window.activeTextEditor?.selection });
 		}
 	};
 

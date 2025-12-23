@@ -84,6 +84,24 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 			return null;
 		}
 
+		// Fix for Issue #displayLocation-cycling: Return tracked completion after Tab navigation
+		// When user presses Tab on a displayLocation label, VS Code navigates to the target position
+		// and immediately calls provideInlineCompletionItems again with isCycling: true.
+		// We need to return the original displayLocation completion, not query for new ones.
+		if (isCycling) {
+			const fileUri = document.uri.toString();
+			const trackedCompletion = this.fimProvider.getTrackedDisplayLocationCompletion(fileUri, position.line);
+			if (trackedCompletion) {
+				console.log('[PukuUnifiedProvider] 🎯 Returning tracked displayLocation completion');
+				this.logService.info('[PukuUnifiedProvider] Returning tracked displayLocation completion');
+				// Return as array wrapped in InlineCompletionList
+				return {
+					items: [trackedCompletion],
+					enableForwardStability: true
+				};
+			}
+		}
+
 		// Get completion from model (coordinates diagnostics + FIM)
 		console.log('[PukuUnifiedProvider] ⚡ Calling model.getCompletion()...');
 		this.logService.info('[PukuUnifiedProvider] Calling model.getCompletion()');
@@ -118,21 +136,48 @@ export class PukuUnifiedInlineProvider extends Disposable implements vscode.Inli
 				range: `[${fix.range.start.line},${fix.range.start.character} -> ${fix.range.end.line},${fix.range.end.character}]`,
 				newText: fix.newText.substring(0, 100),
 				label: fix.label,
+				hasDisplayLocation: !!fix.displayLocation,
 				cursorLine: position.line
 			});
 
-			this.logService.info('[PukuUnifiedProvider] Returning diagnostics fix');
+			this.logService.info('[PukuUnifiedProvider] Returning diagnostics fix with displayLocation');
 
-			// IMPORTANT: For inline edits to be accepted with TAB, the range MUST match cursor position
-			// But we want to insert at fix.range (top of file). Solution: use a workaround.
+			// Use displayLocation metadata if available (from Copilot's diagnostics provider)
+			if (fix.displayLocation) {
+				console.log('[PukuUnifiedProvider] ✅ Using displayLocation metadata from diagnostics provider:', {
+					displayRange: `${fix.displayLocation.range.start.line}:${fix.displayLocation.range.start.character}`,
+					displayLabel: fix.displayLocation.label
+				});
 
+				const item: vscode.InlineCompletionItem = {
+					insertText: fix.newText,
+					range: fix.range,
+					isInlineEdit: true,
+					displayLocation: {
+						range: fix.displayLocation.range,
+						label: fix.displayLocation.label,
+						kind: vscode.InlineCompletionDisplayLocationKind.Label // Use Label for Tab-to-jump
+					}
+				};
+
+				// Track diagnostics completion for lifecycle handling
+				this.completionsByText.set(fix.newText, { document, position });
+
+				// Return InlineCompletionList with enableForwardStability (Issue #55)
+				return {
+					items: [item],
+					enableForwardStability: true
+				};
+			}
+
+			// Fallback: No displayLocation metadata (legacy behavior)
 			// Check if this is an import fix (range at line 0, cursor elsewhere)
 			const isImportFix = fix.range.start.line === 0 && position.line > 0;
 
 			if (isImportFix) {
 				// For import fixes: Show at top of file (line 0)
 				// Even though cursor is elsewhere, VS Code can still show this
-				console.log('[PukuUnifiedProvider] Import fix - showing at top of file');
+				console.log('[PukuUnifiedProvider] Import fix (legacy) - showing at top of file');
 				console.log('[PukuUnifiedProvider] Creating import completion item:', {
 					insertText: fix.newText,
 					range: `[${fix.range.start.line},${fix.range.start.character} -> ${fix.range.end.line},${fix.range.end.character}]`,
