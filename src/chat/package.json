@@ -1243,7 +1243,8 @@
 				"isDefault": true,
 				"when": "config.inlineChat.enableV2",
 				"locations": [
-					"editor"
+					"editor",
+					"editorInline"
 				]
 			},
 			{
@@ -1293,7 +1294,8 @@
 				"description": "%puku.description%",
 				"isDefault": true,
 				"locations": [
-					"editor"
+					"editor",
+					"editorInline"
 				],
 				"when": "!config.inlineChat.enableV2",
 				"disambiguation": [
@@ -1653,6 +1655,10 @@
 			{
 				"vendor": "copilot",
 				"displayName": "Copilot"
+			},
+			{
+				"vendor": "pukuai",
+				"displayName": "Puku AI"
 			},
 			{
 				"vendor": "azure",

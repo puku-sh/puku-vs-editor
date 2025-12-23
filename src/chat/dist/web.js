@@ -3966,7 +3966,7 @@ var require_package = __commonJS({
       name: "puku-editor",
       displayName: "Puku Editor",
       description: "AI-powered code editor with GLM model support via Z.AI",
-      version: "0.43.29",
+      version: "0.43.32",
       build: "1",
       internalAIKey: "1058ec22-3c95-4951-8443-f26c1f325911",
       completionsCoreVersion: "1.378.1799",
@@ -5207,7 +5207,8 @@ var require_package = __commonJS({
             isDefault: true,
             when: "config.inlineChat.enableV2",
             locations: [
-              "editor"
+              "editor",
+              "editorInline"
             ]
           },
           {
@@ -5257,7 +5258,8 @@ var require_package = __commonJS({
             description: "%puku.description%",
             isDefault: true,
             locations: [
-              "editor"
+              "editor",
+              "editorInline"
             ],
             when: "!config.inlineChat.enableV2",
             disambiguation: [
@@ -5617,6 +5619,10 @@ var require_package = __commonJS({
           {
             vendor: "copilot",
             displayName: "Copilot"
+          },
+          {
+            vendor: "pukuai",
+            displayName: "Puku AI"
           },
           {
             vendor: "azure",
@@ -32506,7 +32512,13 @@ function networkRequest(fetcher, telemetryService, capiClientService, requestTyp
     request.signal = abort.signal;
   }
   if (typeof endpoint.urlOrRequestMetadata === "string") {
-    const requestPromise = fetcher.fetch(endpoint.urlOrRequestMetadata, request).catch((reason) => {
+    console.log(`[networkRequest] Making request to ${endpoint.urlOrRequestMetadata}`);
+    const requestPromise = fetcher.fetch(endpoint.urlOrRequestMetadata, request).then((response) => {
+      console.log(`[networkRequest] Response status: ${response.status}`);
+      console.log(`[networkRequest] Response ok: ${response.ok}`);
+      return response;
+    }).catch((reason) => {
+      console.error(`[networkRequest] Request failed:`, reason);
       if (canRetryOnceNetworkError(reason)) {
         telemetryService.sendGHTelemetryEvent("networking.disconnectAll");
         return fetcher.disconnectAll().then(() => {
