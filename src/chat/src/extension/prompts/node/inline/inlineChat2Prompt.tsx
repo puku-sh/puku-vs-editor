@@ -15,6 +15,8 @@ import { SafetyRules } from '../base/safetyRules';
 import { Tag } from '../base/tag';
 import { ChatVariables, UserQuery } from '../panel/chatVariables';
 import { WorkingSet } from '../panel/editCodePrompt';
+import { PukuSemanticContext } from './pukuSemanticContext';
+import { IPukuIndexingService } from '../../../pukuIndexing/node/pukuIndexingService';
 
 
 export type InlineChat2PromptProps = PromptElementProps<{
@@ -25,15 +27,18 @@ export type InlineChat2PromptProps = PromptElementProps<{
 
 export class InlineChat2Prompt extends PromptElement<InlineChat2PromptProps> {
 
+	private semanticResults: Array<{ file: string; chunk: string; score: number; }> = [];
+
 	constructor(
 		props: InlineChat2PromptProps,
 		@IPromptPathRepresentationService private readonly _promptPathRepresentationService: IPromptPathRepresentationService,
+		@IPukuIndexingService private readonly _indexingService: IPukuIndexingService,
 	) {
 		super(props);
 	}
 
 
-	override render(state: void, sizing: PromptSizing): Promise<any> {
+	override async render(state: void, sizing: PromptSizing): Promise<any> {
 
 		const workingSet: IWorkingSet = [{
 			document: TextDocumentSnapshot.create(this.props.data.document),
@@ -44,6 +49,43 @@ export class InlineChat2Prompt extends PromptElement<InlineChat2PromptProps> {
 
 		const variables = new ChatVariablesCollection(this.props.request.references);
 		const filepath = this._promptPathRepresentationService.getFilePath(this.props.data.document.uri);
+
+		// Puku semantic search enhancement
+		const document = this.props.data.document;
+		const languageId = document.languageId;
+		console.log(`[InlineChat2Prompt] Starting semantic search - indexing available: ${this._indexingService.isAvailable()}`);
+
+		if (this._indexingService.isAvailable()) {
+			try {
+				const selectedText = document.getText(this.props.data.selection);
+				const searchQuery = `${this.props.request.prompt}\n\n${selectedText}`;
+				console.log(`[InlineChat2Prompt] Searching with query (${searchQuery.length} chars): "${searchQuery.substring(0, 100)}..."`);
+
+				const results = await this._indexingService.search(searchQuery, 3, languageId);
+				console.log(`[InlineChat2Prompt] Semantic search returned ${results.length} results`);
+
+				this.semanticResults = results.map(r => ({
+					file: r.file,
+					chunk: r.content,
+					score: r.score
+				}));
+
+				if (this.semanticResults.length > 0) {
+					console.log(`[InlineChat2Prompt] Semantic results:`, this.semanticResults.map(r => ({
+						file: r.file,
+						score: r.score,
+						chunkLength: r.chunk.length
+					})));
+				} else {
+					console.log(`[InlineChat2Prompt] No semantic results found`);
+				}
+			} catch (error) {
+				console.error(`[InlineChat2Prompt] Semantic search failed:`, error);
+				this.semanticResults = [];
+			}
+		} else {
+			console.log(`[InlineChat2Prompt] Indexing service not available - skipping semantic search`);
+		}
 
 		// TODO@jrieken: if the selection is empty and if the line with the selection is empty we could hint to add code and
 		// generally with empty selections we could allow the model to be a bit more creative
@@ -64,6 +106,7 @@ export class InlineChat2Prompt extends PromptElement<InlineChat2PromptProps> {
 				<UserMessage>
 					<WorkingSet flexGrow={1} priority={950} workingSet={workingSet} />
 					<ChatVariables flexGrow={3} priority={898} chatVariables={variables} useFixCookbook={true} />
+					<PukuSemanticContext results={this.semanticResults} languageId={languageId} />
 					<Tag name='reminder'>
 						If there is a user selection, focus on it, and try to make changes to the selected code and its context.<br />
 						If there is no user selection, make changes or write new code anywhere in the file.<br />

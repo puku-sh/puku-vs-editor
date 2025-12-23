@@ -41,8 +41,11 @@ export class PukuSemanticContext extends PromptElement<PukuSemanticContextProps>
 	render(state: void, sizing: PromptSizing) {
 		const { results, languageId } = this.props;
 
+		console.log(`[PukuSemanticContext] Rendering with ${results?.length || 0} results`);
+
 		// No results? Don't render anything
 		if (!results || results.length === 0) {
+			console.log(`[PukuSemanticContext] No results to render - returning null`);
 			return null;
 		}
 
@@ -60,9 +63,12 @@ export class PukuSemanticContext extends PromptElement<PukuSemanticContextProps>
 			contextLines.push('');
 		}
 
+		const contextText = contextLines.join('\n');
+		console.log(`[PukuSemanticContext] Rendering context (${contextText.length} chars): "${contextText.substring(0, 200)}..."`);
+
 		return (
 			<TextChunk priority={800}>
-				{contextLines.join('\n')}
+				{contextText}
 			</TextChunk>
 		);
 	}

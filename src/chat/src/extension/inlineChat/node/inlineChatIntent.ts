@@ -68,6 +68,10 @@ export class InlineChatIntent implements IIntent {
 
 	async handleRequest(conversation: Conversation, request: vscode.ChatRequest, stream: vscode.ChatResponseStream, token: CancellationToken, documentContext: IDocumentContext | undefined, agentName: string, _location: ChatLocation, chatTelemetry: ChatTelemetryBuilder, onPaused: Event<boolean>): Promise<vscode.ChatResult> {
 
+		console.log(`[InlineChatIntent] ========== handleRequest called ==========`);
+		console.log(`[InlineChatIntent] Request prompt: "${request.prompt}"`);
+		console.log(`[InlineChatIntent] Location: ${_location}`);
+
 		assertType(request.location2 instanceof ChatRequestEditorData);
 		assertType(documentContext);
 
@@ -93,13 +97,16 @@ export class InlineChatIntent implements IIntent {
 
 		const chatVariables = new ChatVariablesCollection([...request.references]);
 
+		console.log(`[InlineChatIntent] Creating InlineChat2Prompt renderer...`);
 		const renderer = PromptRenderer.create(this._instantiationService, endpoint, InlineChat2Prompt, {
 			request,
 			data: request.location2,
 			exitToolName: INLINE_CHAT_EXIT_TOOL_NAME
 		});
 
+		console.log(`[InlineChatIntent] Calling renderer.render()...`);
 		const renderResult = await renderer.render(undefined, token, { trace: true });
+		console.log(`[InlineChatIntent] Render completed. Messages: ${renderResult.messages.length}, Tokens: ${renderResult.tokenCount}`);
 
 		const telemetry = chatTelemetry.makeRequest(this, ChatLocation.Editor, conversation, renderResult.messages, renderResult.tokenCount, renderResult.references, endpoint, [], inlineChatTools.length);
 		const outcomeComputer = new InteractionOutcomeComputer(request.location2.document.uri);
