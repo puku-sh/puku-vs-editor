@@ -246,10 +246,10 @@ jobs:
             cp dist/puku-editor_${VERSION}_amd64.deb ./
 
             # Display package info
-            dpkg-deb -I puku-editor-${VERSION}-amd64.deb || true
+            dpkg-deb -I puku-editor_${VERSION}_amd64.deb || true
             echo ""
             echo "📦 Package size:"
-            ls -lh puku-editor-${VERSION}-amd64.deb
+            ls -lh puku-editor_${VERSION}_amd64.deb
           else
             echo "❌ .deb package creation failed"
             exit 1
@@ -500,10 +500,10 @@ jobs:
             cp dist/puku-editor_${VERSION}_arm64.deb ./
 
             # Display package info
-            dpkg-deb -I puku-editor-${VERSION}-arm64.deb || true
+            dpkg-deb -I puku-editor_${VERSION}_arm64.deb || true
             echo ""
             echo "📦 Package size:"
-            ls -lh puku-editor-${VERSION}-arm64.deb
+            ls -lh puku-editor_${VERSION}_arm64.deb
           else
             echo "❌ .deb package creation failed"
             exit 1
