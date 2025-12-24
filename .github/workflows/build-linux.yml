@@ -228,39 +228,32 @@ jobs:
           VSCODE_ARCH: x64
           NODE_OPTIONS: --max-old-space-size=16384
 
-      # 🆕 Create Linux packages (tar.gz only, simplified)
-      - name: Create Linux packages
+      # 🆕 Create Linux .deb package
+      - name: Create Linux .deb package
         run: |
-          echo "📦 Creating Linux packages..."
+          echo "📦 Creating .deb package..."
 
-          # Create optimized tar.gz with Puku branding
-          echo "📦 Creating optimized tar.gz package..."
+          # Create .deb package that installs to /opt/puku-editor/
           chmod +x ./build-linux-optimized.sh
           ./build-linux-optimized.sh
 
-          # For now, create simple package stubs if tar.gz was created successfully
-          if [ -f "dist/Puku-linux-x64-"*".tar.gz" ]; then
-            echo "✅ tar.gz package created successfully"
+          # Verify the .deb was created
+          if [ -f "dist/puku-editor_"*"_amd64.deb" ]; then
+            echo "✅ .deb package created successfully"
 
-            # Create empty deb/rpm placeholders to satisfy the upload pattern
-            # In a future iteration, we can implement proper packaging
+            # Copy to root for easy artifact upload
             VERSION=$(node -p "require('./src/vscode/package.json').version")
-            echo "Creating package placeholders for future implementation..."
-            echo "# Puku Editor DEB Package - Coming Soon" > puku-editor-${VERSION}-amd64.deb.placeholder
-            echo "# Puku Editor RPM Package - Coming Soon" > puku-editor-${VERSION}-x86_64.rpm.placeholder
+            cp dist/puku-editor_${VERSION}_amd64.deb ./
 
-            # Rename placeholders to match expected pattern
-            mv puku-editor-${VERSION}-amd64.deb.placeholder puku-editor-${VERSION}-amd64.deb
-            mv puku-editor-${VERSION}-x86_64.rpm.placeholder puku-editor-${VERSION}-x86_64.rpm
+            # Display package info
+            dpkg-deb -I puku-editor-${VERSION}-amd64.deb || true
+            echo ""
+            echo "📦 Package size:"
+            ls -lh puku-editor-${VERSION}-amd64.deb
           else
-            echo "❌ tar.gz package creation failed"
+            echo "❌ .deb package creation failed"
             exit 1
           fi
-
-          # List all created packages
-          echo ""
-          echo "📦 Created packages:"
-          ls -la *.deb *.rpm *.tar.gz 2>/dev/null || echo "Some packages may be missing"
         env:
           VSCODE_ARCH: x64
 
@@ -269,9 +262,7 @@ jobs:
         with:
           name: puku-editor-linux-x64-${{ github.run_id }}
           path: |
-            *.deb
-            *.rpm
-            dist/*.tar.gz
+            puku-editor_*_amd64.deb
           retention-days: 1
           if-no-files-found: error
 
@@ -491,39 +482,32 @@ jobs:
           VSCODE_ARCH: arm64
           NODE_OPTIONS: --max-old-space-size=16384
 
-      # 🆕 Create Linux packages (tar.gz only, simplified)
-      - name: Create Linux packages
+      # 🆕 Create Linux .deb package
+      - name: Create Linux .deb package
         run: |
-          echo "📦 Creating Linux packages..."
+          echo "📦 Creating .deb package..."
 
-          # Create optimized tar.gz with Puku branding
-          echo "📦 Creating optimized tar.gz package..."
+          # Create .deb package that installs to /opt/puku-editor/
           chmod +x ./build-linux-optimized.sh
           ./build-linux-optimized.sh
 
-          # For now, create simple package stubs if tar.gz was created successfully
-          if [ -f "dist/Puku-linux-arm64-"*".tar.gz" ]; then
-            echo "✅ tar.gz package created successfully"
+          # Verify the .deb was created
+          if [ -f "dist/puku-editor_"*"_arm64.deb" ]; then
+            echo "✅ .deb package created successfully"
 
-            # Create empty deb/rpm placeholders to satisfy the upload pattern
-            # In a future iteration, we can implement proper packaging
+            # Copy to root for easy artifact upload
             VERSION=$(node -p "require('./src/vscode/package.json').version")
-            echo "Creating package placeholders for future implementation..."
-            echo "# Puku Editor DEB Package - Coming Soon" > puku-editor-${VERSION}-arm64.deb.placeholder
-            echo "# Puku Editor RPM Package - Coming Soon" > puku-editor-${VERSION}-arm64.rpm.placeholder
+            cp dist/puku-editor_${VERSION}_arm64.deb ./
 
-            # Rename placeholders to match expected pattern
-            mv puku-editor-${VERSION}-arm64.deb.placeholder puku-editor-${VERSION}-arm64.deb
-            mv puku-editor-${VERSION}-arm64.rpm.placeholder puku-editor-${VERSION}-arm64.rpm
+            # Display package info
+            dpkg-deb -I puku-editor-${VERSION}-arm64.deb || true
+            echo ""
+            echo "📦 Package size:"
+            ls -lh puku-editor-${VERSION}-arm64.deb
           else
-            echo "❌ tar.gz package creation failed"
+            echo "❌ .deb package creation failed"
             exit 1
           fi
-
-          # List all created packages
-          echo ""
-          echo "📦 Created packages:"
-          ls -la *.deb *.rpm *.tar.gz 2>/dev/null || echo "Some packages may be missing"
         env:
           VSCODE_ARCH: arm64
 
@@ -532,9 +516,7 @@ jobs:
         with:
           name: puku-editor-linux-arm64-${{ github.run_id }}
           path: |
-            *.deb
-            *.rpm
-            dist/*.tar.gz
+            puku-editor_*_arm64.deb
           retention-days: 1
           if-no-files-found: error
 

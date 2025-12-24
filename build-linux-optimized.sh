@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-# Puku Editor - Optimized Linux Build
-# Minimal extensions + aggressive compression for smaller download size
+# Puku Editor - Linux DEB Package Build
+# Creates a proper .deb package that installs to /opt/puku-editor/
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VSCODE_DIR="$SCRIPT_DIR/src/vscode"
@@ -12,6 +12,7 @@ DIST_DIR="$SCRIPT_DIR/dist"
 
 # Puku branding
 APP_NAME="puku"
+PACKAGE_NAME="puku-editor"
 VERSION=$(node -p "require('$VSCODE_DIR/package.json').version")
 
 # Architecture (supports x64 and arm64)
@@ -22,7 +23,13 @@ if [ "$ARCH" != "x64" ] && [ "$ARCH" != "arm64" ]; then
     exit 1
 fi
 
-# Essential extensions to bundle (same as macOS)
+# Convert to Debian architecture naming
+DEB_ARCH="${ARCH}"
+if [ "$ARCH" == "x64" ]; then
+    DEB_ARCH="amd64"
+fi
+
+# Essential extensions to bundle
 ESSENTIAL_EXTENSIONS=(
     # Core editing
     "configuration-editing"
@@ -66,14 +73,14 @@ ESSENTIAL_EXTENSIONS=(
     "microsoft-authentication"
 )
 
-echo "🚀 Building Optimized Puku Editor for Linux v${VERSION} ($ARCH)"
+echo "🚀 Building Puku Editor DEB Package v${VERSION} (${DEB_ARCH})"
 echo "📦 Using gulp production build + stripping to $(echo ${ESSENTIAL_EXTENSIONS[@]} | wc -w | tr -d ' ') essential extensions"
 echo ""
 
 # Clean previous builds
 echo "🧹 Cleaning previous builds..."
-rm -rf "$BUILD_DIR/puku-linux-${ARCH}"
-rm -f "$DIST_DIR/Puku-linux-${ARCH}-${VERSION}.tar.gz"
+rm -rf "$BUILD_DIR/${PACKAGE_NAME}_${VERSION}-${DEB_ARCH}"
+rm -f "$DIST_DIR/${PACKAGE_NAME}_${VERSION}_${DEB_ARCH}.deb"
 mkdir -p "$BUILD_DIR"
 mkdir -p "$DIST_DIR"
 
@@ -94,14 +101,21 @@ if [ ! -d "$EXTENSION_DIR/dist" ]; then
     exit 1
 fi
 
-# Copy gulp-built output and strip extensions
-echo ""
+# DEB package structure
+DEB_ROOT="$BUILD_DIR/${PACKAGE_NAME}_${VERSION}-${DEB_ARCH}"
+DEBIAN_DIR="$DEB_ROOT/DEBIAN"
+INSTALL_DIR="$DEB_ROOT/opt/puku-editor"
+
+# Create directory structure
+mkdir -p "$DEBIAN_DIR"
+mkdir -p "$INSTALL_DIR"
+mkdir -p "$DEB_ROOT/usr/local/bin"
+
 echo "📦 Copying gulp production build..."
-cp -R "$GULP_BUILD_DIR" "$BUILD_DIR/puku-linux-${ARCH}"
+cp -R "$GULP_BUILD_DIR"/* "$INSTALL_DIR/"
 
 # Setup paths
-APP_ROOT="$BUILD_DIR/puku-linux-${ARCH}"
-APP_RESOURCES="$APP_ROOT/resources"
+APP_RESOURCES="$INSTALL_DIR/resources"
 APP_EXTENSIONS="$APP_RESOURCES/app/extensions"
 
 echo "📦 Stripping non-essential extensions from production build..."
@@ -177,7 +191,6 @@ echo ""
 echo "📦 Updating product metadata..."
 PRODUCT_JSON="$APP_RESOURCES/app/product.json"
 if [ -f "$PRODUCT_JSON" ]; then
-    # Use node to update JSON (safer than sed)
     node -e "
         const fs = require('fs');
         const product = JSON.parse(fs.readFileSync('$PRODUCT_JSON', 'utf8'));
@@ -189,27 +202,111 @@ if [ -f "$PRODUCT_JSON" ]; then
     "
 fi
 
-# Create tar.gz archive with maximum compression
-echo ""
-echo "📦 Creating optimized tar.gz archive..."
-ARCHIVE_NAME="Puku-linux-${ARCH}-${VERSION}.tar.gz"
-ARCHIVE_PATH="$DIST_DIR/$ARCHIVE_NAME"
+# Create DEBIAN/control file
+echo "📦 Creating package control files..."
+cat > "$DEBIAN_DIR/control" <<EOF
+Package: ${PACKAGE_NAME}
+Version: ${VERSION}
+Architecture: ${DEB_ARCH}
+Maintainer: Puku Editor <contact@puku.sh>
+Installed-Size: $(du -sk "$DEB_ROOT" | cut -f1)
+Depends: libgtk-3-0, libnss3, libxss1, libasound2, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libappindicator3-1, libsecret-1-0
+Section: devel
+Priority: optional
+Homepage: https://puku.sh
+Description: Puku Editor - AI-powered code editor
+ Puku Editor is an AI-powered code editor built on GitHub Copilot Chat
+ architecture, providing chat interface, inline completions (FIM),
+ agent mode, and tool calling.
+EOF
 
+# Create DEBIAN/postinst script (runs after installation)
+cat > "$DEBIAN_DIR/postinst" <<'EOF'
+#!/bin/bash
+set -e
+
+# Create symlink for the 'puku' command
+# Note: The binary is at /opt/puku-editor/puku (not in bin/ subdirectory)
+if [ ! -e /usr/local/bin/puku ]; then
+    ln -sf /opt/puku-editor/puku /usr/local/bin/puku
+    echo "✅ Created symlink: /usr/local/bin/puku -> /opt/puku-editor/puku"
+fi
+
+# Update desktop database
+if command -v update-desktop-database &> /dev/null; then
+    update-desktop-database /usr/share/applications 2>/dev/null || true
+fi
+
+echo "🚀 Puku Editor installed successfully!"
+echo "   Run 'puku' to start the editor."
+
+EOF
+
+chmod +x "$DEBIAN_DIR/postinst"
+
+# Create DEBIAN/prerm script (runs before removal)
+cat > "$DEBIAN_DIR/prerm" <<'EOF'
+#!/bin/bash
+set -e
+
+# Remove symlink
+if [ -L /usr/local/bin/puku ]; then
+    rm -f /usr/local/bin/puku
+    echo "🗑️  Removed symlink: /usr/local/bin/puku"
+fi
+
+EOF
+
+chmod +x "$DEBIAN_DIR/prerm"
+
+# Create desktop entry file
+echo "📦 Creating desktop entry..."
+mkdir -p "$DEB_ROOT/usr/share/applications"
+cat > "$DEB_ROOT/usr/share/applications/${PACKAGE_NAME}.desktop" <<EOF
+[Desktop Entry]
+Name=Puku Editor
+Comment=AI-powered code editor
+GenericName=Text Editor
+Exec=/opt/puku-editor/puku %F
+Icon=/opt/puku-editor/resources/app/puku.png
+Type=Application
+Categories=TextEditor;Development;IDE;
+Keywords=puku;editor;code;development;programming;
+StartupNotify=true
+StartupWMClass=puku
+MimeType=text/plain;inode/directory;
+EOF
+
+# Build the DEB package
+echo ""
+echo "📦 Building DEB package..."
 cd "$BUILD_DIR"
-tar -czf "$ARCHIVE_PATH" puku-linux-${ARCH}
+
+# Calculate installed size for control file
+INSTALLED_SIZE=$(du -sk "$DEB_ROOT" | cut -f1)
+sed -i "s/^Installed-Size: .*/Installed-Size: ${INSTALLED_SIZE}/" "$DEBIAN_DIR/control"
+
+# Build the package
+dpkg-deb --build "${PACKAGE_NAME}_${VERSION}-${DEB_ARCH}" "${DIST_DIR}/${PACKAGE_NAME}_${VERSION}_${DEB_ARCH}.deb"
+
 cd "$SCRIPT_DIR"
 
 # Get sizes
-APP_SIZE=$(du -sh "$APP_ROOT" | awk '{print $1}')
-ARCHIVE_SIZE=$(du -sh "$ARCHIVE_PATH" | awk '{print $1}')
+APP_SIZE=$(du -sh "$INSTALL_DIR" | awk '{print $1}')
+DEB_SIZE=$(du -sh "$DIST_DIR/${PACKAGE_NAME}_${VERSION}_${DEB_ARCH}.deb" | awk '{print $1}')
 
 echo ""
-echo "✅ Optimized Linux build complete!"
+echo "✅ DEB package created successfully!"
 echo ""
-echo "📦 Build Directory:  $APP_ROOT ($APP_SIZE)"
-echo "📦 Archive: $ARCHIVE_PATH ($ARCHIVE_SIZE)"
+echo "📦 Package: ${DIST_DIR}/${PACKAGE_NAME}_${VERSION}_${DEB_ARCH}.deb ($DEB_SIZE)"
+echo "📦 Installation Size: $APP_SIZE"
 echo ""
-echo "To test before distributing:"
-echo "  cd $APP_ROOT"
-echo "  ./puku"
+echo "To install:"
+echo "  sudo dpkg -i ${DIST_DIR}/${PACKAGE_NAME}_${VERSION}_${DEB_ARCH}.deb"
+echo ""
+echo "If dependencies are missing, run:"
+echo "  sudo apt-get install -f"
+echo ""
+echo "After installation, simply type:"
+echo "  puku"
 echo ""

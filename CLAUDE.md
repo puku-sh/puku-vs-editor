@@ -13,12 +13,12 @@ This is the **Puku Editor** monorepo containing:
 ## Repository Structure
 
 ```
-puku-vs-editor/puku-editor/
+puku-vs-editor/
 ├── src/
 │   ├── chat/              # Puku Editor extension source
 │   │   ├── src/           # TypeScript source
 │   │   ├── dist/          # Compiled bundles (22MB+)
-│   │   ├── package.json   # Extension dependencies (120 deps)
+│   │   ├── package.json   # Extension dependencies
 │   │   └── .esbuild.ts    # esbuild bundler configuration
 │   └── vscode/            # Forked VS Code (Code-OSS)
 │       ├── src/           # VS Code source
@@ -30,7 +30,9 @@ puku-vs-editor/puku-editor/
 │       ├── build-linux.yml
 │       └── build-windows.yml
 ├── Makefile              # Build automation
+├── launch.sh             # Launch Code-OSS with extension
 ├── build-dmg-optimized.sh # macOS DMG packaging
+├── build-linux-optimized.sh # Linux tar.gz packaging
 └── CLAUDE.md             # This file
 ```
 
@@ -57,9 +59,12 @@ nvm install 23.5.0
 nvm install 22.20.0
 
 # The Makefile handles version switching automatically
-make build-ext    # Uses Node 23.5.0
-make build-vs     # Uses Node 22.20.0
+make build-ext    # Uses Node 23.5.0 (for sqlite-vec)
+make build-vs     # Uses Node 22.20.0 (VS Code requirement)
+make install      # Runs install-extension + install-vscode
 ```
+
+**Note**: If nvm is not available, the Makefile falls back to using the current Node.js version, but this is not recommended.
 
 ## Quick Start
 
@@ -89,6 +94,10 @@ make build-ext
 make build-vs
 
 # Run VS Code with extension
+# Option 1: Use the convenience script from repo root
+./launch.sh
+
+# Option 2: Manual launch
 cd src/vscode
 ./scripts/code.sh --extensionDevelopmentPath=$(pwd)/../chat
 ```
@@ -129,9 +138,9 @@ make build-vs           # VS Code only
 make build-minimal      # Extension + package (~16s)
 
 # Create platform packages
-./build-dmg-optimized.sh    # macOS DMG (~20s, 311MB)
-./build-linux-optimized.sh  # Linux AppImage (~30s)
-# Output: Puku-1.107.0.dmg/AppImage
+./build-dmg-optimized.sh    # macOS DMG (~20s, 311MB) - requires gulp build first
+./build-linux-optimized.sh  # Linux .deb (~30s) - requires gulp build first
+# Output: Puku-1.107.0.dmg / puku-editor_1.107.0_amd64.deb
 
 # Package workflows
 make package            # Full build + package (~57min first time)
@@ -143,7 +152,7 @@ make clean-package      # Remove packaged apps
 
 ### GitHub Actions Workflows
 
-The project builds for 6 platforms via GitHub Actions:
+The project builds for 6 platforms via GitHub Actions on self-hosted runners (Namespace.so):
 
 | Platform | Architectures | Workflow |
 |----------|--------------|----------|
@@ -151,17 +160,26 @@ The project builds for 6 platforms via GitHub Actions:
 | Linux | x64, arm64 | `build-linux.yml` |
 | Windows | x64, arm64 | `build-windows.yml` |
 
-**Trigger**: Push tags matching `v*.*.*` (e.g., `v0.43.6`)
+**Triggers**:
+- Push tags matching `v*.*.*` (e.g., `v0.43.6`) - creates release
+- Push to `feat/ubuntu` branch - Linux builds only
+- Manual workflow dispatch - for testing specific architectures
 
-**Build Process**:
+**Build Process** (Linux example - applies similarly to macOS/Windows):
 1. Checkout code
-2. Setup Node.js 22.20.0 (from `.nvmrc`)
-3. Cache node_modules
-4. Install dependencies (if cache miss)
-5. Run `make build` (builds extension + VS Code)
-6. Create platform-specific package
-7. Upload artifacts (1-day retention)
-8. Create GitHub release (on success)
+2. Setup Node.js 22.20.0 (from `src/vscode/.nvmrc`) with npm cache
+3. Setup Python 3.11
+4. Install system dependencies (`build-essential`, `libx11-dev`, `libxkbfile-dev`, `libsecret-1-dev`)
+5. Cache node_modules (extension + VS Code)
+6. Cache VS Code build output (saves 30-60 minutes)
+7. Install dependencies with `make install` (if cache miss) - retries up to 5 times
+8. **Important**: The Makefile `install` target automatically switches Node.js versions:
+   - Extension: Node 23.5.0+ (for sqlite-vec)
+   - VS Code: Node 22.20.0 (from `.nvmrc`)
+9. Create VS Code production build using `npx gulp vscode-linux-{arch}`
+10. Create optimized .deb package using `./build-linux-optimized.sh`
+11. Upload artifacts (1-day retention)
+12. Create GitHub release (on tag push)
 
 ### Creating a Release
 
@@ -179,6 +197,11 @@ git push origin v0.43.7
 ```
 
 **Note**: Repository is public to get unlimited CI/CD minutes and artifact storage.
+
+### Current Branch Status
+
+- `feat/ubuntu` - Linux build development (triggers Linux builds on push)
+- `main` - Main development branch (full CI/CD on tag push)
 
 ## Puku AI Backend Integration
 
