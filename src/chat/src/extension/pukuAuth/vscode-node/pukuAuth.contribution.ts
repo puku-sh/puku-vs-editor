@@ -8,7 +8,7 @@ import { IExtensionContribution } from '../../common/contributions';
 import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { ILogService } from '../../../platform/log/common/logService';
 import { IPukuAuthService } from '../../pukuIndexing/common/pukuAuth';
-import { PukuAuthProvider } from './pukuAuthProvider';
+import { PukuAuthProvider, PukuAuthSession } from './pukuAuthProvider';
 import { IVSCodeExtensionContext } from '../../../platform/extContext/common/extensionContext';
 
 /**
@@ -19,7 +19,7 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 	public readonly id = 'puku-auth-contribution';
 
 	private _statusBarItem: vscode.StatusBarItem;
-	private _session: vscode.AuthenticationSession | undefined;
+	private _session: PukuAuthSession | undefined;
 	private _pendingAuthCallback?: (token: string | undefined) => void;
 	private _pendingState?: string;
 
@@ -53,9 +53,34 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 			handleUri: (uri: vscode.Uri) => {
 				this._logService.info(`PukuAuthContribution: Received auth callback: ${uri.toString()}`);
 
-				// Parse token from query string
+				// Parse token and state from query string
 				const query = new URLSearchParams(uri.query);
 				const token = query.get('token');
+				const state = query.get('state');
+
+				// Verify state parameter for CSRF protection
+				if (!this._pendingState) {
+					this._logService.error('PukuAuthContribution: Received callback but no pending state - possible CSRF attack');
+					if (this._pendingAuthCallback) {
+						this._pendingAuthCallback(undefined);
+						this._pendingAuthCallback = undefined;
+					}
+					return;
+				}
+
+				if (state !== this._pendingState) {
+					this._logService.error(`PukuAuthContribution: State mismatch - expected ${this._pendingState}, got ${state} - possible CSRF attack`);
+					if (this._pendingAuthCallback) {
+						this._pendingAuthCallback(undefined);
+						this._pendingAuthCallback = undefined;
+					}
+					return;
+				}
+
+				this._logService.info('PukuAuthContribution: State parameter verified successfully');
+
+				// Clear pending state after verification
+				this._pendingState = undefined;
 
 				// Resolve pending auth callback if any
 				if (this._pendingAuthCallback) {
@@ -158,9 +183,9 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 						label: userInfo.name || userInfo.email
 					},
 					scopes: []
-				} as any;
+				};
 
-				this._logService.info(`PukuAuthContribution: Successfully signed in as ${this._session.account.label}`);
+				this._logService.info(`PukuAuthContribution: Successfully signed in as ${this._session.account?.label}`);
 				this._logService.info(`PukuAuthContribution: Session created with token length: ${token.length}`);
 
 				// Create .vscode/settings.json in workspace folders
@@ -181,7 +206,7 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 				this._logService.info('PukuAuthContribution: Refreshing context keys after sign-in');
 				await vscode.commands.executeCommand('puku.refreshToken');
 
-				vscode.window.showInformationMessage(`Signed in to Puku as ${this._session.account.label}`);
+				vscode.window.showInformationMessage(`Signed in to Puku as ${this._session.account?.label}`);
 			} catch (error) {
 				const errorMessage = error instanceof Error ? error.message : String(error);
 				this._logService.error(`PukuAuthContribution: Sign-in failed: ${errorMessage}`, error);
@@ -241,7 +266,7 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 			// First try to get from local session (extension layer)
 			if (this._session && 'accessToken' in this._session) {
 				const PUKU_API_ENDPOINT = 'https://api.puku.sh';
-				const accessToken = (this._session as any).accessToken;
+				const accessToken = this._session.accessToken;
 
 				this._logService.info(`PukuAuthContribution: Returning token from extension layer session (account: ${this._session.account.label})`);
 				return {

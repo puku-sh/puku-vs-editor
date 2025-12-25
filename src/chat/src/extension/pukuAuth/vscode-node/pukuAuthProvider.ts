@@ -11,7 +11,7 @@ const PUKU_AUTH_PROVIDER_ID = 'puku';
 const PUKU_AUTH_PROVIDER_LABEL = 'Puku';
 const PUKU_API_ENDPOINT = 'https://api.puku.sh';
 
-interface PukuAuthSession extends vscode.AuthenticationSession {
+export interface PukuAuthSession extends vscode.AuthenticationSession {
 	readonly accessToken: string;
 }
 
