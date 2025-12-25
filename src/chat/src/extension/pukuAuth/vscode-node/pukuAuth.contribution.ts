@@ -21,7 +21,6 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 	private _statusBarItem: vscode.StatusBarItem;
 	private _session: PukuAuthSession | undefined;
 	private _pendingAuthCallback?: (token: string | undefined) => void;
-	private _pendingState?: string;
 
 	constructor(
 		@ILogService private readonly _logService: ILogService,
@@ -53,34 +52,9 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 			handleUri: (uri: vscode.Uri) => {
 				this._logService.info(`PukuAuthContribution: Received auth callback: ${uri.toString()}`);
 
-				// Parse token and state from query string
+				// Parse token from query string
 				const query = new URLSearchParams(uri.query);
 				const token = query.get('token');
-				const state = query.get('state');
-
-				// Verify state parameter for CSRF protection
-				if (!this._pendingState) {
-					this._logService.error('PukuAuthContribution: Received callback but no pending state - possible CSRF attack');
-					if (this._pendingAuthCallback) {
-						this._pendingAuthCallback(undefined);
-						this._pendingAuthCallback = undefined;
-					}
-					return;
-				}
-
-				if (state !== this._pendingState) {
-					this._logService.error(`PukuAuthContribution: State mismatch - expected ${this._pendingState}, got ${state} - possible CSRF attack`);
-					if (this._pendingAuthCallback) {
-						this._pendingAuthCallback(undefined);
-						this._pendingAuthCallback = undefined;
-					}
-					return;
-				}
-
-				this._logService.info('PukuAuthContribution: State parameter verified successfully');
-
-				// Clear pending state after verification
-				this._pendingState = undefined;
 
 				// Resolve pending auth callback if any
 				if (this._pendingAuthCallback) {
@@ -142,17 +116,10 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 				);
 				this._logService.info(`PukuAuthContribution: Generated callback URI: ${callbackUri.toString()}`);
 
-				// Generate state parameter for CSRF protection
-				const state = this._generateState();
-				this._logService.info(`PukuAuthContribution: Generated state: ${state}`);
-
-				// Store state for callback verification
-				this._pendingState = state;
-
 				// Use Google OAuth endpoint with callback URL
-				const loginUrl = `${PUKU_API_ENDPOINT}/auth/google?callback=${encodeURIComponent(callbackUri.toString())}&state=${state}`;
+				const loginUrl = `${PUKU_API_ENDPOINT}/auth/google?callback=${encodeURIComponent(callbackUri.toString())}`;
 
-				this._logService.info(`PukuAuthContribution: Opening Google OAuth URL: ${loginUrl.replace(state, '***')}`);
+				this._logService.info(`PukuAuthContribution: Opening Google OAuth URL: ${loginUrl}`);
 
 				// Open browser directly - no permission dialog
 				await vscode.env.openExternal(vscode.Uri.parse(loginUrl));
@@ -188,8 +155,6 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 				this._logService.info(`PukuAuthContribution: Successfully signed in as ${this._session.account?.label}`);
 				this._logService.info(`PukuAuthContribution: Session created with token length: ${token.length}`);
 
-				// Create .vscode/settings.json in workspace folders
-				await this._createWorkspaceSettings(token);
 				this._updateStatusBar();
 
 				// Also try to create session in the auth provider for persistence
@@ -388,79 +353,6 @@ export class PukuAuthContribution extends Disposable implements IExtensionContri
 		} catch (error) {
 			this._logService.error('PukuAuthContribution: Failed to fetch user info:', error);
 			throw error;
-		}
-	}
-
-	/**
-	 * Generate a random state parameter for CSRF protection
-	 */
-	private _generateState(): string {
-		const array = new Uint8Array(16);
-		crypto.getRandomValues(array);
-		return Array.from(array, (b) => b.toString(16).padStart(2, '0')).join('');
-	}
-
-	/**
-	 * Create .vscode/settings.json in workspace folders with the token
-	 */
-	private async _createWorkspaceSettings(token: string): Promise<void> {
-		try {
-			const workspaceFolders = vscode.workspace.workspaceFolders;
-			if (!workspaceFolders || workspaceFolders.length === 0) {
-				this._logService.info('PukuAuthContribution: No workspace folders open, skipping settings.json creation');
-				return;
-			}
-
-			this._logService.info(`PukuAuthContribution: Creating .vscode/settings.json in ${workspaceFolders.length} workspace(s)`);
-
-			for (const folder of workspaceFolders) {
-				const vscodeUri = vscode.Uri.joinPath(folder.uri, '.vscode', 'settings.json');
-
-				// Check if settings.json already exists
-				try {
-					await vscode.workspace.fs.stat(vscodeUri);
-					this._logService.info(`PukuAuthContribution: Settings file already exists at ${vscodeUri.toString()}, updating...`);
-
-					// Read existing settings
-					const existingData = await vscode.workspace.fs.readFile(vscodeUri);
-					const existingSettings = JSON.parse(Buffer.from(existingData).toString('utf-8'));
-
-					// Merge with new settings
-					const updatedSettings = {
-						...existingSettings,
-						'files.autoSave': 'afterDelay',
-						'puku.embeddings.token': token
-					};
-
-					// Write updated settings
-					const updatedContent = JSON.stringify(updatedSettings, null, '\t');
-					await vscode.workspace.fs.writeFile(vscodeUri, Buffer.from(updatedContent, 'utf-8'));
-					this._logService.info(`PukuAuthContribution: Updated settings file at ${vscodeUri.toString()}`);
-				} catch (error) {
-					// File doesn't exist, create it
-					this._logService.info(`PukuAuthContribution: Creating new settings file at ${vscodeUri.toString()}`);
-
-					// Create .vscode directory first
-					const vscodeDirUri = vscode.Uri.joinPath(folder.uri, '.vscode');
-					try {
-						await vscode.workspace.fs.createDirectory(vscodeDirUri);
-					} catch (e) {
-						// Directory might already exist, ignore error
-					}
-
-					// Create settings.json
-					const settings = {
-						'files.autoSave': 'afterDelay',
-						'puku.embeddings.token': token
-					};
-					const content = JSON.stringify(settings, null, '\t');
-					await vscode.workspace.fs.writeFile(vscodeUri, Buffer.from(content, 'utf-8'));
-					this._logService.info(`PukuAuthContribution: Created settings file at ${vscodeUri.toString()}`);
-				}
-			}
-		} catch (error) {
-			this._logService.error('PukuAuthContribution: Failed to create workspace settings:', error);
-			// Don't throw - this is non-critical
 		}
 	}
 }
