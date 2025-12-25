@@ -26,7 +26,7 @@ on:
 jobs:
   build-windows-x64:
     name: Build Windows (x64)
-    runs-on: self-hosted  # 🚀 Namespace.so AMD64 16 vCPU, 32GB RAM
+    runs-on: ubuntu:latest  # 🚀 Namespace.so AMD64 16 vCPU, 32GB RAM
     if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.architecture == 'x64' }}
     env:
       VSCODE_ARCH: x64
