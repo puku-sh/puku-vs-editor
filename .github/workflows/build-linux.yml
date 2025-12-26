@@ -658,5 +658,59 @@ jobs:
         run: |
           echo "📋 Security scan completed"
           echo "⚠️ Review any HIGH/CRITICAL findings above"
+  upload-to-cdn:
+    name: Upload to Public CDN
+    needs: [build-linux-x64]
+    runs-on: self-hosted
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: puku-editor-linux-x64-${{ github.run_id }}
+          path: ./artifacts/
+
+      - name: Download ARM64 artifact (if exists)
+        uses: actions/download-artifact@v4
+        with:
+          name: puku-editor-linux-arm64-${{ github.run_id }}
+          path: ./artifacts/
+        continue-on-error: true
+
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          sha256sum *.deb > SHA256SUMS.txt
+
+      # =====================================================================
+      # OPTION 1: Cloudflare R2 (Recommended - cheapest, fastest)
+      # =====================================================================
+      - name: Upload to Cloudflare R2
+        if: ${{ vars.USE_R2 == 'true' }}
+        run: |
+          VERSION="${{ needs.build-linux-x64.outputs.version }}"
+          
+          # Install rclone
+          curl https://rclone.org/install.sh | sudo bash
+          
+          # Configure rclone for R2
+          mkdir -p ~/.config/rclone
+          cat > ~/.config/rclone/rclone.conf << EOF
+          [r2]
+          type = s3
+          provider = Cloudflare
+          access_key_id = ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret_access_key = ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          endpoint = https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          acl = public-read
+          EOF
+          
+          # Upload files
+          rclone copy artifacts/ r2:${{ vars.R2_BUCKET }}/releases/${VERSION}/ --progress
+          rclone copy artifacts/ r2:${{ vars.R2_BUCKET }}/releases/latest/ --progress
+          
+          echo "✅ Uploaded to R2"
+          echo "📦 Download URL: https://${{ vars.CDN_DOMAIN }}/releases/${VERSION}/puku-editor_${VERSION}_amd64.deb"
+          echo "📦 Latest URL: https://${{ vars.CDN_DOMAIN }}/releases/latest/puku-editor_${VERSION}_amd64.deb"
 
   
