@@ -471,7 +471,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 		// Get semantic search context
 		let semanticFiles: Array<{ filepath: string; content: string }> = [];
 
-		if (this._indexingService.isAvailable()) {
+		if (await this._indexingService.isAvailable()) {
 			const searchQuery = commentIntent || document.lineAt(position.line).text.trim();
 
 			if (searchQuery.length > 3) {
@@ -700,7 +700,7 @@ export class PukuFimProvider extends Disposable implements IPukuNextEditProvider
 
 			// Get FRESH semantic context
 			let semanticFiles: Array<{ filepath: string; content: string }> = [];
-			if (this._indexingService.isAvailable()) {
+			if (await this._indexingService.isAvailable()) {
 				try {
 					const currentLine = currentDoc.lineAt(currentPos.line).text.trim();
 					if (currentLine.length > 3) {

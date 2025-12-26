@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as l10n from '@vscode/l10n';
-import { PromptElement, PromptReference, TokenLimit } from '@vscode/prompt-tsx';
+import { BasePromptElementProps, PromptElement, PromptReference, TokenLimit } from '@vscode/prompt-tsx';
 import type * as vscode from 'vscode';
 import { ConfigKey, IConfigurationService } from '../../../platform/configuration/common/configurationService';
 import { IAuthenticationService } from '../../../platform/authentication/common/authentication';
@@ -26,6 +26,8 @@ import { WorkspaceContext, WorkspaceContextProps } from '../../prompts/node/pane
 import { ToolName } from '../common/toolNames';
 import { ToolRegistry } from '../common/toolsRegistry';
 import { checkCancellation } from './toolUtils';
+import { IPukuIndexingService } from '../../pukuIndexing/node/pukuIndexingService';
+import { ISemanticResultsService } from '../../../platform/endpoint/common/semanticResultsService';
 
 export interface ICodebaseToolParams {
 	query: string;
@@ -42,6 +44,8 @@ export class CodebaseTool implements vscode.LanguageModelTool<ICodebaseToolParam
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IAuthenticationService private readonly authenticationService: IAuthenticationService,
+		@IPukuIndexingService private readonly indexingService: IPukuIndexingService,
+		@ISemanticResultsService private readonly semanticResultsService: ISemanticResultsService,
 	) { }
 
 	async invoke(options: vscode.LanguageModelToolInvocationOptions<ICodebaseToolParams>, token: CancellationToken) {
@@ -57,6 +61,64 @@ export class CodebaseTool implements vscode.LanguageModelTool<ICodebaseToolParam
 
 		checkCancellation(token);
 
+		// Use Puku semantic search if available
+		if (await this.indexingService.isAvailable()) {
+			try {
+				// Search for 20 results to send to worker for reranking
+				const searchResults = await this.indexingService.search(options.input.query, 20);
+
+				if (searchResults.length > 0) {
+					// Store results for endpoint to consume and send to worker
+					this.semanticResultsService.setResults(searchResults.map(r => ({
+						content: r.content,
+						file: r.file,
+						score: r.score,
+						line_start: r.line_start,
+						line_end: r.line_end
+					})));
+				}
+
+				// Format results for LLM (top 10 results as preview)
+				const topResults = searchResults.slice(0, 10);
+				let content = `Found ${searchResults.length} relevant code snippets:\n\n`;
+
+				for (const result of topResults) {
+					content += `**${result.file}:${result.line_start}-${result.line_end}** (relevance: ${(result.score * 100).toFixed(0)}%)\n`;
+					content += '```\n';
+					content += result.content;
+					content += '\n```\n\n';
+				}
+
+				if (searchResults.length > 10) {
+					content += `\n_Note: Showing top 10 of ${searchResults.length} results. All results will be considered for the response._\n`;
+				}
+
+				const promptTsxResult = await renderPromptElementJSON(
+					this.instantiationService,
+					SemanticSearchResult,
+					{ content },
+					options.tokenizationOptions,
+					token,
+				);
+
+				const result = new ExtendedLanguageModelToolResult([
+					new LanguageModelPromptTsxPart(promptTsxResult)
+				]);
+
+				result.toolResultMessage = searchResults.length === 0 ?
+					new MarkdownString(l10n.t`Searched codebase for "${options.input.query}", no results`) :
+					searchResults.length === 1 ?
+						new MarkdownString(l10n.t`Searched codebase for "${options.input.query}", 1 result`) :
+						new MarkdownString(l10n.t`Searched codebase for "${options.input.query}", ${searchResults.length} results`);
+
+				return result;
+			} catch (error) {
+				console.error(`[CodebaseTool] Puku semantic search failed:`, error);
+				// Fall back to original WorkspaceContext search
+			}
+		}
+
+		// Fallback to original WorkspaceContext search (for non-Puku installations)
 		let references: PromptReference[] = [];
 		const id = generateUuid();
 		const promptTsxResult = await renderPromptElementJSON(this.instantiationService, WorkspaceContextWrapper, {
@@ -168,5 +230,15 @@ class WorkspaceContextWrapper extends PromptElement<WorkspaceContextProps> {
 		return <TokenLimit max={28_000}>
 			<WorkspaceContext {...this.props} />
 		</TokenLimit>;
+	}
+}
+
+interface SemanticSearchResultProps extends BasePromptElementProps {
+	content: string;
+}
+
+class SemanticSearchResult extends PromptElement<SemanticSearchResultProps> {
+	render() {
+		return <>{this.props.content}</>;
 	}
 }

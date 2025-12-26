@@ -13,6 +13,7 @@ import { IPukuConfigService } from '../common/pukuConfig';
 import { PukuEmbeddingsCache, PukuChunkWithEmbedding } from './pukuEmbeddingsCache';
 import { pukuASTChunker, ChunkType } from './pukuASTChunker';
 import { PukuSummaryGenerator } from './pukuSummaryGenerator';
+import { PukuExclusionService } from './pukuExclusionService';
 
 /**
  * Compute cosine similarity between two vectors
@@ -95,9 +96,9 @@ export interface IPukuIndexingService {
 	readonly progress: PukuIndexingProgress;
 
 	/**
-	 * Check if indexing is available
+	 * Check if indexing is available (async - checks for auth token)
 	 */
-	isAvailable(): boolean;
+	isAvailable(): Promise<boolean>;
 
 	/**
 	 * Initialize the indexing service
@@ -166,6 +167,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 	private _cache: PukuEmbeddingsCache | undefined;
 	private _summaryGenerator: PukuSummaryGenerator | undefined;
+	private _exclusionService: PukuExclusionService | undefined;
 	private _indexedFiles: Map<string, PukuIndexedFile> = new Map();
 
 	private _isIndexing = false;
@@ -226,19 +228,21 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 	/**
 	 * Check if a path should be excluded from indexing
+	 * Delegates to PukuExclusionService for centralized exclusion logic
 	 */
-	private _isExcludedPath(path: string): boolean {
-		return path.includes('node_modules') || path.includes('.git') || path.includes('dist') ||
-			path.includes('build') || path.includes('.next') || path.includes('.puku') ||
-			path.includes('out') || path.includes('.vscode-test');
+	private async _isExcludedPath(path: string): Promise<boolean> {
+		if (!this._exclusionService) {
+			return false;
+		}
+		return await this._exclusionService.shouldExclude(path);
 	}
 
 	/**
 	 * Queue a file for re-indexing with debouncing
 	 */
-	private _queueFileForReindex(uri: vscode.Uri): void {
+	private async _queueFileForReindex(uri: vscode.Uri): Promise<void> {
 		// Skip if not available or currently doing full indexing
-		if (!this.isAvailable()) {
+		if (!this._isAuthReady()) {
 			return; // Silent skip - too noisy otherwise
 		}
 		if (this._isIndexing) {
@@ -246,7 +250,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 		}
 
 		// Skip files in excluded directories
-		if (this._isExcludedPath(uri.fsPath)) {
+		if (await this._isExcludedPath(uri.fsPath)) {
 			return; // Silent skip for excluded paths
 		}
 
@@ -266,7 +270,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 	 * Process the queue of files pending re-indexing
 	 */
 	private async _processReindexQueue(): Promise<void> {
-		if (this._pendingReindex.size === 0 || !this._cache || !this.isAvailable()) {
+		if (this._pendingReindex.size === 0 || !this._cache || !this._isAuthReady()) {
 			return;
 		}
 
@@ -306,7 +310,16 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 		return this._progress;
 	}
 
-	isAvailable(): boolean {
+	async isAvailable(): Promise<boolean> {
+		// Use same auth pattern as FIM - actively try to get token
+		const token = await this._authService.getToken();
+		return !!token;
+	}
+
+	/**
+	 * Internal sync check for auth status (for use in event handlers/private methods)
+	 */
+	private _isAuthReady(): boolean {
 		return this._authService.isReady();
 	}
 
@@ -323,6 +336,17 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 				return;
 			}
 
+			// Initialize exclusion service (handles .gitignore, user settings, etc.)
+			const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+			if (workspaceRoot) {
+				this._exclusionService = new PukuExclusionService(this._configService);
+				await this._exclusionService.initialize(workspaceRoot);
+
+				// Log exclusion stats
+				const exclusionStats = this._exclusionService.getStats();
+				console.log('[PukuIndexing] Exclusion service initialized:', exclusionStats);
+			}
+
 			// Initialize SQLite cache
 			const storageUri = vscode.workspace.workspaceFolders?.[0]
 				? vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, '.puku')
@@ -330,6 +354,15 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 			this._cache = new PukuEmbeddingsCache(storageUri);
 			await this._cache.initialize();
+
+			// Clean up excluded files from old indexing runs
+			const excludedPatterns = ['node_modules', 'dist', 'build', '.next', '.git'];
+			for (const pattern of excludedPatterns) {
+				const removed = this._cache.removeFilesMatching(pattern);
+				if (removed > 0) {
+					console.log(`[PukuIndexing] Cleaned up ${removed} files matching '${pattern}'`);
+				}
+			}
 
 			// Initialize summary generator with database access for job tracking
 			this._summaryGenerator = new PukuSummaryGenerator(this._authService, this._configService, this._cache.db);
@@ -383,7 +416,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 			return;
 		}
 
-		if (!this.isAvailable()) {
+		if (!await this.isAvailable()) {
 			return;
 		}
 
@@ -398,6 +431,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 		try {
 			// Get workspace files
 			const files = await this._getWorkspaceFiles();
+			console.log(`[PukuIndexing] Found ${files.length} files to potentially index`);
 
 			this._updateProgress({
 				status: PukuIndexingStatus.Indexing,
@@ -407,6 +441,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 			let newFilesIndexed = 0;
 			let cachedFiles = 0;
+			let skippedFiles = 0;
 
 			for (let i = 0; i < files.length; i++) {
 				if (this._cancelIndexing) {
@@ -421,6 +456,8 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 						cachedFiles++;
 					} else if (wasIndexed === 'indexed') {
 						newFilesIndexed++;
+					} else if (wasIndexed === 'skipped') {
+						skippedFiles++;
 					}
 
 					this._updateProgress({
@@ -439,7 +476,14 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 				this._onDidCompleteIndexing.fire();
 
 				const stats = this._cache.getStats();
-// 				console.log(`[PukuIndexing] Indexing complete. ${stats.fileCount} files (${newFilesIndexed} new, ${cachedFiles} cached), ${stats.chunkCount} chunks`);
+				console.log(`[PukuIndexing] ✅ Indexing complete:`, {
+					totalFound: files.length,
+					newlyIndexed: newFilesIndexed,
+					cached: cachedFiles,
+					skipped: skippedFiles,
+					finalStats: `${stats.fileCount} files, ${stats.chunkCount} chunks`,
+					indexedPercentage: `${Math.round((cachedFiles + newFilesIndexed) / files.length * 100)}%`
+				});
 			}
 		} catch (error) {
 			console.error('[PukuIndexing] Indexing failed:', error);
@@ -530,6 +574,11 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 	private async _indexFile(uri: vscode.Uri): Promise<'cached' | 'indexed' | 'skipped'> {
 		if (!this._cache) {
+			return 'skipped';
+		}
+
+		// Skip excluded paths (node_modules, dist, etc.)
+		if (await this._isExcludedPath(uri.fsPath)) {
 			return 'skipped';
 		}
 
@@ -755,6 +804,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 			clearTimeout(this._reindexDebounceTimer);
 		}
 		this._cache?.dispose();
+		this._exclusionService?.dispose();
 		super.dispose();
 	}
 }

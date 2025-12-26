@@ -18,6 +18,8 @@ import { IDomainService } from '../common/domainService';
 import { IChatModelInformation } from '../common/endpointProvider';
 import { ChatEndpoint } from './chatEndpoint';
 import { IPukuAuthService } from '../../../extension/pukuIndexing/common/pukuAuth';
+import { ISemanticResultsService } from '../common/semanticResultsService';
+import { ICreateEndpointBodyOptions, IEndpointBody } from '../../networking/common/networking';
 
 export class PukuChatEndpoint extends ChatEndpoint {
 
@@ -36,7 +38,8 @@ export class PukuChatEndpoint extends ChatEndpoint {
 		@IConfigurationService configurationService: IConfigurationService,
 		@IExperimentationService experimentService: IExperimentationService,
 		@ILogService logService: ILogService,
-		@IPukuAuthService private readonly _pukuAuthService: IPukuAuthService
+		@IPukuAuthService private readonly _pukuAuthService: IPukuAuthService,
+		@ISemanticResultsService private readonly _semanticResultsService: ISemanticResultsService
 	) {
 		const modelId = configurationService.getConfig(ConfigKey.PukuAIModel) || 'puku-ai';
 		console.log(`[PukuChatEndpoint] Using model ID: ${modelId}`);
@@ -112,17 +115,53 @@ export class PukuChatEndpoint extends ChatEndpoint {
 
 	override get urlOrRequestMetadata() {
 		const baseEndpoint = this._configurationService.getConfig(ConfigKey.PukuAIEndpoint);
-		// Ensure the full chat completions URL is returned
-		// Handle both '/v1' and '/v1/chat/completions' as base endpoints
+
+		// Check if we have semantic results to send
+		const hasSemanticResults = this._semanticResultsService.hasResults();
+
+		// Use v2 API only if we have semantic results for reranking
 		let url;
-		if (baseEndpoint.endsWith('/v1/chat/completions')) {
-			url = baseEndpoint;
-		} else if (baseEndpoint.endsWith('/v1')) {
-			url = `${baseEndpoint}/chat/completions`;
+		if (hasSemanticResults) {
+			// Use v2 for reranking support
+			if (baseEndpoint.endsWith('/v2/chat/completions')) {
+				url = baseEndpoint;
+			} else if (baseEndpoint.endsWith('/v2')) {
+				url = `${baseEndpoint}/chat/completions`;
+			} else if (baseEndpoint.endsWith('/v1/chat/completions')) {
+				url = baseEndpoint.replace('/v1/', '/v2/');
+			} else if (baseEndpoint.endsWith('/v1')) {
+				url = baseEndpoint.replace('/v1', '/v2') + '/chat/completions';
+			} else {
+				url = `${baseEndpoint}/v2/chat/completions`;
+			}
+			console.log(`[PukuChatEndpoint] Using v2 API for reranking: ${url}`);
 		} else {
-			url = `${baseEndpoint}/v1/chat/completions`;
+			// Use v1 for standard requests
+			if (baseEndpoint.endsWith('/v1/chat/completions')) {
+				url = baseEndpoint;
+			} else if (baseEndpoint.endsWith('/v1')) {
+				url = `${baseEndpoint}/chat/completions`;
+			} else {
+				url = `${baseEndpoint}/v1/chat/completions`;
+			}
+			console.log(`[PukuChatEndpoint] Using v1 API: ${url}`);
 		}
-		console.log(`[PukuChatEndpoint] Using URL: ${url}`);
+
 		return url;
+	}
+
+	override createRequestBody(options: ICreateEndpointBodyOptions): IEndpointBody {
+		// Call parent to create base request body
+		const body = super.createRequestBody(options);
+
+		// Add semantic search results if available
+		const semanticResults = this._semanticResultsService.consumeResults();
+		if (semanticResults && semanticResults.length > 0) {
+			console.log(`[PukuChatEndpoint] Adding ${semanticResults.length} semantic results to request`);
+			(body as any).semantic_results = semanticResults;
+			(body as any).rerank = true;
+		}
+
+		return body;
 	}
 }

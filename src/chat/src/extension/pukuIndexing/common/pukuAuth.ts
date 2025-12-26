@@ -78,6 +78,12 @@ export interface IPukuAuthService {
 	getUser(): Promise<PukuUser | undefined>;
 
 	/**
+	 * Quick check if user is signed in (sync, fast)
+	 * Use this BEFORE calling getToken() to avoid unnecessary async work
+	 */
+	isSignedIn(): boolean;
+
+	/**
 	 * Check if authenticated and ready for indexing
 	 */
 	isReady(): boolean;

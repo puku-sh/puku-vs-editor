@@ -51,6 +51,7 @@ import { IToolGroupingService } from '../../tools/common/virtualTools/virtualToo
 import { applyPatch5Description } from '../../tools/node/applyPatchTool';
 import { addCacheBreakpoints } from './cacheBreakpoints';
 import { EditCodeIntent, EditCodeIntentInvocation, EditCodeIntentInvocationOptions, mergeMetadata, toNewChatReferences } from './editCodeIntent';
+import { IPukuConfigService } from '../../pukuIndexing/common/pukuConfig';
 
 export const getAgentTools = (instaService: IInstantiationService, request: vscode.ChatRequest) =>
 	instaService.invokeFunction(async accessor => {
@@ -220,6 +221,7 @@ export class AgentIntentInvocation extends EditCodeIntentInvocation implements I
 		@ITelemetryService telemetryService: ITelemetryService,
 		@INotebookService notebookService: INotebookService,
 		@ILogService private readonly logService: ILogService,
+		@IPukuConfigService private readonly pukuConfigService: IPukuConfigService,
 	) {
 		super(intent, location, endpoint, request, intentOptions, instantiationService, codeMapperService, envService, promptPathRepresentationService, endpointProvider, workspaceService, toolsService, configurationService, editLogService, commandService, telemetryService, notebookService);
 	}
@@ -246,14 +248,17 @@ export class AgentIntentInvocation extends EditCodeIntentInvocation implements I
 		const tools = await this.getAvailableTools();
 		const toolTokens = tools?.length ? await this.endpoint.acquireTokenizer().countToolTokens(tools) : 0;
 
-		const summarizeThresholdOverride = this.configurationService.getConfig<number | undefined>(ConfigKey.AdvancedExperimental.SummarizeAgentConversationHistoryThreshold);
+		// Get summarization settings from Puku backend config (with fallback to local settings)
+		const pukuConfig = this.pukuConfigService.getConfig();
+		const summarizeThresholdOverride = this.configurationService.getConfig<number | undefined>(ConfigKey.AdvancedExperimental.SummarizeAgentConversationHistoryThreshold)
+			?? pukuConfig.chat?.summarizeAgentConversationHistoryThreshold;
 		if (typeof summarizeThresholdOverride === 'number' && summarizeThresholdOverride < 100) {
 			throw new Error(`Setting puku.${ConfigKey.AdvancedExperimental.SummarizeAgentConversationHistoryThreshold.id} is too low`);
 		}
 
 		// Reserve extra space when tools are involved due to token counting issues
 		const baseBudget = Math.min(
-			this.configurationService.getConfig<number | undefined>(ConfigKey.AdvancedExperimental.SummarizeAgentConversationHistoryThreshold) ?? this.endpoint.modelMaxPromptTokens,
+			summarizeThresholdOverride ?? this.endpoint.modelMaxPromptTokens,
 			this.endpoint.modelMaxPromptTokens
 		);
 		const useTruncation = this.configurationService.getConfig(ConfigKey.AdvancedExperimental.UseResponsesApiTruncation);
@@ -261,8 +266,10 @@ export class AgentIntentInvocation extends EditCodeIntentInvocation implements I
 			Number.MAX_SAFE_INTEGER :
 			Math.floor((baseBudget - toolTokens) * 0.85);
 		const endpoint = toolTokens > 0 ? this.endpoint.cloneWithTokenOverride(safeBudget) : this.endpoint;
-		const summarizationEnabled = this.configurationService.getConfig(ConfigKey.SummarizeAgentConversationHistory) && this.prompt === AgentPrompt;
-		this.logService.debug(`AgentIntent: rendering with budget=${safeBudget} (baseBudget: ${baseBudget}, toolTokens: ${toolTokens}), summarizationEnabled=${summarizationEnabled}`);
+
+		// Use Puku backend config for summarization enabled flag (with fallback to local setting)
+		const summarizationEnabled = (this.configurationService.getConfig(ConfigKey.SummarizeAgentConversationHistory) ?? pukuConfig.chat?.summarizeAgentConversationHistoryEnabled) && this.prompt === AgentPrompt;
+		this.logService.debug(`AgentIntent: rendering with budget=${safeBudget} (baseBudget: ${baseBudget}, toolTokens: ${toolTokens}), summarizationEnabled=${summarizationEnabled}, threshold=${summarizeThresholdOverride}`);
 		let result: RenderPromptResult;
 		const props: AgentPromptProps = {
 			endpoint,

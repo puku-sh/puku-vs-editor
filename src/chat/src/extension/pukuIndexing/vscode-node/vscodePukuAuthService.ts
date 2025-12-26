@@ -87,6 +87,21 @@ export class VsCodePukuAuthService extends Disposable implements IPukuAuthServic
 		return this._user;
 	}
 
+	/**
+	 * Quick check if we're signed in (sync, non-blocking)
+	 * Use this BEFORE calling getToken() to avoid unnecessary work
+	 */
+	isSignedIn(): boolean {
+		// Check if we have a cached token OR a token in settings
+		if (this._token) {
+			return true;
+		}
+		// Quick check for token in settings (sync, fast)
+		const config = vscode.workspace.getConfiguration('puku.embeddings');
+		const settingsToken = config.get<string>('token');
+		return !!settingsToken;
+	}
+
 	isReady(): boolean {
 		return this._status === PukuAuthStatus.Authenticated && !!this._token?.indexingEnabled;
 	}

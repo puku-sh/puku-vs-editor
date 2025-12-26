@@ -70,7 +70,7 @@ export class InlineChatGenerateCodePrompt extends PromptElement<InlineChatGenera
 		const data = await SummarizedDocumentData.create(this._parserService, document, context.fileIndentInfo, context.wholeRange, SelectionSplitKind.OriginalEnd);
 
 		// Puku semantic search enhancement
-		if (this._indexingService.isAvailable()) {
+		if (await this._indexingService.isAvailable()) {
 			try {
 				const selectedText = document.getText(context.selection);
 				const searchQuery = `${query}\n\n${selectedText}`;

@@ -93,8 +93,8 @@ export class InlineFix3Prompt extends PromptElement<InlineFixProps> {
 		const diagnostics = findDiagnosticForSelectionAndPrompt(this.languageDiagnosticsService, document.uri, selection, query);
 
 		// Puku semantic search enhancement
-		if (this.indexingService.isAvailable()) {
-			try {
+		if (await this.indexingService.isAvailable()) {
+			try{
 				const searchQuery = `${query}\n\n${selectedLinesContent}`;
 				const results = await this.indexingService.search(searchQuery, 3, language.languageId);
 				this.semanticResults = results.map(r => ({

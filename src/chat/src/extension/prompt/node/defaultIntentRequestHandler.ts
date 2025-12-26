@@ -384,7 +384,6 @@ export class DefaultIntentRequestHandler {
 			};
 		}
 
-		console.log(`[processSuccessfulFetchResult] Writing response to stream, length: ${appliedText.length}`);
 		this.stream.markdown(appliedText);
 		this.turn.setResponse(TurnStatus.Success, { type: 'model', message: appliedText }, baseModelTelemetry.properties.messageId, chatResult);
 		baseModelTelemetry.markAsDisplayed();

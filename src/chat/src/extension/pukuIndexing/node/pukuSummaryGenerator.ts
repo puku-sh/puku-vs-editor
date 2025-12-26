@@ -48,6 +48,19 @@ export class PukuSummaryGenerator {
 		fileId?: number,
 		progressCallback?: (current: number, total: number) => void
 	): Promise<string[]> {
+		// Skip LLM summarization for minified files (1 chunk with no structure)
+		if (chunks.length === 1 && this._isMinified(chunks[0].text)) {
+			console.log(`[SummaryGenerator] Skipping minified file (1 chunk, minified)`);
+			return [this._fallbackSummary(chunks[0])];
+		}
+
+		console.log(`[SummaryGenerator] generateSummariesBatch called:`, {
+			chunksCount: chunks.length,
+			languageId,
+			fileId,
+			hasJobManager: !!this._jobManager
+		});
+
 		// Use job-based parallel processing if fileId provided and job manager available
 		if (fileId !== undefined && this._jobManager) {
 			return this._generateSummariesWithJobs(chunks, languageId, fileId, progressCallback);
@@ -140,18 +153,51 @@ export class PukuSummaryGenerator {
 			// Update status to running
 			this._jobManager.updateJobStatus(jobId, 'running');
 
+			console.log(`[SummaryGenerator] Processing job ${jobId}:`, {
+				totalChunks: allChunks.length,
+				chunkStartIndex: job.chunkStartIndex,
+				chunkEndIndex: job.chunkEndIndex,
+				expectedJobChunks: job.chunkEndIndex - job.chunkStartIndex
+			});
+
 			const jobChunks = allChunks.slice(job.chunkStartIndex, job.chunkEndIndex);
+			console.log(`[SummaryGenerator] Job ${jobId} sliced chunks:`, {
+				jobChunksLength: jobChunks.length,
+				languageId
+			});
+
 			const summaries: string[] = [];
 
 			const config = this._configService.getConfig();
+			const batchSize = config.performance.batchSize || 50; // Default to 50 if not set
+
+			console.log(`[SummaryGenerator] Job ${jobId} config check:`, {
+				configBatchSize: config.performance.batchSize,
+				actualBatchSize: batchSize,
+				jobChunksLength: jobChunks.length
+			});
+
 			// Process job chunks in batches (configured by server)
-			for (let i = 0; i < jobChunks.length; i += config.performance.batchSize) {
-				const batch = jobChunks.slice(i, i + config.performance.batchSize);
-				const batchSummaries = await this._generateBatch(batch, languageId);
-				summaries.push(...batchSummaries);
+			for (let i = 0; i < jobChunks.length; i += batchSize) {
+				const batch = jobChunks.slice(i, i + batchSize);
+				console.log(`[SummaryGenerator] Job ${jobId} batch ${Math.floor(i / batchSize) + 1}:`, {
+					batchSize: batch.length,
+					batchIndex: i,
+					maxBatchSize: batchSize
+				});
+
+				try {
+					const batchSummaries = await this._generateBatch(batch, languageId);
+					summaries.push(...batchSummaries);
+				} catch (batchError) {
+					// If batch fails, use fallback summaries for this batch
+					console.warn(`[SummaryGenerator] Job ${jobId} batch ${i / config.performance.batchSize + 1} failed, using fallbacks:`, batchError);
+					const fallbackSummaries = batch.map(c => this._fallbackSummary(c));
+					summaries.push(...fallbackSummaries);
+				}
 			}
 
-			// Update job as completed
+			// Update job as completed (even if some batches used fallbacks)
 			this._jobManager.updateJobStatus(jobId, 'completed', summaries);
 		} catch (error) {
 			console.error(`[SummaryGenerator] Job ${jobId} failed:`, error);
@@ -170,9 +216,11 @@ export class PukuSummaryGenerator {
 		const summaries: string[] = [];
 
 		const config = this._configService.getConfig();
+		const batchSize = config.performance.batchSize || 50; // Default to 50 if not set
+
 		// Process chunks in batches (configured by server)
-		for (let i = 0; i < chunks.length; i += config.performance.batchSize) {
-			const batch = chunks.slice(i, i + config.performance.batchSize);
+		for (let i = 0; i < chunks.length; i += batchSize) {
+			const batch = chunks.slice(i, i + batchSize);
 
 			// Report progress
 			if (progressCallback) {
@@ -183,7 +231,7 @@ export class PukuSummaryGenerator {
 				const batchSummaries = await this._generateBatch(batch, languageId);
 				summaries.push(...batchSummaries);
 			} catch (error) {
-				console.error(`[SummaryGenerator] Batch ${i / PukuSummaryGenerator.BATCH_SIZE + 1} failed:`, error);
+				console.error(`[SummaryGenerator] Batch failed:`, error);
 
 				// Fallback to basic summaries for failed batch
 				const fallbackSummaries = batch.map(c => this._fallbackSummary(c));
@@ -203,32 +251,50 @@ export class PukuSummaryGenerator {
 	): Promise<string[]> {
 		const token = await this._authService.getToken();
 		if (!token) {
-			throw new Error('No auth token available for summary generation');
+			console.error('[SummaryGenerator] ❌ No auth token available');
+			throw new Error('Authentication required for summary generation. Please sign in.');
 		}
 
 		const config = this._configService.getConfig();
 		const url = config.endpoints.summarize;
 
-		// Call dedicated summary endpoint (uses server-side API key)
-		const response = await fetch(url, {
-			method: 'POST',
-			headers: {
-				'Authorization': `Bearer ${token.token}`,
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
+		try {
+			const requestBody = {
 				chunks: chunks.map(c => ({ text: c.text })),
 				languageId
-			})
-		});
+			};
 
-		if (!response.ok) {
-			const errorText = await response.text();
-			throw new Error(`Summary API failed: ${response.status} ${errorText}`);
+			console.log('[SummaryGenerator] 📤 Sending batch:', {
+				chunksCount: chunks.length,
+				languageId,
+				firstChunkPreview: chunks[0]?.text.substring(0, 50) || 'N/A'
+			});
+
+			// Call dedicated summary endpoint (uses server-side API key)
+			const response = await fetch(url, {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${token.token}`,
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(requestBody)
+			});
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error('[SummaryGenerator] ❌ API error:', {
+					status: response.status,
+					error: errorText
+				});
+				throw new Error(`Summary API failed: ${response.status} ${errorText}`);
+			}
+
+			const data = await response.json() as { summaries: string[] };
+			return data.summaries;
+		} catch (error) {
+			console.error('[SummaryGenerator] ❌ Fetch failed:', error instanceof Error ? error.message : String(error));
+			throw error;
 		}
-
-		const data = await response.json() as { summaries: string[] };
-		return data.summaries;
 	}
 
 	/**
@@ -297,6 +363,23 @@ Remember: Return EXACTLY ${chunks.length} summaries, one per line, in order.`;
 		}
 
 		return summaries;
+	}
+
+	/**
+	 * Detect if code is minified (long lines, no whitespace)
+	 */
+	private _isMinified(text: string): boolean {
+		const lines = text.split('\n');
+		if (lines.length === 0) return false;
+
+		// Check first line characteristics
+		const firstLine = lines[0];
+		const avgLineLength = text.length / lines.length;
+
+		// Minified if:
+		// - Very long average line length (>500 chars)
+		// - OR first line is extremely long (>1000 chars) with few lines
+		return avgLineLength > 500 || (firstLine.length > 1000 && lines.length < 10);
 	}
 
 	/**

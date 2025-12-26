@@ -69,7 +69,7 @@ export class InlineChatGenerateMarkdownPrompt extends PromptElement<InlineChatGe
 		);
 
 		// Puku semantic search enhancement
-		if (this._indexingService.isAvailable()) {
+		if (await this._indexingService.isAvailable()) {
 			try {
 				const selectedText = document.getText(context.selection);
 				const searchQuery = `${query}\n\n${selectedText}`;

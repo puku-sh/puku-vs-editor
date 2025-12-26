@@ -307,8 +307,21 @@ export class PukuEmbeddingsCache {
 			return false;
 		}
 
-		const result = this._db.prepare('SELECT contentHash FROM Files WHERE uri = ?').get(uri);
-		return result?.contentHash === contentHash;
+		const fileResult = this._db.prepare('SELECT id, contentHash FROM Files WHERE uri = ?').get(uri) as { id: number; contentHash: string } | undefined;
+		if (!fileResult || fileResult.contentHash !== contentHash) {
+			return false;
+		}
+
+		// Also verify that chunks have summaries (files without summaries are considered incomplete)
+		const chunkCount = this._db.prepare('SELECT COUNT(*) as count FROM Chunks WHERE fileId = ?').get(fileResult.id) as { count: number };
+		if (chunkCount.count === 0) {
+			return false; // No chunks means not indexed
+		}
+
+		const summarizedCount = this._db.prepare("SELECT COUNT(*) as count FROM Chunks WHERE fileId = ? AND summary IS NOT NULL AND summary != ''").get(fileResult.id) as { count: number };
+
+		// File is only fully indexed if ALL chunks have summaries
+		return summarizedCount.count === chunkCount.count;
 	}
 
 	/**
@@ -342,6 +355,22 @@ export class PukuEmbeddingsCache {
 			chunkType: row.chunkType as ChunkType | undefined,
 			symbolName: row.symbolName as string | undefined,
 		}));
+	}
+
+	/**
+	 * Remove files matching a pattern (e.g., node_modules, dist)
+	 */
+	removeFilesMatching(pattern: string): number {
+		if (!this._db) {
+			return 0;
+		}
+
+		const result = this._db.prepare(`
+			DELETE FROM Files
+			WHERE uri LIKE ?
+		`).run(`%${pattern}%`);
+
+		return result.changes;
 	}
 
 	/**

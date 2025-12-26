@@ -335,7 +335,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 
 					// Get FRESH semantic context
 					let semanticFiles: Array<{ filepath: string; content: string }> = [];
-					if (this._indexingService.isAvailable()) {
+					if (await this._indexingService.isAvailable()) {
 						try {
 							const currentLine = currentDoc.lineAt(currentPos.line).text.trim();
 							if (currentLine.length > 3) {
@@ -488,7 +488,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 		// 2. Get semantic search context
 		let semanticFiles: Array<{ filepath: string; content: string }> = [];
 
-		if (this._indexingService.isAvailable()) {
+		if (await this._indexingService.isAvailable()) {
 			// For comment-based completions, use comment text for semantic search
 			// For code completions, use current line
 			const searchQuery = commentIntent || document.lineAt(position.line).text.trim();
@@ -626,7 +626,7 @@ export class PukuInlineCompletionProvider extends Disposable implements vscode.I
 
 			// Get FRESH semantic context
 			let semanticFiles: Array<{ filepath: string; content: string }> = [];
-			if (this._indexingService.isAvailable()) {
+			if (await this._indexingService.isAvailable()) {
 				try {
 					const currentLine = currentDoc.lineAt(currentPos.line).text.trim();
 					if (currentLine.length > 3) {

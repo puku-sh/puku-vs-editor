@@ -60,7 +60,7 @@ export class SemanticSearchFlow {
 		languageId: string,
 		currentFileUri: vscode.Uri
 	): Promise<Array<{ filepath, content: string }>> {
-		if (!this._indexingService.isAvailable()) {
+		if (!await this._indexingService.isAvailable()) {
 			return [];
 		}
 

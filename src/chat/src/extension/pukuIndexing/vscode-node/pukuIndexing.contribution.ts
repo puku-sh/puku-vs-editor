@@ -8,6 +8,7 @@ import { Disposable } from '../../../util/vs/base/common/lifecycle';
 import { IInstantiationService } from '../../../util/vs/platform/instantiation/common/instantiation';
 import { IPukuIndexingService, PukuIndexingStatus } from '../node/pukuIndexingService';
 import { IPukuConfigService } from '../common/pukuConfig';
+import { IPukuAuthService } from '../common/pukuAuth';
 
 /**
  * Puku Indexing Contribution - auto-triggers workspace indexing on startup
@@ -25,6 +26,25 @@ export class PukuIndexingContribution extends Disposable {
 
 		// Register search command
 		this._registerCommands();
+
+		// Register internal command to refresh indexing when auth changes
+		this._register(vscode.commands.registerCommand('_puku.refreshIndexing', async () => {
+			console.log('[PukuIndexing.contribution] Refresh indexing command received');
+			// If indexing hasn't been initialized yet, try to initialize it now
+			if (!this._indexingService) {
+				const authService = this._instantiationService.invokeFunction((accessor) => {
+					return accessor.get(IPukuAuthService);
+				});
+				if (authService.isSignedIn()) {
+					console.log('[PukuIndexing.contribution] User is signed in, initializing indexing');
+					await this._initializeIndexing();
+				} else {
+					console.log('[PukuIndexing.contribution] User not signed in, skipping indexing');
+				}
+			} else {
+				console.log('[PukuIndexing.contribution] Indexing already initialized');
+			}
+		}));
 
 		// Initialize indexing after a short delay to let the workspace fully load
 		setTimeout(() => this._initializeIndexing(), 3000);
@@ -168,6 +188,22 @@ export class PukuIndexingContribution extends Disposable {
 			await configService.initialize();
 			console.log('[PukuIndexing.contribution] Config service initialized');
 
+			// Get auth service to check sign-in status
+			const authService = this._instantiationService.invokeFunction((accessor) => {
+				return accessor.get(IPukuAuthService);
+			});
+
+			// FIRST: Check if signed in before initializing indexing
+			if (!authService.isSignedIn()) {
+				console.log('[PukuIndexing.contribution] Not signed in - skipping indexing initialization');
+				this._statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+				this._updateStatusBar(PukuIndexingStatus.Disabled);
+				this._register({ dispose: () => this._statusBarItem?.dispose() });
+				return;
+			}
+
+			console.log('[PukuIndexing.contribution] Signed in - initializing indexing service');
+
 			this._indexingService = this._instantiationService.invokeFunction((accessor) => {
 				return accessor.get(IPukuIndexingService);
 			});
@@ -194,7 +230,7 @@ export class PukuIndexingContribution extends Disposable {
 			// Initialize and start indexing
 			await indexingService.initialize();
 
-			if (indexingService.isAvailable()) {
+			if (await indexingService.isAvailable()) {
 				console.log('[PukuIndexing.contribution] Starting workspace indexing');
 				await indexingService.startIndexing();
 			} else {

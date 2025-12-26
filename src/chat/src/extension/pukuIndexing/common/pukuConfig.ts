@@ -34,12 +34,17 @@ export interface PukuConfig {
 		readonly cacheTTL: number;
 		readonly maxConcurrentJobs: number;
 		readonly chunksPerJob: number;
+		readonly batchSize: number;
 	};
 	readonly diagnostics: {
 		readonly maxDistanceForImport: number;
 		readonly maxDistanceForAsync: number;
 		readonly maxDistanceForAny: number;
 		readonly delayBeforeFixMs: number;
+	};
+	readonly chat: {
+		readonly summarizeAgentConversationHistoryEnabled: boolean;
+		readonly summarizeAgentConversationHistoryThreshold: number;
 	};
 }
 
@@ -69,13 +74,18 @@ export const DEFAULT_PUKU_CONFIG: PukuConfig = {
 		debounceMs: 200,
 		cacheTTL: 300000, // 5 minutes
 		maxConcurrentJobs: 5,
-		chunksPerJob: 20,
+		chunksPerJob: 50, // Increased from 20 for faster indexing
+		batchSize: 50, // 50 chunks per API request (~18,750 tokens, safe for 32k context)
 	},
 	diagnostics: {
 		maxDistanceForImport: 12, // GitHub Copilot uses 12
 		maxDistanceForAsync: 3, // GitHub Copilot uses 3
 		maxDistanceForAny: 5, // GitHub Copilot uses 5
 		delayBeforeFixMs: 50, // GitHub Copilot uses 50ms (see inlineCompletionProvider.ts:183)
+	},
+	chat: {
+		summarizeAgentConversationHistoryEnabled: true, // Default: enabled
+		summarizeAgentConversationHistoryThreshold: 100000, // Default: 100k tokens
 	},
 };
 

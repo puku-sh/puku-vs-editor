@@ -44,12 +44,9 @@ export async function defaultChatResponseProcessor(
 	telemetryData: TelemetryData,
 	cancellationToken?: CancellationToken | undefined
 ) {
-	console.log(`[defaultChatResponseProcessor] Processing streaming response, expectedNumChoices: ${expectedNumChoices}`);
 	const processor = await SSEProcessor.create(logService, telemetryService, expectedNumChoices, response, cancellationToken);
-	console.log(`[defaultChatResponseProcessor] SSEProcessor created, starting processSSE...`);
 	const finishedCompletions = processor.processSSE(finishCallback);
 	const chatCompletions = AsyncIterableObject.map(finishedCompletions, (solution) => {
-		console.log(`[defaultChatResponseProcessor] Processing finished completion, reason: ${solution.reason}`);
 		const loggedReason = solution.reason ?? 'client-trimmed';
 		const dataToSendToTelemetry = telemetryData.extendedBy({
 			completionChoiceFinishReason: loggedReason,
@@ -58,23 +55,17 @@ export async function defaultChatResponseProcessor(
 		telemetryService.sendGHTelemetryEvent('completion.finishReason', dataToSendToTelemetry.properties, dataToSendToTelemetry.measurements);
 		return prepareChatCompletionForReturn(telemetryService, logService, solution, telemetryData);
 	});
-	console.log(`[defaultChatResponseProcessor] Returning chatCompletions`);
 	return chatCompletions;
 }
 
 export async function defaultNonStreamChatResponseProcessor(response: Response, finishCallback: FinishedCallback, telemetryData: TelemetryData) {
-	console.log(`[defaultNonStreamChatResponseProcessor] Processing non-streaming response...`);
 	const textResponse = await response.text();
-	console.log(`[defaultNonStreamChatResponseProcessor] Response text length: ${textResponse.length}`);
-	console.log(`[defaultNonStreamChatResponseProcessor] Response text preview: ${textResponse.substring(0, 200)}`);
 
 	const jsonResponse = JSON.parse(textResponse);
-	console.log(`[defaultNonStreamChatResponseProcessor] Parsed JSON, choices count: ${jsonResponse?.choices?.length ?? 0}`);
 
 	const completions: ChatCompletion[] = [];
 	for (let i = 0; i < (jsonResponse?.choices?.length || 0); i++) {
 		const choice = jsonResponse.choices[i];
-		console.log(`[defaultNonStreamChatResponseProcessor] Processing choice ${i}, finish_reason: ${choice.finish_reason}`);
 
 		const message: Raw.AssistantChatMessage = {
 			role: choice.message.role,
@@ -85,8 +76,6 @@ export async function defaultNonStreamChatResponseProcessor(response: Response, 
 			toolCalls: choice.message.toolCalls ?? choice.message.tool_calls,
 		};
 		const messageText = getTextPart(message.content);
-		console.log(`[defaultNonStreamChatResponseProcessor] Message text length: ${messageText.length}`);
-		console.log(`[defaultNonStreamChatResponseProcessor] Message text preview: ${messageText.substring(0, 100)}`);
 
 		const requestId = response.headers.get('X-Request-ID') ?? generateUuid();
 		const ghRequestId = response.headers.get('x-github-request-id') ?? '';
@@ -112,7 +101,6 @@ export async function defaultNonStreamChatResponseProcessor(response: Response, 
 				id: tool.id ?? '',
 			});
 		}
-		console.log(`[defaultNonStreamChatResponseProcessor] Calling finishCallback with text length: ${messageText.length}`);
 		await finishCallback(messageText, i, {
 			text: messageText,
 			copilotToolCalls: functionCall,
@@ -120,7 +108,6 @@ export async function defaultNonStreamChatResponseProcessor(response: Response, 
 		completions.push(completion);
 	}
 
-	console.log(`[defaultNonStreamChatResponseProcessor] Returning ${completions.length} completions`);
 	return AsyncIterableObject.fromArray(completions);
 }
 

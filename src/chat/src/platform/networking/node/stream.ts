@@ -250,43 +250,33 @@ export class SSEProcessor {
 	 * returns an item with done = true (or calling `.return()`).
 	 */
 	async *processSSE(finishedCb: FinishedCallback = async () => undefined): AsyncIterable<FinishedCompletion> {
-		console.log(`[SSEProcessor.processSSE] Starting to process SSE stream, expectedNumChoices: ${this.expectedNumChoices}`);
 		try {
 			// If it's n > 1 we don't handle usage as the usage is global for the stream and all our code assumes per choice
 			// Therefore we will just skip over the usage and yield the completions
 			if (this.expectedNumChoices > 1) {
-				console.log(`[SSEProcessor.processSSE] Processing multiple choices (n > 1)`);
 				for await (const usageOrCompletions of this.processSSEInner(finishedCb)) {
 					if (!isApiUsage(usageOrCompletions)) {
 						yield usageOrCompletions;
 					}
 				}
 			} else {
-				console.log(`[SSEProcessor.processSSE] Processing single choice (n = 1)`);
 				let completion: FinishedCompletion | undefined;
 				let usage: APIUsage | undefined;
 
 				// Process both the usage and the completions, then yield one combined completions
-				let chunkCount = 0;
 				for await (const usageOrCompletions of this.processSSEInner(finishedCb)) {
-					chunkCount++;
 					if (isApiUsage(usageOrCompletions)) {
-						console.log(`[SSEProcessor.processSSE] Received usage chunk ${chunkCount}`);
 						usage = usageOrCompletions;
 					} else {
-						console.log(`[SSEProcessor.processSSE] Received completion chunk ${chunkCount}`);
 						completion = usageOrCompletions;
 					}
 				}
-				console.log(`[SSEProcessor.processSSE] Finished processing inner stream, total chunks: ${chunkCount}`);
 
 				if (this.maybeCancel('after receiving the completion, but maybe before we got the usage')) {
-					console.log(`[SSEProcessor.processSSE] Cancelled after receiving completion`);
 					return;
 				}
 
 				if (completion) {
-					console.log(`[SSEProcessor.processSSE] Yielding completion with usage`);
 					completion.usage = usage;
 					yield completion;
 				}
@@ -300,25 +290,19 @@ export class SSEProcessor {
 	}
 
 	private async *processSSEInner(finishedCb: FinishedCallback): AsyncIterable<FinishedCompletion | APIUsage> {
-		console.log(`[SSEProcessor.processSSEInner] Starting inner processing...`);
 		// Collects pieces of the SSE stream that haven't been fully processed yet.
 		let extraData = '';
 		// This flag is set when at least for one solution we finished early (via `finishedCb`).
 		let hadEarlyFinishedSolution = false;
 		// Iterate over arbitrarily sized chunks coming in from the network.
-		let networkChunkCount = 0;
 		for await (const chunk of this.body) {
-			networkChunkCount++;
-			console.log(`[SSEProcessor.processSSEInner] Received network chunk ${networkChunkCount}, size: ${chunk.toString().length}`);
 			if (this.maybeCancel('after awaiting body chunk')) {
-				console.log(`[SSEProcessor.processSSEInner] Cancelled after awaiting body chunk`);
 				return;
 			}
 
 			// this.logService.public.debug(chunk.toString());
 			const [dataLines, remainder] = splitChunk(extraData + chunk.toString());
 			extraData = remainder;
-			console.log(`[SSEProcessor.processSSEInner] Parsed ${dataLines.length} data lines from chunk ${networkChunkCount}`);
 
 			// Each dataLine is complete since we've seen at least one \n after it
 
@@ -445,7 +429,6 @@ export class SSEProcessor {
 						}
 
 						const deltaText = solution.flush();
-						console.log(`[SSEProcessor] Calling finishedCb with deltaText length: ${deltaText.length}, total text length: ${solution.text.join('').length}`);
 						finishOffset = await finishedCb(solution.text.join(''), choice.index, {
 							text: deltaText,
 							logprobs: choice.logprobs,

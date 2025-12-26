@@ -81,7 +81,7 @@ export class CommentCompletionFlow {
 		document: vscode.TextDocument,
 		maxResults: number = 3
 	): Promise<Array<{ filepath: string; content: string }>> {
-		if (!this._indexingService.isAvailable()) {
+		if (!await this._indexingService.isAvailable()) {
 			return [];
 		}
 

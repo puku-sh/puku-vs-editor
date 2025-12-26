@@ -1164,6 +1164,15 @@ export class ChatEntitlementRequests extends Disposable {
 			try {
 				await this.commandService.executeCommand('_puku.refreshAuth');
 				this.logService.info('[chat entitlement] Notified extension layer of auth change');
+
+				// Also notify indexing service to initialize if needed
+				try {
+					await this.commandService.executeCommand('_puku.refreshIndexing');
+					this.logService.info('[chat entitlement] Notified indexing service of auth change');
+				} catch (indexingError) {
+					// Indexing service may not be loaded yet - this is fine
+					this.logService.trace('[chat entitlement] Indexing notification skipped (may not be loaded yet)');
+				}
 			} catch (error) {
 				// Extension not loaded yet - this is fine, auth state will sync when it loads
 				this.logService.trace('[chat entitlement] Extension notification skipped (extension may not be loaded yet)');

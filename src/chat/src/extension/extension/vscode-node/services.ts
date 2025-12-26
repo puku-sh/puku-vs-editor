@@ -110,6 +110,7 @@ import { IPukuConfigService } from '../../pukuIndexing/common/pukuConfig';
 import { VsCodePukuConfigService } from '../../pukuIndexing/vscode-node/vscodePukuConfigService';
 import { IPukuChatService } from '../../pukuChat/common/pukuChatService';
 import { PukuChatService } from '../../pukuChat/node/pukuChatService';
+import { ISemanticResultsService, SemanticResultsService } from '../../../platform/endpoint/common/semanticResultsService';
 
 // ###########################################################################################
 // ###                                                                                     ###
@@ -221,6 +222,9 @@ export function registerServices(builder: IInstantiationServiceBuilder, extensio
 
 	// Puku Chat Service
 	builder.define(IPukuChatService, new SyncDescriptor(PukuChatService));
+
+	// Semantic Results Service - Bridge between prompts and endpoint for reranking
+	builder.define(ISemanticResultsService, new SyncDescriptor(SemanticResultsService));
 }
 
 function setupMSFTExperimentationService(builder: IInstantiationServiceBuilder, extensionContext: ExtensionContext) {

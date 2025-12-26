@@ -3966,7 +3966,7 @@ var require_package = __commonJS({
       name: "puku-editor",
       displayName: "Puku Editor",
       description: "AI-powered code editor with GLM model support via Z.AI",
-      version: "0.43.32",
+      version: "0.43.33",
       build: "1",
       internalAIKey: "1058ec22-3c95-4951-8443-f26c1f325911",
       completionsCoreVersion: "1.378.1799",
@@ -5151,8 +5151,8 @@ var require_package = __commonJS({
         chatParticipants: [
           {
             id: "puku.default",
-            name: "GitHubCopilot",
-            fullName: "GitHub Copilot",
+            name: "Puku",
+            fullName: "Puku AI",
             description: "%puku.description%",
             isDefault: true,
             locations: [
@@ -5187,8 +5187,8 @@ var require_package = __commonJS({
           },
           {
             id: "puku.editingSession",
-            name: "GitHubCopilot",
-            fullName: "GitHub Copilot",
+            name: "Puku",
+            fullName: "Puku AI",
             description: "%puku.edits.description%",
             isDefault: true,
             locations: [
@@ -5201,8 +5201,8 @@ var require_package = __commonJS({
           },
           {
             id: "puku.editingSessionEditor",
-            name: "GitHubCopilot",
-            fullName: "GitHub Copilot",
+            name: "Puku",
+            fullName: "Puku AI",
             description: "%puku.edits.description%",
             isDefault: true,
             when: "config.inlineChat.enableV2",
@@ -5213,8 +5213,8 @@ var require_package = __commonJS({
           },
           {
             id: "puku.editingSession2",
-            name: "GitHubCopilot",
-            fullName: "GitHub Copilot",
+            name: "Puku",
+            fullName: "Puku AI",
             description: "%puku.edits.description%",
             isDefault: true,
             locations: [
@@ -5228,7 +5228,7 @@ var require_package = __commonJS({
           {
             id: "puku.editsAgent",
             name: "agent",
-            fullName: "GitHub Copilot",
+            fullName: "Puku AI",
             description: "%puku.agent.description%",
             locations: [
               "panel"
@@ -5253,8 +5253,8 @@ var require_package = __commonJS({
           },
           {
             id: "puku.editor",
-            name: "Copilot",
-            fullName: "GitHub Copilot",
+            name: "Puku",
+            fullName: "Puku AI",
             description: "%puku.description%",
             isDefault: true,
             locations: [
@@ -5359,8 +5359,8 @@ var require_package = __commonJS({
           },
           {
             id: "puku.notebook",
-            name: "GitHubCopilot",
-            fullName: "GitHub Copilot",
+            name: "Puku",
+            fullName: "Puku AI",
             description: "%puku.description%",
             isDefault: true,
             locations: [
@@ -5380,8 +5380,8 @@ var require_package = __commonJS({
           },
           {
             id: "puku.notebookEditorAgent",
-            name: "GitHubCopilot",
-            fullName: "GitHub Copilot",
+            name: "Puku",
+            fullName: "Puku AI",
             description: "%puku.description%",
             isDefault: true,
             locations: [
@@ -7796,6 +7796,146 @@ var require_package = __commonJS({
                 tags: [
                   "advanced",
                   "experimental"
+                ]
+              },
+              "puku.indexing.exclude": {
+                type: "array",
+                items: {
+                  type: "string"
+                },
+                default: [],
+                markdownDescription: "Glob patterns to exclude from indexing.\n\n**Examples**:\n- `**/generated/**` - Exclude generated code\n- `**/*.pb.ts` - Exclude protobuf files\n- `**/migrations/**` - Exclude database migrations\n\n**Priority**: Applied after .gitignore but before VS Code settings.",
+                tags: [
+                  "indexing",
+                  "performance"
+                ]
+              },
+              "puku.indexing.include": {
+                type: "array",
+                items: {
+                  type: "string"
+                },
+                default: [],
+                markdownDescription: "Glob patterns to force include (overrides all exclusions).\n\n**Examples**:\n- `vendor/custom/**` - Include custom vendor code\n- `build/schemas/**` - Include schema definitions in build folder\n\n**Priority**: HIGHEST - overrides .gitignore and all other exclusions.",
+                tags: [
+                  "indexing",
+                  "performance"
+                ]
+              },
+              "puku.indexing.respectGitignore": {
+                type: "boolean",
+                default: true,
+                markdownDescription: "Whether to respect .gitignore rules when indexing files.\n\nWhen enabled, files matching .gitignore patterns will be excluded from indexing.",
+                tags: [
+                  "indexing"
+                ]
+              },
+              "puku.indexing.respectVSCodeExclude": {
+                type: "boolean",
+                default: true,
+                markdownDescription: "Whether to respect VS Code `files.exclude` settings when indexing.\n\nWhen enabled, files matching VS Code exclusion patterns will be excluded from indexing.",
+                tags: [
+                  "indexing"
+                ]
+              },
+              "puku.indexing.skipBinaryFiles": {
+                type: "boolean",
+                default: true,
+                markdownDescription: "Automatically skip binary files (images, PDFs, executables, etc.).\n\nBinary files are detected by:\n1. File extension (`.png`, `.pdf`, `.exe`, etc.)\n2. Null byte presence\n3. High non-printable character ratio\n\n**Disable only if you need to index binary files with meaningful text content.**",
+                tags: [
+                  "indexing",
+                  "performance"
+                ]
+              },
+              "puku.indexing.binaryExtensions": {
+                type: "array",
+                items: {
+                  type: "string"
+                },
+                default: [
+                  ".png",
+                  ".jpg",
+                  ".jpeg",
+                  ".gif",
+                  ".svg",
+                  ".ico",
+                  ".webp",
+                  ".pdf",
+                  ".zip",
+                  ".tar",
+                  ".gz",
+                  ".exe",
+                  ".dll",
+                  ".so",
+                  ".wasm",
+                  ".db",
+                  ".sqlite"
+                ],
+                markdownDescription: "File extensions to treat as binary.\n\n**Default extensions cover**:\n- Images: `.png`, `.jpg`, `.svg`, etc.\n- Documents: `.pdf`\n- Archives: `.zip`, `.tar`, `.gz`\n- Executables: `.exe`, `.dll`, `.so`\n- Databases: `.db`, `.sqlite`\n\n**Add custom extensions** like:\n- `.dat` - Custom data files\n- `.bin` - Binary dumps\n- `.o` - Object files",
+                tags: [
+                  "indexing",
+                  "performance"
+                ]
+              },
+              "puku.indexing.skipGeneratedFiles": {
+                type: "boolean",
+                default: true,
+                markdownDescription: "Skip files with generation markers like `@generated`, `DO NOT EDIT`, etc.\n\nGenerated files are detected by checking the first 20 lines for:\n- Standard markers: `@generated`, `AUTO-GENERATED`, `DO NOT EDIT`\n- Tool markers: `protoc`, `prisma/client`, `openapi-generator`\n- Custom markers: Configurable via `puku.indexing.generatedMarkers`\n\n**Disable only if you need to index generated code.**",
+                tags: [
+                  "indexing",
+                  "performance"
+                ]
+              },
+              "puku.indexing.generatedMarkers": {
+                type: "array",
+                items: {
+                  type: "string"
+                },
+                default: [],
+                markdownDescription: "Additional markers that identify generated files.\n\n**Examples**:\n- `@custom-generator` - Your custom code generator\n- `GENERATED BY ACME TOOL` - Company-specific tool\n- `schema.graphql` - GraphQL schema files",
+                tags: [
+                  "indexing",
+                  "performance"
+                ]
+              },
+              "puku.indexing.skipMinifiedFiles": {
+                type: "boolean",
+                default: true,
+                markdownDescription: "Skip minified files (webpack bundles, uglified code).\n\nMinified files are detected by:\n1. Extension (`.min.js`, `.min.css`)\n2. Bundle markers (`webpackJsonp`, `__webpack_require__`)\n3. Line length (avg >500 chars or max >10,000 chars)\n4. Whitespace ratio (<5% whitespace)\n\n**Disable only if you need to index minified code.**",
+                tags: [
+                  "indexing",
+                  "performance"
+                ]
+              },
+              "puku.indexing.autoDetectProjectType": {
+                type: "boolean",
+                default: true,
+                markdownDescription: "Automatically detect project type and apply language-specific exclusions.\n\n**Detected types**:\n- JavaScript/TypeScript (`package.json`)\n- Python (`requirements.txt`, `pyproject.toml`)\n- Go (`go.mod`)\n- Rust (`Cargo.toml`)\n- Java/Kotlin (`pom.xml`, `build.gradle`)\n- Ruby (`Gemfile`)\n- PHP (`composer.json`)\n- C#/.NET (`*.csproj`)\n\n**Disable** if you want full manual control.",
+                tags: [
+                  "indexing",
+                  "automation"
+                ]
+              },
+              "puku.indexing.projectTypeOverride": {
+                type: "array",
+                items: {
+                  type: "string",
+                  enum: [
+                    "javascript",
+                    "python",
+                    "go",
+                    "rust",
+                    "java",
+                    "ruby",
+                    "php",
+                    "csharp"
+                  ]
+                },
+                default: [],
+                markdownDescription: 'Manually specify project types (overrides auto-detection).\n\n**Use cases**:\n- Monorepo with multiple languages\n- Force specific language exclusions\n- Supplement auto-detection\n\n**Examples**:\n- `["javascript", "python"]` - Monorepo\n- `["rust"]` - Force Rust detection',
+                tags: [
+                  "indexing",
+                  "automation"
                 ]
               }
             }
