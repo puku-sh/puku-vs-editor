@@ -25,6 +25,7 @@ export class VsCodePukuAuthService extends Disposable implements IPukuAuthServic
 	private _token: PukuToken | undefined;
 	private _user: PukuUser | undefined;
 	private _refreshTimeout: ReturnType<typeof setTimeout> | undefined;
+	private _lastLoggedTokenState: 'present' | 'absent' | undefined;
 
 	constructor() {
 		super();
@@ -136,12 +137,19 @@ export class VsCodePukuAuthService extends Disposable implements IPukuAuthServic
 
 				if (sessionToken) {
 					console.log('[VsCodePukuAuthService] Using API key from settings (puku.embeddings.token)');
+					this._lastLoggedTokenState = 'present';
 				} else {
-					console.log('[VsCodePukuAuthService] No token from workbench or settings');
+					// Only log when state changes from present to absent, or on first check
+					if (this._lastLoggedTokenState !== 'absent') {
+						console.log('[VsCodePukuAuthService] No token from workbench or settings');
+						this._lastLoggedTokenState = 'absent';
+					}
 					// Clear cached token if no valid session
 					this._token = undefined;
 					return undefined;
 				}
+			} else {
+				this._lastLoggedTokenState = 'present';
 			}
 
 			// Return cached token if it matches the session token and is still valid
