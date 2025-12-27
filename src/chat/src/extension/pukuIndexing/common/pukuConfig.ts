@@ -141,6 +141,7 @@ export class PukuConfigService extends Disposable implements IPukuConfigService 
 
 	protected _config: PukuConfig | undefined;
 	protected _refreshTimeout: ReturnType<typeof setTimeout> | undefined;
+	private _initialized = false;
 
 	private readonly _configEndpoint: string;
 
@@ -154,6 +155,10 @@ export class PukuConfigService extends Disposable implements IPukuConfigService 
 	}
 
 	async initialize(): Promise<void> {
+		if (this._initialized) {
+			return;
+		}
+		this._initialized = true;
 		await this._fetchConfig();
 		this._scheduleRefresh();
 	}
