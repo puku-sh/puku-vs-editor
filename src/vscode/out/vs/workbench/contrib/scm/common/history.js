@@ -4,4 +4,4 @@
  *--------------------------------------------------------------------------------------------*/
 export const SCMIncomingHistoryItemId = 'scm-graph-incoming-changes';
 export const SCMOutgoingHistoryItemId = 'scm-graph-outgoing-changes';
-//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaGlzdG9yeS5qcyIsInNvdXJjZVJvb3QiOiJmaWxlOi8vL1VzZXJzL3NhaGFtZWQvRGVza3RvcC9wdWt1LXZzLWVkaXRvci9wdWt1LWVkaXRvci9zcmMvdnNjb2RlL3NyYy8iLCJzb3VyY2VzIjpbInZzL3dvcmtiZW5jaC9jb250cmliL3NjbS9jb21tb24vaGlzdG9yeS50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQTs7O2dHQUdnRztBQVVoRyxNQUFNLENBQUMsTUFBTSx3QkFBd0IsR0FBRyw0QkFBNEIsQ0FBQztBQUNyRSxNQUFNLENBQUMsTUFBTSx3QkFBd0IsR0FBRyw0QkFBNEIsQ0FBQyJ9
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiaGlzdG9yeS5qcyIsInNvdXJjZVJvb3QiOiJmaWxlOi8vL2hvbWUvcG9yaWRoaS9kZXZlbG9wbWVudC9wdWt1LXZzLWVkaXRvci9zcmMvdnNjb2RlL3NyYy8iLCJzb3VyY2VzIjpbInZzL3dvcmtiZW5jaC9jb250cmliL3NjbS9jb21tb24vaGlzdG9yeS50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQTs7O2dHQUdnRztBQVVoRyxNQUFNLENBQUMsTUFBTSx3QkFBd0IsR0FBRyw0QkFBNEIsQ0FBQztBQUNyRSxNQUFNLENBQUMsTUFBTSx3QkFBd0IsR0FBRyw0QkFBNEIsQ0FBQyJ9

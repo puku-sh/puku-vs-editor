@@ -543,4 +543,4 @@ async function getWorkerClientForId(clientId) {
  * )} ResourceResponse
  */
 
-//# sourceURL=file:///Users/sahamed/Desktop/puku-vs-editor/puku-editor/src/vscode/src/vs/workbench/contrib/webview/browser/pre/service-worker.js
+//# sourceURL=file:///home/poridhi/development/puku-vs-editor/src/vscode/src/vs/workbench/contrib/webview/browser/pre/service-worker.js

@@ -1092,4 +1092,4 @@ define({
 	}
 });
 
-//# sourceURL=file:///Users/sahamed/Desktop/puku-vs-editor/puku-editor/src/vscode/src/vs/workbench/services/keybinding/test/node/win_ru.js
+//# sourceURL=file:///home/poridhi/development/puku-vs-editor/src/vscode/src/vs/workbench/services/keybinding/test/node/win_ru.js
