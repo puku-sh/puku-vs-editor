@@ -370,6 +370,22 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 	}
 
 	/**
+	 * Check if error is due to missing database or folder
+	 * Implements issue #152: Database error detection
+	 */
+	private _isDatabaseNotFoundError(error: unknown): boolean {
+		if (!(error instanceof Error)) {
+			return false;
+		}
+
+		const message = error.message.toLowerCase();
+		return message.includes('enoent') ||
+			message.includes('no such file') ||
+			(message.includes('database') && message.includes('not found')) ||
+			message.includes('unable to open database');
+	}
+
+	/**
 	 * Show user notification about .puku folder deletion
 	 * Implements issue #151: User notification with recovery options
 	 */
@@ -590,21 +606,30 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 			return;
 		}
 
-		// Group chunks by file to build indexed files list
-		const chunks = this._cache.getAllChunks();
-		const fileChunkCounts = new Map<string, number>();
+		try {
+			// Group chunks by file to build indexed files list
+			const chunks = this._cache.getAllChunks();
+			const fileChunkCounts = new Map<string, number>();
 
-		for (const chunk of chunks) {
-			const count = fileChunkCounts.get(chunk.uri) || 0;
-			fileChunkCounts.set(chunk.uri, count + 1);
-		}
+			for (const chunk of chunks) {
+				const count = fileChunkCounts.get(chunk.uri) || 0;
+				fileChunkCounts.set(chunk.uri, count + 1);
+			}
 
-		for (const [uri, count] of fileChunkCounts) {
-			this._indexedFiles.set(uri, {
+			for (const [uri, count] of fileChunkCounts) {
+				this._indexedFiles.set(uri, {
 				uri: vscode.Uri.parse(uri),
 				chunks: count,
 				lastIndexed: Date.now(),
 			});
+		}
+		} catch (error) {
+			// Database error handling (Issue #152)
+			if (this._isDatabaseNotFoundError(error)) {
+				console.warn('[PukuIndexing] Database missing during _loadFromCache');
+				return;
+			}
+			console.error('[PukuIndexing] Failed to load from cache:', error);
 		}
 	}
 
@@ -672,32 +697,41 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 				this._setStatus(PukuIndexingStatus.Ready);
 				this._onDidCompleteIndexing.fire();
 
-				const stats = this._cache.getStats();
-				console.log(`[PukuIndexing] ✅ Indexing complete:`, {
-					totalFound: files.length,
-					newlyIndexed: newFilesIndexed,
-					cached: cachedFiles,
-					skipped: skippedFiles,
-					finalStats: `${stats.fileCount} files, ${stats.chunkCount} chunks`,
-					indexedPercentage: `${Math.round((cachedFiles + newFilesIndexed) / files.length * 100)}%`
-				});
+				try {
+					const stats = this._cache.getStats();
+					console.log(`[PukuIndexing] ✅ Indexing complete:`, {
+						totalFound: files.length,
+						newlyIndexed: newFilesIndexed,
+						cached: cachedFiles,
+						skipped: skippedFiles,
+						finalStats: `${stats.fileCount} files, ${stats.chunkCount} chunks`,
+						indexedPercentage: `${Math.round((cachedFiles + newFilesIndexed) / files.length * 100)}%`
+					});
 
-				// Record exclusion statistics
-				const exclusionStats = this._exclusionService.getStats();
-				const filesIndexed = newFilesIndexed + cachedFiles;
-				const filesExcluded = files.length - filesIndexed;
-				this._cache.recordExclusionStats({
-					totalFilesFound: files.length,
-					filesIndexed,
-					filesExcluded,
-					projectTypes: this._exclusionService.getProjectTypes(),
-					hasGitignore: exclusionStats.hasGitignore,
-					forceIncludeCount: exclusionStats.forceIncludeCount,
-					userExcludeCount: exclusionStats.userExcludeCount,
-					vscodeExcludeCount: exclusionStats.vscodeExcludeCount,
-					staticPatternCount: exclusionStats.staticPatternCount,
-					autoExclusionCount: this._exclusionService.getAutoExclusionCount(),
-				});
+					// Record exclusion statistics
+					const exclusionStats = this._exclusionService.getStats();
+					const filesIndexed = newFilesIndexed + cachedFiles;
+					const filesExcluded = files.length - filesIndexed;
+					this._cache.recordExclusionStats({
+						totalFilesFound: files.length,
+						filesIndexed,
+						filesExcluded,
+						projectTypes: this._exclusionService.getProjectTypes(),
+						hasGitignore: exclusionStats.hasGitignore,
+						forceIncludeCount: exclusionStats.forceIncludeCount,
+						userExcludeCount: exclusionStats.userExcludeCount,
+						vscodeExcludeCount: exclusionStats.vscodeExcludeCount,
+						staticPatternCount: exclusionStats.staticPatternCount,
+						autoExclusionCount: this._exclusionService.getAutoExclusionCount(),
+					});
+				} catch (error) {
+					// Database error handling (Issue #152)
+					if (this._isDatabaseNotFoundError(error)) {
+						console.warn('[PukuIndexing] Database missing during indexing completion');
+					} else {
+						console.error('[PukuIndexing] Error recording completion stats:', error);
+					}
+				}
 			}
 		} catch (error) {
 			console.error('[PukuIndexing] Indexing failed:', error);
@@ -723,7 +757,18 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 			return [];
 		}
 
-		const allChunks = this._cache.getAllChunks();
+		let allChunks;
+		try {
+			allChunks = this._cache.getAllChunks();
+		} catch (error) {
+			// Database error handling (Issue #152)
+			if (this._isDatabaseNotFoundError(error)) {
+				console.warn('[PukuIndexing] Database missing during search');
+				return [];
+			}
+			throw error;
+		}
+
 		if (allChunks.length === 0) {
 			return [];
 		}
@@ -906,6 +951,13 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 			return 'skipped';
 		} catch (error) {
+			// Check if database was deleted (Issue #152)
+			if (this._isDatabaseNotFoundError(error)) {
+				console.warn('[PukuIndexing] Database missing during _indexFile, triggering recovery');
+				await this._handlePukuFolderDeletion();
+				return 'skipped';
+			}
+
 			// File might be binary or inaccessible
 			console.error(`[PukuIndexing] _indexFile: error - ${uri.fsPath}:`, error);
 			return 'skipped';
