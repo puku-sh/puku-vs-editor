@@ -123,6 +123,28 @@ export class PukuSummaryGenerator {
 		// Clean up jobs
 		this._jobManager.cleanupJobs(fileId);
 
+		// Record summary generation stats
+		const successfulChunks = finalSummaries.filter((s, i) => s !== this._fallbackSummary(chunks[i])).length;
+		const failedChunks = finalSummaries.length - successfulChunks;
+
+		if (this._db) {
+			try {
+				this._db.prepare(`
+					INSERT INTO SummaryStats (timestamp, targetChunks, successfulChunks, failedChunks, languageId, fileUri)
+					VALUES (?, ?, ?, ?, ?, ?)
+				`).run(Date.now(), chunks.length, successfulChunks, failedChunks, languageId, null);
+			} catch (error) {
+				console.error('[SummaryGenerator] Failed to record stats:', error);
+			}
+		}
+
+		console.log('[SummaryGenerator] 📊 Stats:', {
+			total: chunks.length,
+			successful: successfulChunks,
+			failed: failedChunks,
+			successRate: ((successfulChunks / chunks.length) * 100).toFixed(1) + '%'
+		});
+
 		// Report final progress
 		if (progressCallback) {
 			progressCallback(chunks.length, chunks.length);

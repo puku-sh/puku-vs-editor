@@ -44,8 +44,9 @@ import { Codicon } from '../../../../base/common/codicons.js';
 import { URI } from '../../../../base/common/uri.js';
 import { IInlineCompletionsService } from '../../../../editor/browser/services/inlineCompletionsService.js';
 import { IChatSessionsService } from '../common/chatSessionsService.js';
-import { IMarkdownRendererService } from '../../../../platform/markdown/browser/markdownRenderer.js';
-import { MarkdownString } from '../../../../base/common/htmlContent.js';
+// Puku Editor: Commented out unused imports (used by removed "Use AI Features" section)
+// import { IMarkdownRendererService } from '../../../../platform/markdown/browser/markdownRenderer.js';
+// import { MarkdownString } from '../../../../base/common/htmlContent.js';
 import { LEGACY_AGENT_SESSIONS_VIEW_ID } from '../common/constants.js';
 import { AGENT_SESSIONS_VIEW_ID } from './agentSessions/agentSessions.js';
 import { IPukuAuthService } from '../../../services/chat/common/pukuAuthService.js';
@@ -362,7 +363,8 @@ class ChatStatusDashboard extends Disposable {
 		@ITextResourceConfigurationService private readonly textResourceConfigurationService: ITextResourceConfigurationService,
 		@IInlineCompletionsService private readonly inlineCompletionsService: IInlineCompletionsService,
 		@IChatSessionsService private readonly chatSessionsService: IChatSessionsService,
-		@IMarkdownRendererService private readonly markdownRendererService: IMarkdownRendererService,
+		// Puku Editor: Commented out unused service (used by removed "Use AI Features" section)
+		// @IMarkdownRendererService private readonly markdownRendererService: IMarkdownRendererService,
 		@IPukuAuthService private readonly pukuAuthService: IPukuAuthService,
 	) {
 		super();
@@ -524,6 +526,9 @@ class ChatStatusDashboard extends Disposable {
 			this.createCompletionsSnooze(snooze, localize('settings.snooze', "Snooze"), disposables);
 		}
 
+		// Puku Editor: Removed "Use AI Features" setup section
+		// Users should use the "Puku Account" section below for sign-in
+		/*
 		// New to Chat / Signed out
 		{
 			const newUser = isNewUser(this.chatEntitlementService);
@@ -575,6 +580,7 @@ class ChatStatusDashboard extends Disposable {
 				disposables.add(button.onDidClick(() => this.runCommandAndClose(commandId)));
 			}
 		}
+		*/
 
 		// Puku Editor: Show indexing status
 		{
