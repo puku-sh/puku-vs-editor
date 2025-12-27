@@ -325,6 +325,101 @@ ls -la .puku/
 
 ---
 
+## Test 11: Sign-Out During Indexing
+
+**Goal:** Verify indexing stops when user signs out (Issue #154)
+
+### Steps:
+
+1. **Open a workspace** with 100+ files
+
+2. **Start indexing:**
+   - Command: `Puku: Reindex Workspace`
+   - Wait for indexing to start
+
+3. **Monitor progress:**
+   - Watch status bar showing "Indexing: X/Y files"
+   - Wait until approximately 50% progress (e.g., 50/100 files)
+
+4. **Sign out while indexing:**
+   - Command: `Puku: Sign Out`
+   - Or click "Sign Out" in account menu
+
+### Expected Results:
+
+✅ **Indexing stops immediately** (within 1 second)
+
+✅ **Notification appears:**
+- Message: "ℹ️ Indexing stopped (50 of 100 files indexed). Sign in to resume indexing."
+- Two buttons: "Sign In", "Dismiss"
+
+✅ **Status bar clears** (no longer shows "Indexing...")
+
+✅ **Console shows:**
+```
+[PukuIndexing] Stopped indexing due to sign-out
+```
+
+✅ **Indexing status:** Changes to "Disabled"
+
+### Test Sign-In Resume:
+
+1. **Click "Sign In"** button in notification
+   - Opens sign-in flow
+
+2. **Complete sign-in**
+
+3. **Verify indexing resumes:**
+   - Status bar shows "Indexing: 51/100 files" (continues from where it stopped)
+   - Or starts from beginning if cache was lost
+
+### Edge Cases to Test:
+
+**Edge Case A: Sign-out at start (0-1 files indexed)**
+
+```bash
+1. Start indexing
+2. Immediately sign out (within 1 second)
+3. Expected: Notification shows "0 of 100 files indexed"
+```
+
+**Edge Case B: Sign-out at end (99/100 files)**
+
+```bash
+1. Wait until almost complete
+2. Sign out at 99/100
+3. Expected: Notification shows "99 of 100 files indexed"
+4. Sign in: Only 1 file left to index
+```
+
+**Edge Case C: Sign-out while idle (not indexing)**
+
+```bash
+1. Complete indexing (100/100 files)
+2. Sign out
+3. Expected: No notification (not indexing)
+4. Status simply changes to "Disabled"
+```
+
+**Edge Case D: Rapid sign-out/sign-in**
+
+```bash
+1. Start indexing
+2. Sign out
+3. Immediately sign in
+4. Expected: Indexing stops cleanly, then restarts
+```
+
+### What Should NOT Happen:
+
+❌ Indexing continues after sign-out
+❌ Progress bar keeps moving but no actual progress
+❌ Files processed without embeddings
+❌ Crashes or errors
+❌ Notification spam
+
+---
+
 ## Debugging Tips
 
 ### View Console Logs
@@ -420,4 +515,5 @@ After manual testing:
 
 - **Implementation:** See `src/chat/src/extension/pukuIndexing/node/pukuIndexingService.ts`
 - **Tests:** See `src/chat/src/extension/pukuIndexing/test/node/pukuIndexingService.deletion.spec.ts`
-- **Issues:** #149, #150, #151, #152, #153
+- **Issues:** #149, #150, #151, #152, #153, #154
+- **PRD:** See `docs/prd/INDEXING_SIGNOUT_HANDLING.md` (Issue #154)
