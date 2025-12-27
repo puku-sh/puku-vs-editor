@@ -195,6 +195,17 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 					console.error('[PukuIndexing] Failed to initialize after auth ready:', err);
 				});
 			} else if (status === PukuAuthStatus.Unauthenticated) {
+				// Issue #154: Stop indexing on sign-out
+				if (this._isIndexing) {
+					const filesIndexed = this._indexedFiles.size;
+					const totalFiles = this.status.totalFiles;
+
+					this.stopIndexing();
+					console.log('[PukuIndexing] Stopped indexing due to sign-out');
+
+					// Show notification with progress and "Sign In" action
+					this._showSignOutNotification(filesIndexed, totalFiles);
+				}
 				this._setStatus(PukuIndexingStatus.Disabled);
 			}
 		}));
@@ -433,6 +444,31 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 			default:
 				console.log('[PukuIndexing] User chose to reindex later or dismissed');
 				break;
+		}
+	}
+
+	/**
+	 * Show user notification about sign-out during indexing
+	 * Implements issue #154: Stop indexing on sign-out
+	 */
+	private async _showSignOutNotification(filesIndexed: number, totalFiles: number): Promise<void> {
+		// Build notification message with progress
+		const message = `ℹ️  Indexing stopped (${filesIndexed} of ${totalFiles} files indexed). Sign in to resume indexing.`;
+
+		// Show notification with action buttons
+		const action = await vscode.window.showInformationMessage(
+			message,
+			'Sign In',
+			'Dismiss'
+		);
+
+		// Handle user action
+		if (action === 'Sign In') {
+			console.log('[PukuIndexing] User chose to sign in');
+			// Trigger sign-in command
+			await vscode.commands.executeCommand('puku.signIn');
+		} else {
+			console.log('[PukuIndexing] User dismissed sign-out notification');
 		}
 	}
 
