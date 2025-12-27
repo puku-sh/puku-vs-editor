@@ -225,16 +225,9 @@ export class PukuIndexingContribution extends Disposable {
 				return accessor.get(IPukuAuthService);
 			});
 
-			// FIRST: Check if signed in before initializing indexing
-			if (!authService.isSignedIn()) {
-				console.log('[PukuIndexing.contribution] Not signed in - skipping indexing initialization');
-				this._statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-				this._updateStatusBar(PukuIndexingStatus.Disabled);
-				this._register({ dispose: () => this._statusBarItem?.dispose() });
-				return;
-			}
-
-			console.log('[PukuIndexing.contribution] Signed in - initializing indexing service');
+			// ALWAYS create the indexing service (even when signed out)
+			// This ensures the auth status listener is set up to respond to sign-in events
+			console.log('[PukuIndexing.contribution] Creating indexing service (auth status:', authService.isSignedIn() ? 'signed in' : 'signed out', ')');
 
 			this._indexingService = this._instantiationService.invokeFunction((accessor) => {
 				return accessor.get(IPukuIndexingService);
