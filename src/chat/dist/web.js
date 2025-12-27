@@ -7937,6 +7937,15 @@ var require_package = __commonJS({
                   "indexing",
                   "automation"
                 ]
+              },
+              "puku.indexing.notifyOnFolderDeletion": {
+                type: "boolean",
+                default: true,
+                markdownDescription: "Show notification when `.puku` folder is deleted.\n\nWhen enabled, you'll be notified when the indexing folder is deleted and offered options to:\n- **Reindex Now** - Start indexing immediately\n- **Reindex Later** - Skip reindexing for now\n- **Learn More** - Open documentation about the .puku folder\n\n**Disable** if you frequently delete the folder and don't want notifications.",
+                tags: [
+                  "indexing",
+                  "notifications"
+                ]
               }
             }
           }

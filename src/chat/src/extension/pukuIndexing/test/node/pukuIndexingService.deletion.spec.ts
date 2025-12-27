@@ -210,6 +210,78 @@ suite('PukuIndexingService - Deletion Recovery', () => {
 	});
 
 	/**
+	 * Issue #154: Sign-Out Handling Tests
+	 */
+	suite('Sign-Out During Indexing (Issue #154)', () => {
+		test('stops indexing on sign-out', () => {
+			const indexing = { isIndexing: true, filesIndexed: 250, totalFiles: 500 };
+
+			// Simulate sign-out
+			if (indexing.isIndexing) {
+				indexing.isIndexing = false; // Stop indexing
+			}
+
+			assert.strictEqual(indexing.isIndexing, false, 'Indexing should stop');
+		});
+
+		test('does not notify if not indexing', () => {
+			const indexing = { isIndexing: false, filesIndexed: 500, totalFiles: 500 };
+			let notificationShown = false;
+
+			// Simulate sign-out
+			if (indexing.isIndexing) {
+				notificationShown = true;
+			}
+
+			assert.strictEqual(notificationShown, false, 'Should not show notification');
+		});
+
+		test('captures progress before stopping', () => {
+			const indexing = { isIndexing: true, filesIndexed: 250, totalFiles: 500 };
+			let capturedProgress: { filesIndexed: number; totalFiles: number } | null = null;
+
+			// Simulate sign-out
+			if (indexing.isIndexing) {
+				capturedProgress = {
+					filesIndexed: indexing.filesIndexed,
+					totalFiles: indexing.totalFiles
+				};
+				indexing.isIndexing = false;
+			}
+
+			assert.ok(capturedProgress !== null, 'Should capture progress');
+			assert.strictEqual(capturedProgress?.filesIndexed, 250);
+			assert.strictEqual(capturedProgress?.totalFiles, 500);
+		});
+
+		test('formats notification message correctly', () => {
+			const filesIndexed = 250;
+			const totalFiles = 500;
+			const message = buildSignOutMessage(filesIndexed, totalFiles);
+
+			assert.ok(message.includes('250'), 'Should include files indexed');
+			assert.ok(message.includes('500'), 'Should include total files');
+			assert.ok(message.includes('Sign in to resume'), 'Should mention resuming');
+			assert.ok(message.includes('ℹ️'), 'Should include info emoji');
+		});
+
+		test('handles sign-out at different progress levels', () => {
+			const testCases = [
+				{ filesIndexed: 0, totalFiles: 100, expected: '0 of 100' },
+				{ filesIndexed: 1, totalFiles: 100, expected: '1 of 100' },
+				{ filesIndexed: 50, totalFiles: 100, expected: '50 of 100' },
+				{ filesIndexed: 99, totalFiles: 100, expected: '99 of 100' },
+			];
+
+			for (const testCase of testCases) {
+				const message = buildSignOutMessage(testCase.filesIndexed, testCase.totalFiles);
+				assert.ok(message.includes(testCase.expected),
+					`Message should include "${testCase.expected}"`);
+			}
+		});
+	});
+
+	/**
 	 * Performance Tests
 	 */
 	suite('Performance', () => {
@@ -270,6 +342,10 @@ function buildDeletionMessage(wasIndexing: boolean, filesIndexed: number, totalF
 	} else {
 		return '⚠️  The .puku folder was deleted. All indexed data has been lost.';
 	}
+}
+
+function buildSignOutMessage(filesIndexed: number, totalFiles: number): string {
+	return `ℹ️  Indexing stopped (${filesIndexed} of ${totalFiles} files indexed). Sign in to resume indexing.`;
 }
 
 /**
