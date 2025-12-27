@@ -352,7 +352,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 				? vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, '.puku')
 				: undefined;
 
-			this._cache = new PukuEmbeddingsCache(storageUri);
+			this._cache = new PukuEmbeddingsCache(storageUri, this._configService);
 			await this._cache.initialize();
 
 			// Clean up excluded files from old indexing runs
@@ -483,6 +483,23 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 					skipped: skippedFiles,
 					finalStats: `${stats.fileCount} files, ${stats.chunkCount} chunks`,
 					indexedPercentage: `${Math.round((cachedFiles + newFilesIndexed) / files.length * 100)}%`
+				});
+
+				// Record exclusion statistics
+				const exclusionStats = this._exclusionService.getStats();
+				const filesIndexed = newFilesIndexed + cachedFiles;
+				const filesExcluded = files.length - filesIndexed;
+				this._cache.recordExclusionStats({
+					totalFilesFound: files.length,
+					filesIndexed,
+					filesExcluded,
+					projectTypes: this._exclusionService.getProjectTypes(),
+					hasGitignore: exclusionStats.hasGitignore,
+					forceIncludeCount: exclusionStats.forceIncludeCount,
+					userExcludeCount: exclusionStats.userExcludeCount,
+					vscodeExcludeCount: exclusionStats.vscodeExcludeCount,
+					staticPatternCount: exclusionStats.staticPatternCount,
+					autoExclusionCount: this._exclusionService.getAutoExclusionCount(),
 				});
 			}
 		} catch (error) {
