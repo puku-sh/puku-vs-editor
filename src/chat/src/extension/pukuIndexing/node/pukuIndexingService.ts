@@ -175,6 +175,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 	private _isIndexing = false;
 	private _cancelIndexing = false;
+	private _isRecreating = false;
 	private _fileWatcher: vscode.FileSystemWatcher | undefined;
 	private _pukuFolderWatcher: vscode.FileSystemWatcher | undefined;
 	private _pendingReindex: Set<string> = new Set();
@@ -257,7 +258,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 	/**
 	 * Handle .puku folder deletion
-	 * Stub implementation for issue #149 - full implementation in issue #150
+	 * Implements issue #149 (detection) and #150 (recovery)
 	 */
 	private async _handlePukuFolderDeletion(): Promise<void> {
 		console.warn('[PukuIndexing] Handling .puku folder deletion');
@@ -276,14 +277,90 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 		// Clear indexed files map (all data lost)
 		this._indexedFiles.clear();
 
-		// Set status to error
-		this._setStatus(PukuIndexingStatus.Error, 'Indexing folder was deleted');
+		// Recreate folder and database (Issue #150)
+		await this._recreatePukuFolder();
 
 		// Fire event for other components to handle
 		this._onDidPukuFolderDelete.fire();
 
-		// TODO: Issue #150 - Implement automatic recreation
 		// TODO: Issue #151 - Show user notification
+	}
+
+	/**
+	 * Recreate .puku folder and initialize empty database
+	 * Implements issue #150: Automatic folder recreation
+	 */
+	private async _recreatePukuFolder(): Promise<void> {
+		if (this._isRecreating) {
+			console.log('[PukuIndexing] Already recreating, skipping...');
+			return;
+		}
+
+		this._isRecreating = true;
+
+		try {
+			const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+			if (!workspaceFolder) {
+				throw new Error('No workspace folder');
+			}
+
+			const pukuFolderUri = vscode.Uri.joinPath(workspaceFolder.uri, '.puku');
+
+			// Create .puku folder
+			console.log('[PukuIndexing] Creating .puku folder...');
+			await vscode.workspace.fs.createDirectory(pukuFolderUri);
+
+			// Initialize new empty database
+			console.log('[PukuIndexing] Initializing new database...');
+			this._cache = new PukuEmbeddingsCache(pukuFolderUri, this._configService);
+			await this._cache.initialize();
+
+			// Reinitialize summary generator with new database
+			this._summaryGenerator = new PukuSummaryGenerator(this._authService, this._configService, this._cache.db);
+
+			// Set up watcher again for the recreated folder
+			this._setupPukuFolderWatcher();
+
+			// Update status to NotAvailable (needs reindexing)
+			this._setStatus(PukuIndexingStatus.NotAvailable);
+
+			console.log('[PukuIndexing] ✅ Folder and database recreated');
+		} catch (error) {
+			// Handle read-only file system
+			if (this._isReadOnlyError(error)) {
+				console.warn('[PukuIndexing] Read-only FS, using in-memory DB');
+
+				// Fall back to in-memory database
+				this._cache = new PukuEmbeddingsCache(undefined, this._configService);
+				await this._cache.initialize();
+
+				this._summaryGenerator = new PukuSummaryGenerator(this._authService, this._configService, this._cache.db);
+
+				this._setStatus(PukuIndexingStatus.NotAvailable);
+
+				vscode.window.showInformationMessage(
+					'Puku indexing using in-memory mode (read-only file system)'
+				);
+			} else {
+				console.error('[PukuIndexing] Failed to recreate:', error);
+				this._setStatus(PukuIndexingStatus.Error, 'Failed to recreate folder');
+				throw error;
+			}
+		} finally {
+			this._isRecreating = false;
+		}
+	}
+
+	/**
+	 * Check if error is due to read-only file system
+	 */
+	private _isReadOnlyError(error: unknown): boolean {
+		if (!(error instanceof Error)) {
+			return false;
+		}
+		return error.message.includes('EROFS') ||
+			error.message.includes('read-only') ||
+			error.message.includes('permission');
 	}
 
 	/**
