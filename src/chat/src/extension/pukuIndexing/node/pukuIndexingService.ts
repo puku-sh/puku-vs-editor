@@ -158,6 +158,9 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 	private readonly _onDidCompleteIndexing = this._register(new Emitter<void>());
 	readonly onDidCompleteIndexing = this._onDidCompleteIndexing.event;
 
+	private readonly _onDidPukuFolderDelete = this._register(new Emitter<void>());
+	readonly onDidPukuFolderDelete = this._onDidPukuFolderDelete.event;
+
 	private _status: PukuIndexingStatus = PukuIndexingStatus.Idle;
 	private _progress: PukuIndexingProgress = {
 		status: PukuIndexingStatus.Idle,
@@ -173,6 +176,7 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 	private _isIndexing = false;
 	private _cancelIndexing = false;
 	private _fileWatcher: vscode.FileSystemWatcher | undefined;
+	private _pukuFolderWatcher: vscode.FileSystemWatcher | undefined;
 	private _pendingReindex: Set<string> = new Set();
 	private _reindexDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -224,6 +228,62 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 		}));
 
 		this._register(this._fileWatcher);
+	}
+
+	/**
+	 * Set up file watcher to detect .puku folder deletion
+	 * Addresses issue #149: File system watcher for deletion detection
+	 */
+	private _setupPukuFolderWatcher(): void {
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+		if (!workspaceFolder) {
+			return;
+		}
+
+		// Watch for .puku folder deletion
+		const pukuPattern = new vscode.RelativePattern(workspaceFolder, '.puku');
+		this._pukuFolderWatcher = vscode.workspace.createFileSystemWatcher(pukuPattern);
+
+		console.log('[PukuIndexing] .puku folder watcher initialized');
+
+		// Detect folder deletion
+		this._register(this._pukuFolderWatcher.onDidDelete(async (uri) => {
+			console.warn('[PukuIndexing] ⚠️  .puku folder deleted:', uri.fsPath);
+			await this._handlePukuFolderDeletion();
+		}));
+
+		this._register(this._pukuFolderWatcher);
+	}
+
+	/**
+	 * Handle .puku folder deletion
+	 * Stub implementation for issue #149 - full implementation in issue #150
+	 */
+	private async _handlePukuFolderDeletion(): Promise<void> {
+		console.warn('[PukuIndexing] Handling .puku folder deletion');
+
+		// Stop ongoing indexing
+		if (this._isIndexing) {
+			this.stopIndexing();
+		}
+
+		// Close database connection
+		if (this._cache) {
+			this._cache.dispose();
+			this._cache = undefined;
+		}
+
+		// Clear indexed files map (all data lost)
+		this._indexedFiles.clear();
+
+		// Set status to error
+		this._setStatus(PukuIndexingStatus.Error, 'Indexing folder was deleted');
+
+		// Fire event for other components to handle
+		this._onDidPukuFolderDelete.fire();
+
+		// TODO: Issue #150 - Implement automatic recreation
+		// TODO: Issue #151 - Show user notification
 	}
 
 	/**
@@ -354,6 +414,9 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 			this._cache = new PukuEmbeddingsCache(storageUri, this._configService);
 			await this._cache.initialize();
+
+			// Set up watcher for .puku folder deletion (Issue #149)
+			this._setupPukuFolderWatcher();
 
 			// Clean up excluded files from old indexing runs
 			const excludedPatterns = ['node_modules', 'dist', 'build', '.next', '.git'];
