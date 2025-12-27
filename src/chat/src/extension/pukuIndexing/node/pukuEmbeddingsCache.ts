@@ -62,16 +62,23 @@ export class PukuEmbeddingsCache {
 	 * Schema version - bump this when schema changes require a clean rebuild
 	 * independent of extension version (e.g., for schema-only changes).
 	 * Combined with extension version for full cache key.
+	 * @deprecated Use config.embeddingsCache.schemaVersion instead
 	 */
-	private static readonly SCHEMA_VERSION = '6'; // Bumped for SummaryJobs table
+	private static readonly SCHEMA_VERSION = '7'; // Bumped for SummaryStats table
+	/**
+	 * @deprecated Use config.embeddingsCache.modelId instead
+	 */
 	private static readonly MODEL_ID = 'puku-embeddings-1024';
+	/**
+	 * @deprecated Use config.embeddingsCache.embeddingDimensions instead
+	 */
 	private static readonly EMBEDDING_DIMENSIONS = 1024;
 
 	/**
 	 * Get the cache version string (extension version + schema version)
 	 * Cache is automatically rebuilt when extension is updated OR schema changes
 	 */
-	private static getCacheVersion(): string {
+	private static getCacheVersion(schemaVersion?: string): string {
 		// Get extension version from vscode.extensions API
 		// Handle test environment where vscode.extensions may not be available
 		let extVersion = '0.0.0';
@@ -83,15 +90,25 @@ export class PukuEmbeddingsCache {
 		} catch {
 			// In test environment, use default version
 		}
-		return `${extVersion}-s${PukuEmbeddingsCache.SCHEMA_VERSION}`;
+		return `${extVersion}-s${schemaVersion || PukuEmbeddingsCache.SCHEMA_VERSION}`;
 	}
 
 	private _db: sql.DatabaseSync | undefined;
 	private _vecEnabled = false;
+	private _schemaVersion: string;
+	private _modelId: string;
+	private _embeddingDimensions: number;
 
 	constructor(
 		private readonly _storageUri: vscode.Uri | undefined,
-	) { }
+		private readonly _configService?: { getConfig(): { embeddingsCache: { schemaVersion: string; modelId: string; embeddingDimensions: number } } },
+	) {
+		// Get config values or use defaults
+		const config = _configService?.getConfig().embeddingsCache;
+		this._schemaVersion = config?.schemaVersion || PukuEmbeddingsCache.SCHEMA_VERSION;
+		this._modelId = config?.modelId || PukuEmbeddingsCache.MODEL_ID;
+		this._embeddingDimensions = config?.embeddingDimensions || PukuEmbeddingsCache.EMBEDDING_DIMENSIONS;
+	}
 
 	/**
 	 * Check if sqlite-vec is enabled
@@ -201,14 +218,14 @@ export class PukuEmbeddingsCache {
 		`);
 
 		// Check version and model compatibility FIRST - before creating any tables
-		const cacheVersion = PukuEmbeddingsCache.getCacheVersion();
+		const cacheVersion = PukuEmbeddingsCache.getCacheVersion(this._schemaVersion);
 		let needsRebuild = false;
 		try {
 			// Try to check existing cache version
 			const metaResult = this._db.prepare('SELECT version, model FROM CacheMeta LIMIT 1').get();
-			if (!metaResult || metaResult.version !== cacheVersion || metaResult.model !== PukuEmbeddingsCache.MODEL_ID) {
+			if (!metaResult || metaResult.version !== cacheVersion || metaResult.model !== this._modelId) {
 				needsRebuild = true;
-// 				console.log(`[PukuEmbeddingsCache] Cache version/model mismatch (have: ${metaResult?.version}/${metaResult?.model}, need: ${cacheVersion}/${PukuEmbeddingsCache.MODEL_ID}), dropping tables`);
+// 				console.log(`[PukuEmbeddingsCache] Cache version/model mismatch (have: ${metaResult?.version}/${metaResult?.model}, need: ${cacheVersion}/${this._modelId}), dropping tables`);
 			}
 		} catch {
 			// CacheMeta table doesn't exist yet - this is a new database
@@ -261,11 +278,38 @@ export class PukuEmbeddingsCache {
 				FOREIGN KEY (fileId) REFERENCES Files(id) ON DELETE CASCADE
 			);
 
+			CREATE TABLE IF NOT EXISTS SummaryStats (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				timestamp INTEGER NOT NULL,
+				targetChunks INTEGER NOT NULL,
+				successfulChunks INTEGER NOT NULL,
+				failedChunks INTEGER NOT NULL,
+				languageId TEXT,
+				fileUri TEXT
+			);
+
+			CREATE TABLE IF NOT EXISTS ExclusionStats (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				timestamp INTEGER NOT NULL,
+				totalFilesFound INTEGER NOT NULL,
+				filesIndexed INTEGER NOT NULL,
+				filesExcluded INTEGER NOT NULL,
+				projectTypes TEXT,
+				hasGitignore INTEGER NOT NULL,
+				forceIncludeCount INTEGER NOT NULL,
+				userExcludeCount INTEGER NOT NULL,
+				vscodeExcludeCount INTEGER NOT NULL,
+				staticPatternCount INTEGER NOT NULL,
+				autoExclusionCount INTEGER NOT NULL
+			);
+
 			CREATE INDEX IF NOT EXISTS idx_files_uri ON Files(uri);
 			CREATE INDEX IF NOT EXISTS idx_files_languageId ON Files(languageId);
 			CREATE INDEX IF NOT EXISTS idx_chunks_fileId ON Chunks(fileId);
 			CREATE INDEX IF NOT EXISTS idx_summary_jobs_fileId ON SummaryJobs(fileId);
 			CREATE INDEX IF NOT EXISTS idx_summary_jobs_status ON SummaryJobs(status);
+			CREATE INDEX IF NOT EXISTS idx_summary_stats_timestamp ON SummaryStats(timestamp);
+			CREATE INDEX IF NOT EXISTS idx_exclusion_stats_timestamp ON ExclusionStats(timestamp);
 		`);
 
 		// Create vec_chunks virtual table and mapping for KNN search (if sqlite-vec is available)
@@ -273,7 +317,7 @@ export class PukuEmbeddingsCache {
 			try {
 				this._db.exec(`
 					CREATE VIRTUAL TABLE IF NOT EXISTS vec_chunks USING vec0(
-						embedding float[${PukuEmbeddingsCache.EMBEDDING_DIMENSIONS}]
+						embedding float[${this._embeddingDimensions}]
 					);
 
 					CREATE TABLE IF NOT EXISTS VecMapping (
@@ -293,7 +337,7 @@ export class PukuEmbeddingsCache {
 
 		// Update metadata
 		this._db.exec('DELETE FROM CacheMeta;');
-		this._db.prepare('INSERT INTO CacheMeta (version, model) VALUES (?, ?)').run(cacheVersion, PukuEmbeddingsCache.MODEL_ID);
+		this._db.prepare('INSERT INTO CacheMeta (version, model) VALUES (?, ?)').run(cacheVersion, this._modelId);
 // 		console.log(`[PukuEmbeddingsCache] Cache version: ${cacheVersion}`);
 
 		console.log('[PukuEmbeddingsCache] Database initialized');
@@ -456,7 +500,7 @@ export class PukuEmbeddingsCache {
 				);
 
 				// Also insert into vec_chunks for KNN search (only if dimensions match)
-				if (vecInsertStmt && mappingInsertStmt && chunk.embedding.length === PukuEmbeddingsCache.EMBEDDING_DIMENSIONS) {
+				if (vecInsertStmt && mappingInsertStmt && chunk.embedding.length === this._embeddingDimensions) {
 					const chunkId = Number(chunkResult.lastInsertRowid);
 					const vecEmbedding = new Float32Array(chunk.embedding);
 					// Insert embedding (let sqlite-vec auto-generate rowid)
@@ -520,6 +564,211 @@ export class PukuEmbeddingsCache {
 	}
 
 	/**
+	 * Record summary generation statistics
+	 */
+	recordSummaryStats(targetChunks: number, successfulChunks: number, failedChunks: number, languageId?: string, fileUri?: string): void {
+		if (!this._db) {
+			return;
+		}
+
+		this._db.prepare(`
+			INSERT INTO SummaryStats (timestamp, targetChunks, successfulChunks, failedChunks, languageId, fileUri)
+			VALUES (?, ?, ?, ?, ?, ?)
+		`).run(Date.now(), targetChunks, successfulChunks, failedChunks, languageId || null, fileUri || null);
+	}
+
+	/**
+	 * Get summary generation statistics
+	 */
+	getSummaryStats(): {
+		totalTarget: number;
+		totalSuccessful: number;
+		totalFailed: number;
+		successRate: number;
+		recentEntries: Array<{
+			timestamp: number;
+			targetChunks: number;
+			successfulChunks: number;
+			failedChunks: number;
+			languageId: string | null;
+			fileUri: string | null;
+		}>;
+	} {
+		if (!this._db) {
+			return {
+				totalTarget: 0,
+				totalSuccessful: 0,
+				totalFailed: 0,
+				successRate: 0,
+				recentEntries: []
+			};
+		}
+
+		// Get aggregate stats
+		const aggregate = this._db.prepare(`
+			SELECT
+				SUM(targetChunks) as totalTarget,
+				SUM(successfulChunks) as totalSuccessful,
+				SUM(failedChunks) as totalFailed
+			FROM SummaryStats
+		`).get() as { totalTarget: number | null; totalSuccessful: number | null; totalFailed: number | null };
+
+		const totalTarget = aggregate.totalTarget || 0;
+		const totalSuccessful = aggregate.totalSuccessful || 0;
+		const totalFailed = aggregate.totalFailed || 0;
+		const successRate = totalTarget > 0 ? (totalSuccessful / totalTarget) * 100 : 0;
+
+		// Get recent entries
+		const recentEntries = this._db.prepare(`
+			SELECT timestamp, targetChunks, successfulChunks, failedChunks, languageId, fileUri
+			FROM SummaryStats
+			ORDER BY timestamp DESC
+			LIMIT 50
+		`).all() as Array<{
+			timestamp: number;
+			targetChunks: number;
+			successfulChunks: number;
+			failedChunks: number;
+			languageId: string | null;
+			fileUri: string | null;
+		}>;
+
+		return {
+			totalTarget,
+			totalSuccessful,
+			totalFailed,
+			successRate,
+			recentEntries
+		};
+	}
+
+	/**
+	 * Record exclusion statistics
+	 */
+	recordExclusionStats(stats: {
+		totalFilesFound: number;
+		filesIndexed: number;
+		filesExcluded: number;
+		projectTypes: string[];
+		hasGitignore: boolean;
+		forceIncludeCount: number;
+		userExcludeCount: number;
+		vscodeExcludeCount: number;
+		staticPatternCount: number;
+		autoExclusionCount: number;
+	}): void {
+		if (!this._db) {
+			return;
+		}
+
+		this._db.prepare(`
+			INSERT INTO ExclusionStats (
+				timestamp, totalFilesFound, filesIndexed, filesExcluded,
+				projectTypes, hasGitignore, forceIncludeCount, userExcludeCount,
+				vscodeExcludeCount, staticPatternCount, autoExclusionCount
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		`).run(
+			Date.now(),
+			stats.totalFilesFound,
+			stats.filesIndexed,
+			stats.filesExcluded,
+			JSON.stringify(stats.projectTypes),
+			stats.hasGitignore ? 1 : 0,
+			stats.forceIncludeCount,
+			stats.userExcludeCount,
+			stats.vscodeExcludeCount,
+			stats.staticPatternCount,
+			stats.autoExclusionCount
+		);
+	}
+
+	/**
+	 * Get exclusion statistics
+	 */
+	getExclusionStats(): {
+		latestRun: {
+			timestamp: number;
+			totalFilesFound: number;
+			filesIndexed: number;
+			filesExcluded: number;
+			exclusionRate: number;
+			projectTypes: string[];
+			hasGitignore: boolean;
+			forceIncludeCount: number;
+			userExcludeCount: number;
+			vscodeExcludeCount: number;
+			staticPatternCount: number;
+			autoExclusionCount: number;
+		} | null;
+		history: Array<{
+			timestamp: number;
+			totalFilesFound: number;
+			filesIndexed: number;
+			filesExcluded: number;
+			exclusionRate: number;
+		}>;
+	} {
+		if (!this._db) {
+			return { latestRun: null, history: [] };
+		}
+
+		// Get latest run
+		const latest = this._db.prepare(`
+			SELECT * FROM ExclusionStats
+			ORDER BY timestamp DESC
+			LIMIT 1
+		`).get() as {
+			timestamp: number;
+			totalFilesFound: number;
+			filesIndexed: number;
+			filesExcluded: number;
+			projectTypes: string;
+			hasGitignore: number;
+			forceIncludeCount: number;
+			userExcludeCount: number;
+			vscodeExcludeCount: number;
+			staticPatternCount: number;
+			autoExclusionCount: number;
+		} | undefined;
+
+		const latestRun = latest ? {
+			timestamp: latest.timestamp,
+			totalFilesFound: latest.totalFilesFound,
+			filesIndexed: latest.filesIndexed,
+			filesExcluded: latest.filesExcluded,
+			exclusionRate: (latest.filesExcluded / latest.totalFilesFound) * 100,
+			projectTypes: JSON.parse(latest.projectTypes) as string[],
+			hasGitignore: latest.hasGitignore === 1,
+			forceIncludeCount: latest.forceIncludeCount,
+			userExcludeCount: latest.userExcludeCount,
+			vscodeExcludeCount: latest.vscodeExcludeCount,
+			staticPatternCount: latest.staticPatternCount,
+			autoExclusionCount: latest.autoExclusionCount,
+		} : null;
+
+		// Get history
+		const history = this._db.prepare(`
+			SELECT timestamp, totalFilesFound, filesIndexed, filesExcluded
+			FROM ExclusionStats
+			ORDER BY timestamp DESC
+			LIMIT 10
+		`).all() as Array<{
+			timestamp: number;
+			totalFilesFound: number;
+			filesIndexed: number;
+			filesExcluded: number;
+		}>;
+
+		return {
+			latestRun,
+			history: history.map(h => ({
+				...h,
+				exclusionRate: (h.filesExcluded / h.totalFilesFound) * 100
+			}))
+		};
+	}
+
+	/**
 	 * Clear all cached data
 	 */
 	clear(): void {
@@ -541,7 +790,7 @@ export class PukuEmbeddingsCache {
 			return [];
 		}
 
-		if (this._vecEnabled && queryEmbedding.length === PukuEmbeddingsCache.EMBEDDING_DIMENSIONS) {
+		if (this._vecEnabled && queryEmbedding.length === this._embeddingDimensions) {
 			// Use sqlite-vec for efficient KNN search via mapping table
 			const vecQueryFloat = new Float32Array(queryEmbedding);
 			const vecQuery = new Uint8Array(vecQueryFloat.buffer);

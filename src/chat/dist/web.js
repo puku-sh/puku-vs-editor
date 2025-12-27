@@ -3966,7 +3966,7 @@ var require_package = __commonJS({
       name: "puku-editor",
       displayName: "Puku Editor",
       description: "AI-powered code editor with GLM model support via Z.AI",
-      version: "0.43.33",
+      version: "0.43.34",
       build: "1",
       internalAIKey: "1058ec22-3c95-4951-8443-f26c1f325911",
       completionsCoreVersion: "1.378.1799",

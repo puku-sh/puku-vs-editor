@@ -262,6 +262,20 @@ export class PukuExclusionService {
 	}
 
 	/**
+	 * Get detected project types
+	 */
+	getProjectTypes(): string[] {
+		return this._detectedProjectTypes;
+	}
+
+	/**
+	 * Get auto-exclusion pattern count (project type patterns)
+	 */
+	getAutoExclusionCount(): number {
+		return this._projectTypePatterns.length;
+	}
+
+	/**
 	 * Load user settings from VS Code configuration
 	 */
 	private _loadUserSettings(): void {

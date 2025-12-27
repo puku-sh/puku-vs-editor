@@ -24,6 +24,9 @@ export class PukuIndexingContribution extends Disposable {
 	) {
 		super();
 
+		// Ensure .puku folder exists immediately (like Cursor's .cursor folder)
+		this._ensurePukuFolder();
+
 		// Register search command
 		this._registerCommands();
 
@@ -48,6 +51,35 @@ export class PukuIndexingContribution extends Disposable {
 
 		// Initialize indexing after a short delay to let the workspace fully load
 		setTimeout(() => this._initializeIndexing(), 3000);
+	}
+
+	/**
+	 * Ensure .puku folder exists in workspace root
+	 * Creates folder proactively (like Cursor's .cursor folder) so it's always available
+	 */
+	private _ensurePukuFolder(): void {
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+		if (!workspaceFolder) {
+			return;
+		}
+
+		const pukuFolderUri = vscode.Uri.joinPath(workspaceFolder.uri, '.puku');
+
+		// Only create on local file system (not remote/virtual)
+		if (pukuFolderUri.scheme !== 'file') {
+			return;
+		}
+
+		// Create folder async (don't block extension activation)
+		(async () => {
+			try {
+				const fs = await import('fs');
+				await fs.promises.mkdir(pukuFolderUri.fsPath, { recursive: true });
+			} catch (error) {
+				// Ignore errors (might already exist or permissions issue)
+				// Embeddings cache will try again later if needed
+			}
+		})();
 	}
 
 	private _registerCommands(): void {
