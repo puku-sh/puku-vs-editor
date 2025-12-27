@@ -1187,4 +1187,4 @@ define({
 	}
 });
 
-//# sourceURL=file:///Users/sahamed/Desktop/puku-vs-editor/puku-editor/src/vscode/src/vs/workbench/services/keybinding/test/node/mac_de_ch.js
+//# sourceURL=file:///home/poridhi/development/puku-vs-editor/src/vscode/src/vs/workbench/services/keybinding/test/node/mac_de_ch.js
