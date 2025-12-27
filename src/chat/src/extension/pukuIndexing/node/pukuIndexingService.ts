@@ -258,10 +258,15 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 	/**
 	 * Handle .puku folder deletion
-	 * Implements issue #149 (detection) and #150 (recovery)
+	 * Implements issue #149 (detection), #150 (recovery), and #151 (notification)
 	 */
 	private async _handlePukuFolderDeletion(): Promise<void> {
 		console.warn('[PukuIndexing] Handling .puku folder deletion');
+
+		// Capture state before cleanup (for notification)
+		const wasIndexing = this._isIndexing;
+		const filesIndexed = this._indexedFiles.size;
+		const totalFiles = this.status.totalFiles;
 
 		// Stop ongoing indexing
 		if (this._isIndexing) {
@@ -280,10 +285,11 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 		// Recreate folder and database (Issue #150)
 		await this._recreatePukuFolder();
 
+		// Show user notification (Issue #151)
+		await this._showDeletionNotification(wasIndexing, filesIndexed, totalFiles);
+
 		// Fire event for other components to handle
 		this._onDidPukuFolderDelete.fire();
-
-		// TODO: Issue #151 - Show user notification
 	}
 
 	/**
@@ -361,6 +367,57 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 		return error.message.includes('EROFS') ||
 			error.message.includes('read-only') ||
 			error.message.includes('permission');
+	}
+
+	/**
+	 * Show user notification about .puku folder deletion
+	 * Implements issue #151: User notification with recovery options
+	 */
+	private async _showDeletionNotification(wasIndexing: boolean, filesIndexed: number, totalFiles: number): Promise<void> {
+		// Check if notifications are enabled
+		const config = vscode.workspace.getConfiguration('puku.indexing');
+		const shouldNotify = config.get<boolean>('notifyOnFolderDeletion', true);
+
+		if (!shouldNotify) {
+			console.log('[PukuIndexing] Notifications disabled, skipping');
+			return;
+		}
+
+		// Build notification message based on context
+		let message: string;
+		if (wasIndexing) {
+			message = `⚠️  The .puku folder was deleted while indexing. Progress lost: ${filesIndexed} of ${totalFiles} files.`;
+		} else {
+			message = '⚠️  The .puku folder was deleted. All indexed data has been lost.';
+		}
+
+		// Show notification with action buttons
+		const action = await vscode.window.showWarningMessage(
+			message,
+			'Reindex Now',
+			'Reindex Later',
+			'Learn More'
+		);
+
+		// Handle user action
+		switch (action) {
+			case 'Reindex Now':
+				console.log('[PukuIndexing] User chose to reindex now');
+				await this.startIndexing();
+				break;
+
+			case 'Learn More':
+				console.log('[PukuIndexing] User wants to learn more');
+				await vscode.env.openExternal(vscode.Uri.parse(
+					'https://docs.puku.sh/indexing/puku-folder'
+				));
+				break;
+
+			case 'Reindex Later':
+			default:
+				console.log('[PukuIndexing] User chose to reindex later or dismissed');
+				break;
+		}
 	}
 
 	/**
