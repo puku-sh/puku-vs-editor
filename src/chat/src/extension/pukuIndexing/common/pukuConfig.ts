@@ -46,6 +46,11 @@ export interface PukuConfig {
 		readonly summarizeAgentConversationHistoryEnabled: boolean;
 		readonly summarizeAgentConversationHistoryThreshold: number;
 	};
+	readonly embeddingsCache: {
+		readonly schemaVersion: string;
+		readonly modelId: string;
+		readonly embeddingDimensions: number;
+	};
 }
 
 /**
@@ -86,6 +91,11 @@ export const DEFAULT_PUKU_CONFIG: PukuConfig = {
 	chat: {
 		summarizeAgentConversationHistoryEnabled: true, // Default: enabled
 		summarizeAgentConversationHistoryThreshold: 100000, // Default: 100k tokens
+	},
+	embeddingsCache: {
+		schemaVersion: '7', // Schema version for embeddings cache
+		modelId: 'puku-embeddings-1024',
+		embeddingDimensions: 1024,
 	},
 };
 

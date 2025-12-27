@@ -158,6 +158,9 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 	private readonly _onDidCompleteIndexing = this._register(new Emitter<void>());
 	readonly onDidCompleteIndexing = this._onDidCompleteIndexing.event;
 
+	private readonly _onDidPukuFolderDelete = this._register(new Emitter<void>());
+	readonly onDidPukuFolderDelete = this._onDidPukuFolderDelete.event;
+
 	private _status: PukuIndexingStatus = PukuIndexingStatus.Idle;
 	private _progress: PukuIndexingProgress = {
 		status: PukuIndexingStatus.Idle,
@@ -172,7 +175,9 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 	private _isIndexing = false;
 	private _cancelIndexing = false;
+	private _isRecreating = false;
 	private _fileWatcher: vscode.FileSystemWatcher | undefined;
+	private _pukuFolderWatcher: vscode.FileSystemWatcher | undefined;
 	private _pendingReindex: Set<string> = new Set();
 	private _reindexDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -224,6 +229,211 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 		}));
 
 		this._register(this._fileWatcher);
+	}
+
+	/**
+	 * Set up file watcher to detect .puku folder deletion
+	 * Addresses issue #149: File system watcher for deletion detection
+	 */
+	private _setupPukuFolderWatcher(): void {
+		const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+		if (!workspaceFolder) {
+			return;
+		}
+
+		// Watch for .puku folder deletion
+		const pukuPattern = new vscode.RelativePattern(workspaceFolder, '.puku');
+		this._pukuFolderWatcher = vscode.workspace.createFileSystemWatcher(pukuPattern);
+
+		console.log('[PukuIndexing] .puku folder watcher initialized');
+
+		// Detect folder deletion
+		this._register(this._pukuFolderWatcher.onDidDelete(async (uri) => {
+			console.warn('[PukuIndexing] ⚠️  .puku folder deleted:', uri.fsPath);
+			await this._handlePukuFolderDeletion();
+		}));
+
+		this._register(this._pukuFolderWatcher);
+	}
+
+	/**
+	 * Handle .puku folder deletion
+	 * Implements issue #149 (detection), #150 (recovery), and #151 (notification)
+	 */
+	private async _handlePukuFolderDeletion(): Promise<void> {
+		console.warn('[PukuIndexing] Handling .puku folder deletion');
+
+		// Capture state before cleanup (for notification)
+		const wasIndexing = this._isIndexing;
+		const filesIndexed = this._indexedFiles.size;
+		const totalFiles = this.status.totalFiles;
+
+		// Stop ongoing indexing
+		if (this._isIndexing) {
+			this.stopIndexing();
+		}
+
+		// Close database connection
+		if (this._cache) {
+			this._cache.dispose();
+			this._cache = undefined;
+		}
+
+		// Clear indexed files map (all data lost)
+		this._indexedFiles.clear();
+
+		// Recreate folder and database (Issue #150)
+		await this._recreatePukuFolder();
+
+		// Show user notification (Issue #151)
+		await this._showDeletionNotification(wasIndexing, filesIndexed, totalFiles);
+
+		// Fire event for other components to handle
+		this._onDidPukuFolderDelete.fire();
+	}
+
+	/**
+	 * Recreate .puku folder and initialize empty database
+	 * Implements issue #150: Automatic folder recreation
+	 */
+	private async _recreatePukuFolder(): Promise<void> {
+		if (this._isRecreating) {
+			console.log('[PukuIndexing] Already recreating, skipping...');
+			return;
+		}
+
+		this._isRecreating = true;
+
+		try {
+			const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+			if (!workspaceFolder) {
+				throw new Error('No workspace folder');
+			}
+
+			const pukuFolderUri = vscode.Uri.joinPath(workspaceFolder.uri, '.puku');
+
+			// Create .puku folder
+			console.log('[PukuIndexing] Creating .puku folder...');
+			await vscode.workspace.fs.createDirectory(pukuFolderUri);
+
+			// Initialize new empty database
+			console.log('[PukuIndexing] Initializing new database...');
+			this._cache = new PukuEmbeddingsCache(pukuFolderUri, this._configService);
+			await this._cache.initialize();
+
+			// Reinitialize summary generator with new database
+			this._summaryGenerator = new PukuSummaryGenerator(this._authService, this._configService, this._cache.db);
+
+			// Set up watcher again for the recreated folder
+			this._setupPukuFolderWatcher();
+
+			// Update status to NotAvailable (needs reindexing)
+			this._setStatus(PukuIndexingStatus.NotAvailable);
+
+			console.log('[PukuIndexing] ✅ Folder and database recreated');
+		} catch (error) {
+			// Handle read-only file system
+			if (this._isReadOnlyError(error)) {
+				console.warn('[PukuIndexing] Read-only FS, using in-memory DB');
+
+				// Fall back to in-memory database
+				this._cache = new PukuEmbeddingsCache(undefined, this._configService);
+				await this._cache.initialize();
+
+				this._summaryGenerator = new PukuSummaryGenerator(this._authService, this._configService, this._cache.db);
+
+				this._setStatus(PukuIndexingStatus.NotAvailable);
+
+				vscode.window.showInformationMessage(
+					'Puku indexing using in-memory mode (read-only file system)'
+				);
+			} else {
+				console.error('[PukuIndexing] Failed to recreate:', error);
+				this._setStatus(PukuIndexingStatus.Error, 'Failed to recreate folder');
+				throw error;
+			}
+		} finally {
+			this._isRecreating = false;
+		}
+	}
+
+	/**
+	 * Check if error is due to read-only file system
+	 */
+	private _isReadOnlyError(error: unknown): boolean {
+		if (!(error instanceof Error)) {
+			return false;
+		}
+		return error.message.includes('EROFS') ||
+			error.message.includes('read-only') ||
+			error.message.includes('permission');
+	}
+
+	/**
+	 * Check if error is due to missing database or folder
+	 * Implements issue #152: Database error detection
+	 */
+	private _isDatabaseNotFoundError(error: unknown): boolean {
+		if (!(error instanceof Error)) {
+			return false;
+		}
+
+		const message = error.message.toLowerCase();
+		return message.includes('enoent') ||
+			message.includes('no such file') ||
+			(message.includes('database') && message.includes('not found')) ||
+			message.includes('unable to open database');
+	}
+
+	/**
+	 * Show user notification about .puku folder deletion
+	 * Implements issue #151: User notification with recovery options
+	 */
+	private async _showDeletionNotification(wasIndexing: boolean, filesIndexed: number, totalFiles: number): Promise<void> {
+		// Check if notifications are enabled
+		const config = vscode.workspace.getConfiguration('puku.indexing');
+		const shouldNotify = config.get<boolean>('notifyOnFolderDeletion', true);
+
+		if (!shouldNotify) {
+			console.log('[PukuIndexing] Notifications disabled, skipping');
+			return;
+		}
+
+		// Build notification message based on context
+		let message: string;
+		if (wasIndexing) {
+			message = `⚠️  The .puku folder was deleted while indexing. Progress lost: ${filesIndexed} of ${totalFiles} files.`;
+		} else {
+			message = '⚠️  The .puku folder was deleted. All indexed data has been lost.';
+		}
+
+		// Show notification with action buttons
+		const action = await vscode.window.showWarningMessage(
+			message,
+			'Reindex Now',
+			'Reindex Later',
+			'Learn More'
+		);
+
+		// Handle user action
+		switch (action) {
+			case 'Reindex Now':
+				console.log('[PukuIndexing] User chose to reindex now');
+				await this.startIndexing();
+				break;
+
+			case 'Learn More':
+				console.log('[PukuIndexing] User wants to learn more');
+				await vscode.env.openExternal(vscode.Uri.parse(
+					'https://docs.puku.sh/indexing/puku-folder'
+				));
+				break;
+
+			case 'Reindex Later':
+			default:
+				console.log('[PukuIndexing] User chose to reindex later or dismissed');
+				break;
+		}
 	}
 
 	/**
@@ -352,8 +562,11 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 				? vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, '.puku')
 				: undefined;
 
-			this._cache = new PukuEmbeddingsCache(storageUri);
+			this._cache = new PukuEmbeddingsCache(storageUri, this._configService);
 			await this._cache.initialize();
+
+			// Set up watcher for .puku folder deletion (Issue #149)
+			this._setupPukuFolderWatcher();
 
 			// Clean up excluded files from old indexing runs
 			const excludedPatterns = ['node_modules', 'dist', 'build', '.next', '.git'];
@@ -393,21 +606,30 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 			return;
 		}
 
-		// Group chunks by file to build indexed files list
-		const chunks = this._cache.getAllChunks();
-		const fileChunkCounts = new Map<string, number>();
+		try {
+			// Group chunks by file to build indexed files list
+			const chunks = this._cache.getAllChunks();
+			const fileChunkCounts = new Map<string, number>();
 
-		for (const chunk of chunks) {
-			const count = fileChunkCounts.get(chunk.uri) || 0;
-			fileChunkCounts.set(chunk.uri, count + 1);
-		}
+			for (const chunk of chunks) {
+				const count = fileChunkCounts.get(chunk.uri) || 0;
+				fileChunkCounts.set(chunk.uri, count + 1);
+			}
 
-		for (const [uri, count] of fileChunkCounts) {
-			this._indexedFiles.set(uri, {
+			for (const [uri, count] of fileChunkCounts) {
+				this._indexedFiles.set(uri, {
 				uri: vscode.Uri.parse(uri),
 				chunks: count,
 				lastIndexed: Date.now(),
 			});
+		}
+		} catch (error) {
+			// Database error handling (Issue #152)
+			if (this._isDatabaseNotFoundError(error)) {
+				console.warn('[PukuIndexing] Database missing during _loadFromCache');
+				return;
+			}
+			console.error('[PukuIndexing] Failed to load from cache:', error);
 		}
 	}
 
@@ -475,15 +697,41 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 				this._setStatus(PukuIndexingStatus.Ready);
 				this._onDidCompleteIndexing.fire();
 
-				const stats = this._cache.getStats();
-				console.log(`[PukuIndexing] ✅ Indexing complete:`, {
-					totalFound: files.length,
-					newlyIndexed: newFilesIndexed,
-					cached: cachedFiles,
-					skipped: skippedFiles,
-					finalStats: `${stats.fileCount} files, ${stats.chunkCount} chunks`,
-					indexedPercentage: `${Math.round((cachedFiles + newFilesIndexed) / files.length * 100)}%`
-				});
+				try {
+					const stats = this._cache.getStats();
+					console.log(`[PukuIndexing] ✅ Indexing complete:`, {
+						totalFound: files.length,
+						newlyIndexed: newFilesIndexed,
+						cached: cachedFiles,
+						skipped: skippedFiles,
+						finalStats: `${stats.fileCount} files, ${stats.chunkCount} chunks`,
+						indexedPercentage: `${Math.round((cachedFiles + newFilesIndexed) / files.length * 100)}%`
+					});
+
+					// Record exclusion statistics
+					const exclusionStats = this._exclusionService.getStats();
+					const filesIndexed = newFilesIndexed + cachedFiles;
+					const filesExcluded = files.length - filesIndexed;
+					this._cache.recordExclusionStats({
+						totalFilesFound: files.length,
+						filesIndexed,
+						filesExcluded,
+						projectTypes: this._exclusionService.getProjectTypes(),
+						hasGitignore: exclusionStats.hasGitignore,
+						forceIncludeCount: exclusionStats.forceIncludeCount,
+						userExcludeCount: exclusionStats.userExcludeCount,
+						vscodeExcludeCount: exclusionStats.vscodeExcludeCount,
+						staticPatternCount: exclusionStats.staticPatternCount,
+						autoExclusionCount: this._exclusionService.getAutoExclusionCount(),
+					});
+				} catch (error) {
+					// Database error handling (Issue #152)
+					if (this._isDatabaseNotFoundError(error)) {
+						console.warn('[PukuIndexing] Database missing during indexing completion');
+					} else {
+						console.error('[PukuIndexing] Error recording completion stats:', error);
+					}
+				}
 			}
 		} catch (error) {
 			console.error('[PukuIndexing] Indexing failed:', error);
@@ -509,7 +757,18 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 			return [];
 		}
 
-		const allChunks = this._cache.getAllChunks();
+		let allChunks;
+		try {
+			allChunks = this._cache.getAllChunks();
+		} catch (error) {
+			// Database error handling (Issue #152)
+			if (this._isDatabaseNotFoundError(error)) {
+				console.warn('[PukuIndexing] Database missing during search');
+				return [];
+			}
+			throw error;
+		}
+
 		if (allChunks.length === 0) {
 			return [];
 		}
@@ -692,6 +951,13 @@ export class PukuIndexingService extends Disposable implements IPukuIndexingServ
 
 			return 'skipped';
 		} catch (error) {
+			// Check if database was deleted (Issue #152)
+			if (this._isDatabaseNotFoundError(error)) {
+				console.warn('[PukuIndexing] Database missing during _indexFile, triggering recovery');
+				await this._handlePukuFolderDeletion();
+				return 'skipped';
+			}
+
 			// File might be binary or inaccessible
 			console.error(`[PukuIndexing] _indexFile: error - ${uri.fsPath}:`, error);
 			return 'skipped';
